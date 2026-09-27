@@ -30,6 +30,7 @@ import { Route as GTokenRouteImport } from './routes/g.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
 import { Route as BoardSlugRouteImport } from './routes/board.$slug'
+import { Route as AuthHandoffRouteImport } from './routes/auth.handoff'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
 import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
@@ -154,6 +155,7 @@ import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/leve
 import { Route as ApiV1CoachChecklistRouteImport } from './routes/api/v1/coach/checklist'
 import { Route as ApiV1CoachBillingRouteImport } from './routes/api/v1/coach/billing'
 import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
+import { Route as ApiV1AuthWebSessionRouteImport } from './routes/api/v1/auth/web-session'
 import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
 import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
 import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
@@ -435,6 +437,11 @@ const DevPaywallPreviewRoute = DevPaywallPreviewRouteImport.update({
 const BoardSlugRoute = BoardSlugRouteImport.update({
   id: '/board/$slug',
   path: '/board/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthHandoffRoute = AuthHandoffRouteImport.update({
+  id: '/auth/handoff',
+  path: '/auth/handoff',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
@@ -1108,6 +1115,11 @@ const ApiV1CoachBillingRoute = ApiV1CoachBillingRouteImport.update({
 const ApiV1BoardsMySkatersRoute = ApiV1BoardsMySkatersRouteImport.update({
   id: '/api/v1/boards/my-skaters',
   path: '/api/v1/boards/my-skaters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthWebSessionRoute = ApiV1AuthWebSessionRouteImport.update({
+  id: '/api/v1/auth/web-session',
+  path: '/api/v1/auth/web-session',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1AuthRecoverRoute = ApiV1AuthRecoverRouteImport.update({
@@ -2142,6 +2154,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -2248,6 +2261,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/auth/web-session': typeof ApiV1AuthWebSessionRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
   '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
@@ -2461,6 +2475,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/verified': typeof VerifiedRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -2566,6 +2581,7 @@ export interface FileRoutesByTo {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/auth/web-session': typeof ApiV1AuthWebSessionRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
   '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
@@ -2786,6 +2802,7 @@ export interface FileRoutesById {
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -2892,6 +2909,7 @@ export interface FileRoutesById {
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
+  '/api/v1/auth/web-session': typeof ApiV1AuthWebSessionRoute
   '/api/v1/boards/my-skaters': typeof ApiV1BoardsMySkatersRoute
   '/api/v1/coach/billing': typeof ApiV1CoachBillingRoute
   '/api/v1/coach/checklist': typeof ApiV1CoachChecklistRoute
@@ -3112,6 +3130,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -3218,6 +3237,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/auth/web-session'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
     | '/api/v1/coach/checklist'
@@ -3431,6 +3451,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/verified'
     | '/.well-known/apple-app-site-association'
+    | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -3536,6 +3557,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/auth/web-session'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
     | '/api/v1/coach/checklist'
@@ -3755,6 +3777,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach'
     | '/_authenticated/org-admin'
     | '/_authenticated/parent'
+    | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
     | '/email/unsubscribe'
@@ -3861,6 +3884,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
+    | '/api/v1/auth/web-session'
     | '/api/v1/boards/my-skaters'
     | '/api/v1/coach/billing'
     | '/api/v1/coach/checklist'
@@ -4076,6 +4100,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   VerifiedRoute: typeof VerifiedRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  AuthHandoffRoute: typeof AuthHandoffRoute
   BoardSlugRoute: typeof BoardSlugRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -4118,6 +4143,7 @@ export interface RootRouteChildren {
   ApiV1AuthGoogleRoute: typeof ApiV1AuthGoogleRoute
   ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
   ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
+  ApiV1AuthWebSessionRoute: typeof ApiV1AuthWebSessionRoute
   ApiV1BoardsMySkatersRoute: typeof ApiV1BoardsMySkatersRoute
   ApiV1CoachBillingRoute: typeof ApiV1CoachBillingRoute
   ApiV1CoachChecklistRoute: typeof ApiV1CoachChecklistRoute
@@ -4458,6 +4484,13 @@ declare module '@tanstack/react-router' {
       path: '/board/$slug'
       fullPath: '/board/$slug'
       preLoaderRoute: typeof BoardSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/handoff': {
+      id: '/auth/handoff'
+      path: '/auth/handoff'
+      fullPath: '/auth/handoff'
+      preLoaderRoute: typeof AuthHandoffRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/parent': {
@@ -5326,6 +5359,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/boards/my-skaters'
       fullPath: '/api/v1/boards/my-skaters'
       preLoaderRoute: typeof ApiV1BoardsMySkatersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/web-session': {
+      id: '/api/v1/auth/web-session'
+      path: '/api/v1/auth/web-session'
+      fullPath: '/api/v1/auth/web-session'
+      preLoaderRoute: typeof ApiV1AuthWebSessionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/auth/recover': {
@@ -6859,6 +6899,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifiedRoute: VerifiedRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
+  AuthHandoffRoute: AuthHandoffRoute,
   BoardSlugRoute: BoardSlugRoute,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
@@ -6901,6 +6942,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthGoogleRoute: ApiV1AuthGoogleRoute,
   ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
   ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,
+  ApiV1AuthWebSessionRoute: ApiV1AuthWebSessionRoute,
   ApiV1BoardsMySkatersRoute: ApiV1BoardsMySkatersRoute,
   ApiV1CoachBillingRoute: ApiV1CoachBillingRoute,
   ApiV1CoachChecklistRoute: ApiV1CoachChecklistRoute,
