@@ -7,6 +7,7 @@ import {
   fetchBoard,
   fetchBoardList,
   fetchMySkaterNames,
+  searchBoards as searchBoardsServer,
 } from "./board.server";
 
 const slugSchema = z.object({ slug: z.string().trim().min(1).max(80) });
@@ -26,6 +27,19 @@ export const listBoards = createServerFn({ method: "GET" }).handler(
     return fetchBoardList(supabaseAdmin as unknown as { from: (t: string) => any });
   },
 );
+
+/**
+ * Public: search every IJS competition the catalog has found, or look up a
+ * pasted IJS link or number. Thin wrapper over searchBoards.
+ */
+export const searchBoards = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    z.object({ q: z.string().trim().min(2).max(120) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<BoardListEntry[]> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return searchBoardsServer(supabaseAdmin as unknown as { from: (t: string) => any }, data.q);
+  });
 
 /** Signed-in extra: names of the viewer's athletes. Thin wrapper over fetchMySkaterNames. */
 export const getMySkaterNames = createServerFn({ method: "GET" })

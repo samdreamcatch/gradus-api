@@ -37,12 +37,18 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
 
   const { REFRESH_INTERVAL_MS, refreshCompetition } = await import("./board-refresh.server");
 
-  const comp = await admin
-    .from("competitions")
-    .select("id, slug, name, dates_label, location, active, starts_on, ends_on, ijs_base_url, year")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (!comp.data) return null;
+  const select =
+    "id, slug, name, dates_label, location, active, starts_on, ends_on, ijs_base_url, year";
+  let comp = await admin.from("competitions").select(select).eq("slug", slug).maybeSingle();
+  if (!comp.data) {
+    // A competition found by the IJS catalog (`ijs-<year>-<id>`) gets its board
+    // the first time anyone opens it (src/lib/ijs-catalog.server.ts).
+    const { materializeCatalogBoard } = await import("./ijs-catalog.server");
+    const made = await materializeCatalogBoard(admin, slug);
+    if (!made) return null;
+    comp = await admin.from("competitions").select(select).eq("slug", made).maybeSingle();
+    if (!comp.data) return null;
+  }
   const c = comp.data as {
     id: string;
     slug: string;
@@ -111,7 +117,7 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
   try {
     const res = await admin
       .from("competitions")
-      .select("slug, name, dates_label, location, active, starts_on, ends_on")
+      .select("slug, name, dates_label, location, active, starts_on, ends_on, comp_id, year")
       .eq("active", true)
       .order("starts_on", { ascending: false, nullsFirst: false });
     rows = (res?.data ?? []) as any[];
@@ -120,6 +126,21 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
     rows = [];
   }
   const today = new Date().toISOString().slice(0, 10);
+
+  // Every IJS competition on today, found by the catalog sweep, joins the
+  // boards set up in admin ("Happening now" with no setup; 2026-09-26).
+  let catalog: BoardListEntry[] = [];
+  try {
+    const { liveCatalogEntries, toBoardEntries } = await import("./ijs-catalog.server");
+    const known = new Set(rows.map((c) => `${c.year}-${c.comp_id}`));
+    const live = (await liveCatalogEntries(admin, today)).filter(
+      (e) => !known.has(`${e.year}-${e.compId}`),
+    );
+    catalog = await toBoardEntries(admin, live, today);
+  } catch {
+    // Catalog table not there yet: the admin-set-up boards still list.
+    catalog = [];
+  }
 
   return [
     DEMO_LIST_ENTRY,
@@ -130,7 +151,17 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
       location: c.location as string,
       isLiveWindow: (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today),
     })),
+    ...catalog,
   ];
+}
+
+/**
+ * Search every IJS competition the catalog knows, or look up a pasted IJS
+ * link or competition number on the spot. Thin wrapper over `searchCatalog`.
+ */
+export async function searchBoards(admin: AdminDb, q: string): Promise<BoardListEntry[]> {
+  const { searchCatalog } = await import("./ijs-catalog.server");
+  return searchCatalog(admin, q);
 }
 
 /**

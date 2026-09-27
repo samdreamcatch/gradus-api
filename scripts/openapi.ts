@@ -115,6 +115,7 @@ import "../src/routes/api/v1/auth/signup/coach";
 import "../src/routes/api/v1/auth/username/resolve";
 import "../src/routes/api/v1/auth/username/check";
 import "../src/routes/api/v1/public/boards/index";
+import "../src/routes/api/v1/public/boards/search";
 import "../src/routes/api/v1/public/boards/$slug";
 import "../src/routes/api/v1/boards/my-skaters";
 import "../src/routes/api/v1/boards/$slug/follows/index";

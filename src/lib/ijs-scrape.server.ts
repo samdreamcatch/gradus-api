@@ -17,7 +17,7 @@
 
 import type { SkaterProtocol } from "./board-types";
 
-const UA =
+export const IJS_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 export const LIVE_STATUS = "live unofficial";
@@ -40,7 +40,7 @@ const PUBLISHED_ZONE: Record<string, string> = {
  * names, so decode the raw bytes as latin-1 (windows-1252 is its superset and
  * is what browsers actually apply).
  */
-function decodeLatin1(buf: ArrayBuffer): string {
+export function decodeLatin1(buf: ArrayBuffer): string {
   try {
     return new TextDecoder("windows-1252").decode(buf);
   } catch {
@@ -56,7 +56,7 @@ export async function fetchPage(url: string, timeoutMs = 15_000): Promise<string
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": UA, "Cache-Control": "no-cache" },
+      headers: { "User-Agent": IJS_USER_AGENT, "Cache-Control": "no-cache" },
       signal: ctl.signal,
     });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
@@ -123,20 +123,7 @@ function matchAll(re: RegExp, doc: string): RegExpExecArray[] {
 
 /* ----------------------------------------------------------- time helpers */
 
-const MONTHS = [
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
-];
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
 /**
  * Turn a venue-local wall clock into a real instant. IJS publishes schedules
@@ -200,7 +187,11 @@ export function toDate(
 /** IJS prints the competition-local zone in its generated-at footer. */
 export function competitionTimeZone(doc: string): string {
   const label = /Competition local time[\s\S]{0,200}?/i.test(doc)
-    ? text(/<FONT[^>]*SIZE\s*=\s*[-"']?1[^>]*>(.*?)<\/FONT>\s*<!--\s*Competition local time/is.exec(doc)?.[1] ?? "")
+    ? text(
+        /<FONT[^>]*SIZE\s*=\s*[-"']?1[^>]*>(.*?)<\/FONT>\s*<!--\s*Competition local time/is.exec(
+          doc,
+        )?.[1] ?? "",
+      )
     : "";
   const normalized = label.toLowerCase();
   const family = Object.keys(PUBLISHED_ZONE).find((name) => normalized.includes(name));
@@ -256,7 +247,6 @@ export function parseIndex(
   const timeZone = competitionTimeZone(doc);
   const competition: IjsCompetition = { name, dates, location, timeZone };
 
-
   const idx = doc.indexOf("id=daySort");
   if (idx < 0) return { competition, events: [] };
   const table = doc.slice(idx).split(/<\/TABLE>/i)[0] ?? "";
@@ -302,7 +292,6 @@ export interface IjsSkater {
   of: number;
   protocol: SkaterProtocol | null;
 }
-
 
 export interface IjsEventPage {
   event: string;
@@ -421,8 +410,7 @@ export function parseEvent(doc: string): IjsEventPage {
     });
   }
   const active =
-    segments.find((s) => s.active) ??
-    (segments.length ? segments[segments.length - 1] : undefined);
+    segments.find((s) => s.active) ?? (segments.length ? segments[segments.length - 1] : undefined);
   const segment = active?.name ?? "";
 
   // Multi-segment score pairs: column order comes from the `colspan=2 class=top`
@@ -449,7 +437,6 @@ export function parseEvent(doc: string): IjsEventPage {
     const tds = matchAll(/<TD([^>]*)>(.*?)<\/TD>/gis, row)
       .map((m) => ({ cls: attrClass(m[1] ?? ""), val: text(m[2] ?? "") }))
       .filter((c) => c.cls !== "expb"); // drop the detail toggle
-
 
     const rest = [...tds];
     let place = "";
@@ -518,9 +505,6 @@ export function parseEvent(doc: string): IjsEventPage {
       of: 0,
       protocol: segScore ? parseProtocol(detailBlock) : null,
     });
-
-
-
   }
 
   skaters.sort((a, b) => a.start - b.start);
@@ -556,9 +540,7 @@ export function lanes(ev: IjsEventPage): {
 } {
   const sk = ev.skaters;
   const scored = sk.filter((s) => s.segScore);
-  const just = scored.length
-    ? scored.reduce((a, b) => (b.start > a.start ? b : a))
-    : null;
+  const just = scored.length ? scored.reduce((a, b) => (b.start > a.start ? b : a)) : null;
   const i = just ? sk.indexOf(just) + 1 : 0;
   return {
     justScored: just,
