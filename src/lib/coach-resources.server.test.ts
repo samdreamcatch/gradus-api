@@ -567,6 +567,16 @@ const NOT_A_PUBLIC_IMAGE =
   "That link isn't a publicly available image. Paste a direct https link to a JPG, PNG, GIF, or WebP that opens without signing in.";
 
 describe("assertPublicImageUrl", () => {
+  it("identifies itself with a User-Agent (some hosts refuse anonymous clients)", async () => {
+    let ua: string | null = null;
+    const impl = (async (_u: string, init?: RequestInit) => {
+      ua = new Headers(init?.headers).get("user-agent");
+      return new Response(null, { status: 200, headers: { "content-type": "image/png" } });
+    }) as unknown as typeof fetch;
+    await assertPublicImageUrl("https://upload.example/a.png", impl);
+    expect(ua).toContain("GradusLinkCheck");
+  });
+
   it("accepts a URL that answers a HEAD with a raster image type", async () => {
     const f = fakeFetch({ status: 200, type: "image/jpeg; charset=binary" });
     await assertPublicImageUrl("https://cdn.example/a.jpg", f.impl);
@@ -689,6 +699,38 @@ describe("createCoachResource — images come only from a public URL", () => {
     );
     expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
     expect(supabase.insertedPayloads.resources).toBeUndefined();
+  });
+});
+
+describe("createCoachResource — a PDF must be the coach's own upload", () => {
+  it("refuses a storagePath outside the coach's folder or not ending .pdf, and writes nothing", async () => {
+    for (const storagePath of [
+      "coach/other-coach/a.pdf",
+      "library/figure_skating/rulebook.pdf",
+      "coach/c1/a.jpg",
+      "coach/c1/../other/a.pdf",
+    ]) {
+      const supabase = fakeClient(
+        {
+          coach_profiles: { id: "c1", organization_id: null, subscription_tier: "coach_pro" },
+          resources: { id: "r1" },
+        },
+        { coach_levels: [{ sport: "figure_skating" }], resource_sports: [] },
+      );
+      const err = await caught(() =>
+        createCoachResource(
+          { userId: "u1", supabase },
+          createCoachResourceInput.parse({
+            title: "t",
+            kind: "pdf",
+            sports: ["figure_skating"],
+            storagePath,
+          }),
+        ),
+      );
+      expect(err?.status).toBe(422);
+      expect(supabase.insertedPayloads.resources).toBeUndefined();
+    }
   });
 });
 

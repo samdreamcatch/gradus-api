@@ -261,7 +261,11 @@ export async function assertPublicImageUrl(
     const res = await fetchImpl(parsed.toString(), {
       method,
       redirect: "follow",
-      headers: method === "GET" ? { Range: "bytes=0-0" } : undefined,
+      // Some hosts (Wikimedia, for one) refuse requests with no User-Agent.
+      headers: {
+        "User-Agent": "GradusLinkCheck/1.0 (+https://gradus.training)",
+        ...(method === "GET" ? { Range: "bytes=0-0" } : {}),
+      },
       signal: AbortSignal.timeout(8000),
     });
     // Only the headers matter; don't download the body.
@@ -310,6 +314,15 @@ export async function createCoachResource(
   if (data.kind === "image") {
     if (data.storagePath || !data.externalUrl) throw unprocessable(IMAGE_UPLOAD_REFUSED);
     await assertPublicImageUrl(data.externalUrl, ctx.fetchImpl);
+  }
+  // A PDF must be one this coach uploaded: their own folder, a .pdf name.
+  if (
+    data.storagePath &&
+    (!data.storagePath.startsWith(`coach/${coach.id}/`) ||
+      !data.storagePath.toLowerCase().endsWith(".pdf") ||
+      data.storagePath.includes(".."))
+  ) {
+    throw unprocessable(PDF_ONLY);
   }
 
   const { data: inserted, error: iErr } = await supabase

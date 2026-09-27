@@ -11,21 +11,41 @@ ALTER TABLE public.resources
     OR (kind = 'image' AND (external_url IS NULL) <> (storage_path IS NULL))
   );
 
--- 2. No new coach image may be a stored file. A trigger rather than a CHECK
---    so the coach images already uploaded stay valid and still open.
+-- 2. No new coach image may be a stored file, and a coach's stored file must
+--    be a PDF they uploaded: in their own folder, stored as application/pdf
+--    (so image bytes behind a .pdf name can't be served as an image).
+--    A trigger rather than a CHECK so the coach images already uploaded stay
+--    valid and still open.
 CREATE OR REPLACE FUNCTION public.refuse_coach_image_upload()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.coach_id IS NOT NULL AND NEW.kind = 'image' AND NEW.storage_path IS NOT NULL THEN
+  IF NEW.coach_id IS NULL OR NEW.storage_path IS NULL THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.kind = 'image' THEN
     RAISE EXCEPTION 'Coach images must be a link to a publicly available image, not an upload'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  IF NEW.storage_path NOT LIKE ('coach/' || NEW.coach_id::text || '/%')
+     OR NEW.storage_path LIKE '%..%'
+     OR NOT EXISTS (
+       SELECT 1 FROM storage.objects o
+       WHERE o.bucket_id = 'resource-pdfs'
+         AND o.name = NEW.storage_path
+         AND lower(split_part(o.metadata->>'mimetype', ';', 1)) = 'application/pdf'
+     ) THEN
+    RAISE EXCEPTION 'A coach resource file must be a PDF the coach uploaded'
       USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.refuse_coach_image_upload() FROM PUBLIC;
 
 DROP TRIGGER IF EXISTS resources_refuse_coach_image_upload ON public.resources;
 CREATE TRIGGER resources_refuse_coach_image_upload
