@@ -9,7 +9,8 @@ import { Logo } from "@/components/logo";
 import { Chip } from "@/components/ui/chip";
 import { BoardAccountSheet } from "@/components/board/board-account-sheet";
 import { useAuthReady } from "@/hooks/use-auth-ready";
-import { listBoards } from "@/lib/board.functions";
+import { Input } from "@/components/ui/input";
+import { listBoards, searchBoards } from "@/lib/board.functions";
 
 const HISTORY_KEY = "gradus.boardHistory";
 
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/board/")({
       {
         name: "description",
         content:
-          "Live figure skating scoreboards. Scan the QR code at the rink, or pick a competition you have followed before.",
+          "Live figure skating scoreboards. Search any U.S. Figure Skating IJS competition, scan the QR code at the rink, or pick one you have followed before.",
       },
       { property: "og:title", content: "Gradus Live Boards" },
       {
@@ -51,6 +52,21 @@ function BoardIndex() {
   const { data } = useQuery({ queryKey: ["boards"], queryFn: () => list() });
   const live = (data ?? []).filter((c) => c.isLiveWindow);
 
+  const search = useServerFn(searchBoards);
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(query.trim()), 300);
+    return () => window.clearTimeout(t);
+  }, [query]);
+  const searching = debounced.length >= 2;
+  const { data: results, isFetching } = useQuery({
+    queryKey: ["boards", "search", debounced],
+    queryFn: () => search({ data: { q: debounced } }),
+    enabled: searching,
+    staleTime: 60_000,
+  });
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <header className="space-y-2">
@@ -67,11 +83,58 @@ function BoardIndex() {
         </div>
         <h1 className="font-display text-h2 text-text-primary">Live boards</h1>
         <p className="text-sm text-text-secondary">
-          Scan the QR code on the sign at your rink to open that competition&apos;s board.
+          Search for a competition, or scan the QR code on the sign at your rink.
         </p>
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search competitions, or paste an IJS link"
+          aria-label="Search competitions"
+          autoComplete="off"
+          enterKeyHint="search"
+        />
       </header>
 
-      {live.length > 0 ? (
+      {searching ? (
+        <section className="space-y-2" aria-live="polite">
+          <Eyebrow size="caption" tone="tertiary">
+            RESULTS
+          </Eyebrow>
+          {(results ?? []).map((c) => (
+            <Link key={c.slug} to="/board/$slug" params={{ slug: c.slug }} className="block press">
+              <Card variant="row" className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-display text-base text-text-primary">{c.name}</p>
+                  <p className="truncate font-mono text-xs text-text-tertiary">
+                    {[c.datesLabel, c.location].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                {c.isLiveWindow ? (
+                  <Tag size="caption" tone="accent">
+                    LIVE
+                  </Tag>
+                ) : null}
+              </Card>
+            </Link>
+          ))}
+          {!isFetching && results && results.length === 0 ? (
+            <Card variant="row">
+              <p className="text-sm text-text-secondary">
+                No competitions match yet. A competition shows up once IJS posts its page, usually
+                on its first day. Pasting its IJS link finds it right away.
+              </p>
+            </Card>
+          ) : null}
+          {isFetching && !results ? (
+            <p className="text-sm text-text-tertiary" role="status">
+              Searching…
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {!searching && live.length > 0 ? (
         <section className="space-y-2">
           <Eyebrow size="caption" tone="tertiary">
             HAPPENING NOW
@@ -94,7 +157,7 @@ function BoardIndex() {
         </section>
       ) : null}
 
-      {history.length > 0 ? (
+      {!searching && history.length > 0 ? (
         <section className="space-y-2">
           <Eyebrow size="caption" tone="tertiary">
             YOU&apos;VE FOLLOWED
@@ -109,7 +172,7 @@ function BoardIndex() {
         </section>
       ) : null}
 
-      {live.length === 0 && history.length === 0 ? (
+      {!searching && live.length === 0 && history.length === 0 ? (
         <Card variant="hero">
           <p className="text-sm text-text-secondary">
             No competitions are live right now. Boards appear here once you&apos;ve opened one.

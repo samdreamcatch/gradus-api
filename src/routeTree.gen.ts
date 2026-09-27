@@ -172,6 +172,7 @@ import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/
 import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
 import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
 import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
+import { Route as ApiPublicHooksIjsCatalogSweepRouteImport } from './routes/api/public/hooks/ijs-catalog-sweep'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksConsentRetentionRouteImport } from './routes/api/public/hooks/consent-retention'
 import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
@@ -230,6 +231,7 @@ import { Route as ApiV1RoomsIdActivePlansRouteImport } from './routes/api/v1/roo
 import { Route as ApiV1ResourcesIdSignedUrlRouteImport } from './routes/api/v1/resources/$id/signed-url'
 import { Route as ApiV1RecapsIdDismissRouteImport } from './routes/api/v1/recaps/$id/dismiss'
 import { Route as ApiV1PublicPlansTokenRouteImport } from './routes/api/v1/public/plans/$token'
+import { Route as ApiV1PublicBoardsSearchRouteImport } from './routes/api/v1/public/boards/search'
 import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
 import { Route as ApiV1PlansImportTokenRouteImport } from './routes/api/v1/plans/import/$token'
 import { Route as ApiV1PlansIdStatusRouteImport } from './routes/api/v1/plans/$id/status'
@@ -1206,6 +1208,12 @@ const ApiPublicHooksKnowledgeIngestRoute =
     path: '/api/public/hooks/knowledge-ingest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksIjsCatalogSweepRoute =
+  ApiPublicHooksIjsCatalogSweepRouteImport.update({
+    id: '/api/public/hooks/ijs-catalog-sweep',
+    path: '/api/public/hooks/ijs-catalog-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksErrorDigestRoute =
   ApiPublicHooksErrorDigestRouteImport.update({
     id: '/api/public/hooks/error-digest',
@@ -1529,6 +1537,11 @@ const ApiV1RecapsIdDismissRoute = ApiV1RecapsIdDismissRouteImport.update({
 const ApiV1PublicPlansTokenRoute = ApiV1PublicPlansTokenRouteImport.update({
   id: '/api/v1/public/plans/$token',
   path: '/api/v1/public/plans/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicBoardsSearchRoute = ApiV1PublicBoardsSearchRouteImport.update({
+  id: '/api/v1/public/boards/search',
+  path: '/api/v1/public/boards/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
@@ -2216,6 +2229,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
@@ -2344,6 +2358,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards/search': typeof ApiV1PublicBoardsSearchRoute
   '/api/v1/public/plans/$token': typeof ApiV1PublicPlansTokenRoute
   '/api/v1/recaps/$id/dismiss': typeof ApiV1RecapsIdDismissRoute
   '/api/v1/resources/$id/signed-url': typeof ApiV1ResourcesIdSignedUrlRoute
@@ -2532,6 +2547,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
@@ -2660,6 +2676,7 @@ export interface FileRoutesByTo {
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards/search': typeof ApiV1PublicBoardsSearchRoute
   '/api/v1/public/plans/$token': typeof ApiV1PublicPlansTokenRoute
   '/api/v1/recaps/$id/dismiss': typeof ApiV1RecapsIdDismissRoute
   '/api/v1/resources/$id/signed-url': typeof ApiV1ResourcesIdSignedUrlRoute
@@ -2856,6 +2873,7 @@ export interface FileRoutesById {
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
+  '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
@@ -2984,6 +3002,7 @@ export interface FileRoutesById {
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
   '/api/v1/public/boards/$slug': typeof ApiV1PublicBoardsSlugRoute
+  '/api/v1/public/boards/search': typeof ApiV1PublicBoardsSearchRoute
   '/api/v1/public/plans/$token': typeof ApiV1PublicPlansTokenRoute
   '/api/v1/recaps/$id/dismiss': typeof ApiV1RecapsIdDismissRoute
   '/api/v1/resources/$id/signed-url': typeof ApiV1ResourcesIdSignedUrlRoute
@@ -3180,6 +3199,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
@@ -3308,6 +3328,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards/search'
     | '/api/v1/public/plans/$token'
     | '/api/v1/recaps/$id/dismiss'
     | '/api/v1/resources/$id/signed-url'
@@ -3496,6 +3517,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
@@ -3624,6 +3646,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards/search'
     | '/api/v1/public/plans/$token'
     | '/api/v1/recaps/$id/dismiss'
     | '/api/v1/resources/$id/signed-url'
@@ -3819,6 +3842,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
     | '/api/public/hooks/error-digest'
+    | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
@@ -3947,6 +3971,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
     | '/api/v1/public/boards/$slug'
+    | '/api/v1/public/boards/search'
     | '/api/v1/public/plans/$token'
     | '/api/v1/recaps/$id/dismiss'
     | '/api/v1/resources/$id/signed-url'
@@ -4074,6 +4099,7 @@ export interface RootRouteChildren {
   ApiPublicHooksCompetitionRecapsRoute: typeof ApiPublicHooksCompetitionRecapsRoute
   ApiPublicHooksConsentRetentionRoute: typeof ApiPublicHooksConsentRetentionRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
+  ApiPublicHooksIjsCatalogSweepRoute: typeof ApiPublicHooksIjsCatalogSweepRoute
   ApiPublicHooksKnowledgeIngestRoute: typeof ApiPublicHooksKnowledgeIngestRoute
   ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
   ApiPublicHooksLessonWrapUpsRoute: typeof ApiPublicHooksLessonWrapUpsRoute
@@ -4191,6 +4217,7 @@ export interface RootRouteChildren {
   ApiV1PlansIdStatusRoute: typeof ApiV1PlansIdStatusRoute
   ApiV1PlansImportTokenRoute: typeof ApiV1PlansImportTokenRoute
   ApiV1PublicBoardsSlugRoute: typeof ApiV1PublicBoardsSlugRoute
+  ApiV1PublicBoardsSearchRoute: typeof ApiV1PublicBoardsSearchRoute
   ApiV1PublicPlansTokenRoute: typeof ApiV1PublicPlansTokenRoute
   ApiV1RecapsIdDismissRoute: typeof ApiV1RecapsIdDismissRoute
   ApiV1ResourcesIdSignedUrlRoute: typeof ApiV1ResourcesIdSignedUrlRoute
@@ -5427,6 +5454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksKnowledgeIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ijs-catalog-sweep': {
+      id: '/api/public/hooks/ijs-catalog-sweep'
+      path: '/api/public/hooks/ijs-catalog-sweep'
+      fullPath: '/api/public/hooks/ijs-catalog-sweep'
+      preLoaderRoute: typeof ApiPublicHooksIjsCatalogSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/error-digest': {
       id: '/api/public/hooks/error-digest'
       path: '/api/public/hooks/error-digest'
@@ -5831,6 +5865,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/public/plans/$token'
       fullPath: '/api/v1/public/plans/$token'
       preLoaderRoute: typeof ApiV1PublicPlansTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/boards/search': {
+      id: '/api/v1/public/boards/search'
+      path: '/api/v1/public/boards/search'
+      fullPath: '/api/v1/public/boards/search'
+      preLoaderRoute: typeof ApiV1PublicBoardsSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/public/boards/$slug': {
@@ -6841,6 +6882,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCompetitionRecapsRoute: ApiPublicHooksCompetitionRecapsRoute,
   ApiPublicHooksConsentRetentionRoute: ApiPublicHooksConsentRetentionRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
+  ApiPublicHooksIjsCatalogSweepRoute: ApiPublicHooksIjsCatalogSweepRoute,
   ApiPublicHooksKnowledgeIngestRoute: ApiPublicHooksKnowledgeIngestRoute,
   ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
   ApiPublicHooksLessonWrapUpsRoute: ApiPublicHooksLessonWrapUpsRoute,
@@ -6962,6 +7004,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1PlansIdStatusRoute: ApiV1PlansIdStatusRoute,
   ApiV1PlansImportTokenRoute: ApiV1PlansImportTokenRoute,
   ApiV1PublicBoardsSlugRoute: ApiV1PublicBoardsSlugRoute,
+  ApiV1PublicBoardsSearchRoute: ApiV1PublicBoardsSearchRoute,
   ApiV1PublicPlansTokenRoute: ApiV1PublicPlansTokenRoute,
   ApiV1RecapsIdDismissRoute: ApiV1RecapsIdDismissRoute,
   ApiV1ResourcesIdSignedUrlRoute: ApiV1ResourcesIdSignedUrlRoute,
