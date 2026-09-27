@@ -110,6 +110,7 @@ import "../src/routes/api/v1/auth/google";
 import "../src/routes/api/v1/auth/password";
 import "../src/routes/api/v1/auth/attest/register";
 import "../src/routes/api/v1/auth/recover";
+import "../src/routes/api/v1/auth/web-session";
 import "../src/routes/api/v1/auth/signup/coach";
 import "../src/routes/api/v1/auth/username/resolve";
 import "../src/routes/api/v1/auth/username/check";
