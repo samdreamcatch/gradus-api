@@ -145,14 +145,31 @@ async function saveCatalogRow(
   if (error) throw new Error(error.message);
 }
 
-async function topKnownId(db: CatalogDb): Promise<number> {
+/**
+ * The newest id the sweep could have found: at most `atMost` (the window's
+ * top). A far-off id cataloged from a pasted link or number must not drag
+ * the window away from where new competitions actually appear.
+ */
+async function topKnownId(db: CatalogDb, atMost: number): Promise<number> {
   const { data } = await db
     .from("ijs_catalog")
     .select("comp_id")
+    .lte("comp_id", atMost)
     .order("comp_id", { ascending: false })
     .limit(1)
     .maybeSingle();
   return Math.max(SEED_TOP_ID, Number(data?.comp_id ?? 0));
+}
+
+/** The highest window top any year's sweep has reached (a new year starts from there). */
+async function highestWindowTop(db: CatalogDb): Promise<number> {
+  const { data } = await db
+    .from("ijs_catalog_sweep")
+    .select("hi")
+    .order("hi", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.hi ? Number(data.hi) : SEED_TOP_ID + WINDOW_ABOVE;
 }
 
 export interface SweepDeps {
@@ -187,13 +204,13 @@ export async function sweepCatalog(deps: SweepDeps): Promise<SweepResult> {
   const year = years[now.getUTCMinutes() % years.length]!;
   const empty = { year, probed: 0, found: 0, trouble: 0, passCompleted: false };
 
-  const top = await topKnownId(db);
   let { data: state } = await db
     .from("ijs_catalog_sweep")
     .select("*")
     .eq("year", year)
     .maybeSingle();
   if (!state) {
+    const top = await topKnownId(db, await highestWindowTop(db));
     const fresh = {
       year,
       lo: top - WINDOW_BELOW,
@@ -277,7 +294,7 @@ export async function sweepCatalog(deps: SweepDeps): Promise<SweepResult> {
   const patch: Record<string, unknown> = { cursor, leased_until: null, updated_at: nowIso };
   if (passCompleted || cursor > hi) {
     // New pass: re-centre the window on the newest id found so far.
-    const newTop = await topKnownId(db);
+    const newTop = await topKnownId(db, hi);
     patch.cursor = newTop - WINDOW_BELOW;
     patch.lo = newTop - WINDOW_BELOW;
     patch.hi = Math.max(hi, newTop + WINDOW_ABOVE);
@@ -340,8 +357,10 @@ export async function resolveReference(
   deps: { fetchImpl?: typeof fetch; now?: () => Date } = {},
 ): Promise<CatalogEntry | null> {
   const now = (deps.now ?? (() => new Date()))();
-  const thisYear = sweepYears(now)[0]!;
-  const years = ref.year ? [ref.year] : [thisYear, thisYear + 1, thisYear - 1];
+  // A bare number is looked up in the folders the sweep covers (this year, and
+  // next year's from mid-December): one IJS request, two at most. A pasted
+  // link names its year, so it's one request for any year.
+  const years = ref.year ? [ref.year] : sweepYears(now);
   for (const year of years) {
     const { data: existing } = await db
       .from("ijs_catalog")

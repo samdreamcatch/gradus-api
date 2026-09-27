@@ -133,6 +133,9 @@ export function RinkPanel({
 
           {current.startOrder.length > 1 ? (
             <SkaterWheel
+              // A new event or segment starts back on its live skater, even when
+              // its start order is the same length (the wheel keeps its place otherwise).
+              key={`${rink.name}|${current.event}|${current.segment}`}
               startOrder={current.startOrder}
               activeIndex={liveIndex(current)}
               onOpenScore={onOpenScore}

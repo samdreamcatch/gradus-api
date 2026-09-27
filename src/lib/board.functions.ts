@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { BoardResponse } from "./board-types";
@@ -38,8 +39,26 @@ export const searchBoards = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }): Promise<BoardListEntry[]> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Same limit as GET /api/v1/public/boards/search: a pasted number or link
+    // makes the server fetch from IJS, so this public function must not be a
+    // way around the API route's limiter.
+    const { checkRateLimit } = await import("./api/rate-limit");
+    const limited = await checkRateLimit(
+      supabaseAdmin as never,
+      { windowSeconds: 60, max: 30 },
+      { route: "web:boards/search", ip: callerIp(), userId: null },
+    );
+    if (!limited.allowed) throw new Error("Too many searches. Try again in a minute.");
     return searchBoardsServer(supabaseAdmin as unknown as { from: (t: string) => any }, data.q);
   });
+
+function callerIp(): string | null {
+  try {
+    return getRequestHeader("cf-connecting-ip") ?? getRequestIP({ xForwardedFor: true }) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /** Signed-in extra: names of the viewer's athletes. Thin wrapper over fetchMySkaterNames. */
 export const getMySkaterNames = createServerFn({ method: "GET" })

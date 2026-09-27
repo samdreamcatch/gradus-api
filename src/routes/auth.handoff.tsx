@@ -22,8 +22,8 @@ export const Route = createFileRoute("/auth/handoff")({
  * /api/v1/auth/web-session`). The fragment carries a one-time token hash and
  * an allow-listed page: verify it once, wipe the fragment from history, and
  * open the page signed in as the app's account (replacing any other session
- * in this browser). A spent or expired link falls back to the login page,
- * which returns to the same place.
+ * in this browser only once the link checks out). A spent or expired link
+ * falls back to the login page, which returns to the same place.
  */
 function HandoffPage() {
   const [failedNext, setFailedNext] = useState<string | null | undefined>(undefined);
@@ -43,7 +43,8 @@ function HandoffPage() {
       return;
     }
     (async () => {
-      await supabase.auth.signOut({ scope: "local" });
+      // verifyOtp replaces whatever session this browser had; a spent or
+      // expired link leaves that session alone.
       const { error } = await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" });
       if (error) {
         setFailedNext(next);

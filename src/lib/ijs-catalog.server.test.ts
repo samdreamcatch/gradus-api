@@ -10,6 +10,7 @@ import {
   parseCatalogSlug,
   parseIjsReference,
   probeIndex,
+  resolveReference,
   searchWords,
   sweepCatalog,
   sweepYears,
@@ -246,17 +247,72 @@ describe("sweepCatalog", () => {
     const { db, tables } = fakeDb({
       ijs_catalog: [{ year: 2026, comp_id: newest, name: "Newest" }],
       ijs_catalog_sweep: [
-        { year: 2026, lo: 100, hi: 110, cursor: 105, backoff_minutes: 0, leased_until: null },
+        {
+          year: 2026,
+          lo: SEED_TOP_ID + 40,
+          hi: SEED_TOP_ID + 60,
+          cursor: SEED_TOP_ID + 55,
+          backoff_minutes: 0,
+          leased_until: null,
+        },
       ],
     });
     const ijs = fakeIjs({});
     const result = await sweepCatalog({ db, fetchImpl: ijs.fetchImpl, now: () => NOON });
     expect(result.passCompleted).toBe(true);
-    expect(ijs.seen).toEqual([105, 106, 107, 108, 109, 110]);
+    expect(ijs.seen).toEqual([55, 56, 57, 58, 59, 60].map((d) => SEED_TOP_ID + d));
     expect(tables.ijs_catalog_sweep![0]).toMatchObject({
       cursor: newest - WINDOW_BELOW,
       lo: newest - WINDOW_BELOW,
     });
+  });
+
+  it("ignores a far-off id someone pasted when re-centring", async () => {
+    const { db, tables } = fakeDb({
+      ijs_catalog: [
+        { year: 2026, comp_id: SEED_TOP_ID + 50, name: "Real" },
+        { year: 2026, comp_id: SEED_TOP_ID + 9000, name: "Pasted outlier" },
+      ],
+      ijs_catalog_sweep: [
+        {
+          year: 2026,
+          lo: SEED_TOP_ID + 40,
+          hi: SEED_TOP_ID + 60,
+          cursor: SEED_TOP_ID + 61,
+          backoff_minutes: 0,
+          leased_until: null,
+        },
+      ],
+    });
+    await sweepCatalog({ db, fetchImpl: fakeIjs({}).fetchImpl, now: () => NOON });
+    expect(tables.ijs_catalog_sweep![0]!.lo).toBe(SEED_TOP_ID + 50 - WINDOW_BELOW);
+  });
+});
+
+describe("resolveReference", () => {
+  it("looks a bare number up in this year's folder only, one request", async () => {
+    const { db } = fakeDb();
+    const ijs = fakeIjs({});
+    expect(
+      await resolveReference(
+        db,
+        { year: null, compId: 36546 },
+        { fetchImpl: ijs.fetchImpl, now: () => NOON },
+      ),
+    ).toBeNull();
+    expect(ijs.seen).toEqual([36546]);
+  });
+
+  it("catalogs a pasted link's competition for the year it names", async () => {
+    const { db, tables } = fakeDb();
+    const ijs = fakeIjs({ 36155: indexPage("2025 Greater Chicago Fall Invitational") });
+    const hit = await resolveReference(
+      db,
+      { year: 2025, compId: 36155 },
+      { fetchImpl: ijs.fetchImpl, now: () => NOON },
+    );
+    expect(hit?.name).toBe("2025 Greater Chicago Fall Invitational");
+    expect(tables.ijs_catalog?.[0]).toMatchObject({ year: 2025, comp_id: 36155 });
   });
 });
 
