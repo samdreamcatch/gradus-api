@@ -280,8 +280,7 @@
                     "onboardingComplete",
                     "terms",
                     "parentVerification",
-                    "athleteAccountState",
-                    "sports"
+                    "athleteAccountState"
                   ]
                 }
               }

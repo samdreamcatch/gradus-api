@@ -36,9 +36,10 @@ const outputSchema = z.object({
    * Sport keys this account touches (a coach's levels; a parent's or
    * athlete's goal and coached sports), sorted. The iOS shell shows the Live
    * board only when this includes `figure_skating` (2026-09-26). Empty for
-   * org admins and callers without a profile.
+   * org admins and callers without a profile. Always sent; optional in the
+   * contract so an app build that reads it still decodes an older server.
    */
-  sports: z.array(z.string()),
+  sports: z.array(z.string()).optional(),
 });
 
 /**
