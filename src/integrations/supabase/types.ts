@@ -3580,6 +3580,38 @@ export type Database = {
           },
         ]
       }
+      practice_nudges_sent: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          id: string
+          lesson_date: string
+          sent_at: string | null
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          id?: string
+          lesson_date: string
+          sent_at?: string | null
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          id?: string
+          lesson_date?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_nudges_sent_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pre_lesson_briefings: {
         Row: {
           athlete_id: string
