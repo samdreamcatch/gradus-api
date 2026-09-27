@@ -2128,6 +2128,84 @@ export type Database = {
           },
         ]
       }
+      ijs_catalog: {
+        Row: {
+          comp_id: number
+          dates_label: string
+          ends_on: string | null
+          first_event_at: string | null
+          first_seen_at: string
+          location: string
+          name: string
+          starts_on: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          comp_id: number
+          dates_label?: string
+          ends_on?: string | null
+          first_event_at?: string | null
+          first_seen_at?: string
+          location?: string
+          name?: string
+          starts_on?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          comp_id?: number
+          dates_label?: string
+          ends_on?: string | null
+          first_event_at?: string | null
+          first_seen_at?: string
+          location?: string
+          name?: string
+          starts_on?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      ijs_catalog_sweep: {
+        Row: {
+          backoff_minutes: number
+          cursor: number
+          hi: number
+          last_pass_completed_at: string | null
+          leased_until: string | null
+          lo: number
+          pass_started_at: string
+          paused_until: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          backoff_minutes?: number
+          cursor: number
+          hi: number
+          last_pass_completed_at?: string | null
+          leased_until?: string | null
+          lo: number
+          pass_started_at?: string
+          paused_until?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          backoff_minutes?: number
+          cursor?: number
+          hi?: number
+          last_pass_completed_at?: string | null
+          leased_until?: string | null
+          lo?: number
+          pass_started_at?: string
+          paused_until?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       impersonation_events: {
         Row: {
           admin_email: string | null
