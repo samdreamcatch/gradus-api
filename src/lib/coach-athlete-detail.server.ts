@@ -19,6 +19,11 @@ import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete
 import { getSportLevel, getSport, getSuggestedHours } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { stateLabel } from "./session-states";
+import {
+  canReadOtherCoachPlans,
+  otherCoachPlanAccess,
+  type VisibilityLinkState,
+} from "./coach-plan-access.server";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 type Admin = typeof supabaseAdmin;
@@ -117,6 +122,11 @@ export interface OtherCoachDTO {
   sports: CoachedSportDTO[];
   activeCount: number;
   benchedCount: number;
+  /**
+   * Empty when the viewer can't see this coach's plans (not Club, no live
+   * visibility link) — use activeCount + benchedCount to tell whether the
+   * coach has plans at all.
+   */
   plans: OtherCoachPlanDTO[];
 }
 
@@ -136,10 +146,13 @@ export interface CoachAthleteDetailDTO {
   hasAnySignal: boolean;
   windowDays: number;
   otherCoaches: OtherCoachDTO[];
-  /** Other coaches unlocked for this athlete via a Team-plan visibility link. */
+  /** Other coaches unlocked for this athlete via a live visibility link. */
   sharedCoachIds: string[];
-  /** Where a visibility link with each other coach stands (absent = none yet). */
-  coachVisibility: Record<string, "pending" | "declined" | "accepted">;
+  /**
+   * Where a visibility link with each other coach stands (absent = none yet,
+   * or an accepted link that is no longer live — see coach-plan-access.server).
+   */
+  coachVisibility: Record<string, VisibilityLinkState>;
 }
 
 type SlotRow = {
@@ -461,7 +474,8 @@ export async function getCoachAthleteDetail(
 
   // ---- Other coaches on this athlete ----
   // Coaches on this athlete's roster besides me. We surface their
-  // active/benched plans (title, notes, moves) so this coach can coordinate.
+  // active/benched plans (title, notes, moves) so this coach can coordinate
+  // — redacted below unless this coach is on Club or has a live link.
   const otherLinksRes = await admin
     .from("coach_athletes")
     .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
@@ -584,35 +598,20 @@ export async function getCoachAthleteDetail(
     });
   }
 
-  // ---- Team-plan coach visibility ----
-  // Accepted, still parent-enabled links unlock this athlete's other coaches
-  // for read-only viewing, even outside a club.
-  const sharedCoachIds: string[] = [];
-  const coachVisibility: Record<string, "pending" | "declined" | "accepted"> = {};
+  // ---- Team-plan coach visibility + redaction ----
+  // Live visibility links unlock this athlete's other coaches for read-only
+  // viewing, even outside a club (rules in coach-plan-access.server.ts).
+  // Enforced here, not just in the clients: a locked coach keeps name, sports
+  // and plan counts (so the UI can say "Ask X to connect you") but ships with
+  // `plans: []`.
+  let sharedCoachIds: string[] = [];
+  let coachVisibility: Record<string, VisibilityLinkState> = {};
   if (otherCoachIds.length > 0) {
-    const linksRes = await admin
-      .from("coach_visibility_links")
-      .select("coach_a_id, coach_b_id, a_status, b_status")
-      .eq("athlete_id", athleteId)
-      .or(`coach_a_id.eq.${coachId},coach_b_id.eq.${coachId}`);
-    if (linksRes.error) dbError(linksRes.error);
-    const links = (linksRes.data ?? []) as {
-      coach_a_id: string;
-      coach_b_id: string;
-      a_status: string;
-      b_status: string;
-    }[];
-    for (const l of links) {
-      const other = l.coach_a_id === coachId ? l.coach_b_id : l.coach_a_id;
-      if (!otherCoachIds.includes(other)) continue;
-      const state =
-        l.a_status === "declined" || l.b_status === "declined"
-          ? "declined"
-          : l.a_status === "accepted" && l.b_status === "accepted"
-            ? "accepted"
-            : "pending";
-      coachVisibility[other] = state;
-      if (state === "accepted") sharedCoachIds.push(other);
+    const access = await otherCoachPlanAccess(admin, coachId, athleteId, otherCoachIds);
+    sharedCoachIds = access.linkedCoachIds;
+    coachVisibility = access.linkStates;
+    for (const c of otherCoaches) {
+      if (!canReadOtherCoachPlans(access, c.coachId)) c.plans = [];
     }
   }
 
@@ -1056,16 +1055,15 @@ export async function getOtherCoachPlanForMessage(
     });
   }
 
-  // Club-tier gate mirrors the athlete-profile experience.
-  const { data: tierData, error: tierErr } = await admin.rpc("coach_effective_tier", {
-    _coach_id: viewerCoachId,
-  });
-  if (tierErr) dbError(tierErr);
-  if (tierData !== "club") {
+  // Same gate as the athlete profile: Club, or a live visibility link with
+  // the plan's coach — whoever can read it there can open it from a thread.
+  const access = await otherCoachPlanAccess(admin, viewerCoachId, plan.athlete_id, [plan.coach_id]);
+  if (!canReadOtherCoachPlans(access, plan.coach_id)) {
     throw new ApiError({
       code: "plan_required",
       status: 403,
-      message: "Viewing another coach's plans requires the Club plan.",
+      message:
+        "Viewing another coach's plans requires the Club plan, or a connection the parent turns on.",
     });
   }
 

@@ -8,8 +8,9 @@ import { getOtherCoachPlanForMessage } from "@/lib/coach-athlete-detail.server";
 /**
  * Thin wrapper over the shared `getOtherCoachPlanForMessage` (Appendix A
  * "other-plan"): the read-only card for a plan chip in a thread that points
- * at another coach's plan. Club plan only; both coaches must be linked to
- * the athlete.
+ * at another coach's plan. Both coaches must be linked to the athlete, and
+ * the viewer must be on Club or hold a live visibility link with the plan's
+ * coach (coach-plan-access.server.ts) — the same gate as the athlete profile.
  */
 export const Route = createFileRoute("/api/v1/coach/other-plans/$planId")({
   server: {

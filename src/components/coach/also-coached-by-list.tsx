@@ -48,7 +48,9 @@ export function AlsoCoachedByList({
       <SectionHeader title="Also coached by" />
       <ul className="mt-2 space-y-2">
         {coaches.map((c) => {
-          const hasPlans = c.plans.length > 0;
+          // Counts, not `plans`: the server sends `plans: []` for coaches this
+          // viewer can't see, and those should read as locked, not empty.
+          const hasPlans = c.activeCount + c.benchedCount > 0;
           const isLocked = locked && !unlocked.has(c.coachId);
           const interactive = hasPlans && !isLocked;
           const inner = (
@@ -97,7 +99,6 @@ export function AlsoCoachedByList({
                   variant="row"
                   className="press flex w-full cursor-pointer items-center gap-3 text-left"
                   role="button"
-
                   tabIndex={0}
                   onClick={() => onOpenCoach(c.coachId)}
                   onKeyDown={(e) => {
