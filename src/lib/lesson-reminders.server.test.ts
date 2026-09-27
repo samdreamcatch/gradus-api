@@ -31,13 +31,7 @@ type SentRow = {
 };
 
 type Coach = { id: string; user_id: string | null };
-type Athlete = {
-  id: string;
-  user_id: string | null;
-  self_managed: boolean;
-  parent_id: string | null;
-};
-type Parent = { id: string; user_id: string };
+type Athlete = { id: string; first_name: string | null };
 type DeviceToken = { user_id: string; token: string; platform: string };
 
 /**
@@ -54,7 +48,6 @@ function fakeDb(opts: {
   alreadySent?: SentRow[];
   coaches?: Coach[];
   athletes?: Athlete[];
-  parents?: Parent[];
   deviceTokens?: DeviceToken[];
 }) {
   const sent: SentRow[] = [...(opts.alreadySent ?? [])];
@@ -72,8 +65,6 @@ function fakeDb(opts: {
           return opts.coaches ?? [];
         case "athletes":
           return opts.athletes ?? [];
-        case "parent_profiles":
-          return opts.parents ?? [];
         case "device_tokens":
           return opts.deviceTokens ?? [];
         default:
@@ -147,19 +138,27 @@ const BASE_SLOT: SlotRow = {
 };
 
 describe("computeLessonReminders", () => {
-  it("finds an occurrence exactly 60 minutes out", async () => {
+  it("finds an occurrence exactly 15 minutes out", async () => {
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, start_minute: 10 * 60 }; // 10:00, 60 min out
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 15 }; // 09:15, 15 min out
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
-  it("does not find an occurrence 30 minutes out", async () => {
+  it("waits for the 15-minutes-out tick rather than firing 20 minutes early", async () => {
+    const now = nowAtRinkTime(9, 0);
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 20 };
+    const { admin } = fakeDb({ slots: [slot] });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
+  });
+
+  it("does not find an occurrence 30 minutes out (the old hour-before window is gone too)", async () => {
     const now = nowAtRinkTime(9, 0);
     const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 30 };
     const { admin } = fakeDb({ slots: [slot] });
@@ -167,9 +166,9 @@ describe("computeLessonReminders", () => {
     expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
   });
 
-  it("does not find an occurrence 90 minutes out", async () => {
+  it("does not find an occurrence 5 minutes out", async () => {
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, start_minute: 10 * 60 + 30 };
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 5 };
     const { admin } = fakeDb({ slots: [slot] });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
@@ -177,11 +176,11 @@ describe("computeLessonReminders", () => {
 
   it("does not double-upsert on a re-run within the same tick window", async () => {
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, start_minute: 10 * 60 };
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 15 };
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
     });
 
     const first = await computeLessonReminders({ admin }, now);
@@ -195,7 +194,7 @@ describe("computeLessonReminders", () => {
 
   it("skips an occurrence canceled by an override", async () => {
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, start_minute: 10 * 60 };
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 15 };
     const { dateIso } = nowInRinkTz(now);
     const { admin } = fakeDb({
       slots: [slot],
@@ -216,7 +215,7 @@ describe("computeLessonReminders", () => {
   it("uses a rescheduled override's start_minute instead of the slot's own", async () => {
     const now = nowAtRinkTime(9, 0);
     // Slot's own time is 90 min out (would be skipped); the override moves
-    // it to 60 min out.
+    // it to 15 min out.
     const slot = { ...BASE_SLOT, start_minute: 10 * 60 + 30 };
     const { dateIso } = nowInRinkTz(now);
     const { admin } = fakeDb({
@@ -226,49 +225,43 @@ describe("computeLessonReminders", () => {
           slot_id: "slot-1",
           occurrence_date: dateIso,
           status: "rescheduled",
-          start_minute: 10 * 60,
-          end_minute: 11 * 60,
+          start_minute: 9 * 60 + 15,
+          end_minute: 10 * 60,
         },
       ],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
-  it("still records the dedupe row when neither recipient has a device token", async () => {
+  it("still records the dedupe row when the coach has no device token", async () => {
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, start_minute: 10 * 60 };
+    const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 15 };
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: "parent-1" }],
-      parents: [{ id: "parent-1", user_id: "parent-user-1" }],
-      deviceTokens: [], // no tokens registered for anyone
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      deviceTokens: [],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
     expect(sent).toHaveLength(1);
   });
 
-  it("resolves the coach's own user_id and a self-managed athlete's own user_id (not a parent)", async () => {
+  it("resolves the coach's own user_id and routes to Roster", async () => {
     const logs: unknown[][] = [];
     const originalLog = console.log;
     console.log = (...args: unknown[]) => logs.push(args);
     try {
       const now = nowAtRinkTime(9, 0);
-      const slot = { ...BASE_SLOT, start_minute: 10 * 60 };
+      const slot = { ...BASE_SLOT, start_minute: 9 * 60 + 15 };
       const { admin } = fakeDb({
         slots: [slot],
         coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-        athletes: [
-          { id: "athlete-1", user_id: "athlete-user-1", self_managed: true, parent_id: null },
-        ],
-        deviceTokens: [
-          { user_id: "coach-user-1", token: "coach-tok", platform: "ios" },
-          { user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" },
-        ],
+        athletes: [{ id: "athlete-1", first_name: "Nora" }],
+        deviceTokens: [{ user_id: "coach-user-1", token: "coach-tok", platform: "ios" }],
       });
       await computeLessonReminders({ admin }, now);
       const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
@@ -277,56 +270,26 @@ describe("computeLessonReminders", () => {
       expect(payload.coach.userId).toBe("coach-user-1");
       expect(payload.coach.tokenCount).toBe(1);
       expect(payload.coach.payload).toEqual({
-        gradus: { type: "lesson_reminder", route: "coach/roster", v: 1 },
+        gradus: { type: "lesson_reminder", route: "coach/roster/briefing/athlete-1", v: 1 },
       });
-      expect(payload.recipient.userId).toBe("athlete-user-1");
-      expect(payload.recipient.tokenCount).toBe(1);
-      expect(payload.recipient.payload).toEqual({
-        gradus: { type: "lesson_reminder", route: "plans", v: 1 },
-      });
+      expect(payload.recipient).toBeUndefined();
     } finally {
       console.log = originalLog;
     }
   });
 
-  it("resolves a non-self-managed athlete's recipient to their parent's user_id", async () => {
-    const logs: unknown[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: unknown[]) => logs.push(args);
-    try {
-      const now = nowAtRinkTime(9, 0);
-      const slot = { ...BASE_SLOT, start_minute: 10 * 60 };
-      const { admin } = fakeDb({
-        slots: [slot],
-        coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-        athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: "parent-1" }],
-        parents: [{ id: "parent-1", user_id: "parent-user-1" }],
-      });
-      await computeLessonReminders({ admin }, now);
-      const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
-      const payload = JSON.parse(line![1] as string);
-      expect(payload.recipient.userId).toBe("parent-user-1");
-      expect(payload.recipient.payload.gradus.route).toBe("plans");
-      expect(payload.coach.payload.gradus.route).toBe("coach/roster");
-    } finally {
-      console.log = originalLog;
-    }
-  });
-
-  it("delivers one push per token to the coach and the recipient with lesson-scoped collapse ids", async () => {
+  it("pushes only the coach, naming the athlete who is up next", async () => {
     const now = nowAtRinkTime(9, 0);
     const { admin } = fakeDb({
-      slots: [{ ...BASE_SLOT, start_minute: 10 * 60 }],
+      slots: [{ ...BASE_SLOT, start_minute: 9 * 60 + 15 }],
       coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-      athletes: [
-        { id: "athlete-1", user_id: "athlete-user-1", self_managed: true, parent_id: null },
-      ],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
       deviceTokens: [
         { user_id: "coach-user-1", token: "coach-tok", platform: "ios" },
         { user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" },
       ],
     });
-    const sent: { token: string; route: unknown; collapseId?: string }[] = [];
+    const sent: { token: string; route: unknown; alert: unknown; collapseId?: string }[] = [];
     const originalLog = console.log;
     console.log = () => {};
     try {
@@ -345,6 +308,7 @@ describe("computeLessonReminders", () => {
               sent.push({
                 token: req.token,
                 route: (req.payload.gradus as { route: string }).route,
+                alert: (req.payload.aps as { alert: unknown }).alert,
                 collapseId: req.collapseId,
               });
               return { ok: true, apnsId: null };
@@ -353,20 +317,19 @@ describe("computeLessonReminders", () => {
         },
         now,
       );
-      expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 2 });
+      expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 1 });
     } finally {
       console.log = originalLog;
     }
     expect(sent).toEqual([
       {
         token: "coach-tok",
-        route: "coach/roster",
+        route: "coach/roster/briefing/athlete-1",
+        alert: {
+          title: "Nora is up next",
+          body: "See what they've been practicing since you last coached them.",
+        },
         collapseId: "lesson:slot-1:" + nowInRinkTz(now).dateIso + ":coach",
-      },
-      {
-        token: "athlete-tok",
-        route: "plans",
-        collapseId: "lesson:slot-1:" + nowInRinkTz(now).dateIso + ":athlete",
       },
     ]);
   });
@@ -385,7 +348,7 @@ describe("computeLessonReminders", () => {
     const startsOn = anchor.toISOString().slice(0, 10);
     const slot = {
       ...BASE_SLOT,
-      start_minute: 10 * 60,
+      start_minute: 9 * 60 + 15,
       frequency: "biweekly",
       starts_on: startsOn,
     };
@@ -405,89 +368,66 @@ describe("computeLessonReminders", () => {
     const startsOn = anchor.toISOString().slice(0, 10);
     const slot = {
       ...BASE_SLOT,
-      start_minute: 10 * 60,
+      start_minute: 9 * 60 + 15,
       frequency: "biweekly",
       starts_on: startsOn,
     };
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
-  it("still reminds the parent/athlete when the slot has no assigned coach", async () => {
+  it("skips a slot with no assigned coach", async () => {
     // coach_id is nulled out (not deleted) when a coach is unlinked from an
     // athlete's roster — see coach-roster.server.ts's removeAthleteFromRoster.
-    // The parent/athlete side of the reminder must survive that.
+    // Nobody is up next for anyone then.
     const now = nowAtRinkTime(9, 0);
-    const slot = { ...BASE_SLOT, coach_id: null, start_minute: 10 * 60 };
-    const { admin, sent } = fakeDb({
-      slots: [slot],
-      athletes: [
-        { id: "athlete-1", user_id: "athlete-user-1", self_managed: true, parent_id: null },
-      ],
-      deviceTokens: [{ user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" }],
-    });
-    const logs: unknown[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: unknown[]) => logs.push(args);
-    try {
-      const result = await computeLessonReminders({ admin }, now);
-      expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
-      // Dedupe row is still recorded (with a null coach_id) so this
-      // coachless occurrence isn't re-scanned on the next tick.
-      expect(sent).toHaveLength(1);
-      expect(sent[0]?.coach_id).toBeNull();
-
-      const line = logs.find((l) => l[0] === "[api] lesson-reminders sending");
-      const payload = JSON.parse(line![1] as string);
-      expect(payload.coach.userId).toBeNull();
-      expect(payload.coach.tokenCount).toBe(0);
-      expect(payload.recipient.userId).toBe("athlete-user-1");
-      expect(payload.recipient.tokenCount).toBe(1);
-    } finally {
-      console.log = originalLog;
-    }
+    const slot = { ...BASE_SLOT, coach_id: null, start_minute: 9 * 60 + 15 };
+    const { admin, sent } = fakeDb({ slots: [slot] });
+    const result = await computeLessonReminders({ admin }, now);
+    expect(result).toEqual({ scanned: 0, wouldSend: 0, sent: 0 });
+    expect(sent).toHaveLength(0);
   });
 
   it("finds an occurrence starting shortly after midnight, from the night before", async () => {
-    // A slot starting 00:20 tomorrow (Wednesday) is 65 minutes out at
-    // 23:15pm tonight (Tuesday) — the day-boundary case: `nowInRinkTz`
+    // A slot starting 00:10 tomorrow (Wednesday) is 15 minutes out at
+    // 23:55 tonight (Tuesday) — the day-boundary case: `nowInRinkTz`
     // reports Tuesday as today, so this occurrence only exists in the
     // "tomorrow" bucket, never in a same-day query on either side of
     // midnight.
-    const now = nowAtRinkTime(23, 15);
+    const now = nowAtRinkTime(23, 55);
     const { dayOfWeek } = nowInRinkTz(now);
     const slot = {
       ...BASE_SLOT,
       day_of_week: (dayOfWeek + 1) % 7,
-      start_minute: 20,
+      start_minute: 10,
     };
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
   });
 
   it("dedupes a just-after-midnight occurrence against its own (tomorrow's) lesson_date", async () => {
-    const now = nowAtRinkTime(23, 15);
+    const now = nowAtRinkTime(23, 55);
     const { dayOfWeek, dateIso } = nowInRinkTz(now);
     const tomorrowIso = toIsoDate(addDays(parseIsoDate(dateIso), 1));
     const slot = {
       ...BASE_SLOT,
       day_of_week: (dayOfWeek + 1) % 7,
-      start_minute: 20,
+      start_minute: 10,
     };
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", user_id: null, self_managed: false, parent_id: null }],
+      athletes: [{ id: "athlete-1", first_name: "Nora" }],
       // Already recorded for tomorrow's date — must be skipped, not
       // re-sent, and must NOT be mistaken for a dedupe row on tonight's date.
       alreadySent: [
@@ -506,7 +446,7 @@ describe("computeLessonReminders", () => {
   });
 
   it("does not treat a lesson well before midnight as a day-boundary candidate", async () => {
-    // At 22:00pm, nothing tomorrow can be in the 55-65 minute window (the
+    // At 22:00pm, nothing tomorrow can be in the 10-15 minute window (the
     // earliest possible tomorrow start, 00:00, would be 120 minutes out) —
     // guards against the day-boundary bucket over-firing.
     const now = nowAtRinkTime(22, 0);

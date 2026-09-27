@@ -1,18 +1,20 @@
 /**
- * Lesson-reminder compute + dedupe pipeline (PRD §3.8, I15).
+ * Lesson-reminder compute + dedupe pipeline (PRD §3.8, §6.6).
  *
  * Called every 5 minutes by pg_cron (see the `lesson-reminders-every-5-min`
  * migration) via the `POST /api/public/hooks/lesson-reminders` route. This
  * module does the actual work so it can be unit-tested without a live
  * database: given "now", it finds every recurring lesson-slot occurrence
- * landing 55-65 minutes out today, skips anything already recorded in
- * `lesson_reminders_sent`, and — for what's left — assembles the push
- * payload that WOULD be sent to the coach and to the parent/athlete, logs
- * it, and records the occurrence as handled.
+ * landing 10-15 minutes out, skips anything already recorded in
+ * `lesson_reminders_sent`, and pushes the coach an "up next" nudge that opens
+ * Roster with the Up next briefing already open.
  *
- * v1 deliberately does not call APNs. See the PR's "Known limitations"
- * section: no real push is sent yet, and "now" is fixed to
- * `America/New_York` (no per-coach/per-slot timezone exists in the schema).
+ * Coach only. The coach already knows the lesson is on; the push points them
+ * at the briefing. The parent/athlete side is a separate nudge three days
+ * after the lesson (`practice-nudges.server.ts`).
+ *
+ * "Now" is fixed to `America/New_York` (no per-coach/per-slot timezone
+ * exists in the schema).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -36,9 +38,13 @@ export type LessonReminderContext = { admin: Client; push?: PushDeps };
 /** `wouldSend` = occurrences handled this tick (kept for the hook's response shape); `sent` = pushes APNs accepted. */
 export type LessonReminderResult = { scanned: number; wouldSend: number; sent: number };
 
-/** Occurrences land in this window (minutes from "now") to trigger a reminder. */
-const WINDOW_MIN = 55;
-const WINDOW_MAX = 65;
+/**
+ * Occurrences land in this window (minutes from "now") to trigger a reminder.
+ * The 5-minute tick first matches at most 15 minutes out, so a 16:00 lesson
+ * pushes at 15:45; the 10-minutes-out tick is there to retry a transient failure.
+ */
+const WINDOW_MIN = 10;
+const WINDOW_MAX = 15;
 
 type SlotRow = {
   id: string;
@@ -62,12 +68,7 @@ type OverrideRow = {
 
 type CandidateOccurrence = {
   slotId: string;
-  // Nullable: a coach can be unlinked from an athlete's roster without
-  // deleting the slot (coach-roster.server.ts nulls coach_id so the
-  // recurring schedule survives a future re-link) — the parent/athlete
-  // reminder must still go out for a coachless slot, so this can't require
-  // a coach.
-  coachId: string | null;
+  coachId: string;
   athleteId: string;
   lessonDate: string;
 };
@@ -103,9 +104,18 @@ export function nowInRinkTz(now: Date): { dateIso: string; minutes: number; dayO
   return { dateIso, minutes, dayOfWeek };
 }
 
-/** `{ gradus: { type, route, v } }` — the push payload shape both recipients share. */
-function reminderPayload(route: "coach/roster" | "plans") {
-  return { gradus: { type: "lesson_reminder" as const, route, v: 1 as const } };
+/**
+ * `{ gradus: { type, route, v } }` — Roster with this athlete's Up next briefing
+ * open (older iOS builds read `roster/briefing/...` as plain Roster).
+ */
+function reminderPayload(athleteId: string) {
+  return {
+    gradus: {
+      type: "lesson_reminder" as const,
+      route: `coach/roster/briefing/${athleteId}`,
+      v: 1 as const,
+    },
+  };
 }
 
 /**
@@ -153,9 +163,9 @@ async function candidatesForBucket(admin: Client, bucket: Bucket): Promise<Candi
         : s.start_minute;
     const minutesOut = startMinute - bucket.effectiveNowMinutes;
     if (minutesOut < WINDOW_MIN || minutesOut > WINDOW_MAX) continue;
-    // coach_id may be null (a coach unlinked from the athlete's roster keeps
-    // the slot, per coach-roster.server.ts) — the parent/athlete side is
-    // still a valid candidate, so don't drop the occurrence here.
+    // A coach unlinked from the athlete's roster keeps the slot with a null
+    // coach_id (coach-roster.server.ts); nobody is up next for anyone then.
+    if (!s.coach_id) continue;
     candidates.push({
       slotId: s.id,
       coachId: s.coach_id,
@@ -168,7 +178,7 @@ async function candidatesForBucket(admin: Client, bucket: Bucket): Promise<Candi
 
 /**
  * Compute this tick's lesson-reminder occurrences, dedupe against
- * `lesson_reminders_sent`, and log (never send) what would go out.
+ * `lesson_reminders_sent`, and push each coach.
  */
 export async function computeLessonReminders(
   ctx: LessonReminderContext,
@@ -195,7 +205,7 @@ export async function computeLessonReminders(
   ];
 
   // A lesson starting shortly after midnight belongs to TOMORROW's
-  // day_of_week and date, but its reminder window (55-65 minutes out) can
+  // day_of_week and date, but its reminder window (10-15 minutes out) can
   // only ever be reached from TODAY's clock, in the WINDOW_MAX minutes
   // right before midnight. Whenever we're that close, also fetch tomorrow's
   // slots and treat "now" as negative minutes-into-tomorrow, so the same
@@ -241,18 +251,13 @@ export async function computeLessonReminders(
   const toProcess = candidates.filter((c) => !alreadySent.has(`${c.slotId}|${c.lessonDate}`));
   if (toProcess.length === 0) return { scanned, wouldSend: 0, sent: 0 };
 
-  // Resolve recipients: the coach's own user_id (when a coach is still
-  // assigned — a slot can be coachless, see CandidateOccurrence.coachId),
-  // and — for the parent/athlete side — the athlete's own user_id if
-  // self-managed, else their parent's.
-  const coachIds = Array.from(
-    new Set(toProcess.map((c) => c.coachId).filter((id): id is string => !!id)),
-  );
+  // Resolve the coach's own user_id and the athlete's first name for the title.
+  const coachIds = Array.from(new Set(toProcess.map((c) => c.coachId)));
   const athleteIds = Array.from(new Set(toProcess.map((c) => c.athleteId)));
 
   const [coachesRes, athletesRes] = await Promise.all([
     admin.from("coach_profiles").select("id, user_id").in("id", coachIds),
-    admin.from("athletes").select("id, user_id, self_managed, parent_id").in("id", athleteIds),
+    admin.from("athletes").select("id, first_name").in("id", athleteIds),
   ]);
   if (coachesRes.error) dbError(coachesRes.error);
   if (athletesRes.error) dbError(athletesRes.error);
@@ -261,49 +266,14 @@ export async function computeLessonReminders(
   for (const c of (coachesRes.data ?? []) as { id: string; user_id: string | null }[]) {
     coachUserById.set(c.id, c.user_id);
   }
-
-  type AthleteRow = {
-    id: string;
-    user_id: string | null;
-    self_managed: boolean;
-    parent_id: string | null;
-  };
-  const athleteById = new Map<string, AthleteRow>();
-  for (const a of (athletesRes.data ?? []) as AthleteRow[]) athleteById.set(a.id, a);
-
-  const parentIds = Array.from(
-    new Set(
-      Array.from(athleteById.values())
-        .filter((a) => !a.self_managed && a.parent_id)
-        .map((a) => a.parent_id as string),
-    ),
-  );
-  const parentUserById = new Map<string, string | null>();
-  if (parentIds.length > 0) {
-    const parentsRes = await admin
-      .from("parent_profiles")
-      .select("id, user_id")
-      .in("id", parentIds);
-    if (parentsRes.error) dbError(parentsRes.error);
-    for (const p of (parentsRes.data ?? []) as { id: string; user_id: string }[]) {
-      parentUserById.set(p.id, p.user_id);
-    }
+  const firstNameById = new Map<string, string>();
+  for (const a of (athletesRes.data ?? []) as { id: string; first_name: string | null }[]) {
+    if (a.first_name?.trim()) firstNameById.set(a.id, a.first_name.trim());
   }
-
-  const recipientUserFor = (athleteId: string): string | null => {
-    const athlete = athleteById.get(athleteId);
-    if (!athlete) return null;
-    if (athlete.self_managed) return athlete.user_id;
-    if (athlete.parent_id) return parentUserById.get(athlete.parent_id) ?? null;
-    return null;
-  };
 
   const allUserIds = Array.from(
     new Set(
-      [
-        ...toProcess.map((c) => (c.coachId ? (coachUserById.get(c.coachId) ?? null) : null)),
-        ...toProcess.map((c) => recipientUserFor(c.athleteId)),
-      ].filter((id): id is string => !!id),
+      toProcess.map((c) => coachUserById.get(c.coachId) ?? null).filter((id): id is string => !!id),
     ),
   );
 
@@ -363,12 +333,10 @@ export async function computeLessonReminders(
     if (!insertedKeys.has(`${c.slotId}|${c.lessonDate}`)) continue;
     wouldSend += 1;
 
-    const coachUserId = c.coachId ? (coachUserById.get(c.coachId) ?? null) : null;
-    const recipientUserId = recipientUserFor(c.athleteId);
+    const coachUserId = coachUserById.get(c.coachId) ?? null;
     const coachTokens = coachUserId ? (tokensByUser.get(coachUserId) ?? []) : [];
-    const recipientTokens = recipientUserId ? (tokensByUser.get(recipientUserId) ?? []) : [];
-    const coachPayload = reminderPayload("coach/roster");
-    const recipientPayload = reminderPayload("plans");
+    const coachPayload = reminderPayload(c.athleteId);
+    const firstName = firstNameById.get(c.athleteId);
 
     console.log(
       "[api] lesson-reminders sending",
@@ -378,11 +346,6 @@ export async function computeLessonReminders(
         coachId: c.coachId,
         lessonDate: c.lessonDate,
         coach: { userId: coachUserId, tokenCount: coachTokens.length, payload: coachPayload },
-        recipient: {
-          userId: recipientUserId,
-          tokenCount: recipientTokens.length,
-          payload: recipientPayload,
-        },
       }),
     );
 
@@ -400,26 +363,9 @@ export async function computeLessonReminders(
         {
           type: coachPayload.gradus.type,
           route: coachPayload.gradus.route,
-          title: "Lesson in about an hour",
-          body: "Open Roster to see who is up and check their plan.",
+          title: firstName ? `${firstName} is up next` : "Your next lesson is up",
+          body: "See what they've been practicing since you last coached them.",
           collapseId: `${collapse}:coach`,
-          expiresInSeconds,
-        },
-        ctx.push,
-      );
-      occurrenceSent += r.sent;
-      transientFailures += r.failed - r.pruned;
-    }
-    if (recipientUserId && recipientTokens.length) {
-      const r = await notifyUsers(
-        admin,
-        [recipientUserId],
-        {
-          type: recipientPayload.gradus.type,
-          route: recipientPayload.gradus.route,
-          title: "Lesson in about an hour",
-          body: "Time to warm up. Your plan is in the app.",
-          collapseId: `${collapse}:athlete`,
           expiresInSeconds,
         },
         ctx.push,

@@ -170,6 +170,7 @@ import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/we
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
 import { Route as ApiPublicHooksSkillInferenceRouteImport } from './routes/api/public/hooks/skill-inference'
+import { Route as ApiPublicHooksPracticeNudgesRouteImport } from './routes/api/public/hooks/practice-nudges'
 import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
 import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
 import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
@@ -1194,6 +1195,12 @@ const ApiPublicHooksSkillInferenceRoute =
   ApiPublicHooksSkillInferenceRouteImport.update({
     id: '/api/public/hooks/skill-inference',
     path: '/api/public/hooks/skill-inference',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPracticeNudgesRoute =
+  ApiPublicHooksPracticeNudgesRouteImport.update({
+    id: '/api/public/hooks/practice-nudges',
+    path: '/api/public/hooks/practice-nudges',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksLifecycleEmailsRoute =
@@ -2247,6 +2254,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/practice-nudges': typeof ApiPublicHooksPracticeNudgesRoute
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -2567,6 +2575,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/practice-nudges': typeof ApiPublicHooksPracticeNudgesRoute
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -2895,6 +2904,7 @@ export interface FileRoutesById {
   '/api/public/hooks/lesson-reminders': typeof ApiPublicHooksLessonRemindersRoute
   '/api/public/hooks/lesson-wrap-ups': typeof ApiPublicHooksLessonWrapUpsRoute
   '/api/public/hooks/lifecycle-emails': typeof ApiPublicHooksLifecycleEmailsRoute
+  '/api/public/hooks/practice-nudges': typeof ApiPublicHooksPracticeNudgesRoute
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -3223,6 +3233,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/practice-nudges'
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
@@ -3543,6 +3554,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/practice-nudges'
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
@@ -3870,6 +3882,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lesson-reminders'
     | '/api/public/hooks/lesson-wrap-ups'
     | '/api/public/hooks/lifecycle-emails'
+    | '/api/public/hooks/practice-nudges'
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
@@ -4129,6 +4142,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLessonRemindersRoute: typeof ApiPublicHooksLessonRemindersRoute
   ApiPublicHooksLessonWrapUpsRoute: typeof ApiPublicHooksLessonWrapUpsRoute
   ApiPublicHooksLifecycleEmailsRoute: typeof ApiPublicHooksLifecycleEmailsRoute
+  ApiPublicHooksPracticeNudgesRoute: typeof ApiPublicHooksPracticeNudgesRoute
   ApiPublicHooksSkillInferenceRoute: typeof ApiPublicHooksSkillInferenceRoute
   ApiPublicHooksVoiceTranscriptsRoute: typeof ApiPublicHooksVoiceTranscriptsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -5464,6 +5478,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/skill-inference'
       fullPath: '/api/public/hooks/skill-inference'
       preLoaderRoute: typeof ApiPublicHooksSkillInferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/practice-nudges': {
+      id: '/api/public/hooks/practice-nudges'
+      path: '/api/public/hooks/practice-nudges'
+      fullPath: '/api/public/hooks/practice-nudges'
+      preLoaderRoute: typeof ApiPublicHooksPracticeNudgesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/lifecycle-emails': {
@@ -6928,6 +6949,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLessonRemindersRoute: ApiPublicHooksLessonRemindersRoute,
   ApiPublicHooksLessonWrapUpsRoute: ApiPublicHooksLessonWrapUpsRoute,
   ApiPublicHooksLifecycleEmailsRoute: ApiPublicHooksLifecycleEmailsRoute,
+  ApiPublicHooksPracticeNudgesRoute: ApiPublicHooksPracticeNudgesRoute,
   ApiPublicHooksSkillInferenceRoute: ApiPublicHooksSkillInferenceRoute,
   ApiPublicHooksVoiceTranscriptsRoute: ApiPublicHooksVoiceTranscriptsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

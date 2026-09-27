@@ -1,11 +1,10 @@
 // Lesson reminders — called by pg_cron every 5 minutes.
 //
-// Finds recurring lesson-slot occurrences starting 55-65 minutes out (in
-// America/New_York — see the "Known limitations" note in this milestone's
-// PR body) and, for anything not already recorded in
-// `lesson_reminders_sent`, sends the push to the coach and to the
-// parent/athlete through `notifyUsers` (APNs). The table stays the dedupe
-// boundary: "row present" = "already handled".
+// Finds recurring lesson-slot occurrences starting 10-15 minutes out (in
+// America/New_York) and, for anything not already recorded in
+// `lesson_reminders_sent`, pushes the coach an "up next" nudge through
+// `notifyUsers` (APNs). The table stays the dedupe boundary: "row present" =
+// "already handled".
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";

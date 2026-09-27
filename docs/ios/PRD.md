@@ -343,7 +343,7 @@ Everything else goes through the API. The app never issues ad-hoc table queries;
 | Read cached conversations | Send text messages and voice notes (queued, shown as "Sending…") | Live Board, Ask Gradus, new conversation with someone not cached |
 | Read cached resources and downloaded PDFs | Save an Ask Gradus answer for later | Sign in, sign up, invites, billing, account deletion |
 
-**Session timer specifics.** The timer stores a start timestamp and accumulated pause intervals, never a running counter, so it is correct after the app is killed. A Live Activity shows elapsed time on the Lock Screen and Dynamic Island; local notifications remind at configurable durations. The web's `gradus.activeSession.v1` semantics (one active session per user, resumable) are preserved; the server remains the source of truth once submitted.
+**Session timer specifics.** The timer stores a start timestamp and accumulated pause intervals, never a running counter, so it is correct after the app is killed. A Live Activity shows elapsed time on the Lock Screen and Dynamic Island; a local notification ("Still practicing?") reminds an hour after the app goes to the background with the timer running. The web's `gradus.activeSession.v1` semantics (one active session per user, resumable) are preserved; the server remains the source of truth once submitted.
 
 ### 6.6 Realtime and push notifications
 
@@ -358,11 +358,13 @@ Everything else goes through the API. The app never issues ad-hoc table queries;
 | New message in a room | Other participants (respecting blocks and the athlete persona rules) | `rooms/{roomId}` |
 | Plan activated or assigned | The athlete and their guardians | `plans/{planId}` |
 | Lesson wrap-up prompt (after a slot ends) | Coach | `coach/wrap-ups` |
+| Lesson reminder (about 15 minutes before a slot starts): "{Athlete} is up next", opening that athlete's Up next briefing | Coach | `coach/roster/briefing/{athleteId}` |
+| Practice nudge (three days after a lesson, at its start time held to 08:00–20:00, when no practice has been logged since, no lesson has happened since, and the athlete has an active plan) | The athlete and their guardians | `plans` |
 | Guardian or coach connection accepted | The inviting side | `settings/connections` |
 | Competition recap prompt (day after a followed competition) | Coach, parent | `recaps/{competitionId}` |
 | Entitlement changed (Stripe webhook) | Coach or parent | `settings/plan` (silent push, refresh `/me`) |
 
-Lesson reminders ("lesson in 1 hour") are a P1 addition driven by pg_cron calling a Worker hook, matching the existing hooks pattern.
+Lesson reminders and practice nudges are driven by pg_cron calling Worker hooks (`lesson-reminders` every 5 minutes, `practice-nudges` every 15), matching the existing hooks pattern. Changed 2026-09-27: the reminder used to go to both sides an hour before the lesson; the coach now gets it 15 minutes out, and the athlete side became the practice nudge.
 
 **Payload shape.** `{"aps": {"alert": {...}, "badge": n, "sound": "default", "thread-id": "room:<id>"}, "gradus": {"type": "message", "route": "rooms/<id>", "v": 1}}`. Badge equals the unread total the server already computes. The app routes on `gradus.route` from a tap, and refreshes the relevant store on a silent push.
 
