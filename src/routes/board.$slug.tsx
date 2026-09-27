@@ -400,11 +400,11 @@ function BoardPage() {
           {!signedIn ? (
             <Card variant="section" className="space-y-2 text-center">
               <p className="font-display text-base text-text-primary">
-                Sign in and your skaters show up here
+                Sign in to follow your skaters
               </p>
               <p className="text-sm text-text-secondary">
-                Your connected athletes appear automatically, and you&apos;ll get live updates while
-                you use the app.
+                The first time, match each of your athletes to their name on the board. After that,
+                they show up here, with live updates while you use the app.
               </p>
               <div className="flex justify-center pt-1">
                 <BoardAccountSheet redirect={`/board/${slug}`} label="Sign in or sign up" />
