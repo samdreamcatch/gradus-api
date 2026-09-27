@@ -15,6 +15,7 @@ import {
   type AthleteAccountState,
   type ParentVerificationRow,
 } from "@/lib/guardian-verification.server";
+import { callerSports } from "@/lib/caller-sports.server";
 
 const outputSchema = z.object({
   userId: z.string(),
@@ -31,6 +32,14 @@ const outputSchema = z.object({
   parentVerification: parentVerificationSchema.nullable(),
   /** Athlete only (PRD §6.13 A4): `active`, `provisional` or `paused`; `null` for other roles. */
   athleteAccountState: athleteAccountStateSchema.nullable(),
+  /**
+   * Sport keys this account touches (a coach's levels; a parent's or
+   * athlete's goal and coached sports), sorted. The iOS shell shows the Live
+   * board only when this includes `figure_skating` (2026-09-26). Empty for
+   * org admins and callers without a profile. Always sent; optional in the
+   * contract so an app build that reads it still decodes an older server.
+   */
+  sports: z.array(z.string()).optional(),
 });
 
 /**
@@ -107,6 +116,17 @@ export const Route = createFileRoute("/api/v1/me/")({
             onboardingComplete = false;
           } else if (orgAdmin.data) role = "org_admin";
 
+          const sports = await callerSports(
+            admin,
+            role === "coach" && coach.data
+              ? { role: "coach", coachId: coach.data.id as string }
+              : role === "parent" && parent.data
+                ? { role: "parent", parentId: (parent.data as { id: string }).id }
+                : role === "athlete" && athlete.data
+                  ? { role: "athlete", athleteId: athlete.data.id as string }
+                  : { role: "none" },
+          );
+
           const parentRow = parent.data as ParentVerificationRow | null;
           const athleteRow = athlete.data as { account_state?: string | null } | null;
 
@@ -123,6 +143,7 @@ export const Route = createFileRoute("/api/v1/me/")({
             athleteAccountState: athleteRow
               ? ((athleteRow.account_state as AthleteAccountState | null | undefined) ?? "active")
               : null,
+            sports,
           };
         },
       }),
