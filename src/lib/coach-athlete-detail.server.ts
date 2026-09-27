@@ -117,6 +117,11 @@ export interface OtherCoachDTO {
   sports: CoachedSportDTO[];
   activeCount: number;
   benchedCount: number;
+  /**
+   * Empty when the viewer can't see this coach's plans (not Club, no accepted
+   * visibility link) — use activeCount + benchedCount to tell whether the
+   * coach has plans at all.
+   */
   plans: OtherCoachPlanDTO[];
 }
 
@@ -461,7 +466,8 @@ export async function getCoachAthleteDetail(
 
   // ---- Other coaches on this athlete ----
   // Coaches on this athlete's roster besides me. We surface their
-  // active/benched plans (title, notes, moves) so this coach can coordinate.
+  // active/benched plans (title, notes, moves) so this coach can coordinate
+  // — redacted below unless this coach is on Club or has an accepted link.
   const otherLinksRes = await admin
     .from("coach_athletes")
     .select("coach_id, coach_profiles!inner(id, first_name, last_name)")
@@ -613,6 +619,25 @@ export async function getCoachAthleteDetail(
             : "pending";
       coachVisibility[other] = state;
       if (state === "accepted") sharedCoachIds.push(other);
+    }
+  }
+
+  // ---- Redact locked coaches' plans ----
+  // Another coach's plans (title, notes, moves) are only readable on the Club
+  // plan or through an accepted visibility link — the same gate as
+  // getOtherCoachPlanForMessage. Enforce it here, not just in the clients:
+  // a locked coach keeps name, sports and plan counts (so the UI can say
+  // "Ask X to connect you") but ships with `plans: []`.
+  if (otherCoaches.length > 0) {
+    const { data: tierData, error: tierErr } = await admin.rpc("coach_effective_tier", {
+      _coach_id: coachId,
+    });
+    if (tierErr) dbError(tierErr);
+    if (tierData !== "club") {
+      const unlocked = new Set(sharedCoachIds);
+      for (const c of otherCoaches) {
+        if (!unlocked.has(c.coachId)) c.plans = [];
+      }
     }
   }
 
