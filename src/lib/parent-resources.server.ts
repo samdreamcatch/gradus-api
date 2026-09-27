@@ -184,6 +184,8 @@ export async function getResourceSignedUrl(
     if (!row.external_url) throw unprocessable("Missing link URL");
     return { url: row.external_url };
   }
+  // A coach's image is a public web address; older ones are stored files.
+  if (row.kind === "image" && row.external_url) return { url: row.external_url };
 
   if (!row.storage_path) throw unprocessable("Missing storage path");
 

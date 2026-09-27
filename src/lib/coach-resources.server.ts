@@ -20,7 +20,12 @@ import { STORE_SAFE_RIGHTS, type ResourceFeedOptions } from "./parent-resources.
 
 type Client = SupabaseClient<Database>;
 
-export type CoachResourcesContext = { userId: string; supabase: Client };
+export type CoachResourcesContext = {
+  userId: string;
+  supabase: Client;
+  /** Checks an image link is public before it is saved; tests pass a fake. */
+  fetchImpl?: typeof fetch;
+};
 
 export type CoachResourceKind = "pdf" | "image" | "link";
 
@@ -156,6 +161,19 @@ export async function listCoachResources(
   };
 }
 
+export const IMAGE_UPLOAD_REFUSED =
+  "Images can't be uploaded from your device. Add a link to an image that's publicly available on the web.";
+
+const httpsUrl = z
+  .string()
+  .url()
+  .refine((u) => u.startsWith("https://"), "Link must use https://");
+
+/**
+ * A coach adds images (and videos, as links) only from a publicly available
+ * web address, never from their device: file uploads are PDF only. Keeps
+ * photos from a coach's camera roll, which may show minors, out of Gradus.
+ */
 export const createCoachResourceInput = z
   .object({
     title: z.string().trim().min(1).max(160),
@@ -163,18 +181,108 @@ export const createCoachResourceInput = z
     kind: z.enum(["pdf", "image", "link"]),
     sports: z.array(z.string().min(1)).min(1).max(10),
     storagePath: z.string().min(1).nullable().optional(),
-    externalUrl: z
-      .string()
-      .url()
-      .refine((u) => u.startsWith("https://"), "Link must use https://")
-      .nullable()
-      .optional(),
+    externalUrl: httpsUrl.nullable().optional(),
   })
   .refine(
     (v) =>
-      v.kind === "link" ? !!v.externalUrl && !v.storagePath : !!v.storagePath && !v.externalUrl,
+      v.kind === "pdf"
+        ? !!v.storagePath && !v.externalUrl
+        : v.kind === "link"
+          ? !!v.externalUrl && !v.storagePath
+          : // An image upload passes the shape check so the handler can refuse it in words.
+            !!v.externalUrl !== !!v.storagePath,
     { message: "kind and payload mismatch" },
   );
+
+const PUBLIC_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+]);
+
+const NOT_A_PUBLIC_IMAGE =
+  "That link isn't a publicly available image. Paste a direct https link to a JPG, PNG, GIF, or WebP that opens without signing in.";
+
+/** Loopback, private, link-local, and unique-local hosts: never "publicly available". */
+function isPrivateHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local")) return true;
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    );
+  }
+  if (h.includes(":")) {
+    return (
+      h === "::" ||
+      h === "::1" ||
+      /^f[cd]/.test(h) ||
+      /^fe[89ab]/.test(h) ||
+      h.startsWith("::ffff:")
+    );
+  }
+  return false;
+}
+
+/**
+ * Confirms `url` serves an image to an anonymous request: https, no
+ * credentials in the URL, not a private host, and a 2xx answer whose
+ * content type is a raster image. A share page (Google Photos, iCloud) or
+ * anything behind a sign-in answers HTML or 401/403 and is refused.
+ */
+export async function assertPublicImageUrl(
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw unprocessable(NOT_A_PUBLIC_IMAGE);
+  }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+    throw unprocessable(NOT_A_PUBLIC_IMAGE);
+  }
+  if (isPrivateHost(parsed.hostname)) throw unprocessable(NOT_A_PUBLIC_IMAGE);
+
+  const probe = async (method: "HEAD" | "GET") => {
+    const res = await fetchImpl(parsed.toString(), {
+      method,
+      redirect: "follow",
+      headers: method === "GET" ? { Range: "bytes=0-0" } : undefined,
+      signal: AbortSignal.timeout(8000),
+    });
+    // Only the headers matter; don't download the body.
+    await res.body?.cancel().catch(() => {});
+    return res;
+  };
+
+  let res: Response;
+  try {
+    res = await probe("HEAD");
+    // Some hosts refuse HEAD; ask for the first byte instead.
+    if (!res.ok) res = await probe("GET");
+  } catch {
+    throw unprocessable(
+      "We couldn't reach that image link. Check it opens in a private browser window, then try again.",
+    );
+  }
+  if (res.url && isPrivateHost(new URL(res.url).hostname)) throw unprocessable(NOT_A_PUBLIC_IMAGE);
+  const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  if (!res.ok || !PUBLIC_IMAGE_TYPES.has(type)) throw unprocessable(NOT_A_PUBLIC_IMAGE);
+}
 
 export async function createCoachResource(
   ctx: CoachResourcesContext,
@@ -197,6 +305,11 @@ export async function createCoachResource(
   const allowed = new Set((levelRows ?? []).map((l) => l.sport));
   for (const s of data.sports) {
     if (!allowed.has(s)) throw unprocessable(`You don't coach ${s}`);
+  }
+
+  if (data.kind === "image") {
+    if (data.storagePath || !data.externalUrl) throw unprocessable(IMAGE_UPLOAD_REFUSED);
+    await assertPublicImageUrl(data.externalUrl, ctx.fetchImpl);
   }
 
   const { data: inserted, error: iErr } = await supabase
@@ -284,6 +397,9 @@ export async function deleteCoachResource(
   return { ok: true };
 }
 
+export const PDF_ONLY =
+  "Only PDFs can be uploaded. Add images and videos as a link to a public web address.";
+
 export const createCoachResourceUploadUrlInput = z.object({
   ext: z
     .string()
@@ -303,6 +419,10 @@ export async function createCoachResourceUploadUrl(
   if (tier === "coach") {
     throw forbidden("Coach Pro or Club plan required to upload resources");
   }
+
+  // File uploads are PDF only; images and videos come in as public links.
+  const contentType = data.contentType.split(";")[0].trim().toLowerCase();
+  if (data.ext !== "pdf" || contentType !== "application/pdf") throw unprocessable(PDF_ONLY);
 
   const uuid = crypto.randomUUID();
   const path = `coach/${coach.id}/${uuid}.${data.ext}`;

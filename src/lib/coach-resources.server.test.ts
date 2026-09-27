@@ -1,6 +1,9 @@
 import { describe, expect, it, mock } from "bun:test";
 import { ApiError } from "./api/errors";
 import {
+  IMAGE_UPLOAD_REFUSED,
+  PDF_ONLY,
+  assertPublicImageUrl,
   createCoachResource,
   createCoachResourceInput,
   createCoachResourceUploadUrl,
@@ -99,7 +102,7 @@ async function withFakeAdminStorage<T>(
 }
 
 describe("createCoachResourceInput", () => {
-  it("requires a storagePath (not externalUrl) for pdf/image", () => {
+  it("requires a storagePath (not externalUrl) for pdf", () => {
     expect(
       createCoachResourceInput.safeParse({
         title: "t",
@@ -142,6 +145,29 @@ describe("createCoachResourceInput", () => {
         sports: ["figure_skating"],
         storagePath: "coach/1/a.pdf",
       }).success,
+    ).toBe(false);
+  });
+
+  it("takes exactly one of externalUrl or storagePath for image (the handler refuses the upload)", () => {
+    const base = { title: "t", kind: "image", sports: ["figure_skating"] };
+    expect(
+      createCoachResourceInput.safeParse({ ...base, externalUrl: "https://cdn.example/a.jpg" })
+        .success,
+    ).toBe(true);
+    expect(
+      createCoachResourceInput.safeParse({ ...base, storagePath: "coach/1/a.jpg" }).success,
+    ).toBe(true);
+    expect(createCoachResourceInput.safeParse(base).success).toBe(false);
+    expect(
+      createCoachResourceInput.safeParse({
+        ...base,
+        externalUrl: "https://cdn.example/a.jpg",
+        storagePath: "coach/1/a.jpg",
+      }).success,
+    ).toBe(false);
+    expect(
+      createCoachResourceInput.safeParse({ ...base, externalUrl: "http://cdn.example/a.jpg" })
+        .success,
     ).toBe(false);
   });
 
@@ -206,9 +232,8 @@ describe("createCoachResourceUploadUrlInput", () => {
     ).toBe(true);
   });
 
-  it("accepts (and silently ignores) a contentType unrelated to ext — not cross-checked or allowlisted", () => {
-    // Documents current behavior, not a design endorsement (see coach-resources.server.ts:
-    // createCoachResourceUploadUrl never reads `data.contentType`).
+  it("accepts any contentType shape; createCoachResourceUploadUrl refuses anything but a PDF", () => {
+    // The refusal lives in the handler so the coach reads a sentence, not "validation failed".
     expect(
       createCoachResourceUploadUrlInput.safeParse({ ext: "pdf", contentType: "text/html" }).success,
     ).toBe(true);
@@ -519,5 +544,173 @@ describe("createCoachResourceUploadUrl", () => {
     expect(err?.code).toBe("unprocessable");
     expect(err?.status).toBe(422);
     expect(err?.message).toBe("bucket missing");
+  });
+});
+
+/** A fetch stand-in answering each call in turn; records the methods it saw. */
+function fakeFetch(...answers: Array<{ status: number; type?: string } | Error>) {
+  const calls: string[] = [];
+  const impl = (async (_url: string, init?: RequestInit) => {
+    calls.push(init?.method ?? "GET");
+    const next = answers.shift();
+    if (!next) throw new Error("unexpected fetch");
+    if (next instanceof Error) throw next;
+    return new Response(null, {
+      status: next.status,
+      headers: next.type ? { "content-type": next.type } : {},
+    });
+  }) as unknown as typeof fetch;
+  return { impl, calls };
+}
+
+const NOT_A_PUBLIC_IMAGE =
+  "That link isn't a publicly available image. Paste a direct https link to a JPG, PNG, GIF, or WebP that opens without signing in.";
+
+describe("assertPublicImageUrl", () => {
+  it("accepts a URL that answers a HEAD with a raster image type", async () => {
+    const f = fakeFetch({ status: 200, type: "image/jpeg; charset=binary" });
+    await assertPublicImageUrl("https://cdn.example/a.jpg", f.impl);
+    expect(f.calls).toEqual(["HEAD"]);
+  });
+
+  it("falls back to a one-byte GET when the host refuses HEAD", async () => {
+    const f = fakeFetch({ status: 405 }, { status: 206, type: "image/png" });
+    await assertPublicImageUrl("https://cdn.example/a.png", f.impl);
+    expect(f.calls).toEqual(["HEAD", "GET"]);
+  });
+
+  it("refuses a share page that answers HTML (e.g. a photos album link)", async () => {
+    const f = fakeFetch({ status: 200, type: "text/html" });
+    const err = await caught(() => assertPublicImageUrl("https://photos.example/share/x", f.impl));
+    expect(err?.status).toBe(422);
+    expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
+  });
+
+  it("refuses an image behind a sign-in", async () => {
+    const f = fakeFetch({ status: 403, type: "image/jpeg" }, { status: 403, type: "image/jpeg" });
+    const err = await caught(() => assertPublicImageUrl("https://cdn.example/private.jpg", f.impl));
+    expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
+  });
+
+  it("refuses SVG, which the apps can't show", async () => {
+    const f = fakeFetch({ status: 200, type: "image/svg+xml" });
+    const err = await caught(() => assertPublicImageUrl("https://cdn.example/a.svg", f.impl));
+    expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
+  });
+
+  it("refuses private hosts and credentials in the URL without fetching", async () => {
+    for (const url of [
+      "https://localhost/a.jpg",
+      "https://127.0.0.1/a.jpg",
+      "https://10.0.0.4/a.jpg",
+      "https://192.168.1.9/a.jpg",
+      "https://172.20.0.1/a.jpg",
+      "https://169.254.169.254/a.jpg",
+      "https://[::1]/a.jpg",
+      "https://nas.local/a.jpg",
+      "https://user:pw@cdn.example/a.jpg",
+      "http://cdn.example/a.jpg",
+    ]) {
+      const f = fakeFetch();
+      const err = await caught(() => assertPublicImageUrl(url, f.impl));
+      expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
+      expect(f.calls).toEqual([]);
+    }
+  });
+
+  it("says the link couldn't be reached when the fetch fails", async () => {
+    const f = fakeFetch(new TypeError("network"));
+    const err = await caught(() => assertPublicImageUrl("https://cdn.example/a.jpg", f.impl));
+    expect(err?.status).toBe(422);
+    expect(err?.message).toContain("couldn't reach that image link");
+  });
+});
+
+describe("createCoachResource — images come only from a public URL", () => {
+  const proCoach = () =>
+    fakeClient(
+      {
+        coach_profiles: { id: "c1", organization_id: null, subscription_tier: "coach_pro" },
+        resources: { id: "r1" },
+      },
+      { coach_levels: [{ sport: "figure_skating" }], resource_sports: [] },
+    );
+
+  it("refuses an uploaded image (e.g. from an older app) and writes nothing", async () => {
+    const supabase = proCoach();
+    const err = await caught(() =>
+      createCoachResource(
+        { userId: "u1", supabase },
+        createCoachResourceInput.parse({
+          title: "t",
+          kind: "image",
+          sports: ["figure_skating"],
+          storagePath: "coach/c1/a.jpg",
+        }),
+      ),
+    );
+    expect(err?.status).toBe(422);
+    expect(err?.message).toBe(IMAGE_UPLOAD_REFUSED);
+    expect(supabase.insertedPayloads.resources).toBeUndefined();
+  });
+
+  it("saves an image link once it checks out as public", async () => {
+    const supabase = proCoach();
+    const f = fakeFetch({ status: 200, type: "image/webp" });
+    const result = await createCoachResource(
+      { userId: "u1", supabase, fetchImpl: f.impl },
+      createCoachResourceInput.parse({
+        title: "t",
+        kind: "image",
+        sports: ["figure_skating"],
+        externalUrl: "https://cdn.example/a.webp",
+      }),
+    );
+    expect(result).toEqual({ id: "r1" });
+    const [row] = supabase.insertedPayloads.resources as Array<Record<string, unknown>>;
+    expect(row.kind).toBe("image");
+    expect(row.external_url).toBe("https://cdn.example/a.webp");
+    expect(row.storage_path).toBeNull();
+  });
+
+  it("refuses an image link that isn't public and writes nothing", async () => {
+    const supabase = proCoach();
+    const f = fakeFetch({ status: 200, type: "text/html" });
+    const err = await caught(() =>
+      createCoachResource(
+        { userId: "u1", supabase, fetchImpl: f.impl },
+        createCoachResourceInput.parse({
+          title: "t",
+          kind: "image",
+          sports: ["figure_skating"],
+          externalUrl: "https://photos.example/share/x",
+        }),
+      ),
+    );
+    expect(err?.message).toBe(NOT_A_PUBLIC_IMAGE);
+    expect(supabase.insertedPayloads.resources).toBeUndefined();
+  });
+});
+
+describe("createCoachResourceUploadUrl — PDF only", () => {
+  it("refuses an image, whatever it claims to be, before signing anything", async () => {
+    const supabase = fakeClient({
+      coach_profiles: { id: "c1", organization_id: null, subscription_tier: "coach_pro" },
+    });
+    for (const data of [
+      { ext: "jpg", contentType: "image/jpeg" },
+      { ext: "heic", contentType: "image/heic" },
+      { ext: "pdf", contentType: "image/jpeg" },
+      { ext: "mov", contentType: "video/quicktime" },
+    ]) {
+      const err = await caught(() =>
+        createCoachResourceUploadUrl(
+          { userId: "u1", supabase },
+          createCoachResourceUploadUrlInput.parse(data),
+        ),
+      );
+      expect(err?.status).toBe(422);
+      expect(err?.message).toBe(PDF_ONLY);
+    }
   });
 });

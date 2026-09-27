@@ -6,7 +6,7 @@ Each item states what the product does today, the wording problem, and the propo
 
 ## 1. Photographs (§2.3, §5.3)
 
-**Today.** The policy says Gradus does not collect photographs from or about athletes. Coaches can upload a photo of their lesson schedule (parsed into lessons, then kept as a file), image and PDF resources for their athletes, and the iOS app requests photo-library _add_ permission so a shared resource can be saved. None of these flows asks for a photo of an athlete, and uploads are not scanned.
+**Today.** The policy says Gradus does not collect photographs from or about athletes. Coaches can upload a photo of their lesson schedule (parsed into lessons, then kept as a file) and PDF resources for their athletes; since 2026-09-26 a resource image or video can only be a link to a publicly available web address, never a file from the coach's device, and the iOS app requests photo-library _add_ permission so a shared resource can be saved. None of these flows asks for a photo of an athlete, and uploads are not scanned.
 
 **Proposal (keep the promise, add a coach rule).** Keep §2.3 and §5.3 as written. Add to the Terms of Service, and to the upload screens as a one-line notice, that coaches must not upload images or video of athletes; describe schedule photos and resource files in §2.1 as documents the coach provides ("schedule images and instructional files you upload for your athletes"). Consider a short sentence in §2.1 that uploaded files are visible only to the coach's connected athletes and their parents.
 
