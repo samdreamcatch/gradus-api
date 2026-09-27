@@ -307,6 +307,15 @@ describe("getResourceSignedUrl", () => {
     });
   });
 
+  it("returns the public URL directly for an image added by link", async () => {
+    const supabase = fakeClient({
+      resourceRow: { storage_path: null, external_url: "https://cdn.example/a.jpg", kind: "image" },
+    });
+    expect(await getResourceSignedUrl({ userId: "u1", supabase }, "r1")).toEqual({
+      url: "https://cdn.example/a.jpg",
+    });
+  });
+
   it("throws unprocessable 422 'Missing link URL' for a link with no URL", async () => {
     const supabase = fakeClient({
       resourceRow: { storage_path: null, external_url: null, kind: "link" },

@@ -20,10 +20,8 @@ function sportLabel(s: string) {
   return getSport(s as SportKey)?.label ?? s;
 }
 
-const ACCEPT: Record<Exclude<CoachResourceKind, "link">, string> = {
-  pdf: "application/pdf",
-  image: "image/*",
-};
+/** Only PDFs upload; images and videos are links to a public web address. */
+const PDF = "application/pdf";
 
 export function UploadResourceSheet({
   open,
@@ -62,7 +60,8 @@ export function UploadResourceSheet({
       if (!title.trim()) throw new Error("Add a title");
       if (!sports.length) throw new Error("Tag at least one sport");
 
-      if (kind === "link") {
+      if (kind === "link" || kind === "image") {
+        if (!url.trim()) throw new Error("Add a URL");
         await createFn({
           data: {
             title: title.trim(),
@@ -76,15 +75,12 @@ export function UploadResourceSheet({
       }
 
       if (!file) throw new Error("Choose a file");
-      const ext =
-        (file.name.split(".").pop() ?? "").toLowerCase() || (kind === "pdf" ? "pdf" : "png");
-      const signed = await signUpload({
-        data: { ext, contentType: file.type || ACCEPT[kind] },
-      });
+      if (file.type && file.type !== PDF) throw new Error("Choose a PDF");
+      const signed = await signUpload({ data: { ext: "pdf", contentType: PDF } });
       const { error: upErr } = await supabase.storage
         .from("resource-pdfs")
         .uploadToSignedUrl(signed.path, signed.token, file, {
-          contentType: file.type || ACCEPT[kind],
+          contentType: PDF,
         });
       if (upErr) throw upErr;
       await createFn({
@@ -146,6 +142,10 @@ export function UploadResourceSheet({
                 ]}
               />
             </div>
+            <p className="mt-2 text-xs text-text-secondary">
+              Images and videos are added by link, from a public web address, not from your device.
+              For a video, choose Link and paste its YouTube or Vimeo address.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -172,18 +172,23 @@ export function UploadResourceSheet({
             />
           </div>
 
-          {kind === "link" ? (
+          {kind === "link" || kind === "image" ? (
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wide text-text-secondary">
-                URL (https)
+                {kind === "image" ? "Image URL (https)" : "URL (https)"}
               </label>
               <Input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://…"
+                placeholder={kind === "image" ? "https://…/photo.jpg" : "https://…"}
                 className="h-11 rounded-2xl"
                 inputMode="url"
               />
+              {kind === "image" ? (
+                <p className="text-xs text-text-secondary">
+                  A direct link to a JPG, PNG, GIF, or WebP that opens without signing in.
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-2">
@@ -192,7 +197,7 @@ export function UploadResourceSheet({
               </label>
               <input
                 type="file"
-                accept={ACCEPT[kind]}
+                accept={PDF}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 className="block w-full rounded-2xl border border-divider bg-elevated p-3 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-accent-foreground"
               />
