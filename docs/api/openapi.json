@@ -266,6 +266,12 @@
                         "provisional",
                         "paused"
                       ]
+                    },
+                    "sports": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -274,7 +280,8 @@
                     "onboardingComplete",
                     "terms",
                     "parentVerification",
-                    "athleteAccountState"
+                    "athleteAccountState",
+                    "sports"
                   ]
                 }
               }
