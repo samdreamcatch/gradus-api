@@ -19,7 +19,9 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 
 - [ ] Sign in with email + password; wrong password shows "Error: …" inline and is announced.
 - [ ] Sign in with username (athlete) + password.
-- [ ] **Sign in with Apple** on a fresh Apple ID (hide-my-email on): lands on onboarding with the relayed email; sign out, sign in again → same account.
+- [ ] **Sign in with Apple** from the sign-in screen on a fresh Apple ID (hide-my-email on): lands on "Finish setting up" (the role chooser), not a web hand-off; choose Coach → coach onboarding with the relayed email; sign out, sign in again → same account, straight to the tabs.
+- [ ] **Sign up with Apple** from a sign-up form (Create an account → Parent → setup → the Apple button under Create account): disabled with the hint until the terms toggle is on; a fresh Apple ID lands straight in parent onboarding with the athletes entered before the account.
+- [ ] An account with no profile (started on the web, or Apple as above) signing in with email + password: role chooser; "Sign out" there returns to sign-in; the chooser is never shown to a coach, parent or athlete.
 - [ ] Google button is hidden (no client ID yet) — confirm it does not appear.
 - [ ] "Remember me" keeps the identifier after sign-out; Face ID lock (Settings → Device) locks on background after the chosen delay; passcode fallback works; nothing behind the lock is reachable.
 - [ ] Coach sign-up: promo code applied (Settings → Plan shows it); terms checkbox required; onboarding: name → sports → levels/hours → invite code; sample athlete and starter plan appear for figure skating; club join skippable.

@@ -556,7 +556,7 @@ Each table lists the web behavior being ported and what is specifically required
 
 | Feature | Web today | iOS requirement | Pri |
 |---|---|---|---|
-| Sign in | Email or username + password with Turnstile; Google via broker | Native form; Sign in with Apple; Google (button hidden until the iOS client ID exists, 2026-09-19); password broker (§6.4). Remember identifier. Face ID gate optional. | P0 |
+| Sign in | Email or username + password with Turnstile; Google via broker | Native form; Sign in with Apple; Google (button hidden until the iOS client ID exists, 2026-09-19); password broker (§6.4). Remember identifier. Face ID gate optional. *2026-10-02:* Apple is also offered on each sign-up form (after the terms toggle), so a new account starts in its role's onboarding; a session whose `/me` has no role and no sign-up in progress gets the in-app **role chooser** (the web's `/` picker), never a hand-off to the web. | P0 |
 | Coach sign-up | Email + password or Google; promo code field; optional `?invite=` parent code; terms checkbox | Native equivalents; promo code applied via `/me/promo-code`; invite carried from `/i/:code`. | P0 |
 | Coach onboarding | Name → sports coached → levels and hours per week per sport → invite code share; sample athlete and starter plan for new figure skating coaches; join a club by search or code | Native multi-step with progress; sport multiselect with the primary-sport cap rule; club join can be skipped and finished in Settings. | P0 |
 | Parent sign-up | Email + password, beta code check, athletes (name + birthdate) → goals per athlete → practice schedule per coach; mid-flow recovery; invite coach card | Native multi-step; birthdate picker; schedule editor; resume where left off from `getParentSignupStatus`. | P0 |
