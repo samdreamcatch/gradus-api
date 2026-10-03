@@ -29,6 +29,9 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Parent sign-up: athletes (name + birthdate) → goals → schedule per coach; kill the app mid-flow and reopen → resumes at the same step.
 - [ ] Minor athlete sign-up with the parent's code: identity confirmed, username availability check debounces, password set, lands in the athlete app.
 - [ ] Adult athlete sign-up → coach link by code → goals → schedule.
+- [ ] **Athlete entry, birthdate first (S2, PRD §6.13 A4):** Create an account → Athlete → "I'm signing up myself" asks for the date of birth before anything else. Under 13: "Ask your parent to set you up" with "Send my parent an invite" (share sheet) and "I already have my parent's code"; back out and come in again in the same launch → still the parent-only screen; nothing is created server-side. 13–17: name plus the parent's email with the waiting-mode note; after sign-up the coach step says a coach connects once the parent confirms and Skip works; Settings → Profile shows "Waiting for your parent". 18+: name only, no email field.
+- [ ] **Parent verify step in onboarding (S2, switch on):** after the parent's name and athletes, "Verify you're an adult" appears before the athletes are created; "Email me the verification link" → "Check your email…" with "Resend in 60s"; finishing the card check in the email (or opening the `/verified` link on the phone) moves the wizard to goals on its own and the athletes exist. Switch off or an already-verified parent: no step.
+- [ ] **Guardian claim with an unverified parent (S2):** `/g/<token>` as a signed-in, unverified parent shows the verify step above the claim button (button disabled); verified → the claim runs by itself. A `parent_unverified` refusal from the claim opens the same step instead of an error.
 - [ ] Forgot password: request from the sign-in sheet (email prefilled if typed), email arrives, link completes on the web (native reset stays off until the allow-list entry exists).
 - [ ] Terms gate: bump the terms version (Mariah, via admin) → blocking sheet appears on next foreground, scrolls at the largest text size, accept clears it.
 - [ ] Connection celebration after a coach–athlete link; Reduce Motion → no confetti.
@@ -47,6 +50,7 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Create a lesson slot (weekly / biweekly / twice monthly / monthly); edit recurring; reschedule one occurrence; cancel one; delete the series. Each change is visible on the web within a minute.
 - [ ] Athlete detail sheet: title bar + Close; parent, goals, minutes, active plans, AI summary "as of" + refresh, competition results, billing.
 - [ ] Add athlete with guardian email; name-conflict dialog; remove athlete (confirmed).
+- [ ] **Invite recipient rule (S2, PRD §6.13 A5):** New athlete has an optional date of birth; "Who should we email?" appears only once a birthdate of 18+ is entered, otherwise the email field is the parent's and the note explains why. The roster "waiting for parent" state is not in this pass (the roster API has no guardian-claimed field yet; follow-up web wave).
 - [ ] Invite code: share sheet, copy, rotate (confirmed) → old link stops working.
 - [ ] Practice targets set/clear; roster limits and default expectations in Roster settings.
 - [ ] Pre-lesson briefing loads, caches, refreshes.
@@ -66,6 +70,8 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Plan-tagged message from "Message coach about this plan"; tapping the tag opens the plan.
 - [ ] Report a message (reason, note; "Also block" is off by default); block from the room header; blocked list in Settings; unblock.
 - [ ] Airplane mode: send a message → "Waiting for a connection", reconnect → sends; delete an unsent message (confirmed).
+- [ ] **Minors send text only (S2, decision #32):** signed in as a minor athlete, the composer has no microphone; VoiceOver's hint on the message field says voice notes are off for athletes under 18. A coach or parent in the same room still sees the mic.
+- [ ] **Parent pause (S2, PRD §6.13 C):** parent pauses a coach from My athletes → that athlete's room shows the paused notice instead of the composer for the parent, the coach and the athlete; a send attempted from the web answers with the server's own words; Resume restores the composer on the next open.
 
 ## 5. Sessions (parent and athlete) (PRD §7.6)
 
@@ -82,6 +88,9 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Goals editor (parent) and the athlete's own level/season-goal editor; motivation card ≤ 500 chars.
 - [ ] Practice schedule per coach; reset a minor athlete's password (confirmed).
 - [ ] Team plan status; guardians: invite, resend, revoke (confirmed), remove; a guardian sees the same rooms, plans and sessions.
+- [ ] **Verification in parent Settings (S2, decision #34):** switch on and unverified → a "Verification" group with the required copy; switch off but KWS configured → the opt-in copy ("Soon, every parent…"); verified (including legacy parents) → no group. "Email me the verification link" → waiting state → the group disappears when the webhook lands, without leaving the screen. KWS not configured → the step says it isn't switched on yet and offers no button.
+- [ ] **Login code waits for verification (S2):** with the switch on, an unverified parent's minor shows "…login code appears here once you've verified" instead of a code; after verification the code appears.
+- [ ] **Pause/Resume messaging per coach (S2):** the coach's ⋯ menu on My athletes → athlete has "Pause messaging"; the row shows a "Messaging paused" tag; "Resume messaging" clears it. Offline → "You're offline" and nothing changes.
 
 ## 7. Resources, Live Board, billing, settings (PRD §7.9–7.12)
 
