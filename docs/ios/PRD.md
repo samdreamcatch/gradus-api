@@ -28,7 +28,7 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 4 | Live Board | **In native 2.0**, built in the first (P0) wave, with Live Activities. |
 | 5 | Backend | One backend shared by web and iOS: the existing Lovable Cloud (Supabase) project plus the server logic in this repo, exposed to iOS through a versioned JSON API added to this repo. No data migration. See §6. |
 | 6 | Web sunset | Once **both** native apps (iOS, then Android in Kotlin) are live with feature parity, the web app is sunset for coaches, parents, and athletes, and product development moves from Lovable to Claude Code. Until then, **no interruption or degradation of the web experience is acceptable.** See §4 and §10.4. |
-| 7 | Platform | iOS 18 minimum, iPhone-first with adaptive iPad layouts, no Apple Watch in v1. |
+| 7 | Platform | iOS 18 minimum, iPhone-first with adaptive iPad layouts, ~~no Apple Watch in v1~~. **Amended 2026-10-03 (Mariah): an Apple Watch app ships in the same 1.0 App Store submission as the iPhone app** (decision #36, §6.15, §10.11). |
 | 8 | Payments | **No In-App Purchase.** Subscriptions are purchased on the web. The app shows entitlement and, where Apple's rules allow, links out. See §6.8. |
 | 9 | Offline | **Yes.** Offline-first for plans, schedule, sessions, and message drafts, with background sync. See §6.5. |
 | 10 | Design | Keep Gradus typography and color tokens; adopt native navigation and gestures. See §8. |
@@ -53,9 +53,12 @@ Decisions confirmed with Mariah on 2026-09-04. Treat these as settled.
 | 29 | Parent adult verification | **2026-09-24 (Mariah):** every parent account that links a minor athlete is verified as an adult **once**, through Kids Web Services (KWS) Parent Verification, **payment card only** in the US. Stored on the parent profile with the KWS transaction id. Closes §12 #23. Design §6.13, delivery §10.9. |
 | 30 | Under-13 accounts start with the parent | **2026-09-24 (Mariah):** no under-13 athlete account is ever created by the athlete. The athlete entry screen asks for a birthdate first; under 13 it offers only "ask your parent" (the existing share message) and stores nothing. The child joins through the parent's invite code once the parent is verified. **Coaches invite the parent, never the athlete, for any athlete under 18** (or with no birthdate on file). |
 | 31 | Provisional accounts for 13–17 | **2026-09-24 (Mariah):** a 13–17 self-sign-up creates a **provisional** account (own goals and plans visible; no coach connection, no rooms) until a verified guardian claims it. A room that includes a minor opens only when a verified adult who is not the coach is a participant. The email mirror to unclaimed guardians is retired. |
-| 32 | Minors send text only | **2026-09-24 (Mariah):** under-18 athlete accounts cannot record voice notes in 1.0; coach voice notes to a minor keep their coach-side transcripts. No separate consent scope for transcription (Mariah's reading: transcription is coach input; and with no minor audio stored there is no child recording for the amended COPPA Rule to reach). Reopen if athlete voice returns. |
+| 32 | Minors send text only | **2026-09-24 (Mariah):** under-18 athlete accounts cannot record voice notes in 1.0; coach voice notes to a minor keep their coach-side transcripts. No separate consent scope for transcription (Mariah's reading: transcription is coach input; and with no minor audio stored there is no child recording for the amended COPPA Rule to reach). ~~Reopen if athlete voice returns.~~ **Reopened and narrowed 2026-10-03 (#37):** voice *notes* stay text-only for minors; voice *as input to the athlete's own plan* is allowed under the transcribe-and-discard rule in §6.13 A7. |
 | 33 | Apple age signals | **2026-09-24 (Mariah):** adopt Declared Age Range (tighten-only), PermissionKit significant-change asks, the StoreKit age-rating watcher, and the `RESCIND_CONSENT` server notification. Required for the Texas App Store Accountability Act on the US storefront (#25) and for California from 2027-01-01. A coach SafeSport-training attestation at onboarding was proposed and **declined**. |
 | 34 | Opt-in verification before the switch; a `/support` page for KWS go-live | **2026-09-25 (Mariah):** while `PARENT_VERIFICATION_REQUIRED` is off, parent Settings offers "Verify you're an adult" as an opt-in whenever KWS is configured, so the KWS test environment can be exercised on production (Lovable Cloud has one shared secret set, so the switch cannot be on for preview alone) and parents can verify ahead of the gates. KWS's go-live review requires a support or FAQ URL, so `gradus.training/support` (support@gradussports.com plus FAQs) is built **nearer go-live**, not now. KWS verification methods: credit and debit card (face scan is not offered in the US). |
+| 35 | Athletes author their own plans | **2026-10-03 (Mariah):** every athlete (minor or adult) can create, edit, activate, bench and delete **their own** practice plans with the same editor, seeded move curriculum and voice builder coaches have, but can never assign a plan to anyone else. They share a plan through the existing public `/p/:token` link, and anyone who opens it (athlete or coach) can adopt it as a **copy snapshot** that lands **active** on the adopter. Athletes get **read-only** access to the seeded curriculum (no personal move library). Coaches **see** an athlete's self-authored plans; those plans **do not count** toward the two-active-plans-per-coach limit. Under-18 athletes **may** publish share links (a text-only workout, no contact details); the public page says "Plan by *first name*". Built as **parallel `/athlete/...` routes**, never by generalizing the coach modules. Design §6.14; milestones §10.10. |
+| 36 | Apple Watch in 1.0, headphones-first | **2026-10-03 (Mariah):** a watchOS app ships **in the same App Store submission** as the iPhone app (reverses #7). It is built to be used **entirely through headphones**: text-to-speech out, voice in. Five workflows: voice→plan (athlete, coach), deploy a plan (athlete: activate their own; coach: assign and activate), plan→audio with a **full read** of every move (athlete, parent, coach), the pre-lesson briefing spoken **on tap only** (coach), and the post-lesson wrap-up by voice (coach). Design §6.15; milestones §10.11. QA device: Apple Watch Series 10. |
+| 37 | Minors may build plans by voice (transcribe and discard) | **2026-10-03 (Mariah):** the #32 text-only rule is narrowed. An under-18 athlete may record a voice clip to build or edit **their own plan** (iPhone and watch). The server transcribes it and **never stores the audio**: the clip is discarded as soon as the transcript exists, and only the transcript text, which the athlete authored exactly as if typed, is kept on the plan (`plans.voice_transcript`). This is the amended COPPA Rule's audio exception (a child's voice collected solely to replace written words and deleted at once), every under-13 account already carries verified parental consent (#29), and 13–17 are outside COPPA. Voice **notes** in messaging stay text-only for minors (#32). Counsel confirms the wording in the privacy policy and direct notice (§12 #31). |
 
 ---
 
@@ -73,7 +76,7 @@ This project rebuilds the coach, parent, and athlete experience as a native Swif
 
 ### Non-goals
 
-- Android, watchOS, macOS (Catalyst), or visionOS.
+- Android, macOS (Catalyst), or visionOS. *Amended 2026-10-03:* watchOS is **in scope** for 1.0 (decision #36, §6.15).
 - Org admin or internal admin features on iOS.
 - Purchasing subscriptions in-app.
 - Migrating off Lovable Cloud or changing the Supabase project. (Documented as a possible later project in §11.)
@@ -513,7 +516,7 @@ Decisions #29–#33. **Why.** The live privacy policy already promises verifiabl
 
 1. **One adult verification per parent account (#29).** A parent account that links a minor is verified as an adult once, through KWS Parent Verification, **payment card only** in the US. `parent_profiles` gains `adult_verified_at`, `adult_verification_method` (`kws_card` or `admin`) and `adult_verification_ref` (the KWS transaction id). Triggered at the first minor link or claim: after account creation in parent onboarding (onboarding itself stays before the account, #27) and inside the guardian claim flow. Never at coach or adult-athlete sign-up. Parent profiles that exist when the S1 migration runs are marked `legacy` and are never prompted or gated (§12 #27, Mariah 2026-09-24); verification applies to parent accounts created afterwards. *2026-09-25 (#34):* while the switch is off, parent Settings shows the step as an opt-in whenever KWS is configured (`available`); legacy parents carry a verified state and never see it.
 2. **KWS flow.** Server-side only. Client-credentials token, then `send-email` with the parent's **own account email** (never the address a child typed), `location` `US`, `language` `en`, `userContext` `parent`, and `externalPayload` carrying the parent profile id and a nonce. KWS emails the parent, hosts the white-labeled card check, posts the signed `parent-verified` webhook, and redirects the parent to `https://gradus.training/verified` with a signed query (KWS's "Verification Response": `status`, `externalPayload`, `signature`, HMAC over `status:externalPayload` with the verification secret). The page and the app forward that query to `POST /guardian/verification/complete`, so either channel alone completes the verification. Webhook handling: HMAC-SHA256 over `timestamp.rawBody` against `x-kws-signature` (accept either signature during a secret rotation), idempotent on transaction id, a `webhook_receipts` row, and a 2xx only after the parent row is updated. Secrets live in Lovable Cloud (`KWS_CLIENT_ID`, `KWS_API_KEY`, `KWS_WEBHOOK_SECRET`, `KWS_VERIFICATION_SECRET`), test and production sets. The KWS test environment carries preview and CI; production waits on KWS's go-live review. Demo and review accounts (#26) are seeded verified with method `admin`, because App Review cannot pass a card check.
-3. **Consent ledger.** `guardian_consents` (athlete, parent, scope, granted at, revoked at, method, evidence). Scopes in 1.0: `account` and `messaging`. Granted when a verified parent creates or claims the athlete; revoked on unlink, athlete removal, account deletion, or `RESCIND_CONSENT` (B4). No `voice` scope, because minors send text only (#32). No separate third-party-disclosure scope; §12 #24 carries the counsel check.
+3. **Consent ledger.** `guardian_consents` (athlete, parent, scope, granted at, revoked at, method, evidence). Scopes in 1.0: `account` and `messaging`. Granted when a verified parent creates or claims the athlete; revoked on unlink, athlete removal, account deletion, or `RESCIND_CONSENT` (B4). No `voice` scope, because minors send text only (#32); *2026-10-03 (#37):* voice input to the athlete's own plan needs no scope either, because no minor audio is ever stored (A7). No separate third-party-disclosure scope; §12 #24 carries the counsel check.
 4. **Athlete account states** (`athletes.account_state`: `active`, `provisional`, `paused`). Age comes from the birthdate on file; no birthdate means minor (the D8 posture).
    - **Under 13 (#30).** No self-created account. The athlete entry screen asks for the birthdate first; under 13 it shows only "Ask your parent to set up Gradus" with the existing share message, stores nothing server-side, and remembers the outcome for the session so a second birthdate does not reopen the flow. `createSelfManagedAthlete` refuses under-13 input (`parent_required`, 422). The child joins through the parent's invite code after the parent is verified.
    - **13–17 (#31).** Self-sign-up creates a `provisional` account with a parent email on file: own goals and plans visible; no coach connection, no rooms, no coach-side claim, until a verified guardian claims. Provisional accounts nobody claims are deleted after 3 months (§12 #25), and the direct notice says so.
@@ -521,7 +524,7 @@ Decisions #29–#33. **Why.** The live privacy policy already promises verifiabl
    - **18+.** Unchanged.
 5. **Coaches invite the parent, never the athlete, for anyone under 18 (#30).** `addAthleteWithGuardian` accepts `inviteRecipient: "athlete"` only when a birthdate is on file and the athlete is 18+; the roster shows "waiting for parent" until the parent verifies and claims; `claimAthleteSelf` keeps refusing under-18.
 6. **The room rule (#31).** A room that includes a minor athlete opens, and accepts sends, only when a verified adult who is not the coach is a participant. `mirrorGuardianActivity` (the email copy to an unclaimed guardian) is retired: it sent coach messages to an unverified address.
-7. **Text only for minors (#32).** `sendMessage` refuses a voice send from a minor athlete's session and the voice-note upload policy refuses their uploads; the composer hides the microphone for minors and says why in the VoiceOver label.
+7. **Text only for minors (#32), with one exception (#37, 2026-10-03).** `sendMessage` refuses a voice send from a minor athlete's session and the voice-note upload policy refuses their uploads; the composer hides the microphone for minors and says why in the VoiceOver label. **Exception:** `POST /athlete/voice/build-plan` (§6.14) accepts a minor's recording. The server transcribes it in memory, writes only the transcript to the athlete's own plan, and discards the audio in the same request; nothing is written to storage, no transcript is sent to any party but the athlete's own plan, and the audio never reaches a third party other than the transcription processor the privacy policy already names. The request is refused for anyone who is not the plan's own athlete. The direct notice and privacy policy say so (§12 #31).
 8. **Direct notice.** The parent invite and the KWS email carry the COPPA direct notice: what is collected (name, birthdate, username, messages, goals, practice logs), how it is used, the processors the privacy policy names, that parent contact details and unclaimed provisional accounts are deleted after the §12 #25 window, and how to review or delete.
 9. **Retention.** A scheduled job deletes expired provisional accounts and their guardian emails; the public retention policy (§12 #24) states the windows.
 
@@ -540,9 +543,51 @@ Decisions #29–#33. **Why.** The live privacy policy already promises verifiabl
 - **Reports.** A published contact address and a response commitment in the listing and in the Safe Sport panel (Guideline 1.2); `minor_safety` reports keep their urgent admin email.
 - **Not adopted.** A coach SafeSport-training attestation at onboarding (Mariah, 2026-09-24).
 
-**D. Paper (Mariah with counsel; §12 #24).** Privacy policy reconciled with what is actually collected (username, messages, goals, practice logs; no minor audio), KWS named as a processor, the direct-notice copy, the public retention policy, and the written information-security program the amended rule requires.
+**D. Paper (Mariah with counsel; §12 #24).** Privacy policy reconciled with what is actually collected (username, messages, goals, practice logs; no minor audio *stored*, with the #37 transcribe-and-discard sentence for plan building), KWS named as a processor, the direct-notice copy, the public retention policy, and the written information-security program the amended rule requires.
 
 **What the web gets for free.** A and C live in the shared server functions, so the web has the same states, the same room rule and the same verification step the moment S1 publishes; only B is iOS-only. Kotlin later uses Google's Play Age Signals API in B's place.
+
+---
+
+### 6.14 Athlete-authored plans (added 2026-10-03)
+
+Decision #35. **Why.** The product has always treated the plan as a coach artifact: `plans.coach_id` and `moves.coach_id` own every row, every write route refuses non-coaches up front (`requirePlansCoach`) and then filters by the coach id, the voice builder resolves athlete names from the coach's roster, the library seeds per coach, and the share-import RPC refuses non-coaches. Athletes who train without a coach, or between coaches, had only Gradus starter programs and whatever a coach assigned. Mariah wants athletes to plan their own practice with the same tools, and to pass plans to friends.
+
+**What already fits.** Starter programs insert plans with no coach (`coach_id NULL`, `athlete_id`, `source = 'gradus'`), so the schema trigger already admits non-coach-owned plans. The share-token helper already authorizes the plan's own athlete, the runner's plan detail already has the Share button, and the app already routes `/p/:token`. The iOS plan editor renders one role-aware DTO and gates every edit on `isOwner`.
+
+**A. Ownership.** A self-authored plan is `kind = 'plan'`, `source = 'athlete'`, `coach_id NULL`, `athlete_id` = the author. The ownership trigger admits `source = 'athlete'` alongside `'gradus'`; `plans_source_check` gains the value. RLS: athletes insert, update and delete `plans` and `plan_moves` rows where the plan is theirs and `source = 'athlete'`; the existing athlete SELECT policies already cover them. Coaches linked to the athlete read them through the existing role-aware detail (read-only, `isOwner: false`); they appear on the athlete's detail screen in the roster with a "By *first name*" caption. **They never count toward `MAX_ACTIVE_PLANS_PER_ATHLETE`**, which is a per-coach pairing rule; there is no cap on an athlete's own active plans (§12 #33).
+
+**B. Routes: parallel, never generalized.** New module `athlete-authoring.server.ts` and routes `POST /athlete/plans`, `PATCH` / `DELETE /athlete/plans/{id}`, `POST /athlete/plans/{id}/status`, `POST /athlete/plans/{id}/moves/from-library`, `PATCH` / `DELETE /athlete/plans/{id}/moves/{moveId}`, `PUT /athlete/plans/{id}/moves/order`, `GET /athlete/moves` (read-only seeded curriculum for the athlete's sports), `POST /athlete/voice/build-plan` (create and edit modes; no athlete slot; move-name hints from the seed curriculum). They reuse the plans schemas and DTOs. The coach modules (`plans.server.ts`, `moves.server.ts`, `voice.server.ts`) are **not** touched: the 32 coach-keyed filters stay as they are, which is the §4.1 no-disruption posture. `GET /plans/{id}` returns `isOwner: true` and keeps `moveId` / `libraryMove` for the author; `GET /athlete/plans` marks self-authored rows (`source`) so the client never captions them "from Gradus".
+
+**C. Library.** Read-only. `GET /athlete/moves` serves `seed_moves` filtered to the sports on the athlete's goals; "Add moves from the library" works exactly as for coaches; there is no personal library, no save-to-library, no archive, no move sheet for athletes.
+
+**D. Sharing and adoption.** Unchanged share token and public page. The public snapshot RPC gains an author field so the page reads "Plan by *first name*" when the author is an athlete ("Plan by Coach *Name*" as today otherwise). `import_shared_plan` gains an athlete branch: a copy snapshot (same as the coach import) created as `kind = 'plan'`, `source = 'athlete'`, `athlete_id` = the importer, **status active**. Coaches keep importing as a benched template. Under-18 authors may share (#35).
+
+**E. iOS.** The athlete's Plans tab gains a "+" and the voice button, a "Mine" caption and filter, and a read-only Library segment. Opening a plan the athlete owns pushes the editor (`PlanDetailView` in an *authoring* mode that hides assignment, templates, the bench-reason prompt and the coach-voiced copy); any other plan opens the runner view. `SharedPlanView` offers "Add to my plans" to athletes. Offline edits go through the existing outbox with the new paths on its allow-list. The mock repository gets the athlete mode so the simulator walkthroughs and tests cover it.
+
+**What the web gets.** The routes are additive; the PWA shows nothing new. The web sunsets (§10.4), so no web UI is built for this.
+
+### 6.15 Apple Watch, headphones-first (added 2026-10-03)
+
+Decisions #36 and #37; supersedes the "no Apple Watch" line of #7. **Why.** Coaches are rinkside with their hands busy; athletes and parents run plans on the ice or in the gym. Mariah wants the watch usable **without looking**: Gradus speaks, the user talks back.
+
+**The constraint that shapes everything (verified against the watchOS 26 SDK, 2026-09-25).** watchOS has **no speech-recognition framework**. Every "voice in" on the wrist is a recorded clip sent to the server, which already transcribes through ElevenLabs. "Voice out" is Apple's on-device `AVSpeechSynthesizer`, which works offline and keeps playing through AirPods when the wrist drops (`audio` background mode). **Recording cannot run in the background**, so a clip is spoken with the screen awake; the existing 90-second cap fits. The interaction model is therefore: raise wrist, tap one large button, talk or listen. Hands-free navigation by voice inside the app is not possible on this platform and is not promised.
+
+**Architecture (from the 2026-09-25 study; unchanged).** An **independent** watch app (`WKRunsIndependentlyOfCompanionApp`) in target `GradusWatch` (bundle `training.gradus.app.watchkitapp`, watchOS 11+), embedded in the iOS binary so it rides the same record and the same review. New package `FeatureWatch`; `GradusAPI`, `GradusCore`, `GradusDesign`, `GradusWidgetData` gain `.watchOS(.v11)` with guards around `UIApplication`, `LocalAuthentication`, MetricKit, `UIFont` and the audio-session options. The watch holds **its own session**, minted by a new `POST /auth/companion` (reuses `mintSessionForEmail`) and handed over through WatchConnectivity, because Keychain items are this-device-only and Supabase refresh tokens are single-use. No Realtime, no watch-native push tokens (the phone's notifications mirror), no voice notes from the wrist in 1.0.
+
+**Workflows.**
+
+| Workflow | Roles | Existing pieces | New |
+|---|---|---|---|
+| Voice → plan | athlete, coach | the iPhone recorder (90 s), `POST /voice/build-plan` (coach), `POST /athlete/voice/build-plan` (§6.14) | watch recorder screen; spoken read-back ("New plan, six moves. First: forward crossovers, eight reps"); a watch outbox for the rink |
+| Deploy a plan | athlete, coach | assign (`PATCH /plans/{id}`), activate (`POST .../status`), bench-conflict handling | spoken list of drafts, pick by tap, spoken confirmation; the 409 conflict is spoken, not shown. Athletes activate **their own** plan only |
+| Plan → audio | athlete, parent, coach | role-aware plan detail for all three | **new** `PlanNarration` in `GradusCore` (shared with iPhone): title, then every move with target, cue and why, in order (**full read**, #36); a player with next and previous; plan cache on the watch |
+| Pre-lesson briefing | coach | `GET /coach/athletes/{id}/briefing` (`narrative`), the 15-minute "up next" push | spoken **on tap only** (#36); a compact `GET /coach/up-next` so the wrist never pulls the whole roster |
+| Post-lesson wrap-up | coach | pending wrap-ups, voice edit on `activePlanId`, `POST /coach/wrap-ups` (`edited` / `redeployed` / `dismissed` / `did_not_happen`) | spoken prompt ("Nora's lesson just ended. What changed?"), record, spoken result, one-tap action |
+
+**Minors on the wrist.** Voice→plan is allowed for under-18 athletes under #37 (transcribe and discard). Everything else is role-gated as on iPhone.
+
+**Dependencies.** Athlete workflows on the watch wait on §10.10 AP1 and AP2. Plan→audio ships first because it needs no server change and gives the iPhone read-aloud for the accessibility gate. The watch is now on the **critical path** for submission (#36): W0–W6 land before I16's go/no-go, and a review rejection on the watch holds the whole app (§11 #27).
 
 ---
 
@@ -601,7 +646,7 @@ Each table lists the web behavior being ported and what is specifically required
 | Templates | Plans without an athlete; clone into real plans | Native. | P0 |
 | Move library | Browse, search, edit personal moves; sport and category dropdowns; archive | Native. | P0 |
 | Starter programs | Adopt the Gradus starter plan (new figure skating coaches) | Native. | P1 |
-| Plan sharing | Share token → public `/p/:token` page; import a shared plan; share-to-socials button | Share sheet; import flow from universal link. | P1 |
+| Plan sharing | Share token → public `/p/:token` page; import a shared plan; share-to-socials button | Share sheet; import flow from universal link. *2026-10-03 (#35):* the same link is how athletes pass plans to friends; an athlete who opens it gets "Add to my plans" (copy, active). | P1 |
 | Draft from competition results | Generate a plan from linked results | See §7.11. | P1 |
 
 ### 7.4 Coach — voice
@@ -654,6 +699,10 @@ Each table lists the web behavior being ported and what is specifically required
 | Goal editor (self) | Current level and season goal were parent-only in the original scope | **Mariah's call, 2026-09-16: wrong — editable by the athlete too, minor or adult.** Native level/season-goal picker on the athlete's own goal card, same fields as the parent's editor (§7.7). Uses the existing `PUT /adult-athlete/goals`: despite the path name, its RLS check (`athlete_can_self_connect`) is ownership-only (`athletes.user_id = auth.uid()`), not gated on `self_managed` or age — so it already authorizes a minor's own session. No backend change needed, only the iOS client and this doc were behind. | P0 |
 | Coaches | Add a coach by code (parent-managed and adult athletes) | Native. | P0 |
 | Parent or guardian | Guardian email on file, invite a guardian (adult athletes) | Native. *2026-09-24:* a provisional 13–17 athlete sees "Waiting for your parent" with resend and what unlocks after the claim; a minor's composer is text-only (§6.13 A4, A7). | P1 |
+| Own plans *(added 2026-10-03, #35)* | — (new; §6.14) | "+" on the Plans tab creates a draft; the coach editor in authoring mode (moves from the seeded library, inline edits, reorder, notes, activate / bench / delete, share); a "Mine" caption and filter; opening an own plan pushes the editor, any other plan the runner. Edits queue offline. | P0 |
+| Voice → own plan *(2026-10-03, #35, #37)* | — | The voice button on the athlete's Plans tab and in the editor, create and edit modes, through `POST /athlete/voice/build-plan`; allowed for minors because the audio is discarded after transcription (§6.13 A7). | P0 |
+| Seeded move library *(2026-10-03)* | — | Read-only Library segment: the curriculum for the athlete's sports, grouped by category, searchable; add to a plan from the picker. No personal moves. | P0 |
+| Adopt a shared plan *(2026-10-03)* | — | `SharedPlanView` shows "Add to my plans"; the copy lands active and opens. | P1 |
 
 ### 7.9 Resources and Ask Gradus
 
@@ -711,6 +760,23 @@ Each table lists the web behavior being ported and what is specifically required
 ### 7.14 Explicitly web-only or dropped
 
 Admin panel, org admin, email admin and previews, dev tools and paywall preview, impersonation, PWA install banner and update prompt, service worker chunk recovery, hydration diagnostics, Turnstile widget, embedded Stripe checkout, the `board` demo mode, and the Capacitor plugins (`@capacitor/*`, `@capgo/capacitor-native-biometric`). *2026-09-19:* the Capacitor iOS project can be removed from the web repo at any time, since the shell will not ship; the Android shell's fate is open (§12 #14), so `android/`, `capacitor.config.ts` and the web's `isNativeApp()` branches stay until that is decided.
+
+---
+
+### 7.15 Apple Watch (added 2026-10-03)
+
+Decision #36; design §6.15. Headphones-first: every screen speaks, every input is one large button or a recorded clip. All text meets the §8.5 contrast and target rules at watch sizes.
+
+| Feature | Roles | Watch requirement | Pri |
+|---|---|---|---|
+| Session hand-off | all | Signed in on the phone → the watch receives its own session over WatchConnectivity (`POST /auth/companion`); sign-out on either side revokes the other. | P0 |
+| Plan → audio | athlete, parent, coach | Pick a plan (spoken list, tap), hear the full read; next / previous / repeat; keeps playing through headphones when the wrist drops; cached for the rink. | P0 |
+| Session timer | athlete, parent | Start / pause / end from the wrist, the same timestamp timer and the same flow-state sheet; ownership shared with the phone over WatchConnectivity. | P0 |
+| Voice → plan | athlete, coach | One button to record (≤ 90 s, screen awake), spoken read-back of what was built, "Keep it" / "Try again". | P0 |
+| Deploy a plan | athlete, coach | Spoken list of drafts; coach picks an athlete and activates, athlete activates their own; the bench conflict is spoken with the two choices. | P0 |
+| Pre-lesson briefing | coach | "Up next" shows the athlete and time; tap to hear the briefing; nothing is spoken unprompted. | P0 |
+| Post-lesson wrap-up | coach | Pending wrap-ups listed; tap → spoken prompt → record → spoken result → Keep / Re-deploy / Didn't happen / Dismiss. | P0 |
+| Messaging | all | Not in 1.0 on the wrist (notifications mirror from the phone). | — |
 
 ---
 
@@ -807,12 +873,14 @@ gradus-ios/
   Gradus.xcodeproj
   Gradus/                     app target (composition root, AppDelegate for push, scenes)
   GradusWidgets/              WidgetKit extension: Live Board Live Activity + widgets, session-timer activity
+  GradusWatch/                watchOS app target (independent; 2026-10-03, §6.15) — spoken plans, briefings, wrap-ups, voice→plan
   Packages/
     GradusAPI/                generated OpenAPI client + auth broker + interceptors + DTOs
     GradusCore/               models, repositories, sync engine, outbox, feature flags
     GradusDesign/             tokens (generated from design-tokens.json), fonts, components, haptics
     FeatureAuth/  FeatureOnboarding/  FeatureRoster/  FeaturePlans/  FeatureVoice/
     FeatureMessages/  FeatureSessions/  FeatureBoard/  FeatureResources/  FeatureSettings/
+    FeatureWatch/             the watch screens and narration player (2026-10-03); PlanNarration itself lives in GradusCore
   Contract/                   vendored openapi.json, vectors/, design-tokens.json, SOURCE_COMMIT
   scripts/sync-contract.sh
   Tests/                      unit (Swift Testing), UI smoke (XCUITest), snapshot (optional)
@@ -1023,6 +1091,31 @@ Decisions #29–#33; the design is §6.13. Taken after the §10.6 gate, in paral
 | S4 | SafeSport behaviors and QA | web, iOS | The report contact address and response commitment in the listing copy and the Safe Sport panel; `docs/ios/QA.md` rows for every rule in §6.13; review notes updated; `docs/ios/app-store-submission.md` §5 and §7 updated; the `/support` page on gradus.training (support@gradussports.com plus FAQs), which KWS's go-live review requires (#34), built nearer go-live. *Built 2026-10-03: web PR #172 (`/support`, the "Gradus Support" card in the web Safe Sport panel) and gradus-ios PR #91 (the same card natively); the response commitment "we respond within one business day" is a default for Mariah to confirm (§12 #30); QA rows and the kit in this docs PR.* | The QA rows pass on a device; submission kit matches §6.13; `/support` is live before the KWS production review is requested |
 | S5 | Paper | Mariah, counsel | Privacy policy, direct notice, public retention policy, written security program, the App Store age-assurance answer, KWS terms accepted in the Epic developer portal *(done 2026-09-25)*, the production configuration entered (privacy URL, support URL, brand name) and go-live approved | Published; App Store Connect answers match the policy |
 
+### 10.10 Athlete-authored plans (2026-10-03)
+
+Decision #35; design §6.14. One web PR per milestone, off `main`, never bundled with other web work; the iOS PR follows the contract re-sync. Nothing here touches the coach plan modules.
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| AP1 | Ownership migration | web | `plans_source_check` gains `'athlete'`; the ownership trigger admits it; athlete INSERT / UPDATE / DELETE policies on `plans` and `plan_moves` for own `source = 'athlete'` rows; `import_shared_plan` athlete branch (copy, `kind = 'plan'`, `athlete_id` = importer, active); `get_shared_plan` author field for "Plan by *first name*" | Migration applied in Lovable; an athlete session can insert and read its own plan through SQL; a coach session cannot touch it |
+| AP2 | Athlete authoring API | web | `athlete-authoring.server.ts`; the `/athlete/plans*`, `/athlete/moves`, `/athlete/voice/build-plan` routes (§6.14 B) with idempotency and ETags where the coach twins have them; `GET /plans/{id}` returns `isOwner: true` with library links for the author; `GET /athlete/plans` carries `source`; transcribe-and-discard verified by test (no storage write, no audio in logs); OpenAPI exported | Every route live behind the flag; vectors added; iOS contract re-synced |
+| AP3 | iOS authoring | iOS | Athlete paths in `PlansRepository` plus outbox allow-list and mock; own-plan routing to the editor; `PlanDetailModel` authoring mode; "+", voice, "Mine" and the read-only Library segment on the athlete Plans tab; `SharedPlanView` "Add to my plans"; tests for every new branch | Mock walkthrough passes for adult and minor athletes; real pass against preview |
+| AP4 | Close-out | iOS, web, docs | AAA pass on the new surfaces; `docs/ios/QA.md` rows; review notes mention athlete-authored plans; this PRD's §7.8 rows checked off | QA rows green on TestFlight |
+
+### 10.11 Apple Watch (2026-10-03)
+
+Decision #36; design §6.15. In the same 1.0 submission, so these land before I16's go/no-go. W1 first (no server change, helps the accessibility gate); W4 waits on AP2. This Mac has the watchOS SDK but no watch simulator runtime yet; W0 downloads it. QA on Mariah's Apple Watch Series 10.
+
+| # | Milestone | Repo | Scope | Done when |
+|---|---|---|---|---|
+| W0 | Target and session | iOS, web | `GradusWatch` target in `project.yml`, `FeatureWatch`, watchOS deployment in the shared packages with the five platform guards; `POST /auth/companion`; WatchConnectivity hand-off and revoke; Xcode Cloud builds the watch | A signed-in phone signs the watch in; sign-out on either side signs out both |
+| W1 | Plan → audio | iOS | `PlanNarration` in `GradusCore` (full read); the watch player; background audio; plan cache; the iPhone gets "Read this plan aloud" from the same builder | A parent, athlete and coach each hear a full plan through AirPods with the wrist down |
+| W2 | Coach briefing and wrap-up | iOS, web | `GET /coach/up-next`; "Up next" screen with tap-to-speak briefing; pending wrap-ups with record → `/voice/build-plan` edit → spoken result → action → `POST /coach/wrap-ups` | A wrap-up recorded on the wrist updates the plan and clears the roster pill on the phone |
+| W3 | Coach voice → plan and deploy | iOS | Recorder screen, read-back, drafts list, assign and activate with the spoken conflict | A plan dictated on the wrist is active on the athlete's phone |
+| W4 | Athlete voice → plan and deploy | iOS | The same screens on `/athlete/...` (AP2); minors included (#37) | A minor athlete builds and activates a plan from the wrist in the mock and on preview |
+| W5 | Sessions | iOS | Timer start / pause / end on the wrist, shared ownership with the phone, the flow-state sheet | A session started on the watch ends on the phone and vice versa, logged once |
+| W6 | Close-out | iOS, docs | AAA pass at watch sizes; watch screenshots; App Privacy unchanged (no new collection); `docs/ios/QA.md` rows; review notes | QA rows green on the Series 10 |
+
 ---
 
 ## 11. Risks and dependencies
@@ -1055,6 +1148,9 @@ Decisions #29–#33; the design is §6.13. Taken after the §10.6 gate, in paral
 | 24 | *(2026-09-24)* App Review walks the parent flow | Reviewers cannot pass a card check | The demo parent is seeded verified (#26) and the review note says so. |
 | 25 | *(2026-09-24)* Declared Age Range unavailable (iOS 18–25, declined sharing, non-US accounts) | No device signal | The birthdate path stands; the signal only ever tightens. |
 | 26 | *(2026-09-24)* Apple's computed rating vs under-13 Child Accounts | A Child Account cannot install a 13+ app without the parent | Ask to Buy now covers free downloads; the listing says a parent installs it; revisit if the computed rating lands above 13+. |
+| 27 | *(2026-10-03)* The Apple Watch is on the submission's critical path (#36) | A watch defect or a review question about the watch holds the iPhone release | W1 first and W0–W6 as small additive PRs; a go/no-go at I16 can still cut the watch to the first point release under the same record if Mariah agrees then |
+| 28 | *(2026-10-03)* Minor voice to plan (#37) rests on the COPPA audio exception plus existing parental consent | Counsel disagrees, or the policy wording lags the feature | The server never writes audio to storage (tested in AP2); §12 #31 carries the wording; if counsel says no, the fallback is Apple's on-device dictation returning text to a `transcript` input, which Gradus never hears |
+| 29 | *(2026-10-03)* watchOS has no speech recognition and no background recording | "Completely in headphones" cannot mean hands-free navigation; a clip needs the screen awake | The §6.15 interaction model (one large button, speak or listen) is the promise; listing copy and screenshots show that, not voice commands |
 
 ---
 
@@ -1092,6 +1188,9 @@ Decisions #29–#33; the design is §6.13. Taken after the §10.6 gate, in paral
 | 28 | *(2026-10-03)* Existing accounts on a device whose Declared Age Range says under 18 (a coach, parent or adult-athlete profile already exists) | Mariah, with counsel | Before California's DAAA (2027-01-01) | **Not re-gated in 1.0:** S3 tightens only sign-up, on the device. Options: send the band to the server so an adult-flagged athlete gets the minor rules (a new stored data type, privacy manifest and policy change), or block adult profiles on such a device |
 | 29 | *(2026-10-03)* Restoring an athlete paused by `RESCIND_CONSENT` | Mariah | Before the first real rescind | **Admin only, on request to support@gradussports.com.** Apple sends no "consent restored" event. There is no admin control yet: today it is a database change (`athletes.account_state = 'active'`) plus fresh consent rows; an Admin → Users button is the follow-up |
 | 30 | *(2026-10-03)* The response commitment for reports (Guideline 1.2) | Mariah | Before submission | **"We respond within one business day"** (S4 default), shown on `/support`, in both Safe Sport panels and in the listing. Every report already emails the team at once and minor-safety reports are flagged urgent; the commitment is the reply time |
+| 31 | *(2026-10-03)* Privacy-policy and direct-notice sentence for minor voice→plan under the audio exception (#37) | Mariah with counsel | Before AP2 ships to production | Extends §12 #24: "a child's voice clip used to build their own practice plan is transcribed and deleted immediately; only the words are kept"; the processor named is the transcription provider already in the policy |
+| 32 | *(2026-10-03)* Public share page attribution for athlete authors: first name only, or full name as for coaches | Mariah | Before AP1 | **First name only** |
+| 33 | *(2026-10-03)* Whether an athlete's own active plans are capped | Mariah | Before AP2 | **No cap** (the two-plan rule is per coach pairing, #35) |
 
 ---
 
@@ -1118,6 +1217,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | `GET /me/celebrations` · `POST /me/celebrations/{id}/ack` | `getPendingConnectionCelebrations`, `acknowledgeConnection` | P1 |
 | `POST /devices` · `DELETE /devices/{token}` | `registerDeviceToken`, `unregisterDeviceToken` | P0 |
 | `POST /live-activities/tokens` | new | P0 |
+| `POST /auth/companion` *(2026-10-03, §6.15)* | new; `mintSessionForEmail` for the paired watch, handed over by WatchConnectivity | P0 |
 | `POST /errors` | `reportClientError` | P0 |
 | `POST /feedback` | `submitFeedback` (`listFeedback`, `setFeedbackResolved` are admin) | P0 |
 | `GET /meta/config` `[pub]` · `GET /meta/client-policy` `[pub]` | new (env flags: paywall, Coach Pro, Founding cutoff, min client version) | P0 |
@@ -1186,6 +1286,19 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | `POST /voice/transcribe` (multipart) · `POST /voice/build-plan` | `voiceTranscribe`, `voiceBuildPlan` | P0 |
 | `POST /plans/{id}/share-token` · `GET /public/plans/{token}` `[pub]` · `POST /plans/import/{token}` | `getOrCreateShareToken`, `getSharedPlanPublic`, `importSharedPlan` | P1 |
 
+### Athlete-authored plans (new, 2026-10-03; §6.14)
+
+Parallel to the coach routes above; the coach modules are untouched. `[idem]` and `[etag]` where the coach twin has them.
+
+| Endpoint | Source | Pri |
+|---|---|---|
+| `POST /athlete/plans` `[idem]` · `PATCH /athlete/plans/{id}` · `DELETE /athlete/plans/{id}` · `POST /athlete/plans/{id}/status` | new `athlete-authoring.server.ts` (own plans only, `source = 'athlete'`) | P0 |
+| `POST /athlete/plans/{id}/moves/from-library` · `PATCH /athlete/plans/{id}/moves/{moveId}` · `DELETE ...` · `PUT /athlete/plans/{id}/moves/order` | new | P0 |
+| `GET /athlete/moves` `[etag]` | new; read-only `seed_moves` for the athlete's sports | P0 |
+| `POST /athlete/voice/build-plan` (multipart; create and edit) | new; transcribe and discard (#37) | P0 |
+| `GET /plans/{id}` (author: `isOwner: true`, library links kept) · `GET /athlete/plans` (`source` on each row) · `POST /plans/import/{token}` (athlete branch: copy, active) | amended | P0 |
+| `GET /coach/up-next` *(watch, §6.15)* | new; the next lesson occurrence and whether a briefing is cached | P0 |
+
 ### Messaging and safety
 
 | Endpoint | Source | Pri |
@@ -1239,7 +1352,7 @@ Every user-facing `createServerFn` and its `/api/v1` counterpart. Admin, org-adm
 | Connections and invites | `coach_athletes`, `coach_athlete_sports`, `athlete_primary_coaches`, `athlete_guardians`, `guardian_invites`, `coach_invite_codes`, `parent_invite_codes`, `athlete_invite_codes`, `adult_athlete_invite_codes`, `invite_lookup_attempts`, `athlete_coach_visibility`, `coach_visibility_links`; `coach_athletes.messaging_paused_at` (2026-09-24) | Roster and coach lists (derived DTOs) |
 | Organizations | `organizations`, `organization_invite_codes`, `organization_leads`, `org_coach_invites`, `org_admin_actions` | Own org name only |
 | Schedule | `athlete_lesson_slots`, `lesson_slot_overrides`, `lesson_wrap_ups`, `coach_athlete_practice_targets`, `pre_lesson_briefings` | Slots and overrides for ±8 weeks; briefings as fetched |
-| Plans | `plans`, `plan_moves`, `moves`, `seed_moves`, `plan_sessions`, `athlete_goals`, new `athlete_skill_events`, new `athlete_goals_history` (PR #129) | All own plans and moves; sessions for opened plans; skill events and goals history are read only through the profile, not cached |
+| Plans | `plans` (*2026-10-03:* `source = 'athlete'` rows), `plan_moves`, `moves`, `seed_moves` (read by athletes from 2026-10-03), `plan_sessions`, `athlete_goals`, new `athlete_skill_events`, new `athlete_goals_history` (PR #129) | All own plans and moves; sessions for opened plans; skill events and goals history are read only through the profile, not cached |
 | Messaging | `message_rooms`, `direct_rooms`, `messages`, `message_reads`, `user_blocks`, `user_reports` | Rooms; newest 200 messages per room; blocks |
 | Resources and AI | `resources`, `resource_sports`, `parent_saved_answers`, new `knowledge_sources`, new `knowledge_chunks` | Lists; downloaded PDFs; saved answers with their sources; knowledge tables are server-only |
 | Competitions | `competitions`, `competition_snapshots`, `competition_attendance`, `competition_recaps`, `athlete_competition_results`, `athlete_competition_skaters`, new `board_follows`, new `live_activity_tokens` | Board history and follows; last snapshot per visited board |
@@ -1263,7 +1376,7 @@ Size: S < 200 lines, M 200–500, L 500–1000, XL > 1000 lines of TSX in the we
 | `/signup/athlete`, `/confirm`, `/account`, `/signup/athlete/adult` | `AthleteSignUpFlow`, `AdultAthleteSignUpView` | M | P0 |
 | `/i/:code` | `InviteEntryView` | M | P0 |
 | `/g/:token`, `/team/:token` | `GuardianClaimFlow`, `TeamInviteView` | M | P1 |
-| `/p/:token` | `SharedPlanView` | M | P1 |
+| `/p/:token` | `SharedPlanView` (*2026-10-03:* athletes get "Add to my plans") | M | P1 |
 | `/coach` (redirect), `/coach/onboarding` | `CoachOnboardingFlow` | M | P0 |
 | `/coach/roster` (+ `week-schedule-view`, `lesson-slot-sheet`, `athlete-detail-sheet`, `roster-card`, `schedule-import-sheet`) | `RosterView`, `WeekScheduleView`, `LessonSlotEditor`, `AthleteDetailView`, `ScheduleImportFlow` (FeatureRoster) | M route + 3.5k components | P0 (import P1) |
 | `/coach/plans`, `/coach/plans/:planId` (+ `move-sheet`, `move-field`, `voice-fab`) | `PlansListView`, `PlanDetailView`, `PlanEditor`, `MoveLibraryView`, `VoiceCaptureView` (FeaturePlans, FeatureVoice) | XL | P0 |
@@ -1276,7 +1389,7 @@ Size: S < 200 lines, M 200–500, L 500–1000, XL > 1000 lines of TSX in the we
 | `/parent/team` | `TeamPlanView` (guardians; billing link) | M | P1 |
 | `/parent/resources` | `ResourcesView`, `AskGradusView`, `SavedAnswersView` | M | P1 |
 | `/athlete` (redirect), `/athlete/onboarding` | `AthleteOnboardingFlow` | L | P0 |
-| `/athlete/plans`, `/athlete/plans/:planId` | shared runner views + `MotivationCard` | M | P0 |
+| `/athlete/plans`, `/athlete/plans/:planId` | shared runner views + `MotivationCard`; *2026-10-03:* own plans open `PlanDetailView` in authoring mode, plus the read-only Library segment | M | P0 |
 | `/athlete/settings`, `/athlete/settings/account` | `SettingsView` (athlete) | L | P0 |
 | `/athlete/resources` | `SafeSportPanel` (P0), `AskGradusView` (P1) | M | P0 / P1 |
 | `/board`, `/board/:slug` (+ 14 board components) | `BoardIndexView`, `BoardView`, `RinkPanel`, `ScheduleBoard`, `FollowingView`, `ScoreSheetView`, `EventResultsView`; `BoardLiveActivity`, `BoardWidget` (FeatureBoard, GradusWidgets) | M + 2k components | P0 (widget P1) |
@@ -1400,6 +1513,8 @@ The package numbers used by the milestones in §10.2 and by the briefs in `docs/
 - **3.11** *(2026-09-20)* Athlete profile, inference job, profile-fed prompts, sport-aware plan drafting from full results history (L3)
 - **3.12** *(2026-09-20)* Knowledge corpus, ingestion path, grounded Ask Gradus with citations and safety routing, iOS sources UI (L4, L5)
 - **3.13** *(2026-09-20)* Learned pace model, post-launch (L6)
+- **3.14** *(2026-10-03)* Athlete-authored plans: ownership migration and RPC branches, the parallel `/athlete/...` authoring routes with transcribe-and-discard voice, the iOS authoring mode, read-only library and adopt flow (AP1–AP4)
+- **3.15** *(2026-10-03)* Apple Watch: `GradusWatch` target and companion session, `PlanNarration` and the player, spoken briefing and wrap-up, voice→plan and deploy for coaches and athletes, sessions on the wrist (W0–W6)
 
 **Phase C — Capacitor iOS 1.0 to the App Store** — **Dropped 2026-09-19** (no shell ships)
 
