@@ -1,37 +1,22 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Separator } from "@/components/ui/separator";
-import type { BoardSkater, SkaterProtocol } from "@/lib/board-types";
-
-/** One skate: an event plus the skater's row in it, scored or not yet. */
-export interface ScoreEntry {
-  skater: BoardSkater;
-  eventLabel: string;
-  /** Scheduled time, shown while results are still pending. */
-  pendingLabel?: string;
-}
+import { Tag } from "@/components/ui/tag";
+import type { SkaterProtocol } from "@/lib/board-types";
+import type { ScoreSelection, Skate } from "@/lib/board-skaters";
 
 /** The judged detail behind one posted score. */
 function ProtocolDetail({ p }: { p: SkaterProtocol }) {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-4 gap-2 text-center">
-        {[
+      <ScoreCells
+        cells={[
           ["SCORE", p.total],
           ["ELEMENTS", p.elementsScore],
           ["COMPONENTS", p.componentsScore],
           ["DEDUCT.", p.deductionsScore],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-divider bg-elevated px-2 py-3">
-            <Eyebrow size="nano" tone="tertiary" className="block">
-              {label}
-            </Eyebrow>
-            <span className="mt-1 block font-mono text-base text-text-primary tabular-nums">
-              {value || "—"}
-            </span>
-          </div>
-        ))}
-      </div>
+        ]}
+      />
 
       {p.elements.length > 0 ? (
         <section className="space-y-2">
@@ -126,74 +111,161 @@ function ProtocolDetail({ p }: { p: SkaterProtocol }) {
   );
 }
 
+function ScoreCells({ cells }: { cells: [string, string][] }) {
+  return (
+    <div
+      className="grid gap-2 text-center"
+      style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}
+    >
+      {cells.map(([label, value]) => (
+        <div key={label} className="rounded-xl border border-divider bg-elevated px-2 py-3">
+          <Eyebrow size="nano" tone="tertiary" className="block">
+            {label}
+          </Eyebrow>
+          <span className="mt-1 block font-mono text-base text-text-primary tabular-nums">
+            {value || "—"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return `${n}${({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th"}`;
+}
+
+/** Event, status and where/when, above every skate. */
+function SkateHeader({ skate }: { skate: Skate }) {
+  const { event, skater } = skate;
+  const of = skater.of || event.count || 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="font-display text-base text-text-primary">
+          {[event.name, event.segment].filter(Boolean).join(" · ") || "Event"}
+        </h3>
+        <Tag size="nano" tone={event.status === "live" ? "accent" : "default"}>
+          {event.status === "final"
+            ? "FINAL"
+            : event.status === "live"
+              ? "IN PROGRESS"
+              : "SCHEDULED"}
+        </Tag>
+      </div>
+      <p className="font-mono text-xs text-text-tertiary">
+        {[
+          event.rink,
+          [event.dayLabel, event.timeLabel].filter(Boolean).join(" "),
+          of ? `skates ${ordinal(skater.start)} of ${of}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+    </div>
+  );
+}
+
+/** A posted score whose judged detail the board doesn't carry. */
+function ScoreOnly({ skate }: { skate: Skate }) {
+  const s = skate.skater;
+  const place = (s.finalPlace || s.place || "").trim();
+  const cells = (
+    [
+      ["SCORE", s.segScore],
+      ["TOTAL", s.total === s.segScore ? "" : s.total],
+      ["PLACE", place],
+    ] as [string, string][]
+  ).filter(([, v]) => v);
+  return (
+    <div className="space-y-2">
+      <ScoreCells cells={cells} />
+      <p className="text-sm text-text-secondary">
+        The element-by-element protocol isn&apos;t included for this skate.
+      </p>
+      {skate.officialUrl ? (
+        <a
+          href={skate.officialUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="press-soft inline-flex min-h-11 items-center text-sm font-bold text-accent-ink underline underline-offset-4"
+        >
+          Official results ↗
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function Pending({ skate }: { skate: Skate }) {
+  const { event } = skate;
+  const [title, line] =
+    event.status === "final"
+      ? ["NO SCORE POSTED", "No score was posted for this skate."]
+      : event.status === "live"
+        ? ["RESULTS PENDING", "Scores post a minute or two after each skate and show up here."]
+        : [
+            "NOT SKATED YET",
+            event.timeLabel
+              ? `Scheduled for ${event.timeLabel}. Scores show up here as soon as they post.`
+              : "Scores show up here as soon as they post.",
+          ];
+  return (
+    <div className="rounded-xl border border-divider bg-elevated px-4 py-3">
+      <Eyebrow size="nano" tone="tertiary" className="block">
+        {title}
+      </Eyebrow>
+      <p className="mt-1 text-sm text-text-secondary">{line}</p>
+    </div>
+  );
+}
+
 /**
- * The judged protocol behind a posted score, exactly as the officials filed it.
- * Everything shown here comes from the same published event page the board
- * already reads — no extra request, no interpretation.
- *
- * Pass `entries` to show every skate this athlete has on the day; events with
- * no posted result yet read as pending rather than being hidden.
+ * A skater's scores at this competition, the one presentation every board
+ * surface opens (the wheel and lanes, My skaters, the follow search, event
+ * results): every skate they have, the one tapped first. A protocol shows
+ * exactly as the officials filed it, from the same published event page the
+ * board already reads; a score without one shows what posted and links the
+ * official page; a skate still to come says when.
  */
 export function ScoreSheet({
-  skater,
-  eventLabel,
-  entries,
+  selection,
   onOpenChange,
 }: {
-  skater: BoardSkater | null;
-  eventLabel: string;
-  entries?: ScoreEntry[];
+  selection: ScoreSelection | null;
   onOpenChange: (open: boolean) => void;
 }) {
-  const list: ScoreEntry[] =
-    entries && entries.length > 0 ? entries : skater ? [{ skater, eventLabel }] : [];
-  const multiple = list.length > 1;
-
   return (
-    <Sheet open={!!skater} onOpenChange={onOpenChange}>
+    <Sheet open={!!selection} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="paper-surface max-h-[90dvh] overflow-y-auto">
         <SheetHeader className="text-left">
           <SheetTitle className="font-display text-h3 text-text-primary">
-            {skater?.name ?? ""}
+            {selection?.name ?? ""}
           </SheetTitle>
-          <p className="font-mono text-xs text-text-tertiary">
-            {[multiple ? "" : list[0]?.eventLabel, skater?.club].filter(Boolean).join(" · ")}
-          </p>
+          {selection?.club ? (
+            <p className="font-mono text-xs text-text-tertiary">{selection.club}</p>
+          ) : null}
         </SheetHeader>
 
         <div className="space-y-5 pb-6">
-          {list.map((entry, i) => {
-            const p = entry.skater.protocol ?? null;
-            return (
-              <section key={`${entry.eventLabel}-${entry.skater.start}-${i}`} className="space-y-3">
-                {multiple ? (
-                  <>
-                    {i > 0 ? <Separator /> : null}
-                    <Eyebrow size="micro" tone="tertiary" as="h3">
-                      {entry.eventLabel || "EVENT"}
-                    </Eyebrow>
-                  </>
-                ) : null}
-
-                {p ? (
-                  <ProtocolDetail p={p} />
-                ) : (
-                  <div className="rounded-xl border border-divider bg-elevated px-4 py-3">
-                    <Eyebrow size="nano" tone="tertiary" className="block">
-                      RESULTS PENDING
-                    </Eyebrow>
-                    <p className="mt-1 text-sm text-text-secondary">
-                      {entry.skater.segScore
-                        ? `Scored ${entry.skater.segScore} — judged detail hasn't been published yet.`
-                        : entry.pendingLabel
-                          ? `Scheduled for ${entry.pendingLabel}. Scores show up here as soon as they post.`
-                          : "Scores show up here as soon as they post."}
-                    </p>
-                  </div>
-                )}
-              </section>
-            );
-          })}
+          {selection && selection.skates.length === 0 ? (
+            <p className="text-sm text-text-secondary">Nothing has posted for this skater yet.</p>
+          ) : null}
+          {selection?.skates.map((skate, i) => (
+            <section key={`${skate.event.file}-${skate.skater.start}`} className="space-y-3">
+              {i > 0 ? <Separator /> : null}
+              <SkateHeader skate={skate} />
+              {skate.skater.protocol ? (
+                <ProtocolDetail p={skate.skater.protocol} />
+              ) : skate.skater.segScore ? (
+                <ScoreOnly skate={skate} />
+              ) : (
+                <Pending skate={skate} />
+              )}
+            </section>
+          ))}
         </div>
       </SheetContent>
     </Sheet>

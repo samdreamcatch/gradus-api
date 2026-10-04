@@ -98,3 +98,79 @@ export function findMySkaters(payload: BoardPayload | null, names: string[]): Sk
 
   return out.sort((a, b) => a.sortAt - b.sortAt);
 }
+
+/** One skate: a skater's row in one event, scored or still to come. */
+export interface Skate {
+  event: BoardEvent;
+  skater: BoardSkater;
+  /** The event's page on the official results site, where the full protocol lives. */
+  officialUrl: string | null;
+}
+
+/**
+ * What a tap on a skater opens, from every board surface (the wheel and lanes,
+ * My skaters, the follow search, event results): their every skate at this
+ * competition, the one tapped first. Mariah, 2026-10-03: the same skater
+ * looked different depending on where they were tapped.
+ */
+export interface ScoreSelection {
+  name: string;
+  club: string;
+  skates: Skate[];
+}
+
+/** `https://…/37055/index.asp` -> `https://…/37055/`. */
+function officialBase(index: string): string | null {
+  if (!/^https?:\/\//i.test(index)) return null;
+  return index.replace(/[^/]*$/, "");
+}
+
+/**
+ * Every skate one skater has at this competition, the tapped event first and
+ * the rest in schedule order. The tapped row wins for its own event when it
+ * carries the protocol and the schedule's copy doesn't (the rink panel always
+ * carries it; the schedule only for recent events). Same rule as
+ * `BoardLogic.skates` on iOS.
+ */
+export function skatesOf(
+  payload: BoardPayload | null,
+  key: string,
+  opts: { tapped?: BoardSkater | null; focusKey?: string | null } = {},
+): Skate[] {
+  if (!payload || !key) return [];
+  const base = officialBase(payload.competition.url);
+  const out: Skate[] = [];
+  let focusIndex = -1;
+  for (const event of allEvents(payload)) {
+    const isFocus =
+      !!opts.focusKey && eventKey(event.name, event.segment, event.rink) === opts.focusKey;
+    for (const row of event.results) {
+      if (normalizeName(row.name) !== key) continue;
+      const tapped = opts.tapped;
+      const skater =
+        isFocus &&
+        tapped &&
+        normalizeName(tapped.name) === key &&
+        tapped.start === row.start &&
+        !row.protocol &&
+        tapped.protocol
+          ? tapped
+          : row;
+      if (isFocus && focusIndex < 0) focusIndex = out.length;
+      out.push({ event, skater, officialUrl: base ? `${base}${event.file}` : null });
+    }
+  }
+  if (focusIndex > 0) out.unshift(...out.splice(focusIndex, 1));
+  return out;
+}
+
+/** The selection a tap on `skater` opens; `focusKey` is the event tapped from. */
+export function scoreSelectionFor(
+  payload: BoardPayload | null,
+  skater: BoardSkater,
+  focusKey?: string | null,
+): ScoreSelection {
+  const skates = skatesOf(payload, normalizeName(skater.name), { tapped: skater, focusKey });
+  const club = skater.club || skates.find((s) => s.skater.club)?.skater.club || "";
+  return { name: skater.name, club, skates };
+}

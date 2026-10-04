@@ -7,13 +7,13 @@ import { Tag } from "@/components/ui/tag";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Logo } from "@/components/logo";
 import { RinkPanel } from "@/components/board/rink-panel";
-import { allEvents } from "@/components/board/my-skaters";
 import { ScheduleBoard } from "@/components/board/schedule-board";
-import { ScoreSheet, type ScoreEntry } from "@/components/board/score-sheet";
+import { ScoreSheet } from "@/components/board/score-sheet";
 import { EventResults } from "@/components/board/event-results";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { getBoard } from "@/lib/board.functions";
-import { normalizeName, type BoardEvent, type BoardSkater } from "@/lib/board-types";
+import type { BoardEvent, BoardSkater } from "@/lib/board-types";
+import { eventKey, scoreSelectionFor, type ScoreSelection } from "@/lib/board-skaters";
 
 const REFRESH_MS = 30_000;
 
@@ -54,11 +54,7 @@ function WallBoardPage() {
   const { slug } = Route.useParams();
   const board = useServerFn(getBoard);
   const [tab, setTab] = useState<WallTab>("rinks");
-  const [score, setScore] = useState<{
-    skater: BoardSkater;
-    eventLabel: string;
-    entries?: ScoreEntry[];
-  } | null>(null);
+  const [score, setScore] = useState<ScoreSelection | null>(null);
   const [resultsEvent, setResultsEvent] = useState<BoardEvent | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -70,22 +66,10 @@ function WallBoardPage() {
 
   const payload = data?.payload ?? null;
 
-  const openByName = useCallback(
-    (skater: BoardSkater) => {
-      const key = normalizeName(skater.name);
-      const entries: ScoreEntry[] = payload
-        ? allEvents(payload).flatMap((e) =>
-            e.results
-              .filter((r) => normalizeName(r.name) === key)
-              .map((r) => ({
-                skater: r,
-                eventLabel: [e.name, e.segment].filter(Boolean).join(" \u00b7 "),
-                pendingLabel: e.timeLabel,
-              })),
-          )
-        : [];
-      setScore({ skater, eventLabel: entries[0]?.eventLabel ?? "", entries });
-    },
+  /** Opens a skater's scores, from any surface; `focusKey` is the event tapped from. */
+  const openSkater = useCallback(
+    (skater: BoardSkater, focusKey?: string | null) =>
+      setScore(scoreSelectionFor(payload, skater, focusKey)),
     [payload],
   );
 
@@ -146,7 +130,14 @@ function WallBoardPage() {
               <RinkPanel
                 key={r.name}
                 rink={r}
-                onOpenScore={openByName}
+                onOpenScore={(s, rink) =>
+                  openSkater(
+                    s,
+                    rink.current
+                      ? eventKey(rink.current.event, rink.current.segment, rink.name)
+                      : null,
+                  )
+                }
                 timeZone={payload?.competition.timeZone}
               />
             ))
@@ -181,17 +172,17 @@ function WallBoardPage() {
           if (!open) setResultsEvent(null);
         }}
         onOpenScore={(s) =>
-          setScore({
-            skater: s,
-            eventLabel: [resultsEvent?.name, resultsEvent?.segment].filter(Boolean).join(" · "),
-          })
+          openSkater(
+            s,
+            resultsEvent
+              ? eventKey(resultsEvent.name, resultsEvent.segment, resultsEvent.rink)
+              : null,
+          )
         }
       />
 
       <ScoreSheet
-        skater={score?.skater ?? null}
-        eventLabel={score?.eventLabel ?? ""}
-        entries={score?.entries}
+        selection={score}
         onOpenChange={(open) => {
           if (!open) setScore(null);
         }}

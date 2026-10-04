@@ -1,6 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/utils";
 import { standingsOf, type BoardEvent, type BoardSkater } from "@/lib/board-types";
 
 const MEDAL = ["GOLD", "SILVER", "BRONZE"];
@@ -14,7 +13,8 @@ function placeOf(s: BoardSkater): string {
 /**
  * How an event finished: final standings in placement order, medals marked,
  * every posted score in view. Same published data the live lanes read — no
- * extra request, just sorted by result instead of start order.
+ * extra request, just sorted by result instead of start order. Any row opens
+ * that skater's scores, the same sheet as everywhere on the board.
  */
 export function EventResults({
   event,
@@ -65,7 +65,7 @@ export function EventResults({
                 s.name,
                 s.club,
                 score ? `score ${score}` : "no score yet",
-                s.protocol ? "open protocol" : "",
+                "open scores",
               ]
                 .filter(Boolean)
                 .join(", ");
@@ -73,13 +73,9 @@ export function EventResults({
                 <button
                   key={`${s.start}-${s.name}`}
                   type="button"
-                  disabled={!s.protocol}
                   aria-label={label}
-                  onClick={() => s.protocol && onOpenScore(s)}
-                  className={cn(
-                    "flex min-h-11 w-full items-center gap-3 py-2 text-left",
-                    s.protocol ? "press-soft" : "cursor-default",
-                  )}
+                  onClick={() => onOpenScore(s)}
+                  className="press-soft flex min-h-11 w-full items-center gap-3 py-2 text-left"
                 >
                   <span className="w-6 shrink-0 font-mono text-sm text-text-primary tabular-nums">
                     {place || "–"}
@@ -112,6 +108,9 @@ export function EventResults({
                         protocol
                       </span>
                     ) : null}
+                  </span>
+                  <span aria-hidden="true" className="shrink-0 text-text-tertiary">
+                    ›
                   </span>
                 </button>
               );

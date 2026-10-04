@@ -29,6 +29,7 @@ import {
 } from "@/lib/competition-results.functions";
 
 import type { BoardSkater } from "@/lib/board-types";
+import type { ScoreSelection } from "@/lib/board-skaters";
 
 /** Competitions shown before the coach asks for the full season history. */
 const VISIBLE_LIMIT = 5;
@@ -52,7 +53,6 @@ function summarize(results: AthleteResultDTO[]): string {
   return `${label} · best ${ordinal(Math.min(...places))}`;
 }
 
-
 /**
  * Competition results for one athlete, private to their circle. Linking starts
  * from the coach's own roster — never from the public board — so a follower can
@@ -74,7 +74,6 @@ export function CompetitionResultsSection({
   const [linkOpen, setLinkOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [detail, setDetail] = useState<AthleteResultDTO | null>(null);
-
 
   const results = useQuery({
     queryKey: ["athlete-competition-results", athleteId],
@@ -108,7 +107,6 @@ export function CompetitionResultsSection({
   const links = results.data ?? [];
   const visible = showAll ? links : links.slice(0, VISIBLE_LIMIT);
 
-
   return (
     <section>
       <SectionHeader
@@ -135,7 +133,6 @@ export function CompetitionResultsSection({
             defaultValue={links[0]?.competitionId}
             className="mt-2 overflow-hidden rounded-2xl border border-divider bg-card shadow-sm"
           >
-
             {visible.map((l) => (
               <AccordionItem
                 key={l.competitionId}
@@ -242,7 +239,6 @@ export function CompetitionResultsSection({
                       {l.existingPlan.title}
                     </p>
                   ) : null}
-
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -262,7 +258,6 @@ export function CompetitionResultsSection({
         </>
       )}
 
-
       <LinkCompetitionSheet
         athleteId={athleteId}
         firstName={firstName}
@@ -272,16 +267,7 @@ export function CompetitionResultsSection({
       />
 
       <ScoreSheet
-        skater={
-          detail
-            ? ({
-                name: detail.eventName,
-                club: detail.rink,
-                protocol: detail.protocol,
-              } as unknown as BoardSkater)
-            : null
-        }
-        eventLabel={detail ? [detail.segment, detail.placement].filter(Boolean).join(" · ") : ""}
+        selection={detail ? storedResultSelection(detail) : null}
         onOpenChange={(v) => {
           if (!v) setDetail(null);
         }}
@@ -290,6 +276,43 @@ export function CompetitionResultsSection({
   );
 }
 
+/** A linked result's stored protocol, shown in the board's score sheet. */
+function storedResultSelection(r: AthleteResultDTO): ScoreSelection {
+  const skater: BoardSkater = {
+    start: 0,
+    of: 0,
+    name: r.eventName,
+    club: r.rink,
+    group: "",
+    segScore: r.segmentScore,
+    total: r.totalScore,
+    place: r.placement,
+    protocol: r.protocol,
+  };
+  return {
+    name: r.eventName,
+    club: r.rink,
+    skates: [
+      {
+        event: {
+          file: "",
+          name: [r.segment, r.placement].filter(Boolean).join(" · "),
+          segment: "",
+          rink: "",
+          timeLabel: "",
+          startIso: null,
+          status: "final",
+          count: null,
+          dayLabel: "",
+          dayKey: "",
+          results: [skater],
+        },
+        skater,
+        officialUrl: null,
+      },
+    ],
+  };
+}
 
 /** Pick a finished competition, then confirm which published skater is theirs. */
 function LinkCompetitionSheet({

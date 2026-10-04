@@ -39,12 +39,15 @@ export function FollowSearch({
   followedKeys,
   onFollow,
   onUnfollow,
+  onOpenName,
 }: {
   payload: BoardPayload | null;
   /** Normalized names currently followed by hand. */
   followedKeys: string[];
   onFollow: (name: string) => void;
   onUnfollow: (key: string) => void;
+  /** Opens the skater's scores, the same sheet as everywhere on the board. */
+  onOpenName?: (name: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -113,12 +116,26 @@ export function FollowSearch({
               const isFollowed = followedKeys.includes(e.key);
               return (
                 <li key={e.key} className="flex items-center gap-3 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-text-primary">{e.name}</span>
-                    <span className="block truncate font-mono text-nano text-text-tertiary">
-                      {e.where}
+                  {onOpenName ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenName(e.name)}
+                      aria-label={`Scores for ${e.name}, ${e.where}`}
+                      className="press-soft min-h-11 min-w-0 flex-1 text-left"
+                    >
+                      <span className="block truncate text-sm text-text-primary">{e.name}</span>
+                      <span className="block truncate font-mono text-nano text-text-tertiary">
+                        {e.where} ›
+                      </span>
+                    </button>
+                  ) : (
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm text-text-primary">{e.name}</span>
+                      <span className="block truncate font-mono text-nano text-text-tertiary">
+                        {e.where}
+                      </span>
                     </span>
-                  </span>
+                  )}
                   <Chip
                     size="small"
                     className="min-h-11 shrink-0"

@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-parts";
+import { LANE_STYLE, SkaterBody, laneSurface, type LaneTone } from "@/components/board/lane-parts";
 import { cn } from "@/lib/utils";
 import type { BoardSkater } from "@/lib/board-types";
 
-/** Height of one card slot, in px. */
-const STEP = 84;
+/** Smallest card slot, in px; the slot grows with the tallest card so none overlaps. */
+const MIN_STEP = 84;
+/** Space between neighbouring cards. */
+const GAP = 8;
 /** Drag distance that advances one card — shorter than a slot so a thumb flick moves it. */
 const DRAG_STEP = 60;
 /** How many cards are rendered on either side of the centre. */
 const WINDOW = 2;
 /** Movement past which a gesture counts as a drag, not a tap. */
 const SLOP = 6;
-/** Soft fade at the top and bottom of the window so cards enter and leave. */
-const EDGE_MASK = "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)";
+/**
+ * Fades only the gap at the window's top and bottom edge: a card in view is
+ * never faded, only one sliding out past the edge.
+ */
+const EDGE_MASK = `linear-gradient(to bottom, transparent, black ${GAP / 2}px, black calc(100% - ${GAP / 2}px), transparent)`;
 
 function roleOf(delta: number): { tone: LaneTone; label: string } {
   if (delta === 0) return { tone: "ice", label: "ON THE ICE" };
@@ -53,6 +58,28 @@ export function SkaterWheel({
   const frame = useRef<number | null>(null);
   const offsetRef = useRef(0);
   const boundsRef = useRef({ centre: 0, last: 0 });
+
+  /** Tallest card measured so far (text size, two-line names). */
+  const [cardHeight, setCardHeight] = useState(0);
+  const sizes = useRef<ResizeObserver | null>(null);
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      let tallest = 0;
+      for (const e of entries) {
+        tallest = Math.max(tallest, e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height);
+      }
+      setCardHeight((h) => (tallest > h ? tallest : h));
+    });
+    sizes.current = ro;
+    return () => ro.disconnect();
+  }, []);
+  const measure = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    sizes.current?.observe(el);
+    return () => sizes.current?.unobserve(el);
+  }, []);
+  const slot = Math.max(MIN_STEP, Math.ceil(cardHeight) + GAP);
 
   const last = startOrder.length - 1;
   boundsRef.current = { centre: activeIndex - step, last };
@@ -199,7 +226,7 @@ export function SkaterWheel({
         ref={container}
         className="relative select-none overflow-hidden"
         style={{
-          height: STEP * 3,
+          height: slot * 3,
           touchAction: "none",
           maskImage: EDGE_MASK,
           WebkitMaskImage: EDGE_MASK,
@@ -212,18 +239,19 @@ export function SkaterWheel({
             const style = LANE_STYLE[tone];
             const isCentre = index === nearest;
             const tappable = !!onOpenScore;
+            // Never dimmed with distance: a card in view reads at full contrast.
             return (
               <li
                 key={`${skater.start}-${skater.name}`}
                 aria-current={isCentre ? "true" : undefined}
                 className="absolute inset-x-0 top-1/2"
                 style={{
-                  transform: `translateY(calc(-50% + ${pos * (STEP - 6)}px)) scale(${Math.max(0.96, 1 - away * 0.02)})`,
-                  opacity: Math.max(0, 1 - away * 0.18),
+                  transform: `translateY(calc(-50% + ${pos * slot}px)) scale(${Math.max(0.97, 1 - away * 0.015)})`,
                   zIndex: 10 - Math.round(away),
                 }}
               >
                 <div
+                  ref={measure}
                   data-skater-index={index}
                   role={tappable ? "button" : undefined}
                   tabIndex={tappable ? 0 : undefined}
@@ -235,10 +263,11 @@ export function SkaterWheel({
                   }}
                   aria-label={tappable ? `${label}: ${skater.name} — open scores` : undefined}
                   className={cn(
-                    "mx-1 rounded-xl border-l-4 bg-card/60 px-4 py-3 text-left shadow-sm",
+                    "mx-1 rounded-xl border-l-4 px-4 py-3 text-left shadow-sm",
                     style.border,
                     tappable && "press-soft cursor-pointer",
                   )}
+                  style={laneSurface(tone)}
                 >
                   <Eyebrow size="micro" className={cn("block", style.label)}>
                     {label}
@@ -247,7 +276,7 @@ export function SkaterWheel({
                     skater={skater}
                     tone={tone}
                     awaiting={index === activeIndex}
-                    showDetailHint={tappable && !!skater.protocol}
+                    showDetailHint={tappable && !!skater.segScore}
                   />
                 </div>
               </li>

@@ -4,7 +4,7 @@ import { Tag } from "@/components/ui/tag";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { BoardCurrent, BoardRink, BoardSkater } from "@/lib/board-types";
-import { LANE_STYLE, SkaterBody, type LaneTone } from "@/components/board/lane-parts";
+import { LANE_STYLE, SkaterBody, laneSurface, type LaneTone } from "@/components/board/lane-parts";
 import { SkaterWheel } from "@/components/board/skater-wheel";
 
 /** `2026-08-31T18:20:00Z` -> `in 12 min`, or `now`. */
@@ -50,7 +50,7 @@ function Lane({
         ? {
             type: "button" as const,
             onClick: () => onOpenScore!(skater!),
-            "aria-label": `${label}: ${skater!.name} — open score detail`,
+            "aria-label": `${label}: ${skater!.name} — open scores`,
           }
         : {})}
       className={cn(
@@ -58,6 +58,7 @@ function Lane({
         style.border,
         tappable && "press-soft",
       )}
+      style={laneSurface(tone)}
     >
       <Eyebrow size="micro" className={cn("block", style.label)}>
         {label}
@@ -68,7 +69,7 @@ function Lane({
           skater={skater}
           tone={tone}
           awaiting={awaiting}
-          showDetailHint={tappable && !!skater.protocol}
+          showDetailHint={tappable && !!skater.segScore}
         />
       ) : (
         <p className="mt-2 text-sm text-text-tertiary">—</p>
@@ -92,16 +93,18 @@ function liveIndex(current: BoardCurrent): number {
 
 export function RinkPanel({
   rink,
-  onOpenScore,
+  onOpenScore: onOpenSkater,
   className,
   timeZone = "America/New_York",
 }: {
   rink: BoardRink;
-  onOpenScore?: (s: BoardSkater) => void;
+  /** Opens a skater's scores; the rink says which event the tap came from. */
+  onOpenScore?: (s: BoardSkater, rink: BoardRink) => void;
   className?: string;
   timeZone?: string;
 }) {
   const current = rink.current;
+  const onOpenScore = onOpenSkater ? (s: BoardSkater) => onOpenSkater(s, rink) : undefined;
 
   return (
     <Card variant="section" className={cn("space-y-4", className)}>
