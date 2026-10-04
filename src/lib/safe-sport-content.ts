@@ -50,6 +50,23 @@ export const HOTLINES: Hotline[] = [
   },
 ];
 
+/**
+ * Reporting to Gradus itself (PRD §6.13 C "Reports", Guideline 1.2, S4): the
+ * published contact and the response commitment, shown in the Safe Sport
+ * panel, on `/support`, and in the App Store listing. iOS carries the same
+ * words in `SafeSportContent`; keep both in step.
+ */
+export const GRADUS_SUPPORT_EMAIL = "support@gradussports.com";
+
+export const REPORT_TO_GRADUS = {
+  title: "Gradus Support",
+  body: "Something wrong in a Gradus conversation? Open the message's menu and choose Report this message, or email us. Reporting doesn't notify the other person.",
+  commitment:
+    "Every report reaches our team the moment it's sent, and reports about a minor's safety are flagged urgent. We respond within one business day.",
+  notEmergency:
+    "Gradus isn't an emergency or reporting service for abuse. For that, use the hotlines below or call 911.",
+} as const;
+
 export function formatTel(digits: string): string {
   if (digits.length === 11 && digits.startsWith("1")) {
     return `1-${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;

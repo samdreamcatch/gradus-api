@@ -52,6 +52,7 @@ describe("apple-app-site-association", () => {
       "/reset-password",
       "/privacy",
       "/terms",
+      "/support",
       "/unsubscribe",
       "/admin/*",
       "/org-admin/*",

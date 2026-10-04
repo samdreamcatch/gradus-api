@@ -1,7 +1,13 @@
-import { ChevronDown, Globe, MessageSquare, Phone } from "lucide-react";
+import { ChevronDown, Flag, Globe, Mail, MessageSquare, Phone } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { HOTLINES, formatTel, type Hotline } from "@/lib/safe-sport-content";
+import {
+  GRADUS_SUPPORT_EMAIL,
+  HOTLINES,
+  REPORT_TO_GRADUS,
+  formatTel,
+  type Hotline,
+} from "@/lib/safe-sport-content";
 
 const COUNTS_ITEMS = [
   "Someone yells, mocks, or names-calls — at you or someone else.",
@@ -38,6 +44,7 @@ export function SafeSportPanel() {
 
       <CountsDisclosure />
       <TrustedAdultDisclosure />
+      <ReportToGradus />
 
       {/* Hotlines */}
       <div>
@@ -61,6 +68,31 @@ export function SafeSportPanel() {
         If you or someone else is in immediate danger, call 911.
       </p>
     </section>
+  );
+}
+
+/** Reporting to Gradus itself (PRD §6.13 C, Guideline 1.2): the contact and the response commitment. */
+export function ReportToGradus() {
+  return (
+    <div className="rounded-2xl border border-divider bg-card p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent-ink">
+          <Flag className="h-4 w-4" aria-hidden />
+        </span>
+        <div className="min-w-0 space-y-2">
+          <h3 className="text-sm font-medium text-text-primary">{REPORT_TO_GRADUS.title}</h3>
+          <p className="text-sm text-text-secondary">{REPORT_TO_GRADUS.body}</p>
+          <p className="text-sm text-text-secondary">{REPORT_TO_GRADUS.commitment}</p>
+          <Button asChild variant="outline" size="sm" className="rounded-full">
+            <a href={`mailto:${GRADUS_SUPPORT_EMAIL}`}>
+              <Mail className="h-3.5 w-3.5" aria-hidden />
+              {GRADUS_SUPPORT_EMAIL}
+            </a>
+          </Button>
+          <p className="text-xs text-text-tertiary">{REPORT_TO_GRADUS.notEmergency}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -21,6 +21,7 @@ export const UNIVERSAL_LINK_EXCLUDES = [
   "/reset-password/*",
   "/privacy",
   "/terms",
+  "/support",
   "/unsubscribe",
   "/unsubscribe/*",
   "/admin",
