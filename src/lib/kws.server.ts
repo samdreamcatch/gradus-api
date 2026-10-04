@@ -4,7 +4,8 @@
  * #29). Server-only: credentials never reach a client.
  *
  * Flow: `kwsSendVerificationEmail` asks KWS to email the parent; the parent
- * finishes a payment-card check on KWS's white-labeled page; KWS then
+ * finishes KWS's adult check on its white-labeled page (in the US: a payment
+ * card or the last four digits of an SSN; KWS never says which); KWS then
  * (a) POSTs a signed `parent-verified` webhook to `/api/public/webhooks/kws`
  * and (b) redirects the parent to `/verified` with a signed query (KWS calls
  * that the "Verification Response"). Both carry the `externalPayload` we

@@ -12,7 +12,13 @@ import type {
   StartParentVerificationResult,
 } from "@/lib/guardian-verification.server";
 
-export const adultVerificationMethodSchema = z.enum(["kws_card", "admin", "legacy"]);
+/**
+ * Known values: `kws`, `admin`, `legacy`. Deliberately not an enum on the wire
+ * (review 2026-10-04): a closed enum made every installed iOS build fail to
+ * decode the whole `/me` body when a value changed; the server normalizes
+ * (`normalizeAdultVerificationMethod`) and clients map what they know.
+ */
+export const adultVerificationMethodSchema = z.string();
 export const athleteAccountStateSchema = z.enum(["active", "provisional", "paused"]);
 
 export const parentVerificationSchema = z.object({

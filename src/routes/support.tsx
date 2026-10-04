@@ -28,7 +28,7 @@ type Faq = { q: string; a: string };
 const SUPPORT_FAQS: Faq[] = [
   {
     q: "Why does Gradus ask parents to verify they're an adult?",
-    a: "So that the adult in every conversation with a minor really is an adult. Each parent account linked to an athlete under 18 is verified once, with a quick payment-card check run by Kids Web Services, a parental-verification service from Epic Games. Gradus never sees your card details.",
+    a: "So that the adult in every conversation with a minor really is an adult. Each parent account linked to an athlete under 18 is verified once by Kids Web Services, a parental-verification service from Epic Games, using a payment card or the last four digits of a Social Security number on its own secure page. Gradus never sees those details, only the result.",
   },
   {
     q: "My child is under 13. How do they join?",

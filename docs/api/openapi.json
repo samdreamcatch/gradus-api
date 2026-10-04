@@ -227,11 +227,6 @@
                           "type": [
                             "string",
                             "null"
-                          ],
-                          "enum": [
-                            "kws_card",
-                            "admin",
-                            "legacy"
                           ]
                         },
                         "verifiedAt": {
@@ -14364,11 +14359,6 @@
                           "type": [
                             "string",
                             "null"
-                          ],
-                          "enum": [
-                            "kws_card",
-                            "admin",
-                            "legacy"
                           ]
                         },
                         "verifiedAt": {
@@ -21383,11 +21373,6 @@
                           "type": [
                             "string",
                             "null"
-                          ],
-                          "enum": [
-                            "kws_card",
-                            "admin",
-                            "legacy"
                           ]
                         },
                         "verifiedAt": {

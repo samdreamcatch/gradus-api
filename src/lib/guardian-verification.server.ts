@@ -36,7 +36,21 @@ import {
 
 type Admin = typeof supabaseAdmin;
 
-export type AdultVerificationMethod = "kws_card" | "admin" | "legacy";
+export type AdultVerificationMethod = "kws" | "admin" | "legacy";
+
+/**
+ * Read-side normalization (review 2026-10-04): rows written before the
+ * `kws_card` → `kws` relabel still carry the old value until the contract
+ * migration runs, and a Lovable publish and a migration are separate steps.
+ * The DTO never depends on which happened first.
+ */
+export function normalizeAdultVerificationMethod(
+  raw: string | null | undefined,
+): AdultVerificationMethod | null {
+  if (!raw) return null;
+  if (raw === "kws_card") return "kws";
+  return raw as AdultVerificationMethod;
+}
 export type AthleteAccountState = "active" | "provisional" | "paused";
 
 export interface ParentVerificationDTO {
@@ -45,7 +59,8 @@ export interface ParentVerificationDTO {
   /** KWS is configured, so `start` can send the email. */
   available: boolean;
   verified: boolean;
-  method: AdultVerificationMethod | null;
+  /** `kws` | `admin` | `legacy`. A plain string on the wire so a client tolerates a value it has not learned yet. */
+  method: string | null;
   verifiedAt: string | null;
   requestedAt: string | null;
 }
@@ -76,7 +91,7 @@ export function toParentVerificationDTO(
   >,
   env: NodeJS.ProcessEnv = process.env,
 ): ParentVerificationDTO {
-  const method = (row.adult_verification_method as AdultVerificationMethod | null) ?? null;
+  const method = normalizeAdultVerificationMethod(row.adult_verification_method);
   return {
     required: verificationRequired(env),
     available: verificationAvailable(env),
@@ -337,14 +352,14 @@ export async function recordParentVerification(
     .from("parent_profiles")
     .update({
       adult_verified_at: now.toISOString(),
-      adult_verification_method: "kws_card",
+      adult_verification_method: "kws",
       adult_verification_ref: args.transactionId,
     })
     .eq("id", parent.id);
   if (upd.error) dbError(upd.error);
   await activateAthletesForVerifiedParent(admin, parent.id, {
     now,
-    evidence: { verification: "kws_card", ref: args.transactionId },
+    evidence: { verification: "kws", ref: args.transactionId },
   });
   return { applied: true, duplicate: false };
 }

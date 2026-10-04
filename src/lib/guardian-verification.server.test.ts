@@ -16,6 +16,7 @@ import {
   toParentVerificationDTO,
 } from "./guardian-verification.server";
 import { encodeExternalPayload, hmacSha256Hex } from "./kws.server";
+import { parentVerificationSchema } from "./api/guardian-verification-schema";
 import { isMinorOrUnconfirmed } from "./athlete-age";
 
 /* -------------------------------------------------------------------------- */
@@ -165,6 +166,32 @@ const unverifiedParent = () => ({
 });
 
 describe("toParentVerificationDTO / assertParentVerified", () => {
+  it("normalizes a pre-relabel kws_card row to kws and the DTO passes the wire schema", () => {
+    for (const stored of ["kws_card", "kws"]) {
+      const dto = toParentVerificationDTO(
+        {
+          adult_verified_at: "2026-10-03T00:00:00Z",
+          adult_verification_method: stored,
+          adult_verification_requested_at: null,
+        },
+        REQUIRED,
+      );
+      expect(dto.method).toBe("kws");
+      expect(dto.verified).toBe(true);
+      expect(parentVerificationSchema.parse(dto)).toEqual(dto);
+    }
+    const none = toParentVerificationDTO(
+      {
+        adult_verified_at: null,
+        adult_verification_method: null,
+        adult_verification_requested_at: null,
+      },
+      REQUIRED,
+    );
+    expect(none.method).toBeNull();
+    expect(parentVerificationSchema.parse(none).verified).toBe(false);
+  });
+
   it("reports legacy parents as verified and the switch as off by default", () => {
     const dto = toParentVerificationDTO(
       {
@@ -192,7 +219,7 @@ describe("toParentVerificationDTO / assertParentVerified", () => {
       status: 403,
     });
     admin.tables.parent_profiles[0].adult_verified_at = NOW.toISOString();
-    admin.tables.parent_profiles[0].adult_verification_method = "kws_card";
+    admin.tables.parent_profiles[0].adult_verification_method = "kws";
     await expect(assertParentVerified(admin, PARENT, REQUIRED)).resolves.toBeUndefined();
   });
 });
@@ -346,7 +373,7 @@ describe("handleKwsWebhook", () => {
     expect(first.status).toBe(200);
     expect(await first.json()).toEqual({ ok: true, applied: true, duplicate: false });
     const parent = admin.tables.parent_profiles[0];
-    expect(parent.adult_verification_method).toBe("kws_card");
+    expect(parent.adult_verification_method).toBe("kws");
     expect(parent.adult_verification_ref).toBe("tx-1");
     expect(parent.adult_verified_at).toBe(NOW.toISOString());
 
@@ -779,7 +806,7 @@ describe("activateAthletesForVerifiedParent / setCoachMessagingPause", () => {
     });
     const result = await activateAthletesForVerifiedParent(admin, PARENT, {
       now: NOW,
-      evidence: { verification: "kws_card" },
+      evidence: { verification: "kws" },
     });
     expect(result).toEqual({ activated: 1, athletes: 2 });
     expect(admin.tables.athletes.find((a) => a.id === "a1")?.account_state).toBe("active");

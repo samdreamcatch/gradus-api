@@ -291,7 +291,7 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       .single();
     if (parentProfile.error) dbError(parentProfile.error);
     const parentId = parentProfile.data.id as string;
-    // App Review cannot pass a card check (PRD §6.13 A2, risk #24): the demo
+    // App Review cannot pass the KWS adult check (PRD §6.13 A2, risk #24): the demo
     // parent is verified by the admin tool, method `admin`.
     await markParentVerifiedByAdmin(admin, parentId, "admin-demo-accounts");
 

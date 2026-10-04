@@ -27,7 +27,7 @@ type Outcome =
   | { kind: "failed"; reason: string | null };
 
 /**
- * Where KWS sends a parent after the card check (PRD §6.13 A2). The query
+ * Where KWS sends a parent after the adult check (PRD §6.13 A2). The query
  * is signed; it is forwarded to the server as-is and recorded there (the
  * webhook is the other channel for the same transaction). The parent
  * usually has another tab or the app waiting on this, so the page says
