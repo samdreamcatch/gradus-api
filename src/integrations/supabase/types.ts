@@ -263,59 +263,6 @@ export type Database = {
         }
         Relationships: []
       }
-      app_store_app_transactions: {
-        Row: {
-          app_transaction_id: string
-          athlete_id: string
-          environment: string
-          first_seen_at: string
-          last_seen_at: string
-        }
-        Insert: {
-          app_transaction_id: string
-          athlete_id: string
-          environment: string
-          first_seen_at?: string
-          last_seen_at?: string
-        }
-        Update: {
-          app_transaction_id?: string
-          athlete_id?: string
-          environment?: string
-          first_seen_at?: string
-          last_seen_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_store_app_transactions_athlete_id_fkey"
-            columns: ["athlete_id"]
-            isOneToOne: false
-            referencedRelation: "athletes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      app_store_rescinded_transactions: {
-        Row: {
-          app_transaction_id: string
-          environment: string
-          notification_uuid: string | null
-          rescinded_at: string
-        }
-        Insert: {
-          app_transaction_id: string
-          environment: string
-          notification_uuid?: string | null
-          rescinded_at?: string
-        }
-        Update: {
-          app_transaction_id?: string
-          environment?: string
-          notification_uuid?: string | null
-          rescinded_at?: string
-        }
-        Relationships: []
-      }
       athlete_coach_visibility: {
         Row: {
           athlete_id: string
