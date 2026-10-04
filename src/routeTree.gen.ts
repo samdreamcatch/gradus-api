@@ -9,370 +9,344 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifiedRouteImport } from './routes/verified'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BoardIndexRouteImport } from './routes/board.index'
-import { Route as TeamTokenRouteImport } from './routes/team.$token'
-import { Route as SignupParentRouteImport } from './routes/signup.parent'
-import { Route as SignupCoachRouteImport } from './routes/signup.coach'
-import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
-import { Route as SignupAdminRouteImport } from './routes/signup.admin'
-import { Route as PTokenRouteImport } from './routes/p.$token'
-import { Route as ICodeRouteImport } from './routes/i.$code'
-import { Route as GTokenRouteImport } from './routes/g.$token'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
-import { Route as BoardSlugRouteImport } from './routes/board.$slug'
-import { Route as AuthHandoffRouteImport } from './routes/auth.handoff'
-import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
-import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
-import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
-import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as VerifiedRouteImport } from './routes/verified'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
-import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
-import { Route as AuthenticatedOrgAdminIndexRouteImport } from './routes/_authenticated/org-admin.index'
-import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
-import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticated/athlete'
+import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
+import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
+import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthHandoffRouteImport } from './routes/auth.handoff'
+import { Route as BoardIndexRouteImport } from './routes/board.index'
+import { Route as BoardSlugRouteImport } from './routes/board.$slug'
+import { Route as DevPaywallPreviewRouteImport } from './routes/dev.paywall-preview'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as GTokenRouteImport } from './routes/g.$token'
+import { Route as ICodeRouteImport } from './routes/i.$code'
+import { Route as PTokenRouteImport } from './routes/p.$token'
+import { Route as SignupAdminRouteImport } from './routes/signup.admin'
+import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
+import { Route as SignupCoachRouteImport } from './routes/signup.coach'
+import { Route as SignupParentRouteImport } from './routes/signup.parent'
+import { Route as TeamTokenRouteImport } from './routes/team.$token'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent.schedule'
-import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
-import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
-import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlete.confirm'
-import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
-import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as BoardSlugWallRouteImport } from './routes/board.$slug_.wall'
-import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
-import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
-import { Route as ApiV1ErrorsRouteImport } from './routes/api/v1/errors'
-import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
-import { Route as AuthenticatedParentTeamRouteImport } from './routes/_authenticated/parent.team'
-import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
-import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
-import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
-import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
-import { Route as AuthenticatedOrgAdminResourcesRouteImport } from './routes/_authenticated/org-admin.resources'
-import { Route as AuthenticatedOrgAdminMovesRouteImport } from './routes/_authenticated/org-admin.moves'
-import { Route as AuthenticatedOrgAdminCalendarRouteImport } from './routes/_authenticated/org-admin.calendar'
-import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
-import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
-import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
-import { Route as AuthenticatedCoachPaywallRouteImport } from './routes/_authenticated/coach.paywall'
-import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
-import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
-import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
-import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
-import { Route as AuthenticatedAdminUsageRouteImport } from './routes/_authenticated/admin.usage'
-import { Route as AuthenticatedAdminSocialPlansRouteImport } from './routes/_authenticated/admin.social-plans'
-import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin.sessions'
-import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
-import { Route as AuthenticatedAdminReportingRouteImport } from './routes/_authenticated/admin.reporting'
-import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
-import { Route as AuthenticatedAdminParentInvitesRouteImport } from './routes/_authenticated/admin.parent-invites'
-import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
-import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
-import { Route as AuthenticatedAdminPausedAthletesRouteImport } from './routes/_authenticated/admin.paused-athletes'
-import { Route as AuthenticatedAdminLibraryRightsRouteImport } from './routes/_authenticated/admin.library-rights'
-import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
-import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
-import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_authenticated/admin.impersonation'
-import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
-import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
-import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_authenticated/admin.email-health'
-import { Route as AuthenticatedAdminDemoAccountsRouteImport } from './routes/_authenticated/admin.demo-accounts'
-import { Route as AuthenticatedAdminCompetitionsRouteImport } from './routes/_authenticated/admin.competitions'
-import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
-import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticated/admin.ask'
-import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
-import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
-import { Route as ApiV1SavedAnswersIndexRouteImport } from './routes/api/v1/saved-answers/index'
-import { Route as ApiV1RoomsIndexRouteImport } from './routes/api/v1/rooms/index'
-import { Route as ApiV1ResourcesIndexRouteImport } from './routes/api/v1/resources/index'
-import { Route as ApiV1RecapsIndexRouteImport } from './routes/api/v1/recaps/index'
-import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
-import { Route as ApiV1DevicesIndexRouteImport } from './routes/api/v1/devices/index'
-import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
-import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
-import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
-import { Route as AuthenticatedCoachResourcesIndexRouteImport } from './routes/_authenticated/coach.resources.index'
-import { Route as AuthenticatedCoachPlansIndexRouteImport } from './routes/_authenticated/coach.plans.index'
-import { Route as AuthenticatedCoachMessagesIndexRouteImport } from './routes/_authenticated/coach.messages.index'
-import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes/_authenticated/athlete.resources.index'
-import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
-import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
-import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin.users.index'
+import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
+import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
+import { Route as AuthenticatedAdminAskRouteImport } from './routes/_authenticated/admin.ask'
+import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
+import { Route as AuthenticatedAdminCompetitionsRouteImport } from './routes/_authenticated/admin.competitions'
+import { Route as AuthenticatedAdminDemoAccountsRouteImport } from './routes/_authenticated/admin.demo-accounts'
+import { Route as AuthenticatedAdminEmailHealthRouteImport } from './routes/_authenticated/admin.email-health'
+import { Route as AuthenticatedAdminErrorsRouteImport } from './routes/_authenticated/admin.errors'
+import { Route as AuthenticatedAdminFeedbackRouteImport } from './routes/_authenticated/admin.feedback'
+import { Route as AuthenticatedAdminImpersonationRouteImport } from './routes/_authenticated/admin.impersonation'
+import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
+import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
+import { Route as AuthenticatedAdminLibraryRightsRouteImport } from './routes/_authenticated/admin.library-rights'
+import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
+import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
+import { Route as AuthenticatedAdminParentInvitesRouteImport } from './routes/_authenticated/admin.parent-invites'
+import { Route as AuthenticatedAdminPausedAthletesRouteImport } from './routes/_authenticated/admin.paused-athletes'
+import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
+import { Route as AuthenticatedAdminReportingRouteImport } from './routes/_authenticated/admin.reporting'
+import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
+import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin.sessions'
+import { Route as AuthenticatedAdminSocialPlansRouteImport } from './routes/_authenticated/admin.social-plans'
+import { Route as AuthenticatedAdminUsageRouteImport } from './routes/_authenticated/admin.usage'
+import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
+import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
+import { Route as AuthenticatedAthleteSettingsRouteImport } from './routes/_authenticated/athlete.settings'
+import { Route as AuthenticatedCoachIndexRouteImport } from './routes/_authenticated/coach.index'
+import { Route as AuthenticatedCoachCelebrationPreviewRouteImport } from './routes/_authenticated/coach/celebration-preview'
+import { Route as AuthenticatedCoachOnboardingRouteImport } from './routes/_authenticated/coach.onboarding'
+import { Route as AuthenticatedCoachPaywallRouteImport } from './routes/_authenticated/coach.paywall'
+import { Route as AuthenticatedCoachPlansRouteImport } from './routes/_authenticated/coach.plans'
+import { Route as AuthenticatedCoachRosterRouteImport } from './routes/_authenticated/coach.roster'
+import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authenticated/coach.settings'
+import { Route as AuthenticatedOrgAdminIndexRouteImport } from './routes/_authenticated/org-admin.index'
+import { Route as AuthenticatedOrgAdminCalendarRouteImport } from './routes/_authenticated/org-admin.calendar'
+import { Route as AuthenticatedOrgAdminMovesRouteImport } from './routes/_authenticated/org-admin.moves'
+import { Route as AuthenticatedOrgAdminResourcesRouteImport } from './routes/_authenticated/org-admin.resources'
+import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
+import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
+import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
+import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
+import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
+import { Route as AuthenticatedParentTeamRouteImport } from './routes/_authenticated/parent.team'
+import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
+import { Route as ApiV1ErrorsRouteImport } from './routes/api/v1/errors'
+import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
+import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
+import { Route as BoardSlugWallRouteImport } from './routes/board.$slug_.wall'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
+import { Route as SignupAthleteAdultRouteImport } from './routes/signup.athlete.adult'
+import { Route as SignupAthleteConfirmRouteImport } from './routes/signup.athlete.confirm'
+import { Route as SignupParentAthletesRouteImport } from './routes/signup.parent.athletes'
+import { Route as SignupParentGoalsRouteImport } from './routes/signup.parent.goals'
+import { Route as SignupParentScheduleRouteImport } from './routes/signup.parent.schedule'
 import { Route as AuthenticatedAdminEmailsIndexRouteImport } from './routes/_authenticated/admin.emails.index'
-import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as ApiV1VoiceTranscribeRouteImport } from './routes/api/v1/voice/transcribe'
-import { Route as ApiV1VoiceBuildPlanRouteImport } from './routes/api/v1/voice/build-plan'
-import { Route as ApiV1TeamInvitesPreviewRouteImport } from './routes/api/v1/team-invites/preview'
-import { Route as ApiV1TeamInvitesClaimRouteImport } from './routes/api/v1/team-invites/claim'
-import { Route as ApiV1SignupAdultAthleteRouteImport } from './routes/api/v1/signup/adult-athlete'
-import { Route as ApiV1SavedAnswersIdRouteImport } from './routes/api/v1/saved-answers/$id'
-import { Route as ApiV1SafetyReportsRouteImport } from './routes/api/v1/safety/reports'
-import { Route as ApiV1RoomsEnsureRouteImport } from './routes/api/v1/rooms/ensure'
-import { Route as ApiV1RecapsPendingRouteImport } from './routes/api/v1/recaps/pending'
-import { Route as ApiV1RecapsCoachesRouteImport } from './routes/api/v1/recaps/coaches'
-import { Route as ApiV1PromoCodesValidateRouteImport } from './routes/api/v1/promo-codes/validate'
-import { Route as ApiV1ParentSettingsRouteImport } from './routes/api/v1/parent/settings'
-import { Route as ApiV1ParentProfileRouteImport } from './routes/api/v1/parent/profile'
-import { Route as ApiV1ParentPlansRouteImport } from './routes/api/v1/parent/plans'
-import { Route as ApiV1ParentInviteCodeRouteImport } from './routes/api/v1/parent/invite-code'
-import { Route as ApiV1ParentGoalsRouteImport } from './routes/api/v1/parent/goals'
-import { Route as ApiV1ParentCoachVisibilityRouteImport } from './routes/api/v1/parent/coach-visibility'
-import { Route as ApiV1OrgsVerifyCodeRouteImport } from './routes/api/v1/orgs/verify-code'
-import { Route as ApiV1OrgsSearchRouteImport } from './routes/api/v1/orgs/search'
-import { Route as ApiV1OrgsPopularRouteImport } from './routes/api/v1/orgs/popular'
-import { Route as ApiV1OrgsLookupCodeRouteImport } from './routes/api/v1/orgs/lookup-code'
-import { Route as ApiV1OrgsLeadRouteImport } from './routes/api/v1/orgs/lead'
-import { Route as ApiV1OrgsJoinRouteImport } from './routes/api/v1/orgs/join'
-import { Route as ApiV1OrgsClaimCodeRouteImport } from './routes/api/v1/orgs/claim-code'
-import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
-import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
-import { Route as ApiV1MessagesUnreadTotalRouteImport } from './routes/api/v1/messages/unread-total'
-import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
-import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-code'
-import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
-import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
-import { Route as ApiV1MeAppTransactionRouteImport } from './routes/api/v1/me/app-transaction'
-import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
-import { Route as ApiV1GuardianStatusRouteImport } from './routes/api/v1/guardian/status'
-import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
-import { Route as ApiV1CompetitionsFinishedRouteImport } from './routes/api/v1/competitions/finished'
-import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
-import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
-import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
-import { Route as ApiV1CoachChecklistRouteImport } from './routes/api/v1/coach/checklist'
-import { Route as ApiV1CoachBillingRouteImport } from './routes/api/v1/coach/billing'
-import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
-import { Route as ApiV1AuthWebSessionRouteImport } from './routes/api/v1/auth/web-session'
-import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
-import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
-import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
-import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
-import { Route as ApiV1AthleteSettingsRouteImport } from './routes/api/v1/athlete/settings'
-import { Route as ApiV1AthletePlansRouteImport } from './routes/api/v1/athlete/plans'
-import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
-import { Route as ApiV1AnalyticsEventsRouteImport } from './routes/api/v1/analytics/events'
-import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
-import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
-import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/webhooks/kws'
-import { Route as ApiPublicWebhooksAppStoreRouteImport } from './routes/api/public/webhooks/app-store'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
-import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
-import { Route as ApiPublicHooksSkillInferenceRouteImport } from './routes/api/public/hooks/skill-inference'
-import { Route as ApiPublicHooksPracticeNudgesRouteImport } from './routes/api/public/hooks/practice-nudges'
-import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
-import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
-import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
-import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
-import { Route as ApiPublicHooksIjsCatalogSweepRouteImport } from './routes/api/public/hooks/ijs-catalog-sweep'
-import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
-import { Route as ApiPublicHooksConsentRetentionRouteImport } from './routes/api/public/hooks/consent-retention'
-import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
-import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
-import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
-import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
-import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
-import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
-import { Route as AuthenticatedCoachSettingsAccountRouteImport } from './routes/_authenticated/coach.settings_.account'
-import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
-import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_authenticated/coach.messages.$roomId'
-import { Route as AuthenticatedAthleteSettingsAccountRouteImport } from './routes/_authenticated/athlete.settings_.account'
-import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
-import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
-import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
-import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
-import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
-import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
-import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
-import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
-import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
-import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id/index'
-import { Route as ApiV1ParentTeamIndexRouteImport } from './routes/api/v1/parent/team/index'
-import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
-import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
-import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api/v1/live-activities/tokens/index'
-import { Route as ApiV1GuardianClaimIndexRouteImport } from './routes/api/v1/guardian/claim/index'
-import { Route as ApiV1CoachWrapUpsIndexRouteImport } from './routes/api/v1/coach/wrap-ups/index'
-import { Route as ApiV1CoachRosterIndexRouteImport } from './routes/api/v1/coach/roster/index'
-import { Route as ApiV1CoachResourcesIndexRouteImport } from './routes/api/v1/coach/resources/index'
-import { Route as ApiV1CoachPostEventIndexRouteImport } from './routes/api/v1/coach/post-event/index'
-import { Route as ApiV1CoachPlansIndexRouteImport } from './routes/api/v1/coach/plans/index'
-import { Route as ApiV1CoachMovesIndexRouteImport } from './routes/api/v1/coach/moves/index'
-import { Route as ApiV1CoachLessonSlotsIndexRouteImport } from './routes/api/v1/coach/lesson-slots/index'
-import { Route as ApiV1CoachInvoicesIndexRouteImport } from './routes/api/v1/coach/invoices/index'
-import { Route as ApiV1CoachInviteCodeIndexRouteImport } from './routes/api/v1/coach/invite-code/index'
-import { Route as ApiV1AthleteGoalsIndexRouteImport } from './routes/api/v1/athlete/goals/index'
-import { Route as ApiV1AdultAthleteSchedulesIndexRouteImport } from './routes/api/v1/adult-athlete/schedules/index'
-import { Route as ApiV1AdultAthleteCoachesIndexRouteImport } from './routes/api/v1/adult-athlete/coaches/index'
-import { Route as ApiV1SignupParentValidateCodeRouteImport } from './routes/api/v1/signup/parent/validate-code'
-import { Route as ApiV1SignupParentStatusRouteImport } from './routes/api/v1/signup/parent/status'
-import { Route as ApiV1SignupParentStartRouteImport } from './routes/api/v1/signup/parent/start'
-import { Route as ApiV1SignupParentScheduleRouteImport } from './routes/api/v1/signup/parent/schedule'
-import { Route as ApiV1SignupParentLinkCoachRouteImport } from './routes/api/v1/signup/parent/link-coach'
-import { Route as ApiV1SignupParentGoalsRouteImport } from './routes/api/v1/signup/parent/goals'
-import { Route as ApiV1SignupParentCoachPreviewRouteImport } from './routes/api/v1/signup/parent/coach-preview'
-import { Route as ApiV1SignupParentAthletesForCodeRouteImport } from './routes/api/v1/signup/parent/athletes-for-code'
-import { Route as ApiV1SignupAthleteUsernameRouteImport } from './routes/api/v1/signup/athlete/username'
-import { Route as ApiV1SignupAthleteInviteSummaryRouteImport } from './routes/api/v1/signup/athlete/invite-summary'
-import { Route as ApiV1SignupAthleteClaimRouteImport } from './routes/api/v1/signup/athlete/claim'
-import { Route as ApiV1SafetyBlocksUserIdRouteImport } from './routes/api/v1/safety/blocks/$userId'
-import { Route as ApiV1RoomsIdReadRouteImport } from './routes/api/v1/rooms/$id/read'
-import { Route as ApiV1RoomsIdMessagesRouteImport } from './routes/api/v1/rooms/$id/messages'
-import { Route as ApiV1RoomsIdActivePlansRouteImport } from './routes/api/v1/rooms/$id/active-plans'
-import { Route as ApiV1ResourcesIdSignedUrlRouteImport } from './routes/api/v1/resources/$id/signed-url'
-import { Route as ApiV1RecapsIdDismissRouteImport } from './routes/api/v1/recaps/$id/dismiss'
-import { Route as ApiV1PublicPlansTokenRouteImport } from './routes/api/v1/public/plans/$token'
-import { Route as ApiV1PublicBoardsSearchRouteImport } from './routes/api/v1/public/boards/search'
-import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
-import { Route as ApiV1PlansImportTokenRouteImport } from './routes/api/v1/plans/import/$token'
-import { Route as ApiV1PlansIdStatusRouteImport } from './routes/api/v1/plans/$id/status'
-import { Route as ApiV1PlansIdShareTokenRouteImport } from './routes/api/v1/plans/$id/share-token'
-import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
-import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
-import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
-import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/invites/parent/claim'
-import { Route as ApiV1InvitesAdultAthletePreviewRouteImport } from './routes/api/v1/invites/adult-athlete/preview'
-import { Route as ApiV1InvitesAdultAthleteClaimRouteImport } from './routes/api/v1/invites/adult-athlete/claim'
-import { Route as ApiV1GuardianVerificationStatusRouteImport } from './routes/api/v1/guardian/verification/status'
-import { Route as ApiV1GuardianVerificationStartRouteImport } from './routes/api/v1/guardian/verification/start'
-import { Route as ApiV1GuardianVerificationCompleteRouteImport } from './routes/api/v1/guardian/verification/complete'
-import { Route as ApiV1GuardianClaimSummaryRouteImport } from './routes/api/v1/guardian/claim/summary'
-import { Route as ApiV1GuardianClaimSelfRouteImport } from './routes/api/v1/guardian/claim/self'
-import { Route as ApiV1GuardianClaimMergeOptionsRouteImport } from './routes/api/v1/guardian/claim/merge-options'
-import { Route as ApiV1GuardianClaimMergeRouteImport } from './routes/api/v1/guardian/claim/merge'
-import { Route as ApiV1GuardianClaimContextRouteImport } from './routes/api/v1/guardian/claim/context'
-import { Route as ApiV1CompetitionsIdSkaterMatchesRouteImport } from './routes/api/v1/competitions/$id/skater-matches'
-import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
-import { Route as ApiV1CoachWrapUpsPendingRouteImport } from './routes/api/v1/coach/wrap-ups/pending'
-import { Route as ApiV1CoachVisibilityMineRouteImport } from './routes/api/v1/coach/visibility/mine'
-import { Route as ApiV1CoachScheduleImportParseRouteImport } from './routes/api/v1/coach/schedule-import/parse'
-import { Route as ApiV1CoachScheduleImportCommitRouteImport } from './routes/api/v1/coach/schedule-import/commit'
-import { Route as ApiV1CoachRosterPracticeSummariesRouteImport } from './routes/api/v1/coach/roster/practice-summaries'
-import { Route as ApiV1CoachResourcesUploadUrlRouteImport } from './routes/api/v1/coach/resources/upload-url'
-import { Route as ApiV1CoachResourcesIdRouteImport } from './routes/api/v1/coach/resources/$id'
-import { Route as ApiV1CoachOtherPlansPlanIdRouteImport } from './routes/api/v1/coach/other-plans/$planId'
-import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v1/coach/onboarding/complete'
-import { Route as ApiV1CoachMovesFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/from-plan-move'
-import { Route as ApiV1CoachMovesForkFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/fork-from-plan-move'
-import { Route as ApiV1CoachInvoicesPreviewRouteImport } from './routes/api/v1/coach/invoices/preview'
-import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/coach/invite-code/rotate'
-import { Route as ApiV1CoachFoundingRestoreRouteImport } from './routes/api/v1/coach/founding/restore'
-import { Route as ApiV1CoachFoundingClaimRouteImport } from './routes/api/v1/coach/founding/claim'
-import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
-import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
-import { Route as ApiV1AuthSignupParentRouteImport } from './routes/api/v1/auth/signup/parent'
-import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
-import { Route as ApiV1AuthSignupAdultAthleteRouteImport } from './routes/api/v1/auth/signup/adult-athlete'
-import { Route as ApiV1AuthAttestRegisterRouteImport } from './routes/api/v1/auth/attest/register'
-import { Route as ApiV1AthletesIdRecapsRouteImport } from './routes/api/v1/athletes/$id/recaps'
-import { Route as ApiV1AthleteGoalsMotivationRouteImport } from './routes/api/v1/athlete/goals/motivation'
-import { Route as ApiV1AthleteGoalsLongTermRouteImport } from './routes/api/v1/athlete/goals/long-term'
-import { Route as ApiV1AdultAthleteSchedulesCoachIdRouteImport } from './routes/api/v1/adult-athlete/schedules/$coachId'
-import { Route as ApiV1AdultAthleteCoachSportsOfferedRouteImport } from './routes/api/v1/adult-athlete/coach/sports-offered'
-import { Route as ApiV1AdultAthleteCoachPreviewRouteImport } from './routes/api/v1/adult-athlete/coach/preview'
+import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
+import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
+import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
+import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin.users.index'
+import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
+import { Route as AuthenticatedAthleteMessagesIndexRouteImport } from './routes/_authenticated/athlete.messages.index'
+import { Route as AuthenticatedAthleteMessagesRoomIdRouteImport } from './routes/_authenticated/athlete.messages.$roomId'
+import { Route as AuthenticatedAthletePlansIndexRouteImport } from './routes/_authenticated/athlete.plans.index'
+import { Route as AuthenticatedAthletePlansPlanIdRouteImport } from './routes/_authenticated/athlete.plans.$planId'
+import { Route as AuthenticatedAthleteResourcesIndexRouteImport } from './routes/_authenticated/athlete.resources.index'
+import { Route as AuthenticatedAthleteSettingsAccountRouteImport } from './routes/_authenticated/athlete.settings_.account'
+import { Route as AuthenticatedCoachMessagesIndexRouteImport } from './routes/_authenticated/coach.messages.index'
+import { Route as AuthenticatedCoachMessagesRoomIdRouteImport } from './routes/_authenticated/coach.messages.$roomId'
+import { Route as AuthenticatedCoachPlansIndexRouteImport } from './routes/_authenticated/coach.plans.index'
+import { Route as AuthenticatedCoachPlansPlanIdRouteImport } from './routes/_authenticated/coach.plans.$planId'
+import { Route as AuthenticatedCoachResourcesIndexRouteImport } from './routes/_authenticated/coach.resources.index'
+import { Route as AuthenticatedCoachSettingsAccountRouteImport } from './routes/_authenticated/coach.settings_.account'
+import { Route as AuthenticatedParentMessagesIndexRouteImport } from './routes/_authenticated/parent.messages.index'
+import { Route as AuthenticatedParentMessagesRoomIdRouteImport } from './routes/_authenticated/parent.messages.$roomId'
+import { Route as AuthenticatedParentPlansIndexRouteImport } from './routes/_authenticated/parent.plans.index'
+import { Route as AuthenticatedParentPlansPlanIdRouteImport } from './routes/_authenticated/parent.plans.$planId'
+import { Route as AuthenticatedParentResourcesIndexRouteImport } from './routes/_authenticated/parent.resources.index'
+import { Route as AuthenticatedParentSettingsAccountRouteImport } from './routes/_authenticated/parent.settings_.account'
+import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/board/refresh'
+import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
+import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
+import { Route as ApiPublicHooksConsentRetentionRouteImport } from './routes/api/public/hooks/consent-retention'
+import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
+import { Route as ApiPublicHooksIjsCatalogSweepRouteImport } from './routes/api/public/hooks/ijs-catalog-sweep'
+import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
+import { Route as ApiPublicHooksLessonRemindersRouteImport } from './routes/api/public/hooks/lesson-reminders'
+import { Route as ApiPublicHooksLessonWrapUpsRouteImport } from './routes/api/public/hooks/lesson-wrap-ups'
+import { Route as ApiPublicHooksLifecycleEmailsRouteImport } from './routes/api/public/hooks/lifecycle-emails'
+import { Route as ApiPublicHooksPracticeNudgesRouteImport } from './routes/api/public/hooks/practice-nudges'
+import { Route as ApiPublicHooksSkillInferenceRouteImport } from './routes/api/public/hooks/skill-inference'
+import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicWebhooksAppStoreRouteImport } from './routes/api/public/webhooks/app-store'
+import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/webhooks/kws'
+import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
+import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
+import { Route as ApiV1AnalyticsEventsRouteImport } from './routes/api/v1/analytics/events'
+import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
+import { Route as ApiV1AthletePlansRouteImport } from './routes/api/v1/athlete/plans'
+import { Route as ApiV1AthleteSettingsRouteImport } from './routes/api/v1/athlete/settings'
+import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
+import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
+import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
+import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
+import { Route as ApiV1AuthWebSessionRouteImport } from './routes/api/v1/auth/web-session'
+import { Route as ApiV1BoardsMySkatersRouteImport } from './routes/api/v1/boards/my-skaters'
+import { Route as ApiV1CoachBillingRouteImport } from './routes/api/v1/coach/billing'
+import { Route as ApiV1CoachChecklistRouteImport } from './routes/api/v1/coach/checklist'
+import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
+import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
+import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
+import { Route as ApiV1CompetitionsFinishedRouteImport } from './routes/api/v1/competitions/finished'
+import { Route as ApiV1DevicesIndexRouteImport } from './routes/api/v1/devices/index'
+import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
+import { Route as ApiV1GuardianStatusRouteImport } from './routes/api/v1/guardian/status'
+import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
+import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
+import { Route as ApiV1MeAppTransactionRouteImport } from './routes/api/v1/me/app-transaction'
+import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
+import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
+import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-code'
+import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
+import { Route as ApiV1MessagesUnreadTotalRouteImport } from './routes/api/v1/messages/unread-total'
+import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
+import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
+import { Route as ApiV1OrgsClaimCodeRouteImport } from './routes/api/v1/orgs/claim-code'
+import { Route as ApiV1OrgsJoinRouteImport } from './routes/api/v1/orgs/join'
+import { Route as ApiV1OrgsLeadRouteImport } from './routes/api/v1/orgs/lead'
+import { Route as ApiV1OrgsLookupCodeRouteImport } from './routes/api/v1/orgs/lookup-code'
+import { Route as ApiV1OrgsPopularRouteImport } from './routes/api/v1/orgs/popular'
+import { Route as ApiV1OrgsSearchRouteImport } from './routes/api/v1/orgs/search'
+import { Route as ApiV1OrgsVerifyCodeRouteImport } from './routes/api/v1/orgs/verify-code'
+import { Route as ApiV1ParentCoachVisibilityRouteImport } from './routes/api/v1/parent/coach-visibility'
+import { Route as ApiV1ParentGoalsRouteImport } from './routes/api/v1/parent/goals'
+import { Route as ApiV1ParentInviteCodeRouteImport } from './routes/api/v1/parent/invite-code'
+import { Route as ApiV1ParentPlansRouteImport } from './routes/api/v1/parent/plans'
+import { Route as ApiV1ParentProfileRouteImport } from './routes/api/v1/parent/profile'
+import { Route as ApiV1ParentSettingsRouteImport } from './routes/api/v1/parent/settings'
+import { Route as ApiV1PromoCodesValidateRouteImport } from './routes/api/v1/promo-codes/validate'
+import { Route as ApiV1RecapsIndexRouteImport } from './routes/api/v1/recaps/index'
+import { Route as ApiV1RecapsCoachesRouteImport } from './routes/api/v1/recaps/coaches'
+import { Route as ApiV1RecapsPendingRouteImport } from './routes/api/v1/recaps/pending'
+import { Route as ApiV1ResourcesIndexRouteImport } from './routes/api/v1/resources/index'
+import { Route as ApiV1RoomsIndexRouteImport } from './routes/api/v1/rooms/index'
+import { Route as ApiV1RoomsEnsureRouteImport } from './routes/api/v1/rooms/ensure'
+import { Route as ApiV1SafetyReportsRouteImport } from './routes/api/v1/safety/reports'
+import { Route as ApiV1SavedAnswersIndexRouteImport } from './routes/api/v1/saved-answers/index'
+import { Route as ApiV1SavedAnswersIdRouteImport } from './routes/api/v1/saved-answers/$id'
+import { Route as ApiV1SignupAdultAthleteRouteImport } from './routes/api/v1/signup/adult-athlete'
+import { Route as ApiV1TeamInvitesClaimRouteImport } from './routes/api/v1/team-invites/claim'
+import { Route as ApiV1TeamInvitesPreviewRouteImport } from './routes/api/v1/team-invites/preview'
+import { Route as ApiV1VoiceBuildPlanRouteImport } from './routes/api/v1/voice/build-plan'
+import { Route as ApiV1VoiceTranscribeRouteImport } from './routes/api/v1/voice/transcribe'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as ApiV1AdultAthleteCoachLinkRouteImport } from './routes/api/v1/adult-athlete/coach/link'
-import { Route as ApiV1PlansIdSessionsIndexRouteImport } from './routes/api/v1/plans/$id/sessions/index'
-import { Route as ApiV1PlansIdMovesIndexRouteImport } from './routes/api/v1/plans/$id/moves/index'
-import { Route as ApiV1ParentTeamGuardiansIndexRouteImport } from './routes/api/v1/parent/team/guardians/index'
-import { Route as ApiV1ParentAthletesIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/index'
-import { Route as ApiV1CoachVisibilityIdIndexRouteImport } from './routes/api/v1/coach/visibility/$id/index'
-import { Route as ApiV1CoachRosterAthletesIndexRouteImport } from './routes/api/v1/coach/roster/athletes/index'
-import { Route as ApiV1CoachLessonSlotsIdIndexRouteImport } from './routes/api/v1/coach/lesson-slots/$id/index'
-import { Route as ApiV1CoachInvoicesIdIndexRouteImport } from './routes/api/v1/coach/invoices/$id/index'
-import { Route as ApiV1CoachAthletesIdIndexRouteImport } from './routes/api/v1/coach/athletes/$id/index'
-import { Route as ApiV1BoardsSlugFollowsIndexRouteImport } from './routes/api/v1/boards/$slug/follows/index'
-import { Route as ApiV1AthletesIdCompetitionResultsIndexRouteImport } from './routes/api/v1/athletes/$id/competition-results/index'
-import { Route as ApiV1AthletesIdCompetitionLinksIndexRouteImport } from './routes/api/v1/athletes/$id/competition-links/index'
+import { Route as ApiV1AdultAthleteCoachPreviewRouteImport } from './routes/api/v1/adult-athlete/coach/preview'
+import { Route as ApiV1AdultAthleteCoachSportsOfferedRouteImport } from './routes/api/v1/adult-athlete/coach/sports-offered'
+import { Route as ApiV1AdultAthleteCoachesIndexRouteImport } from './routes/api/v1/adult-athlete/coaches/index'
+import { Route as ApiV1AdultAthleteSchedulesIndexRouteImport } from './routes/api/v1/adult-athlete/schedules/index'
+import { Route as ApiV1AdultAthleteSchedulesCoachIdRouteImport } from './routes/api/v1/adult-athlete/schedules/$coachId'
+import { Route as ApiV1AthleteGoalsIndexRouteImport } from './routes/api/v1/athlete/goals/index'
+import { Route as ApiV1AthleteGoalsLongTermRouteImport } from './routes/api/v1/athlete/goals/long-term'
+import { Route as ApiV1AthleteGoalsMotivationRouteImport } from './routes/api/v1/athlete/goals/motivation'
+import { Route as ApiV1AthletesIdRecapsRouteImport } from './routes/api/v1/athletes/$id/recaps'
+import { Route as ApiV1AuthAttestRegisterRouteImport } from './routes/api/v1/auth/attest/register'
+import { Route as ApiV1AuthSignupAdultAthleteRouteImport } from './routes/api/v1/auth/signup/adult-athlete'
+import { Route as ApiV1AuthSignupCoachRouteImport } from './routes/api/v1/auth/signup/coach'
+import { Route as ApiV1AuthSignupParentRouteImport } from './routes/api/v1/auth/signup/parent'
+import { Route as ApiV1AuthUsernameCheckRouteImport } from './routes/api/v1/auth/username/check'
+import { Route as ApiV1AuthUsernameResolveRouteImport } from './routes/api/v1/auth/username/resolve'
+import { Route as ApiV1CoachFoundingClaimRouteImport } from './routes/api/v1/coach/founding/claim'
+import { Route as ApiV1CoachFoundingRestoreRouteImport } from './routes/api/v1/coach/founding/restore'
+import { Route as ApiV1CoachInviteCodeIndexRouteImport } from './routes/api/v1/coach/invite-code/index'
+import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/coach/invite-code/rotate'
+import { Route as ApiV1CoachInvoicesIndexRouteImport } from './routes/api/v1/coach/invoices/index'
+import { Route as ApiV1CoachInvoicesPreviewRouteImport } from './routes/api/v1/coach/invoices/preview'
+import { Route as ApiV1CoachLessonSlotsIndexRouteImport } from './routes/api/v1/coach/lesson-slots/index'
+import { Route as ApiV1CoachMovesIndexRouteImport } from './routes/api/v1/coach/moves/index'
+import { Route as ApiV1CoachMovesForkFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/fork-from-plan-move'
+import { Route as ApiV1CoachMovesFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/from-plan-move'
+import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v1/coach/onboarding/complete'
+import { Route as ApiV1CoachOtherPlansPlanIdRouteImport } from './routes/api/v1/coach/other-plans/$planId'
+import { Route as ApiV1CoachPlansIndexRouteImport } from './routes/api/v1/coach/plans/index'
+import { Route as ApiV1CoachPostEventIndexRouteImport } from './routes/api/v1/coach/post-event/index'
+import { Route as ApiV1CoachResourcesIndexRouteImport } from './routes/api/v1/coach/resources/index'
+import { Route as ApiV1CoachResourcesIdRouteImport } from './routes/api/v1/coach/resources/$id'
+import { Route as ApiV1CoachResourcesUploadUrlRouteImport } from './routes/api/v1/coach/resources/upload-url'
+import { Route as ApiV1CoachRosterIndexRouteImport } from './routes/api/v1/coach/roster/index'
+import { Route as ApiV1CoachRosterPracticeSummariesRouteImport } from './routes/api/v1/coach/roster/practice-summaries'
+import { Route as ApiV1CoachScheduleImportCommitRouteImport } from './routes/api/v1/coach/schedule-import/commit'
+import { Route as ApiV1CoachScheduleImportParseRouteImport } from './routes/api/v1/coach/schedule-import/parse'
+import { Route as ApiV1CoachVisibilityMineRouteImport } from './routes/api/v1/coach/visibility/mine'
+import { Route as ApiV1CoachWrapUpsIndexRouteImport } from './routes/api/v1/coach/wrap-ups/index'
+import { Route as ApiV1CoachWrapUpsPendingRouteImport } from './routes/api/v1/coach/wrap-ups/pending'
+import { Route as ApiV1CompetitionsIdAttendanceRouteImport } from './routes/api/v1/competitions/$id/attendance'
+import { Route as ApiV1CompetitionsIdSkaterMatchesRouteImport } from './routes/api/v1/competitions/$id/skater-matches'
+import { Route as ApiV1GuardianClaimIndexRouteImport } from './routes/api/v1/guardian/claim/index'
+import { Route as ApiV1GuardianClaimContextRouteImport } from './routes/api/v1/guardian/claim/context'
+import { Route as ApiV1GuardianClaimMergeRouteImport } from './routes/api/v1/guardian/claim/merge'
+import { Route as ApiV1GuardianClaimMergeOptionsRouteImport } from './routes/api/v1/guardian/claim/merge-options'
+import { Route as ApiV1GuardianClaimSelfRouteImport } from './routes/api/v1/guardian/claim/self'
+import { Route as ApiV1GuardianClaimSummaryRouteImport } from './routes/api/v1/guardian/claim/summary'
+import { Route as ApiV1GuardianVerificationCompleteRouteImport } from './routes/api/v1/guardian/verification/complete'
+import { Route as ApiV1GuardianVerificationStartRouteImport } from './routes/api/v1/guardian/verification/start'
+import { Route as ApiV1GuardianVerificationStatusRouteImport } from './routes/api/v1/guardian/verification/status'
+import { Route as ApiV1InvitesAdultAthleteClaimRouteImport } from './routes/api/v1/invites/adult-athlete/claim'
+import { Route as ApiV1InvitesAdultAthletePreviewRouteImport } from './routes/api/v1/invites/adult-athlete/preview'
+import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/invites/parent/claim'
+import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
+import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api/v1/live-activities/tokens/index'
+import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
+import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
+import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
+import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
+import { Route as ApiV1ParentTeamIndexRouteImport } from './routes/api/v1/parent/team/index'
+import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id/index'
+import { Route as ApiV1PlansIdShareTokenRouteImport } from './routes/api/v1/plans/$id/share-token'
+import { Route as ApiV1PlansIdStatusRouteImport } from './routes/api/v1/plans/$id/status'
+import { Route as ApiV1PlansImportTokenRouteImport } from './routes/api/v1/plans/import/$token'
+import { Route as ApiV1PublicBoardsIndexRouteImport } from './routes/api/v1/public/boards/index'
+import { Route as ApiV1PublicBoardsSlugRouteImport } from './routes/api/v1/public/boards/$slug'
+import { Route as ApiV1PublicBoardsSearchRouteImport } from './routes/api/v1/public/boards/search'
+import { Route as ApiV1PublicPlansTokenRouteImport } from './routes/api/v1/public/plans/$token'
+import { Route as ApiV1RecapsIdDismissRouteImport } from './routes/api/v1/recaps/$id/dismiss'
+import { Route as ApiV1ResourcesIdSignedUrlRouteImport } from './routes/api/v1/resources/$id/signed-url'
+import { Route as ApiV1RoomsIdIndexRouteImport } from './routes/api/v1/rooms/$id/index'
+import { Route as ApiV1RoomsIdActivePlansRouteImport } from './routes/api/v1/rooms/$id/active-plans'
+import { Route as ApiV1RoomsIdMessagesRouteImport } from './routes/api/v1/rooms/$id/messages'
+import { Route as ApiV1RoomsIdReadRouteImport } from './routes/api/v1/rooms/$id/read'
+import { Route as ApiV1SafetyBlocksIndexRouteImport } from './routes/api/v1/safety/blocks/index'
+import { Route as ApiV1SafetyBlocksUserIdRouteImport } from './routes/api/v1/safety/blocks/$userId'
+import { Route as ApiV1SignupAthleteClaimRouteImport } from './routes/api/v1/signup/athlete/claim'
+import { Route as ApiV1SignupAthleteInviteSummaryRouteImport } from './routes/api/v1/signup/athlete/invite-summary'
+import { Route as ApiV1SignupAthleteUsernameRouteImport } from './routes/api/v1/signup/athlete/username'
+import { Route as ApiV1SignupParentAthletesForCodeRouteImport } from './routes/api/v1/signup/parent/athletes-for-code'
+import { Route as ApiV1SignupParentCoachPreviewRouteImport } from './routes/api/v1/signup/parent/coach-preview'
+import { Route as ApiV1SignupParentGoalsRouteImport } from './routes/api/v1/signup/parent/goals'
+import { Route as ApiV1SignupParentLinkCoachRouteImport } from './routes/api/v1/signup/parent/link-coach'
+import { Route as ApiV1SignupParentScheduleRouteImport } from './routes/api/v1/signup/parent/schedule'
+import { Route as ApiV1SignupParentStartRouteImport } from './routes/api/v1/signup/parent/start'
+import { Route as ApiV1SignupParentStatusRouteImport } from './routes/api/v1/signup/parent/status'
+import { Route as ApiV1SignupParentValidateCodeRouteImport } from './routes/api/v1/signup/parent/validate-code'
 import { Route as ApiV1AdultAthleteCoachesIdIndexRouteImport } from './routes/api/v1/adult-athlete/coaches/$id/index'
-import { Route as ApiV1PlansIdSessionsSummaryRouteImport } from './routes/api/v1/plans/$id/sessions/summary'
-import { Route as ApiV1PlansIdMovesOrderRouteImport } from './routes/api/v1/plans/$id/moves/order'
-import { Route as ApiV1PlansIdMovesFromLibraryRouteImport } from './routes/api/v1/plans/$id/moves/from-library'
-import { Route as ApiV1PlansIdMovesMoveIdRouteImport } from './routes/api/v1/plans/$id/moves/$moveId'
-import { Route as ApiV1ParentTeamGuardiansIdRouteImport } from './routes/api/v1/parent/team/guardians/$id'
-import { Route as ApiV1ParentAthletesIdScheduleRouteImport } from './routes/api/v1/parent/athletes/$id/schedule'
-import { Route as ApiV1ParentAthletesIdResetPasswordRouteImport } from './routes/api/v1/parent/athletes/$id/reset-password'
-import { Route as ApiV1ParentAthletesIdPrimaryCoachRouteImport } from './routes/api/v1/parent/athletes/$id/primary-coach'
-import { Route as ApiV1ParentAthletesIdGoalsRouteImport } from './routes/api/v1/parent/athletes/$id/goals'
-import { Route as ApiV1MeCelebrationsIdAckRouteImport } from './routes/api/v1/me/celebrations/$id/ack'
-import { Route as ApiV1GuardianInvitesIdResendRouteImport } from './routes/api/v1/guardian/invites/$id/resend'
-import { Route as ApiV1CoachVisibilityIdRespondRouteImport } from './routes/api/v1/coach/visibility/$id/respond'
-import { Route as ApiV1CoachStarterPlansIdAdoptRouteImport } from './routes/api/v1/coach/starter-plans/$id/adopt'
-import { Route as ApiV1CoachRosterAthletesAthleteIdRouteImport } from './routes/api/v1/coach/roster/athletes/$athleteId'
-import { Route as ApiV1CoachPostEventIdDismissRouteImport } from './routes/api/v1/coach/post-event/$id/dismiss'
-import { Route as ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/$id/update-from-plan-move'
-import { Route as ApiV1CoachMovesIdArchiveRouteImport } from './routes/api/v1/coach/moves/$id/archive'
-import { Route as ApiV1CoachInvoicesIdStatusRouteImport } from './routes/api/v1/coach/invoices/$id/status'
-import { Route as ApiV1CoachCompetitionsIdRosterRouteImport } from './routes/api/v1/coach/competitions/$id/roster'
-import { Route as ApiV1CoachAthletesIdRateRouteImport } from './routes/api/v1/coach/athletes/$id/rate'
-import { Route as ApiV1CoachAthletesIdPracticeTargetRouteImport } from './routes/api/v1/coach/athletes/$id/practice-target'
-import { Route as ApiV1CoachAthletesIdBriefingRouteImport } from './routes/api/v1/coach/athletes/$id/briefing'
-import { Route as ApiV1CoachAthletesIdBillingRouteImport } from './routes/api/v1/coach/athletes/$id/billing'
-import { Route as ApiV1CoachAthletesIdAiSummaryRouteImport } from './routes/api/v1/coach/athletes/$id/ai-summary'
-import { Route as ApiV1CoachAthletesIdActivePlansRouteImport } from './routes/api/v1/coach/athletes/$id/active-plans'
-import { Route as ApiV1BoardsSlugFollowsNameRouteImport } from './routes/api/v1/boards/$slug/follows/$name'
-import { Route as ApiV1AthletesIdCompetitionLinksLinkIdRouteImport } from './routes/api/v1/athletes/$id/competition-links/$linkId'
 import { Route as ApiV1AdultAthleteCoachesIdSportsRouteImport } from './routes/api/v1/adult-athlete/coaches/$id/sports'
-import { Route as ApiV1ParentTeamGuardiansInvitesIndexRouteImport } from './routes/api/v1/parent/team/guardians/invites/index'
-import { Route as ApiV1ParentAthletesIdCoachesIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/index'
+import { Route as ApiV1AthletesIdCompetitionLinksIndexRouteImport } from './routes/api/v1/athletes/$id/competition-links/index'
+import { Route as ApiV1AthletesIdCompetitionLinksLinkIdRouteImport } from './routes/api/v1/athletes/$id/competition-links/$linkId'
+import { Route as ApiV1AthletesIdCompetitionResultsIndexRouteImport } from './routes/api/v1/athletes/$id/competition-results/index'
+import { Route as ApiV1BoardsSlugFollowsIndexRouteImport } from './routes/api/v1/boards/$slug/follows/index'
+import { Route as ApiV1BoardsSlugFollowsNameRouteImport } from './routes/api/v1/boards/$slug/follows/$name'
+import { Route as ApiV1CoachAthletesIdIndexRouteImport } from './routes/api/v1/coach/athletes/$id/index'
+import { Route as ApiV1CoachAthletesIdActivePlansRouteImport } from './routes/api/v1/coach/athletes/$id/active-plans'
+import { Route as ApiV1CoachAthletesIdAiSummaryRouteImport } from './routes/api/v1/coach/athletes/$id/ai-summary'
+import { Route as ApiV1CoachAthletesIdBillingRouteImport } from './routes/api/v1/coach/athletes/$id/billing'
+import { Route as ApiV1CoachAthletesIdBriefingRouteImport } from './routes/api/v1/coach/athletes/$id/briefing'
+import { Route as ApiV1CoachAthletesIdPracticeTargetRouteImport } from './routes/api/v1/coach/athletes/$id/practice-target'
+import { Route as ApiV1CoachAthletesIdRateRouteImport } from './routes/api/v1/coach/athletes/$id/rate'
+import { Route as ApiV1CoachCompetitionsIdRosterRouteImport } from './routes/api/v1/coach/competitions/$id/roster'
+import { Route as ApiV1CoachInvoicesIdIndexRouteImport } from './routes/api/v1/coach/invoices/$id/index'
+import { Route as ApiV1CoachInvoicesIdStatusRouteImport } from './routes/api/v1/coach/invoices/$id/status'
+import { Route as ApiV1CoachLessonSlotsIdIndexRouteImport } from './routes/api/v1/coach/lesson-slots/$id/index'
+import { Route as ApiV1CoachMovesIdArchiveRouteImport } from './routes/api/v1/coach/moves/$id/archive'
+import { Route as ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/$id/update-from-plan-move'
+import { Route as ApiV1CoachPostEventIdDismissRouteImport } from './routes/api/v1/coach/post-event/$id/dismiss'
+import { Route as ApiV1CoachRosterAthletesIndexRouteImport } from './routes/api/v1/coach/roster/athletes/index'
+import { Route as ApiV1CoachRosterAthletesAthleteIdRouteImport } from './routes/api/v1/coach/roster/athletes/$athleteId'
+import { Route as ApiV1CoachStarterPlansIdAdoptRouteImport } from './routes/api/v1/coach/starter-plans/$id/adopt'
+import { Route as ApiV1CoachVisibilityIdIndexRouteImport } from './routes/api/v1/coach/visibility/$id/index'
+import { Route as ApiV1CoachVisibilityIdRespondRouteImport } from './routes/api/v1/coach/visibility/$id/respond'
+import { Route as ApiV1GuardianInvitesIdResendRouteImport } from './routes/api/v1/guardian/invites/$id/resend'
+import { Route as ApiV1MeCelebrationsIdAckRouteImport } from './routes/api/v1/me/celebrations/$id/ack'
+import { Route as ApiV1ParentAthletesIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/index'
+import { Route as ApiV1ParentAthletesIdGoalsRouteImport } from './routes/api/v1/parent/athletes/$id/goals'
+import { Route as ApiV1ParentAthletesIdPrimaryCoachRouteImport } from './routes/api/v1/parent/athletes/$id/primary-coach'
+import { Route as ApiV1ParentAthletesIdResetPasswordRouteImport } from './routes/api/v1/parent/athletes/$id/reset-password'
+import { Route as ApiV1ParentAthletesIdScheduleRouteImport } from './routes/api/v1/parent/athletes/$id/schedule'
+import { Route as ApiV1ParentTeamGuardiansIndexRouteImport } from './routes/api/v1/parent/team/guardians/index'
+import { Route as ApiV1ParentTeamGuardiansIdRouteImport } from './routes/api/v1/parent/team/guardians/$id'
+import { Route as ApiV1PlansIdMovesIndexRouteImport } from './routes/api/v1/plans/$id/moves/index'
+import { Route as ApiV1PlansIdMovesMoveIdRouteImport } from './routes/api/v1/plans/$id/moves/$moveId'
+import { Route as ApiV1PlansIdMovesFromLibraryRouteImport } from './routes/api/v1/plans/$id/moves/from-library'
+import { Route as ApiV1PlansIdMovesOrderRouteImport } from './routes/api/v1/plans/$id/moves/order'
+import { Route as ApiV1PlansIdSessionsIndexRouteImport } from './routes/api/v1/plans/$id/sessions/index'
+import { Route as ApiV1PlansIdSessionsSummaryRouteImport } from './routes/api/v1/plans/$id/sessions/summary'
 import { Route as ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRouteImport } from './routes/api/v1/athletes/$id/competition-results/$resultId/generate-plan'
-import { Route as ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport } from './routes/api/v1/parent/team/guardians/invites/$id/index'
-import { Route as ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/index'
-import { Route as ApiV1ParentTeamGuardiansInvitesIdResendRouteImport } from './routes/api/v1/parent/team/guardians/invites/$id/resend'
-import { Route as ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/sports'
-import { Route as ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
-import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
-import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
+import { Route as ApiV1ParentAthletesIdCoachesIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/index'
+import { Route as ApiV1ParentTeamGuardiansInvitesIndexRouteImport } from './routes/api/v1/parent/team/guardians/invites/index'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
+import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
+import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+import { Route as ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/index'
+import { Route as ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+import { Route as ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/$coachId/sports'
+import { Route as ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport } from './routes/api/v1/parent/team/guardians/invites/$id/index'
+import { Route as ApiV1ParentTeamGuardiansInvitesIdResendRouteImport } from './routes/api/v1/parent/team/guardians/invites/$id/resend'
 
-const VerifiedRoute = VerifiedRouteImport.update({
-  id: '/verified',
-  path: '/verified',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -380,104 +354,40 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BoardIndexRoute = BoardIndexRouteImport.update({
-  id: '/board/',
-  path: '/board/',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TeamTokenRoute = TeamTokenRouteImport.update({
-  id: '/team/$token',
-  path: '/team/$token',
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupParentRoute = SignupParentRouteImport.update({
-  id: '/signup/parent',
-  path: '/signup/parent',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupCoachRoute = SignupCoachRouteImport.update({
-  id: '/signup/coach',
-  path: '/signup/coach',
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupAthleteRoute = SignupAthleteRouteImport.update({
-  id: '/signup/athlete',
-  path: '/signup/athlete',
+const VerifiedRoute = VerifiedRouteImport.update({
+  id: '/verified',
+  path: '/verified',
   getParentRoute: () => rootRouteImport,
-} as any)
-const SignupAdminRoute = SignupAdminRouteImport.update({
-  id: '/signup/admin',
-  path: '/signup/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PTokenRoute = PTokenRouteImport.update({
-  id: '/p/$token',
-  path: '/p/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ICodeRoute = ICodeRouteImport.update({
-  id: '/i/$code',
-  path: '/i/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GTokenRoute = GTokenRouteImport.update({
-  id: '/g/$token',
-  path: '/g/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevPaywallPreviewRoute = DevPaywallPreviewRouteImport.update({
-  id: '/dev/paywall-preview',
-  path: '/dev/paywall-preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BoardSlugRoute = BoardSlugRouteImport.update({
-  id: '/board/$slug',
-  path: '/board/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthHandoffRoute = AuthHandoffRouteImport.update({
-  id: '/auth/handoff',
-  path: '/auth/handoff',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
-  id: '/parent',
-  path: '/parent',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedOrgAdminRoute = AuthenticatedOrgAdminRouteImport.update({
-  id: '/org-admin',
-  path: '/org-admin',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAthleteRoute = AuthenticatedAthleteRouteImport.update({
-  id: '/athlete',
-  path: '/athlete',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const DotwellKnownAppleAppSiteAssociationRoute =
   DotwellKnownAppleAppSiteAssociationRouteImport.update({
@@ -485,313 +395,105 @@ const DotwellKnownAppleAppSiteAssociationRoute =
     path: '/.well-known/apple-app-site-association',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedParentIndexRoute =
-  AuthenticatedParentIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedOrgAdminIndexRoute =
-  AuthenticatedOrgAdminIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedCoachRoute,
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAthleteIndexRoute =
-  AuthenticatedAthleteIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
+const AuthenticatedAthleteRoute = AuthenticatedAthleteRouteImport.update({
+  id: '/athlete',
+  path: '/athlete',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOrgAdminRoute = AuthenticatedOrgAdminRouteImport.update({
+  id: '/org-admin',
+  path: '/org-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
+  id: '/parent',
+  path: '/parent',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthHandoffRoute = AuthHandoffRouteImport.update({
+  id: '/auth/handoff',
+  path: '/auth/handoff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardIndexRoute = BoardIndexRouteImport.update({
+  id: '/board/',
+  path: '/board/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardSlugRoute = BoardSlugRouteImport.update({
+  id: '/board/$slug',
+  path: '/board/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevPaywallPreviewRoute = DevPaywallPreviewRouteImport.update({
+  id: '/dev/paywall-preview',
+  path: '/dev/paywall-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GTokenRoute = GTokenRouteImport.update({
+  id: '/g/$token',
+  path: '/g/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAdminRoute = SignupAdminRouteImport.update({
+  id: '/signup/admin',
+  path: '/signup/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAthleteRoute = SignupAthleteRouteImport.update({
+  id: '/signup/athlete',
+  path: '/signup/athlete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupCoachRoute = SignupCoachRouteImport.update({
+  id: '/signup/coach',
+  path: '/signup/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupParentRoute = SignupParentRouteImport.update({
+  id: '/signup/parent',
+  path: '/signup/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamTokenRoute = TeamTokenRouteImport.update({
+  id: '/team/$token',
+  path: '/team/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const SignupParentScheduleRoute = SignupParentScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
-  getParentRoute: () => SignupParentRoute,
-} as any)
-const SignupParentGoalsRoute = SignupParentGoalsRouteImport.update({
-  id: '/goals',
-  path: '/goals',
-  getParentRoute: () => SignupParentRoute,
-} as any)
-const SignupParentAthletesRoute = SignupParentAthletesRouteImport.update({
-  id: '/athletes',
-  path: '/athletes',
-  getParentRoute: () => SignupParentRoute,
-} as any)
-const SignupAthleteConfirmRoute = SignupAthleteConfirmRouteImport.update({
-  id: '/confirm',
-  path: '/confirm',
-  getParentRoute: () => SignupAthleteRoute,
-} as any)
-const SignupAthleteAdultRoute = SignupAthleteAdultRouteImport.update({
-  id: '/adult',
-  path: '/adult',
-  getParentRoute: () => SignupAthleteRoute,
-} as any)
-const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => SignupAthleteRoute,
-} as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BoardSlugWallRoute = BoardSlugWallRouteImport.update({
-  id: '/board/$slug_/wall',
-  path: '/board/$slug/wall',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
-  id: '/api/v1/message-targets',
-  path: '/api/v1/message-targets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1FeedbackRoute = ApiV1FeedbackRouteImport.update({
-  id: '/api/v1/feedback',
-  path: '/api/v1/feedback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ErrorsRoute = ApiV1ErrorsRouteImport.update({
-  id: '/api/v1/errors',
-  path: '/api/v1/errors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AskRoute = ApiV1AskRouteImport.update({
-  id: '/api/v1/ask',
-  path: '/api/v1/ask',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedParentTeamRoute = AuthenticatedParentTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => AuthenticatedParentRoute,
-} as any)
-const AuthenticatedParentSettingsRoute =
-  AuthenticatedParentSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedOrgAdminTemplatesRoute =
-  AuthenticatedOrgAdminTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedOrgAdminSettingsRoute =
-  AuthenticatedOrgAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedOrgAdminRosterRoute =
-  AuthenticatedOrgAdminRosterRouteImport.update({
-    id: '/roster',
-    path: '/roster',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedOrgAdminResourcesRoute =
-  AuthenticatedOrgAdminResourcesRouteImport.update({
-    id: '/resources',
-    path: '/resources',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedOrgAdminMovesRoute =
-  AuthenticatedOrgAdminMovesRouteImport.update({
-    id: '/moves',
-    path: '/moves',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedOrgAdminCalendarRoute =
-  AuthenticatedOrgAdminCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedOrgAdminRoute,
-  } as any)
-const AuthenticatedCoachSettingsRoute =
-  AuthenticatedCoachSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedCoachRosterRoute =
-  AuthenticatedCoachRosterRouteImport.update({
-    id: '/roster',
-    path: '/roster',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedCoachPlansRoute = AuthenticatedCoachPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => AuthenticatedCoachRoute,
-} as any)
-const AuthenticatedCoachPaywallRoute =
-  AuthenticatedCoachPaywallRouteImport.update({
-    id: '/paywall',
-    path: '/paywall',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedCoachOnboardingRoute =
-  AuthenticatedCoachOnboardingRouteImport.update({
-    id: '/onboarding',
-    path: '/onboarding',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedCoachCelebrationPreviewRoute =
-  AuthenticatedCoachCelebrationPreviewRouteImport.update({
-    id: '/celebration-preview',
-    path: '/celebration-preview',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedAthleteSettingsRoute =
-  AuthenticatedAthleteSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
-const AuthenticatedAthleteOnboardingRoute =
-  AuthenticatedAthleteOnboardingRouteImport.update({
-    id: '/onboarding',
-    path: '/onboarding',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
-const AuthenticatedAdminUsageRoute = AuthenticatedAdminUsageRouteImport.update({
-  id: '/usage',
-  path: '/usage',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminSocialPlansRoute =
-  AuthenticatedAdminSocialPlansRouteImport.update({
-    id: '/social-plans',
-    path: '/social-plans',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminSessionsRoute =
-  AuthenticatedAdminSessionsRouteImport.update({
-    id: '/sessions',
-    path: '/sessions',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminReportsRoute =
-  AuthenticatedAdminReportsRouteImport.update({
-    id: '/reports',
-    path: '/reports',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminReportingRoute =
-  AuthenticatedAdminReportingRouteImport.update({
-    id: '/reporting',
-    path: '/reporting',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPromoCodesRoute =
-  AuthenticatedAdminPromoCodesRouteImport.update({
-    id: '/promo-codes',
-    path: '/promo-codes',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminParentInvitesRoute =
-  AuthenticatedAdminParentInvitesRouteImport.update({
-    id: '/parent-invites',
-    path: '/parent-invites',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminOrganizationsRoute =
-  AuthenticatedAdminOrganizationsRouteImport.update({
-    id: '/organizations',
-    path: '/organizations',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminPausedAthletesRoute = AuthenticatedAdminPausedAthletesRouteImport.update({
-  id: '/paused-athletes',
-  path: '/paused-athletes',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminLibraryRightsRoute =
-  AuthenticatedAdminLibraryRightsRouteImport.update({
-    id: '/library-rights',
-    path: '/library-rights',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminLeadsRoute = AuthenticatedAdminLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminKnowledgeRoute =
-  AuthenticatedAdminKnowledgeRouteImport.update({
-    id: '/knowledge',
-    path: '/knowledge',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminImpersonationRoute =
-  AuthenticatedAdminImpersonationRouteImport.update({
-    id: '/impersonation',
-    path: '/impersonation',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminFeedbackRoute =
-  AuthenticatedAdminFeedbackRouteImport.update({
-    id: '/feedback',
-    path: '/feedback',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminErrorsRoute =
-  AuthenticatedAdminErrorsRouteImport.update({
-    id: '/errors',
-    path: '/errors',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminEmailHealthRoute =
-  AuthenticatedAdminEmailHealthRouteImport.update({
-    id: '/email-health',
-    path: '/email-health',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminDemoAccountsRoute =
-  AuthenticatedAdminDemoAccountsRouteImport.update({
-    id: '/demo-accounts',
-    path: '/demo-accounts',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminCompetitionsRoute =
-  AuthenticatedAdminCompetitionsRouteImport.update({
-    id: '/competitions',
-    path: '/competitions',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminBillingRoute =
-  AuthenticatedAdminBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminAskRoute = AuthenticatedAdminAskRouteImport.update({
-  id: '/ask',
-  path: '/ask',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminAnnouncementsRoute =
-  AuthenticatedAdminAnnouncementsRouteImport.update({
-    id: '/announcements',
-    path: '/announcements',
+const AuthenticatedAdminActiveRoute =
+  AuthenticatedAdminActiveRouteImport.update({
+    id: '/active',
+    path: '/active',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminActivityRoute =
@@ -800,563 +502,321 @@ const AuthenticatedAdminActivityRoute =
     path: '/activity',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminActiveRoute =
-  AuthenticatedAdminActiveRouteImport.update({
-    id: '/active',
-    path: '/active',
+const AuthenticatedAdminAnnouncementsRoute =
+  AuthenticatedAdminAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiV1SavedAnswersIndexRoute = ApiV1SavedAnswersIndexRouteImport.update({
-  id: '/api/v1/saved-answers/',
-  path: '/api/v1/saved-answers/',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedAdminAskRoute = AuthenticatedAdminAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const ApiV1RoomsIndexRoute = ApiV1RoomsIndexRouteImport.update({
-  id: '/api/v1/rooms/',
-  path: '/api/v1/rooms/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ResourcesIndexRoute = ApiV1ResourcesIndexRouteImport.update({
-  id: '/api/v1/resources/',
-  path: '/api/v1/resources/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1RecapsIndexRoute = ApiV1RecapsIndexRouteImport.update({
-  id: '/api/v1/recaps/',
-  path: '/api/v1/recaps/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
-  id: '/api/v1/me/',
-  path: '/api/v1/me/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1DevicesIndexRoute = ApiV1DevicesIndexRouteImport.update({
-  id: '/api/v1/devices/',
-  path: '/api/v1/devices/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedParentResourcesIndexRoute =
-  AuthenticatedParentResourcesIndexRouteImport.update({
-    id: '/resources/',
-    path: '/resources/',
-    getParentRoute: () => AuthenticatedParentRoute,
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedParentPlansIndexRoute =
-  AuthenticatedParentPlansIndexRouteImport.update({
-    id: '/plans/',
-    path: '/plans/',
-    getParentRoute: () => AuthenticatedParentRoute,
+const AuthenticatedAdminCompetitionsRoute =
+  AuthenticatedAdminCompetitionsRouteImport.update({
+    id: '/competitions',
+    path: '/competitions',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedParentMessagesIndexRoute =
-  AuthenticatedParentMessagesIndexRouteImport.update({
-    id: '/messages/',
-    path: '/messages/',
-    getParentRoute: () => AuthenticatedParentRoute,
+const AuthenticatedAdminDemoAccountsRoute =
+  AuthenticatedAdminDemoAccountsRouteImport.update({
+    id: '/demo-accounts',
+    path: '/demo-accounts',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedCoachResourcesIndexRoute =
-  AuthenticatedCoachResourcesIndexRouteImport.update({
-    id: '/resources/',
-    path: '/resources/',
-    getParentRoute: () => AuthenticatedCoachRoute,
+const AuthenticatedAdminEmailHealthRoute =
+  AuthenticatedAdminEmailHealthRouteImport.update({
+    id: '/email-health',
+    path: '/email-health',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedCoachPlansIndexRoute =
-  AuthenticatedCoachPlansIndexRouteImport.update({
+const AuthenticatedAdminErrorsRoute =
+  AuthenticatedAdminErrorsRouteImport.update({
+    id: '/errors',
+    path: '/errors',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFeedbackRoute =
+  AuthenticatedAdminFeedbackRouteImport.update({
+    id: '/feedback',
+    path: '/feedback',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminImpersonationRoute =
+  AuthenticatedAdminImpersonationRouteImport.update({
+    id: '/impersonation',
+    path: '/impersonation',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminKnowledgeRoute =
+  AuthenticatedAdminKnowledgeRouteImport.update({
+    id: '/knowledge',
+    path: '/knowledge',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLeadsRoute = AuthenticatedAdminLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminLibraryRightsRoute =
+  AuthenticatedAdminLibraryRightsRouteImport.update({
+    id: '/library-rights',
+    path: '/library-rights',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminOrganizationsRoute =
+  AuthenticatedAdminOrganizationsRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminParentInvitesRoute =
+  AuthenticatedAdminParentInvitesRouteImport.update({
+    id: '/parent-invites',
+    path: '/parent-invites',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPausedAthletesRoute =
+  AuthenticatedAdminPausedAthletesRouteImport.update({
+    id: '/paused-athletes',
+    path: '/paused-athletes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPromoCodesRoute =
+  AuthenticatedAdminPromoCodesRouteImport.update({
+    id: '/promo-codes',
+    path: '/promo-codes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminReportingRoute =
+  AuthenticatedAdminReportingRouteImport.update({
+    id: '/reporting',
+    path: '/reporting',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminReportsRoute =
+  AuthenticatedAdminReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSessionsRoute =
+  AuthenticatedAdminSessionsRouteImport.update({
+    id: '/sessions',
+    path: '/sessions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSocialPlansRoute =
+  AuthenticatedAdminSocialPlansRouteImport.update({
+    id: '/social-plans',
+    path: '/social-plans',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsageRoute = AuthenticatedAdminUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAthleteIndexRoute =
+  AuthenticatedAthleteIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedCoachPlansRoute,
+    getParentRoute: () => AuthenticatedAthleteRoute,
   } as any)
-const AuthenticatedCoachMessagesIndexRoute =
-  AuthenticatedCoachMessagesIndexRouteImport.update({
-    id: '/messages/',
-    path: '/messages/',
+const AuthenticatedAthleteOnboardingRoute =
+  AuthenticatedAthleteOnboardingRouteImport.update({
+    id: '/onboarding',
+    path: '/onboarding',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthleteSettingsRoute =
+  AuthenticatedAthleteSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedCoachIndexRoute = AuthenticatedCoachIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCoachRoute,
+} as any)
+const AuthenticatedCoachCelebrationPreviewRoute =
+  AuthenticatedCoachCelebrationPreviewRouteImport.update({
+    id: '/celebration-preview',
+    path: '/celebration-preview',
     getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
-const AuthenticatedAthleteResourcesIndexRoute =
-  AuthenticatedAthleteResourcesIndexRouteImport.update({
-    id: '/resources/',
-    path: '/resources/',
-    getParentRoute: () => AuthenticatedAthleteRoute,
+const AuthenticatedCoachOnboardingRoute =
+  AuthenticatedCoachOnboardingRouteImport.update({
+    id: '/onboarding',
+    path: '/onboarding',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
-const AuthenticatedAthletePlansIndexRoute =
-  AuthenticatedAthletePlansIndexRouteImport.update({
-    id: '/plans/',
-    path: '/plans/',
-    getParentRoute: () => AuthenticatedAthleteRoute,
+const AuthenticatedCoachPaywallRoute =
+  AuthenticatedCoachPaywallRouteImport.update({
+    id: '/paywall',
+    path: '/paywall',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
-const AuthenticatedAthleteMessagesIndexRoute =
-  AuthenticatedAthleteMessagesIndexRouteImport.update({
-    id: '/messages/',
-    path: '/messages/',
-    getParentRoute: () => AuthenticatedAthleteRoute,
+const AuthenticatedCoachPlansRoute = AuthenticatedCoachPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthenticatedCoachRoute,
+} as any)
+const AuthenticatedCoachRosterRoute =
+  AuthenticatedCoachRosterRouteImport.update({
+    id: '/roster',
+    path: '/roster',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
-const AuthenticatedAdminUsersIndexRoute =
-  AuthenticatedAdminUsersIndexRouteImport.update({
-    id: '/users/',
-    path: '/users/',
-    getParentRoute: () => AuthenticatedAdminRoute,
+const AuthenticatedCoachSettingsRoute =
+  AuthenticatedCoachSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedCoachRoute,
   } as any)
+const AuthenticatedOrgAdminIndexRoute =
+  AuthenticatedOrgAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminCalendarRoute =
+  AuthenticatedOrgAdminCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminMovesRoute =
+  AuthenticatedOrgAdminMovesRouteImport.update({
+    id: '/moves',
+    path: '/moves',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminResourcesRoute =
+  AuthenticatedOrgAdminResourcesRouteImport.update({
+    id: '/resources',
+    path: '/resources',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminRosterRoute =
+  AuthenticatedOrgAdminRosterRouteImport.update({
+    id: '/roster',
+    path: '/roster',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminSettingsRoute =
+  AuthenticatedOrgAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminTemplatesRoute =
+  AuthenticatedOrgAdminTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedParentIndexRoute =
+  AuthenticatedParentIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentSettingsRoute =
+  AuthenticatedParentSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentTeamRoute = AuthenticatedParentTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedParentRoute,
+} as any)
+const ApiV1AskRoute = ApiV1AskRouteImport.update({
+  id: '/api/v1/ask',
+  path: '/api/v1/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ErrorsRoute = ApiV1ErrorsRouteImport.update({
+  id: '/api/v1/errors',
+  path: '/api/v1/errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1FeedbackRoute = ApiV1FeedbackRouteImport.update({
+  id: '/api/v1/feedback',
+  path: '/api/v1/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
+  id: '/api/v1/message-targets',
+  path: '/api/v1/message-targets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardSlugWallRoute = BoardSlugWallRouteImport.update({
+  id: '/board/$slug_/wall',
+  path: '/board/$slug/wall',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupAthleteAccountRoute = SignupAthleteAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => SignupAthleteRoute,
+} as any)
+const SignupAthleteAdultRoute = SignupAthleteAdultRouteImport.update({
+  id: '/adult',
+  path: '/adult',
+  getParentRoute: () => SignupAthleteRoute,
+} as any)
+const SignupAthleteConfirmRoute = SignupAthleteConfirmRouteImport.update({
+  id: '/confirm',
+  path: '/confirm',
+  getParentRoute: () => SignupAthleteRoute,
+} as any)
+const SignupParentAthletesRoute = SignupParentAthletesRouteImport.update({
+  id: '/athletes',
+  path: '/athletes',
+  getParentRoute: () => SignupParentRoute,
+} as any)
+const SignupParentGoalsRoute = SignupParentGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => SignupParentRoute,
+} as any)
+const SignupParentScheduleRoute = SignupParentScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => SignupParentRoute,
+} as any)
 const AuthenticatedAdminEmailsIndexRoute =
   AuthenticatedAdminEmailsIndexRouteImport.update({
     id: '/emails/',
     path: '/emails/',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1VoiceTranscribeRoute = ApiV1VoiceTranscribeRouteImport.update({
-  id: '/api/v1/voice/transcribe',
-  path: '/api/v1/voice/transcribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1VoiceBuildPlanRoute = ApiV1VoiceBuildPlanRouteImport.update({
-  id: '/api/v1/voice/build-plan',
-  path: '/api/v1/voice/build-plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1TeamInvitesPreviewRoute = ApiV1TeamInvitesPreviewRouteImport.update({
-  id: '/api/v1/team-invites/preview',
-  path: '/api/v1/team-invites/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1TeamInvitesClaimRoute = ApiV1TeamInvitesClaimRouteImport.update({
-  id: '/api/v1/team-invites/claim',
-  path: '/api/v1/team-invites/claim',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1SignupAdultAthleteRoute = ApiV1SignupAdultAthleteRouteImport.update({
-  id: '/api/v1/signup/adult-athlete',
-  path: '/api/v1/signup/adult-athlete',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1SavedAnswersIdRoute = ApiV1SavedAnswersIdRouteImport.update({
-  id: '/api/v1/saved-answers/$id',
-  path: '/api/v1/saved-answers/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1SafetyReportsRoute = ApiV1SafetyReportsRouteImport.update({
-  id: '/api/v1/safety/reports',
-  path: '/api/v1/safety/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1RoomsEnsureRoute = ApiV1RoomsEnsureRouteImport.update({
-  id: '/api/v1/rooms/ensure',
-  path: '/api/v1/rooms/ensure',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1RecapsPendingRoute = ApiV1RecapsPendingRouteImport.update({
-  id: '/api/v1/recaps/pending',
-  path: '/api/v1/recaps/pending',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1RecapsCoachesRoute = ApiV1RecapsCoachesRouteImport.update({
-  id: '/api/v1/recaps/coaches',
-  path: '/api/v1/recaps/coaches',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1PromoCodesValidateRoute = ApiV1PromoCodesValidateRouteImport.update({
-  id: '/api/v1/promo-codes/validate',
-  path: '/api/v1/promo-codes/validate',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentSettingsRoute = ApiV1ParentSettingsRouteImport.update({
-  id: '/api/v1/parent/settings',
-  path: '/api/v1/parent/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentProfileRoute = ApiV1ParentProfileRouteImport.update({
-  id: '/api/v1/parent/profile',
-  path: '/api/v1/parent/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentPlansRoute = ApiV1ParentPlansRouteImport.update({
-  id: '/api/v1/parent/plans',
-  path: '/api/v1/parent/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentInviteCodeRoute = ApiV1ParentInviteCodeRouteImport.update({
-  id: '/api/v1/parent/invite-code',
-  path: '/api/v1/parent/invite-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentGoalsRoute = ApiV1ParentGoalsRouteImport.update({
-  id: '/api/v1/parent/goals',
-  path: '/api/v1/parent/goals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentCoachVisibilityRoute =
-  ApiV1ParentCoachVisibilityRouteImport.update({
-    id: '/api/v1/parent/coach-visibility',
-    path: '/api/v1/parent/coach-visibility',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1OrgsVerifyCodeRoute = ApiV1OrgsVerifyCodeRouteImport.update({
-  id: '/api/v1/orgs/verify-code',
-  path: '/api/v1/orgs/verify-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsSearchRoute = ApiV1OrgsSearchRouteImport.update({
-  id: '/api/v1/orgs/search',
-  path: '/api/v1/orgs/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsPopularRoute = ApiV1OrgsPopularRouteImport.update({
-  id: '/api/v1/orgs/popular',
-  path: '/api/v1/orgs/popular',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsLookupCodeRoute = ApiV1OrgsLookupCodeRouteImport.update({
-  id: '/api/v1/orgs/lookup-code',
-  path: '/api/v1/orgs/lookup-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsLeadRoute = ApiV1OrgsLeadRouteImport.update({
-  id: '/api/v1/orgs/lead',
-  path: '/api/v1/orgs/lead',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsJoinRoute = ApiV1OrgsJoinRouteImport.update({
-  id: '/api/v1/orgs/join',
-  path: '/api/v1/orgs/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1OrgsClaimCodeRoute = ApiV1OrgsClaimCodeRouteImport.update({
-  id: '/api/v1/orgs/claim-code',
-  path: '/api/v1/orgs/claim-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
-  id: '/api/v1/meta/config',
-  path: '/api/v1/meta/config',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MetaClientPolicyRoute = ApiV1MetaClientPolicyRouteImport.update({
-  id: '/api/v1/meta/client-policy',
-  path: '/api/v1/meta/client-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MessagesUnreadTotalRoute =
-  ApiV1MessagesUnreadTotalRouteImport.update({
-    id: '/api/v1/messages/unread-total',
-    path: '/api/v1/messages/unread-total',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1MeTermsRoute = ApiV1MeTermsRouteImport.update({
-  id: '/api/v1/me/terms',
-  path: '/api/v1/me/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MePromoCodeRoute = ApiV1MePromoCodeRouteImport.update({
-  id: '/api/v1/me/promo-code',
-  path: '/api/v1/me/promo-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
-  id: '/api/v1/me/presence',
-  path: '/api/v1/me/presence',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MeDeletionImpactRoute = ApiV1MeDeletionImpactRouteImport.update({
-  id: '/api/v1/me/deletion-impact',
-  path: '/api/v1/me/deletion-impact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1MeAppTransactionRoute = ApiV1MeAppTransactionRouteImport.update({
-  id: '/api/v1/me/app-transaction',
-  path: '/api/v1/me/app-transaction',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
-  id: '/api/v1/invites/resolve',
-  path: '/api/v1/invites/resolve',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1GuardianStatusRoute = ApiV1GuardianStatusRouteImport.update({
-  id: '/api/v1/guardian/status',
-  path: '/api/v1/guardian/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1DevicesTokenRoute = ApiV1DevicesTokenRouteImport.update({
-  id: '/api/v1/devices/$token',
-  path: '/api/v1/devices/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1CompetitionsFinishedRoute =
-  ApiV1CompetitionsFinishedRouteImport.update({
-    id: '/api/v1/competitions/finished',
-    path: '/api/v1/competitions/finished',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachProfileRoute = ApiV1CoachProfileRouteImport.update({
-  id: '/api/v1/coach/profile',
-  path: '/api/v1/coach/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1CoachOrgRoute = ApiV1CoachOrgRouteImport.update({
-  id: '/api/v1/coach/org',
-  path: '/api/v1/coach/org',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1CoachLevelsRoute = ApiV1CoachLevelsRouteImport.update({
-  id: '/api/v1/coach/levels',
-  path: '/api/v1/coach/levels',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1CoachChecklistRoute = ApiV1CoachChecklistRouteImport.update({
-  id: '/api/v1/coach/checklist',
-  path: '/api/v1/coach/checklist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1CoachBillingRoute = ApiV1CoachBillingRouteImport.update({
-  id: '/api/v1/coach/billing',
-  path: '/api/v1/coach/billing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1BoardsMySkatersRoute = ApiV1BoardsMySkatersRouteImport.update({
-  id: '/api/v1/boards/my-skaters',
-  path: '/api/v1/boards/my-skaters',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AuthWebSessionRoute = ApiV1AuthWebSessionRouteImport.update({
-  id: '/api/v1/auth/web-session',
-  path: '/api/v1/auth/web-session',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AuthRecoverRoute = ApiV1AuthRecoverRouteImport.update({
-  id: '/api/v1/auth/recover',
-  path: '/api/v1/auth/recover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AuthPasswordRoute = ApiV1AuthPasswordRouteImport.update({
-  id: '/api/v1/auth/password',
-  path: '/api/v1/auth/password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AuthGoogleRoute = ApiV1AuthGoogleRouteImport.update({
-  id: '/api/v1/auth/google',
-  path: '/api/v1/auth/google',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AuthAppleRoute = ApiV1AuthAppleRouteImport.update({
-  id: '/api/v1/auth/apple',
-  path: '/api/v1/auth/apple',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AthleteSettingsRoute = ApiV1AthleteSettingsRouteImport.update({
-  id: '/api/v1/athlete/settings',
-  path: '/api/v1/athlete/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AthletePlansRoute = ApiV1AthletePlansRouteImport.update({
-  id: '/api/v1/athlete/plans',
-  path: '/api/v1/athlete/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AthleteMeRoute = ApiV1AthleteMeRouteImport.update({
-  id: '/api/v1/athlete/me',
-  path: '/api/v1/athlete/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AnalyticsEventsRoute = ApiV1AnalyticsEventsRouteImport.update({
-  id: '/api/v1/analytics/events',
-  path: '/api/v1/analytics/events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1AdultAthleteOnboardingRoute =
-  ApiV1AdultAthleteOnboardingRouteImport.update({
-    id: '/api/v1/adult-athlete/onboarding',
-    path: '/api/v1/adult-athlete/onboarding',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AdultAthleteGoalsRoute = ApiV1AdultAthleteGoalsRouteImport.update({
-  id: '/api/v1/adult-athlete/goals',
-  path: '/api/v1/adult-athlete/goals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWebhooksKwsRoute = ApiPublicWebhooksKwsRouteImport.update({
-  id: '/api/public/webhooks/kws',
-  path: '/api/public/webhooks/kws',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWebhooksAppStoreRoute =
-  ApiPublicWebhooksAppStoreRouteImport.update({
-    id: '/api/public/webhooks/app-store',
-    path: '/api/public/webhooks/app-store',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicPaymentsWebhookRoute =
-  ApiPublicPaymentsWebhookRouteImport.update({
-    id: '/api/public/payments/webhook',
-    path: '/api/public/payments/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksVoiceTranscriptsRoute =
-  ApiPublicHooksVoiceTranscriptsRouteImport.update({
-    id: '/api/public/hooks/voice-transcripts',
-    path: '/api/public/hooks/voice-transcripts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSkillInferenceRoute =
-  ApiPublicHooksSkillInferenceRouteImport.update({
-    id: '/api/public/hooks/skill-inference',
-    path: '/api/public/hooks/skill-inference',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksPracticeNudgesRoute =
-  ApiPublicHooksPracticeNudgesRouteImport.update({
-    id: '/api/public/hooks/practice-nudges',
-    path: '/api/public/hooks/practice-nudges',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksLifecycleEmailsRoute =
-  ApiPublicHooksLifecycleEmailsRouteImport.update({
-    id: '/api/public/hooks/lifecycle-emails',
-    path: '/api/public/hooks/lifecycle-emails',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksLessonWrapUpsRoute =
-  ApiPublicHooksLessonWrapUpsRouteImport.update({
-    id: '/api/public/hooks/lesson-wrap-ups',
-    path: '/api/public/hooks/lesson-wrap-ups',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksLessonRemindersRoute =
-  ApiPublicHooksLessonRemindersRouteImport.update({
-    id: '/api/public/hooks/lesson-reminders',
-    path: '/api/public/hooks/lesson-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksKnowledgeIngestRoute =
-  ApiPublicHooksKnowledgeIngestRouteImport.update({
-    id: '/api/public/hooks/knowledge-ingest',
-    path: '/api/public/hooks/knowledge-ingest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksIjsCatalogSweepRoute =
-  ApiPublicHooksIjsCatalogSweepRouteImport.update({
-    id: '/api/public/hooks/ijs-catalog-sweep',
-    path: '/api/public/hooks/ijs-catalog-sweep',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksErrorDigestRoute =
-  ApiPublicHooksErrorDigestRouteImport.update({
-    id: '/api/public/hooks/error-digest',
-    path: '/api/public/hooks/error-digest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksConsentRetentionRoute =
-  ApiPublicHooksConsentRetentionRouteImport.update({
-    id: '/api/public/hooks/consent-retention',
-    path: '/api/public/hooks/consent-retention',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCompetitionRecapsRoute =
-  ApiPublicHooksCompetitionRecapsRouteImport.update({
-    id: '/api/public/hooks/competition-recaps',
-    path: '/api/public/hooks/competition-recaps',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksBillingNoticesRoute =
-  ApiPublicHooksBillingNoticesRouteImport.update({
-    id: '/api/public/hooks/billing-notices',
-    path: '/api/public/hooks/billing-notices',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicBoardRefreshRoute = ApiPublicBoardRefreshRouteImport.update({
-  id: '/api/public/board/refresh',
-  path: '/api/public/board/refresh',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedParentSettingsAccountRoute =
-  AuthenticatedParentSettingsAccountRouteImport.update({
-    id: '/settings_/account',
-    path: '/settings/account',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedParentPlansPlanIdRoute =
-  AuthenticatedParentPlansPlanIdRouteImport.update({
-    id: '/plans/$planId',
-    path: '/plans/$planId',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedParentMessagesRoomIdRoute =
-  AuthenticatedParentMessagesRoomIdRouteImport.update({
-    id: '/messages/$roomId',
-    path: '/messages/$roomId',
-    getParentRoute: () => AuthenticatedParentRoute,
-  } as any)
-const AuthenticatedCoachSettingsAccountRoute =
-  AuthenticatedCoachSettingsAccountRouteImport.update({
-    id: '/settings_/account',
-    path: '/settings/account',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedCoachPlansPlanIdRoute =
-  AuthenticatedCoachPlansPlanIdRouteImport.update({
-    id: '/$planId',
-    path: '/$planId',
-    getParentRoute: () => AuthenticatedCoachPlansRoute,
-  } as any)
-const AuthenticatedCoachMessagesRoomIdRoute =
-  AuthenticatedCoachMessagesRoomIdRouteImport.update({
-    id: '/messages/$roomId',
-    path: '/messages/$roomId',
-    getParentRoute: () => AuthenticatedCoachRoute,
-  } as any)
-const AuthenticatedAthleteSettingsAccountRoute =
-  AuthenticatedAthleteSettingsAccountRouteImport.update({
-    id: '/settings_/account',
-    path: '/settings/account',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
-const AuthenticatedAthletePlansPlanIdRoute =
-  AuthenticatedAthletePlansPlanIdRouteImport.update({
-    id: '/plans/$planId',
-    path: '/plans/$planId',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
-const AuthenticatedAthleteMessagesRoomIdRoute =
-  AuthenticatedAthleteMessagesRoomIdRouteImport.update({
-    id: '/messages/$roomId',
-    path: '/messages/$roomId',
-    getParentRoute: () => AuthenticatedAthleteRoute,
-  } as any)
-const AuthenticatedAdminUsersUserIdRoute =
-  AuthenticatedAdminUsersUserIdRouteImport.update({
-    id: '/users/$userId',
-    path: '/users/$userId',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPlansPlanIdRoute =
-  AuthenticatedAdminPlansPlanIdRouteImport.update({
-    id: '/plans/$planId',
-    path: '/plans/$planId',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminListKindRoute =
-  AuthenticatedAdminListKindRouteImport.update({
-    id: '/list/$kind',
-    path: '/list/$kind',
+const AuthenticatedAdminEmailsNameRoute =
+  AuthenticatedAdminEmailsNameRouteImport.update({
+    id: '/emails/$name',
+    path: '/emails/$name',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminErrorsIdRoute =
@@ -1365,494 +825,551 @@ const AuthenticatedAdminErrorsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedAdminErrorsRoute,
   } as any)
-const AuthenticatedAdminEmailsNameRoute =
-  AuthenticatedAdminEmailsNameRouteImport.update({
-    id: '/emails/$name',
-    path: '/emails/$name',
+const AuthenticatedAdminListKindRoute =
+  AuthenticatedAdminListKindRouteImport.update({
+    id: '/list/$kind',
+    path: '/list/$kind',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
-  id: '/api/v1/safety/blocks/',
-  path: '/api/v1/safety/blocks/',
+const AuthenticatedAdminPlansPlanIdRoute =
+  AuthenticatedAdminPlansPlanIdRouteImport.update({
+    id: '/plans/$planId',
+    path: '/plans/$planId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsersIndexRoute =
+  AuthenticatedAdminUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsersUserIdRoute =
+  AuthenticatedAdminUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAthleteMessagesIndexRoute =
+  AuthenticatedAthleteMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthleteMessagesRoomIdRoute =
+  AuthenticatedAthleteMessagesRoomIdRouteImport.update({
+    id: '/messages/$roomId',
+    path: '/messages/$roomId',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthletePlansIndexRoute =
+  AuthenticatedAthletePlansIndexRouteImport.update({
+    id: '/plans/',
+    path: '/plans/',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthletePlansPlanIdRoute =
+  AuthenticatedAthletePlansPlanIdRouteImport.update({
+    id: '/plans/$planId',
+    path: '/plans/$planId',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthleteResourcesIndexRoute =
+  AuthenticatedAthleteResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedAthleteSettingsAccountRoute =
+  AuthenticatedAthleteSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedAthleteRoute,
+  } as any)
+const AuthenticatedCoachMessagesIndexRoute =
+  AuthenticatedCoachMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
+const AuthenticatedCoachMessagesRoomIdRoute =
+  AuthenticatedCoachMessagesRoomIdRouteImport.update({
+    id: '/messages/$roomId',
+    path: '/messages/$roomId',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
+const AuthenticatedCoachPlansIndexRoute =
+  AuthenticatedCoachPlansIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCoachPlansRoute,
+  } as any)
+const AuthenticatedCoachPlansPlanIdRoute =
+  AuthenticatedCoachPlansPlanIdRouteImport.update({
+    id: '/$planId',
+    path: '/$planId',
+    getParentRoute: () => AuthenticatedCoachPlansRoute,
+  } as any)
+const AuthenticatedCoachResourcesIndexRoute =
+  AuthenticatedCoachResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
+const AuthenticatedCoachSettingsAccountRoute =
+  AuthenticatedCoachSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedCoachRoute,
+  } as any)
+const AuthenticatedParentMessagesIndexRoute =
+  AuthenticatedParentMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentMessagesRoomIdRoute =
+  AuthenticatedParentMessagesRoomIdRouteImport.update({
+    id: '/messages/$roomId',
+    path: '/messages/$roomId',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentPlansIndexRoute =
+  AuthenticatedParentPlansIndexRouteImport.update({
+    id: '/plans/',
+    path: '/plans/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentPlansPlanIdRoute =
+  AuthenticatedParentPlansPlanIdRouteImport.update({
+    id: '/plans/$planId',
+    path: '/plans/$planId',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentResourcesIndexRoute =
+  AuthenticatedParentResourcesIndexRouteImport.update({
+    id: '/resources/',
+    path: '/resources/',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const AuthenticatedParentSettingsAccountRoute =
+  AuthenticatedParentSettingsAccountRouteImport.update({
+    id: '/settings_/account',
+    path: '/settings/account',
+    getParentRoute: () => AuthenticatedParentRoute,
+  } as any)
+const ApiPublicBoardRefreshRoute = ApiPublicBoardRefreshRouteImport.update({
+  id: '/api/public/board/refresh',
+  path: '/api/public/board/refresh',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1RoomsIdIndexRoute = ApiV1RoomsIdIndexRouteImport.update({
-  id: '/api/v1/rooms/$id/',
-  path: '/api/v1/rooms/$id/',
+const ApiPublicHooksBillingNoticesRoute =
+  ApiPublicHooksBillingNoticesRouteImport.update({
+    id: '/api/public/hooks/billing-notices',
+    path: '/api/public/hooks/billing-notices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCompetitionRecapsRoute =
+  ApiPublicHooksCompetitionRecapsRouteImport.update({
+    id: '/api/public/hooks/competition-recaps',
+    path: '/api/public/hooks/competition-recaps',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksConsentRetentionRoute =
+  ApiPublicHooksConsentRetentionRouteImport.update({
+    id: '/api/public/hooks/consent-retention',
+    path: '/api/public/hooks/consent-retention',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksErrorDigestRoute =
+  ApiPublicHooksErrorDigestRouteImport.update({
+    id: '/api/public/hooks/error-digest',
+    path: '/api/public/hooks/error-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksIjsCatalogSweepRoute =
+  ApiPublicHooksIjsCatalogSweepRouteImport.update({
+    id: '/api/public/hooks/ijs-catalog-sweep',
+    path: '/api/public/hooks/ijs-catalog-sweep',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksKnowledgeIngestRoute =
+  ApiPublicHooksKnowledgeIngestRouteImport.update({
+    id: '/api/public/hooks/knowledge-ingest',
+    path: '/api/public/hooks/knowledge-ingest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLessonRemindersRoute =
+  ApiPublicHooksLessonRemindersRouteImport.update({
+    id: '/api/public/hooks/lesson-reminders',
+    path: '/api/public/hooks/lesson-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLessonWrapUpsRoute =
+  ApiPublicHooksLessonWrapUpsRouteImport.update({
+    id: '/api/public/hooks/lesson-wrap-ups',
+    path: '/api/public/hooks/lesson-wrap-ups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLifecycleEmailsRoute =
+  ApiPublicHooksLifecycleEmailsRouteImport.update({
+    id: '/api/public/hooks/lifecycle-emails',
+    path: '/api/public/hooks/lifecycle-emails',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPracticeNudgesRoute =
+  ApiPublicHooksPracticeNudgesRouteImport.update({
+    id: '/api/public/hooks/practice-nudges',
+    path: '/api/public/hooks/practice-nudges',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSkillInferenceRoute =
+  ApiPublicHooksSkillInferenceRouteImport.update({
+    id: '/api/public/hooks/skill-inference',
+    path: '/api/public/hooks/skill-inference',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksVoiceTranscriptsRoute =
+  ApiPublicHooksVoiceTranscriptsRouteImport.update({
+    id: '/api/public/hooks/voice-transcripts',
+    path: '/api/public/hooks/voice-transcripts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksAppStoreRoute =
+  ApiPublicWebhooksAppStoreRouteImport.update({
+    id: '/api/public/webhooks/app-store',
+    path: '/api/public/webhooks/app-store',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksKwsRoute = ApiPublicWebhooksKwsRouteImport.update({
+  id: '/api/public/webhooks/kws',
+  path: '/api/public/webhooks/kws',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PublicBoardsIndexRoute = ApiV1PublicBoardsIndexRouteImport.update({
-  id: '/api/v1/public/boards/',
-  path: '/api/v1/public/boards/',
+const ApiV1AdultAthleteGoalsRoute = ApiV1AdultAthleteGoalsRouteImport.update({
+  id: '/api/v1/adult-athlete/goals',
+  path: '/api/v1/adult-athlete/goals',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PlansIdIndexRoute = ApiV1PlansIdIndexRouteImport.update({
-  id: '/api/v1/plans/$id/',
-  path: '/api/v1/plans/$id/',
+const ApiV1AdultAthleteOnboardingRoute =
+  ApiV1AdultAthleteOnboardingRouteImport.update({
+    id: '/api/v1/adult-athlete/onboarding',
+    path: '/api/v1/adult-athlete/onboarding',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AnalyticsEventsRoute = ApiV1AnalyticsEventsRouteImport.update({
+  id: '/api/v1/analytics/events',
+  path: '/api/v1/analytics/events',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1ParentTeamIndexRoute = ApiV1ParentTeamIndexRouteImport.update({
-  id: '/api/v1/parent/team/',
-  path: '/api/v1/parent/team/',
+const ApiV1AthleteMeRoute = ApiV1AthleteMeRouteImport.update({
+  id: '/api/v1/athlete/me',
+  path: '/api/v1/athlete/me',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1ParentAthletesIndexRoute =
-  ApiV1ParentAthletesIndexRouteImport.update({
-    id: '/api/v1/parent/athletes/',
-    path: '/api/v1/parent/athletes/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1MeCelebrationsIndexRoute =
-  ApiV1MeCelebrationsIndexRouteImport.update({
-    id: '/api/v1/me/celebrations/',
-    path: '/api/v1/me/celebrations/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1LiveActivitiesTokensIndexRoute =
-  ApiV1LiveActivitiesTokensIndexRouteImport.update({
-    id: '/api/v1/live-activities/tokens/',
-    path: '/api/v1/live-activities/tokens/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianClaimIndexRoute = ApiV1GuardianClaimIndexRouteImport.update({
-  id: '/api/v1/guardian/claim/',
-  path: '/api/v1/guardian/claim/',
+const ApiV1AthletePlansRoute = ApiV1AthletePlansRouteImport.update({
+  id: '/api/v1/athlete/plans',
+  path: '/api/v1/athlete/plans',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachWrapUpsIndexRoute = ApiV1CoachWrapUpsIndexRouteImport.update({
-  id: '/api/v1/coach/wrap-ups/',
-  path: '/api/v1/coach/wrap-ups/',
+const ApiV1AthleteSettingsRoute = ApiV1AthleteSettingsRouteImport.update({
+  id: '/api/v1/athlete/settings',
+  path: '/api/v1/athlete/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachRosterIndexRoute = ApiV1CoachRosterIndexRouteImport.update({
-  id: '/api/v1/coach/roster/',
-  path: '/api/v1/coach/roster/',
+const ApiV1AuthAppleRoute = ApiV1AuthAppleRouteImport.update({
+  id: '/api/v1/auth/apple',
+  path: '/api/v1/auth/apple',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachResourcesIndexRoute =
-  ApiV1CoachResourcesIndexRouteImport.update({
-    id: '/api/v1/coach/resources/',
-    path: '/api/v1/coach/resources/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachPostEventIndexRoute =
-  ApiV1CoachPostEventIndexRouteImport.update({
-    id: '/api/v1/coach/post-event/',
-    path: '/api/v1/coach/post-event/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachPlansIndexRoute = ApiV1CoachPlansIndexRouteImport.update({
-  id: '/api/v1/coach/plans/',
-  path: '/api/v1/coach/plans/',
+const ApiV1AuthGoogleRoute = ApiV1AuthGoogleRouteImport.update({
+  id: '/api/v1/auth/google',
+  path: '/api/v1/auth/google',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachMovesIndexRoute = ApiV1CoachMovesIndexRouteImport.update({
-  id: '/api/v1/coach/moves/',
-  path: '/api/v1/coach/moves/',
+const ApiV1AuthPasswordRoute = ApiV1AuthPasswordRouteImport.update({
+  id: '/api/v1/auth/password',
+  path: '/api/v1/auth/password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachLessonSlotsIndexRoute =
-  ApiV1CoachLessonSlotsIndexRouteImport.update({
-    id: '/api/v1/coach/lesson-slots/',
-    path: '/api/v1/coach/lesson-slots/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachInvoicesIndexRoute = ApiV1CoachInvoicesIndexRouteImport.update({
-  id: '/api/v1/coach/invoices/',
-  path: '/api/v1/coach/invoices/',
+const ApiV1AuthRecoverRoute = ApiV1AuthRecoverRouteImport.update({
+  id: '/api/v1/auth/recover',
+  path: '/api/v1/auth/recover',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachInviteCodeIndexRoute =
-  ApiV1CoachInviteCodeIndexRouteImport.update({
-    id: '/api/v1/coach/invite-code/',
-    path: '/api/v1/coach/invite-code/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AthleteGoalsIndexRoute = ApiV1AthleteGoalsIndexRouteImport.update({
-  id: '/api/v1/athlete/goals/',
-  path: '/api/v1/athlete/goals/',
+const ApiV1AuthWebSessionRoute = ApiV1AuthWebSessionRouteImport.update({
+  id: '/api/v1/auth/web-session',
+  path: '/api/v1/auth/web-session',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AdultAthleteSchedulesIndexRoute =
-  ApiV1AdultAthleteSchedulesIndexRouteImport.update({
-    id: '/api/v1/adult-athlete/schedules/',
-    path: '/api/v1/adult-athlete/schedules/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AdultAthleteCoachesIndexRoute =
-  ApiV1AdultAthleteCoachesIndexRouteImport.update({
-    id: '/api/v1/adult-athlete/coaches/',
-    path: '/api/v1/adult-athlete/coaches/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupParentValidateCodeRoute =
-  ApiV1SignupParentValidateCodeRouteImport.update({
-    id: '/api/v1/signup/parent/validate-code',
-    path: '/api/v1/signup/parent/validate-code',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupParentStatusRoute = ApiV1SignupParentStatusRouteImport.update({
-  id: '/api/v1/signup/parent/status',
-  path: '/api/v1/signup/parent/status',
+const ApiV1BoardsMySkatersRoute = ApiV1BoardsMySkatersRouteImport.update({
+  id: '/api/v1/boards/my-skaters',
+  path: '/api/v1/boards/my-skaters',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1SignupParentStartRoute = ApiV1SignupParentStartRouteImport.update({
-  id: '/api/v1/signup/parent/start',
-  path: '/api/v1/signup/parent/start',
+const ApiV1CoachBillingRoute = ApiV1CoachBillingRouteImport.update({
+  id: '/api/v1/coach/billing',
+  path: '/api/v1/coach/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1SignupParentScheduleRoute =
-  ApiV1SignupParentScheduleRouteImport.update({
-    id: '/api/v1/signup/parent/schedule',
-    path: '/api/v1/signup/parent/schedule',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupParentLinkCoachRoute =
-  ApiV1SignupParentLinkCoachRouteImport.update({
-    id: '/api/v1/signup/parent/link-coach',
-    path: '/api/v1/signup/parent/link-coach',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupParentGoalsRoute = ApiV1SignupParentGoalsRouteImport.update({
-  id: '/api/v1/signup/parent/goals',
-  path: '/api/v1/signup/parent/goals',
+const ApiV1CoachChecklistRoute = ApiV1CoachChecklistRouteImport.update({
+  id: '/api/v1/coach/checklist',
+  path: '/api/v1/coach/checklist',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1SignupParentCoachPreviewRoute =
-  ApiV1SignupParentCoachPreviewRouteImport.update({
-    id: '/api/v1/signup/parent/coach-preview',
-    path: '/api/v1/signup/parent/coach-preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupParentAthletesForCodeRoute =
-  ApiV1SignupParentAthletesForCodeRouteImport.update({
-    id: '/api/v1/signup/parent/athletes-for-code',
-    path: '/api/v1/signup/parent/athletes-for-code',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupAthleteUsernameRoute =
-  ApiV1SignupAthleteUsernameRouteImport.update({
-    id: '/api/v1/signup/athlete/username',
-    path: '/api/v1/signup/athlete/username',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupAthleteInviteSummaryRoute =
-  ApiV1SignupAthleteInviteSummaryRouteImport.update({
-    id: '/api/v1/signup/athlete/invite-summary',
-    path: '/api/v1/signup/athlete/invite-summary',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1SignupAthleteClaimRoute = ApiV1SignupAthleteClaimRouteImport.update({
-  id: '/api/v1/signup/athlete/claim',
-  path: '/api/v1/signup/athlete/claim',
+const ApiV1CoachLevelsRoute = ApiV1CoachLevelsRouteImport.update({
+  id: '/api/v1/coach/levels',
+  path: '/api/v1/coach/levels',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1SafetyBlocksUserIdRoute = ApiV1SafetyBlocksUserIdRouteImport.update({
-  id: '/api/v1/safety/blocks/$userId',
-  path: '/api/v1/safety/blocks/$userId',
+const ApiV1CoachOrgRoute = ApiV1CoachOrgRouteImport.update({
+  id: '/api/v1/coach/org',
+  path: '/api/v1/coach/org',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1RoomsIdReadRoute = ApiV1RoomsIdReadRouteImport.update({
-  id: '/api/v1/rooms/$id/read',
-  path: '/api/v1/rooms/$id/read',
+const ApiV1CoachProfileRoute = ApiV1CoachProfileRouteImport.update({
+  id: '/api/v1/coach/profile',
+  path: '/api/v1/coach/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1RoomsIdMessagesRoute = ApiV1RoomsIdMessagesRouteImport.update({
-  id: '/api/v1/rooms/$id/messages',
-  path: '/api/v1/rooms/$id/messages',
+const ApiV1CompetitionsFinishedRoute =
+  ApiV1CompetitionsFinishedRouteImport.update({
+    id: '/api/v1/competitions/finished',
+    path: '/api/v1/competitions/finished',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1DevicesIndexRoute = ApiV1DevicesIndexRouteImport.update({
+  id: '/api/v1/devices/',
+  path: '/api/v1/devices/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1RoomsIdActivePlansRoute = ApiV1RoomsIdActivePlansRouteImport.update({
-  id: '/api/v1/rooms/$id/active-plans',
-  path: '/api/v1/rooms/$id/active-plans',
+const ApiV1DevicesTokenRoute = ApiV1DevicesTokenRouteImport.update({
+  id: '/api/v1/devices/$token',
+  path: '/api/v1/devices/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1ResourcesIdSignedUrlRoute =
-  ApiV1ResourcesIdSignedUrlRouteImport.update({
-    id: '/api/v1/resources/$id/signed-url',
-    path: '/api/v1/resources/$id/signed-url',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1RecapsIdDismissRoute = ApiV1RecapsIdDismissRouteImport.update({
-  id: '/api/v1/recaps/$id/dismiss',
-  path: '/api/v1/recaps/$id/dismiss',
+const ApiV1GuardianStatusRoute = ApiV1GuardianStatusRouteImport.update({
+  id: '/api/v1/guardian/status',
+  path: '/api/v1/guardian/status',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PublicPlansTokenRoute = ApiV1PublicPlansTokenRouteImport.update({
-  id: '/api/v1/public/plans/$token',
-  path: '/api/v1/public/plans/$token',
+const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
+  id: '/api/v1/invites/resolve',
+  path: '/api/v1/invites/resolve',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PublicBoardsSearchRoute = ApiV1PublicBoardsSearchRouteImport.update({
-  id: '/api/v1/public/boards/search',
-  path: '/api/v1/public/boards/search',
+const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
+  id: '/api/v1/me/',
+  path: '/api/v1/me/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
-  id: '/api/v1/public/boards/$slug',
-  path: '/api/v1/public/boards/$slug',
+const ApiV1MeAppTransactionRoute = ApiV1MeAppTransactionRouteImport.update({
+  id: '/api/v1/me/app-transaction',
+  path: '/api/v1/me/app-transaction',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PlansImportTokenRoute = ApiV1PlansImportTokenRouteImport.update({
-  id: '/api/v1/plans/import/$token',
-  path: '/api/v1/plans/import/$token',
+const ApiV1MeDeletionImpactRoute = ApiV1MeDeletionImpactRouteImport.update({
+  id: '/api/v1/me/deletion-impact',
+  path: '/api/v1/me/deletion-impact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PlansIdStatusRoute = ApiV1PlansIdStatusRouteImport.update({
-  id: '/api/v1/plans/$id/status',
-  path: '/api/v1/plans/$id/status',
+const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
+  id: '/api/v1/me/presence',
+  path: '/api/v1/me/presence',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PlansIdShareTokenRoute = ApiV1PlansIdShareTokenRouteImport.update({
-  id: '/api/v1/plans/$id/share-token',
-  path: '/api/v1/plans/$id/share-token',
+const ApiV1MePromoCodeRoute = ApiV1MePromoCodeRouteImport.update({
+  id: '/api/v1/me/promo-code',
+  path: '/api/v1/me/promo-code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
-  id: '/api/v1/me/terms_/accept',
-  path: '/api/v1/me/terms/accept',
+const ApiV1MeTermsRoute = ApiV1MeTermsRouteImport.update({
+  id: '/api/v1/me/terms',
+  path: '/api/v1/me/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1LiveActivitiesTokensTokenRoute =
-  ApiV1LiveActivitiesTokensTokenRouteImport.update({
-    id: '/api/v1/live-activities/tokens/$token',
-    path: '/api/v1/live-activities/tokens/$token',
+const ApiV1MessagesUnreadTotalRoute =
+  ApiV1MessagesUnreadTotalRouteImport.update({
+    id: '/api/v1/messages/unread-total',
+    path: '/api/v1/messages/unread-total',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1InvitesParentPreviewRoute =
-  ApiV1InvitesParentPreviewRouteImport.update({
-    id: '/api/v1/invites/parent/preview',
-    path: '/api/v1/invites/parent/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1InvitesParentClaimRoute = ApiV1InvitesParentClaimRouteImport.update({
-  id: '/api/v1/invites/parent/claim',
-  path: '/api/v1/invites/parent/claim',
+const ApiV1MetaClientPolicyRoute = ApiV1MetaClientPolicyRouteImport.update({
+  id: '/api/v1/meta/client-policy',
+  path: '/api/v1/meta/client-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1InvitesAdultAthletePreviewRoute =
-  ApiV1InvitesAdultAthletePreviewRouteImport.update({
-    id: '/api/v1/invites/adult-athlete/preview',
-    path: '/api/v1/invites/adult-athlete/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1InvitesAdultAthleteClaimRoute =
-  ApiV1InvitesAdultAthleteClaimRouteImport.update({
-    id: '/api/v1/invites/adult-athlete/claim',
-    path: '/api/v1/invites/adult-athlete/claim',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianVerificationStatusRoute =
-  ApiV1GuardianVerificationStatusRouteImport.update({
-    id: '/api/v1/guardian/verification/status',
-    path: '/api/v1/guardian/verification/status',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianVerificationStartRoute =
-  ApiV1GuardianVerificationStartRouteImport.update({
-    id: '/api/v1/guardian/verification/start',
-    path: '/api/v1/guardian/verification/start',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianVerificationCompleteRoute =
-  ApiV1GuardianVerificationCompleteRouteImport.update({
-    id: '/api/v1/guardian/verification/complete',
-    path: '/api/v1/guardian/verification/complete',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianClaimSummaryRoute =
-  ApiV1GuardianClaimSummaryRouteImport.update({
-    id: '/api/v1/guardian/claim/summary',
-    path: '/api/v1/guardian/claim/summary',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianClaimSelfRoute = ApiV1GuardianClaimSelfRouteImport.update({
-  id: '/api/v1/guardian/claim/self',
-  path: '/api/v1/guardian/claim/self',
+const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
+  id: '/api/v1/meta/config',
+  path: '/api/v1/meta/config',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1GuardianClaimMergeOptionsRoute =
-  ApiV1GuardianClaimMergeOptionsRouteImport.update({
-    id: '/api/v1/guardian/claim/merge-options',
-    path: '/api/v1/guardian/claim/merge-options',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianClaimMergeRoute = ApiV1GuardianClaimMergeRouteImport.update({
-  id: '/api/v1/guardian/claim/merge',
-  path: '/api/v1/guardian/claim/merge',
+const ApiV1OrgsClaimCodeRoute = ApiV1OrgsClaimCodeRouteImport.update({
+  id: '/api/v1/orgs/claim-code',
+  path: '/api/v1/orgs/claim-code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1GuardianClaimContextRoute =
-  ApiV1GuardianClaimContextRouteImport.update({
-    id: '/api/v1/guardian/claim/context',
-    path: '/api/v1/guardian/claim/context',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CompetitionsIdSkaterMatchesRoute =
-  ApiV1CompetitionsIdSkaterMatchesRouteImport.update({
-    id: '/api/v1/competitions/$id/skater-matches',
-    path: '/api/v1/competitions/$id/skater-matches',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CompetitionsIdAttendanceRoute =
-  ApiV1CompetitionsIdAttendanceRouteImport.update({
-    id: '/api/v1/competitions/$id/attendance',
-    path: '/api/v1/competitions/$id/attendance',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachWrapUpsPendingRoute =
-  ApiV1CoachWrapUpsPendingRouteImport.update({
-    id: '/api/v1/coach/wrap-ups/pending',
-    path: '/api/v1/coach/wrap-ups/pending',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachVisibilityMineRoute =
-  ApiV1CoachVisibilityMineRouteImport.update({
-    id: '/api/v1/coach/visibility/mine',
-    path: '/api/v1/coach/visibility/mine',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachScheduleImportParseRoute =
-  ApiV1CoachScheduleImportParseRouteImport.update({
-    id: '/api/v1/coach/schedule-import/parse',
-    path: '/api/v1/coach/schedule-import/parse',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachScheduleImportCommitRoute =
-  ApiV1CoachScheduleImportCommitRouteImport.update({
-    id: '/api/v1/coach/schedule-import/commit',
-    path: '/api/v1/coach/schedule-import/commit',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachRosterPracticeSummariesRoute =
-  ApiV1CoachRosterPracticeSummariesRouteImport.update({
-    id: '/api/v1/coach/roster/practice-summaries',
-    path: '/api/v1/coach/roster/practice-summaries',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachResourcesUploadUrlRoute =
-  ApiV1CoachResourcesUploadUrlRouteImport.update({
-    id: '/api/v1/coach/resources/upload-url',
-    path: '/api/v1/coach/resources/upload-url',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachResourcesIdRoute = ApiV1CoachResourcesIdRouteImport.update({
-  id: '/api/v1/coach/resources/$id',
-  path: '/api/v1/coach/resources/$id',
+const ApiV1OrgsJoinRoute = ApiV1OrgsJoinRouteImport.update({
+  id: '/api/v1/orgs/join',
+  path: '/api/v1/orgs/join',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1CoachOtherPlansPlanIdRoute =
-  ApiV1CoachOtherPlansPlanIdRouteImport.update({
-    id: '/api/v1/coach/other-plans/$planId',
-    path: '/api/v1/coach/other-plans/$planId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachOnboardingCompleteRoute =
-  ApiV1CoachOnboardingCompleteRouteImport.update({
-    id: '/api/v1/coach/onboarding/complete',
-    path: '/api/v1/coach/onboarding/complete',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachMovesFromPlanMoveRoute =
-  ApiV1CoachMovesFromPlanMoveRouteImport.update({
-    id: '/api/v1/coach/moves/from-plan-move',
-    path: '/api/v1/coach/moves/from-plan-move',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachMovesForkFromPlanMoveRoute =
-  ApiV1CoachMovesForkFromPlanMoveRouteImport.update({
-    id: '/api/v1/coach/moves/fork-from-plan-move',
-    path: '/api/v1/coach/moves/fork-from-plan-move',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachInvoicesPreviewRoute =
-  ApiV1CoachInvoicesPreviewRouteImport.update({
-    id: '/api/v1/coach/invoices/preview',
-    path: '/api/v1/coach/invoices/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachInviteCodeRotateRoute =
-  ApiV1CoachInviteCodeRotateRouteImport.update({
-    id: '/api/v1/coach/invite-code/rotate',
-    path: '/api/v1/coach/invite-code/rotate',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachFoundingRestoreRoute =
-  ApiV1CoachFoundingRestoreRouteImport.update({
-    id: '/api/v1/coach/founding/restore',
-    path: '/api/v1/coach/founding/restore',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachFoundingClaimRoute = ApiV1CoachFoundingClaimRouteImport.update({
-  id: '/api/v1/coach/founding/claim',
-  path: '/api/v1/coach/founding/claim',
+const ApiV1OrgsLeadRoute = ApiV1OrgsLeadRouteImport.update({
+  id: '/api/v1/orgs/lead',
+  path: '/api/v1/orgs/lead',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AuthUsernameResolveRoute =
-  ApiV1AuthUsernameResolveRouteImport.update({
-    id: '/api/v1/auth/username/resolve',
-    path: '/api/v1/auth/username/resolve',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AuthUsernameCheckRoute = ApiV1AuthUsernameCheckRouteImport.update({
-  id: '/api/v1/auth/username/check',
-  path: '/api/v1/auth/username/check',
+const ApiV1OrgsLookupCodeRoute = ApiV1OrgsLookupCodeRouteImport.update({
+  id: '/api/v1/orgs/lookup-code',
+  path: '/api/v1/orgs/lookup-code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AuthSignupParentRoute = ApiV1AuthSignupParentRouteImport.update({
-  id: '/api/v1/auth/signup/parent',
-  path: '/api/v1/auth/signup/parent',
+const ApiV1OrgsPopularRoute = ApiV1OrgsPopularRouteImport.update({
+  id: '/api/v1/orgs/popular',
+  path: '/api/v1/orgs/popular',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AuthSignupCoachRoute = ApiV1AuthSignupCoachRouteImport.update({
-  id: '/api/v1/auth/signup/coach',
-  path: '/api/v1/auth/signup/coach',
+const ApiV1OrgsSearchRoute = ApiV1OrgsSearchRouteImport.update({
+  id: '/api/v1/orgs/search',
+  path: '/api/v1/orgs/search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AuthSignupAdultAthleteRoute =
-  ApiV1AuthSignupAdultAthleteRouteImport.update({
-    id: '/api/v1/auth/signup/adult-athlete',
-    path: '/api/v1/auth/signup/adult-athlete',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AuthAttestRegisterRoute = ApiV1AuthAttestRegisterRouteImport.update({
-  id: '/api/v1/auth/attest/register',
-  path: '/api/v1/auth/attest/register',
+const ApiV1OrgsVerifyCodeRoute = ApiV1OrgsVerifyCodeRouteImport.update({
+  id: '/api/v1/orgs/verify-code',
+  path: '/api/v1/orgs/verify-code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AthletesIdRecapsRoute = ApiV1AthletesIdRecapsRouteImport.update({
-  id: '/api/v1/athletes/$id/recaps',
-  path: '/api/v1/athletes/$id/recaps',
+const ApiV1ParentCoachVisibilityRoute =
+  ApiV1ParentCoachVisibilityRouteImport.update({
+    id: '/api/v1/parent/coach-visibility',
+    path: '/api/v1/parent/coach-visibility',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentGoalsRoute = ApiV1ParentGoalsRouteImport.update({
+  id: '/api/v1/parent/goals',
+  path: '/api/v1/parent/goals',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1AthleteGoalsMotivationRoute =
-  ApiV1AthleteGoalsMotivationRouteImport.update({
-    id: '/api/v1/athlete/goals/motivation',
-    path: '/api/v1/athlete/goals/motivation',
+const ApiV1ParentInviteCodeRoute = ApiV1ParentInviteCodeRouteImport.update({
+  id: '/api/v1/parent/invite-code',
+  path: '/api/v1/parent/invite-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ParentPlansRoute = ApiV1ParentPlansRouteImport.update({
+  id: '/api/v1/parent/plans',
+  path: '/api/v1/parent/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ParentProfileRoute = ApiV1ParentProfileRouteImport.update({
+  id: '/api/v1/parent/profile',
+  path: '/api/v1/parent/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ParentSettingsRoute = ApiV1ParentSettingsRouteImport.update({
+  id: '/api/v1/parent/settings',
+  path: '/api/v1/parent/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PromoCodesValidateRoute = ApiV1PromoCodesValidateRouteImport.update({
+  id: '/api/v1/promo-codes/validate',
+  path: '/api/v1/promo-codes/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RecapsIndexRoute = ApiV1RecapsIndexRouteImport.update({
+  id: '/api/v1/recaps/',
+  path: '/api/v1/recaps/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RecapsCoachesRoute = ApiV1RecapsCoachesRouteImport.update({
+  id: '/api/v1/recaps/coaches',
+  path: '/api/v1/recaps/coaches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RecapsPendingRoute = ApiV1RecapsPendingRouteImport.update({
+  id: '/api/v1/recaps/pending',
+  path: '/api/v1/recaps/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ResourcesIndexRoute = ApiV1ResourcesIndexRouteImport.update({
+  id: '/api/v1/resources/',
+  path: '/api/v1/resources/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIndexRoute = ApiV1RoomsIndexRouteImport.update({
+  id: '/api/v1/rooms/',
+  path: '/api/v1/rooms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsEnsureRoute = ApiV1RoomsEnsureRouteImport.update({
+  id: '/api/v1/rooms/ensure',
+  path: '/api/v1/rooms/ensure',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SafetyReportsRoute = ApiV1SafetyReportsRouteImport.update({
+  id: '/api/v1/safety/reports',
+  path: '/api/v1/safety/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SavedAnswersIndexRoute = ApiV1SavedAnswersIndexRouteImport.update({
+  id: '/api/v1/saved-answers/',
+  path: '/api/v1/saved-answers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SavedAnswersIdRoute = ApiV1SavedAnswersIdRouteImport.update({
+  id: '/api/v1/saved-answers/$id',
+  path: '/api/v1/saved-answers/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupAdultAthleteRoute = ApiV1SignupAdultAthleteRouteImport.update({
+  id: '/api/v1/signup/adult-athlete',
+  path: '/api/v1/signup/adult-athlete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TeamInvitesClaimRoute = ApiV1TeamInvitesClaimRouteImport.update({
+  id: '/api/v1/team-invites/claim',
+  path: '/api/v1/team-invites/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TeamInvitesPreviewRoute = ApiV1TeamInvitesPreviewRouteImport.update({
+  id: '/api/v1/team-invites/preview',
+  path: '/api/v1/team-invites/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1VoiceBuildPlanRoute = ApiV1VoiceBuildPlanRouteImport.update({
+  id: '/api/v1/voice/build-plan',
+  path: '/api/v1/voice/build-plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1VoiceTranscribeRoute = ApiV1VoiceTranscribeRouteImport.update({
+  id: '/api/v1/voice/transcribe',
+  path: '/api/v1/voice/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1AthleteGoalsLongTermRoute =
-  ApiV1AthleteGoalsLongTermRouteImport.update({
-    id: '/api/v1/athlete/goals/long-term',
-    path: '/api/v1/athlete/goals/long-term',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AdultAthleteSchedulesCoachIdRoute =
-  ApiV1AdultAthleteSchedulesCoachIdRouteImport.update({
-    id: '/api/v1/adult-athlete/schedules/$coachId',
-    path: '/api/v1/adult-athlete/schedules/$coachId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AdultAthleteCoachSportsOfferedRoute =
-  ApiV1AdultAthleteCoachSportsOfferedRouteImport.update({
-    id: '/api/v1/adult-athlete/coach/sports-offered',
-    path: '/api/v1/adult-athlete/coach/sports-offered',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1AdultAthleteCoachPreviewRoute =
-  ApiV1AdultAthleteCoachPreviewRouteImport.update({
-    id: '/api/v1/adult-athlete/coach/preview',
-    path: '/api/v1/adult-athlete/coach/preview',
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1AdultAthleteCoachLinkRoute =
@@ -1861,75 +1378,488 @@ const ApiV1AdultAthleteCoachLinkRoute =
     path: '/api/v1/adult-athlete/coach/link',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1PlansIdSessionsIndexRoute =
-  ApiV1PlansIdSessionsIndexRouteImport.update({
-    id: '/api/v1/plans/$id/sessions/',
-    path: '/api/v1/plans/$id/sessions/',
+const ApiV1AdultAthleteCoachPreviewRoute =
+  ApiV1AdultAthleteCoachPreviewRouteImport.update({
+    id: '/api/v1/adult-athlete/coach/preview',
+    path: '/api/v1/adult-athlete/coach/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1PlansIdMovesIndexRoute = ApiV1PlansIdMovesIndexRouteImport.update({
-  id: '/api/v1/plans/$id/moves/',
-  path: '/api/v1/plans/$id/moves/',
+const ApiV1AdultAthleteCoachSportsOfferedRoute =
+  ApiV1AdultAthleteCoachSportsOfferedRouteImport.update({
+    id: '/api/v1/adult-athlete/coach/sports-offered',
+    path: '/api/v1/adult-athlete/coach/sports-offered',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteCoachesIndexRoute =
+  ApiV1AdultAthleteCoachesIndexRouteImport.update({
+    id: '/api/v1/adult-athlete/coaches/',
+    path: '/api/v1/adult-athlete/coaches/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteSchedulesIndexRoute =
+  ApiV1AdultAthleteSchedulesIndexRouteImport.update({
+    id: '/api/v1/adult-athlete/schedules/',
+    path: '/api/v1/adult-athlete/schedules/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AdultAthleteSchedulesCoachIdRoute =
+  ApiV1AdultAthleteSchedulesCoachIdRouteImport.update({
+    id: '/api/v1/adult-athlete/schedules/$coachId',
+    path: '/api/v1/adult-athlete/schedules/$coachId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1AthleteGoalsIndexRoute = ApiV1AthleteGoalsIndexRouteImport.update({
+  id: '/api/v1/athlete/goals/',
+  path: '/api/v1/athlete/goals/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1ParentTeamGuardiansIndexRoute =
-  ApiV1ParentTeamGuardiansIndexRouteImport.update({
-    id: '/api/v1/parent/team/guardians/',
-    path: '/api/v1/parent/team/guardians/',
+const ApiV1AthleteGoalsLongTermRoute =
+  ApiV1AthleteGoalsLongTermRouteImport.update({
+    id: '/api/v1/athlete/goals/long-term',
+    path: '/api/v1/athlete/goals/long-term',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentAthletesIdIndexRoute =
-  ApiV1ParentAthletesIdIndexRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/',
-    path: '/api/v1/parent/athletes/$id/',
+const ApiV1AthleteGoalsMotivationRoute =
+  ApiV1AthleteGoalsMotivationRouteImport.update({
+    id: '/api/v1/athlete/goals/motivation',
+    path: '/api/v1/athlete/goals/motivation',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachVisibilityIdIndexRoute =
-  ApiV1CoachVisibilityIdIndexRouteImport.update({
-    id: '/api/v1/coach/visibility/$id/',
-    path: '/api/v1/coach/visibility/$id/',
+const ApiV1AthletesIdRecapsRoute = ApiV1AthletesIdRecapsRouteImport.update({
+  id: '/api/v1/athletes/$id/recaps',
+  path: '/api/v1/athletes/$id/recaps',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthAttestRegisterRoute = ApiV1AuthAttestRegisterRouteImport.update({
+  id: '/api/v1/auth/attest/register',
+  path: '/api/v1/auth/attest/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthSignupAdultAthleteRoute =
+  ApiV1AuthSignupAdultAthleteRouteImport.update({
+    id: '/api/v1/auth/signup/adult-athlete',
+    path: '/api/v1/auth/signup/adult-athlete',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachRosterAthletesIndexRoute =
-  ApiV1CoachRosterAthletesIndexRouteImport.update({
-    id: '/api/v1/coach/roster/athletes/',
-    path: '/api/v1/coach/roster/athletes/',
+const ApiV1AuthSignupCoachRoute = ApiV1AuthSignupCoachRouteImport.update({
+  id: '/api/v1/auth/signup/coach',
+  path: '/api/v1/auth/signup/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthSignupParentRoute = ApiV1AuthSignupParentRouteImport.update({
+  id: '/api/v1/auth/signup/parent',
+  path: '/api/v1/auth/signup/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthUsernameCheckRoute = ApiV1AuthUsernameCheckRouteImport.update({
+  id: '/api/v1/auth/username/check',
+  path: '/api/v1/auth/username/check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthUsernameResolveRoute =
+  ApiV1AuthUsernameResolveRouteImport.update({
+    id: '/api/v1/auth/username/resolve',
+    path: '/api/v1/auth/username/resolve',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachLessonSlotsIdIndexRoute =
-  ApiV1CoachLessonSlotsIdIndexRouteImport.update({
-    id: '/api/v1/coach/lesson-slots/$id/',
-    path: '/api/v1/coach/lesson-slots/$id/',
+const ApiV1CoachFoundingClaimRoute = ApiV1CoachFoundingClaimRouteImport.update({
+  id: '/api/v1/coach/founding/claim',
+  path: '/api/v1/coach/founding/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachFoundingRestoreRoute =
+  ApiV1CoachFoundingRestoreRouteImport.update({
+    id: '/api/v1/coach/founding/restore',
+    path: '/api/v1/coach/founding/restore',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachInvoicesIdIndexRoute =
-  ApiV1CoachInvoicesIdIndexRouteImport.update({
-    id: '/api/v1/coach/invoices/$id/',
-    path: '/api/v1/coach/invoices/$id/',
+const ApiV1CoachInviteCodeIndexRoute =
+  ApiV1CoachInviteCodeIndexRouteImport.update({
+    id: '/api/v1/coach/invite-code/',
+    path: '/api/v1/coach/invite-code/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachAthletesIdIndexRoute =
-  ApiV1CoachAthletesIdIndexRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/',
-    path: '/api/v1/coach/athletes/$id/',
+const ApiV1CoachInviteCodeRotateRoute =
+  ApiV1CoachInviteCodeRotateRouteImport.update({
+    id: '/api/v1/coach/invite-code/rotate',
+    path: '/api/v1/coach/invite-code/rotate',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1BoardsSlugFollowsIndexRoute =
-  ApiV1BoardsSlugFollowsIndexRouteImport.update({
-    id: '/api/v1/boards/$slug/follows/',
-    path: '/api/v1/boards/$slug/follows/',
+const ApiV1CoachInvoicesIndexRoute = ApiV1CoachInvoicesIndexRouteImport.update({
+  id: '/api/v1/coach/invoices/',
+  path: '/api/v1/coach/invoices/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachInvoicesPreviewRoute =
+  ApiV1CoachInvoicesPreviewRouteImport.update({
+    id: '/api/v1/coach/invoices/preview',
+    path: '/api/v1/coach/invoices/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1AthletesIdCompetitionResultsIndexRoute =
-  ApiV1AthletesIdCompetitionResultsIndexRouteImport.update({
-    id: '/api/v1/athletes/$id/competition-results/',
-    path: '/api/v1/athletes/$id/competition-results/',
+const ApiV1CoachLessonSlotsIndexRoute =
+  ApiV1CoachLessonSlotsIndexRouteImport.update({
+    id: '/api/v1/coach/lesson-slots/',
+    path: '/api/v1/coach/lesson-slots/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1AthletesIdCompetitionLinksIndexRoute =
-  ApiV1AthletesIdCompetitionLinksIndexRouteImport.update({
-    id: '/api/v1/athletes/$id/competition-links/',
-    path: '/api/v1/athletes/$id/competition-links/',
+const ApiV1CoachMovesIndexRoute = ApiV1CoachMovesIndexRouteImport.update({
+  id: '/api/v1/coach/moves/',
+  path: '/api/v1/coach/moves/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachMovesForkFromPlanMoveRoute =
+  ApiV1CoachMovesForkFromPlanMoveRouteImport.update({
+    id: '/api/v1/coach/moves/fork-from-plan-move',
+    path: '/api/v1/coach/moves/fork-from-plan-move',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachMovesFromPlanMoveRoute =
+  ApiV1CoachMovesFromPlanMoveRouteImport.update({
+    id: '/api/v1/coach/moves/from-plan-move',
+    path: '/api/v1/coach/moves/from-plan-move',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachOnboardingCompleteRoute =
+  ApiV1CoachOnboardingCompleteRouteImport.update({
+    id: '/api/v1/coach/onboarding/complete',
+    path: '/api/v1/coach/onboarding/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachOtherPlansPlanIdRoute =
+  ApiV1CoachOtherPlansPlanIdRouteImport.update({
+    id: '/api/v1/coach/other-plans/$planId',
+    path: '/api/v1/coach/other-plans/$planId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachPlansIndexRoute = ApiV1CoachPlansIndexRouteImport.update({
+  id: '/api/v1/coach/plans/',
+  path: '/api/v1/coach/plans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachPostEventIndexRoute =
+  ApiV1CoachPostEventIndexRouteImport.update({
+    id: '/api/v1/coach/post-event/',
+    path: '/api/v1/coach/post-event/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachResourcesIndexRoute =
+  ApiV1CoachResourcesIndexRouteImport.update({
+    id: '/api/v1/coach/resources/',
+    path: '/api/v1/coach/resources/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachResourcesIdRoute = ApiV1CoachResourcesIdRouteImport.update({
+  id: '/api/v1/coach/resources/$id',
+  path: '/api/v1/coach/resources/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachResourcesUploadUrlRoute =
+  ApiV1CoachResourcesUploadUrlRouteImport.update({
+    id: '/api/v1/coach/resources/upload-url',
+    path: '/api/v1/coach/resources/upload-url',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachRosterIndexRoute = ApiV1CoachRosterIndexRouteImport.update({
+  id: '/api/v1/coach/roster/',
+  path: '/api/v1/coach/roster/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachRosterPracticeSummariesRoute =
+  ApiV1CoachRosterPracticeSummariesRouteImport.update({
+    id: '/api/v1/coach/roster/practice-summaries',
+    path: '/api/v1/coach/roster/practice-summaries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachScheduleImportCommitRoute =
+  ApiV1CoachScheduleImportCommitRouteImport.update({
+    id: '/api/v1/coach/schedule-import/commit',
+    path: '/api/v1/coach/schedule-import/commit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachScheduleImportParseRoute =
+  ApiV1CoachScheduleImportParseRouteImport.update({
+    id: '/api/v1/coach/schedule-import/parse',
+    path: '/api/v1/coach/schedule-import/parse',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachVisibilityMineRoute =
+  ApiV1CoachVisibilityMineRouteImport.update({
+    id: '/api/v1/coach/visibility/mine',
+    path: '/api/v1/coach/visibility/mine',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachWrapUpsIndexRoute = ApiV1CoachWrapUpsIndexRouteImport.update({
+  id: '/api/v1/coach/wrap-ups/',
+  path: '/api/v1/coach/wrap-ups/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachWrapUpsPendingRoute =
+  ApiV1CoachWrapUpsPendingRouteImport.update({
+    id: '/api/v1/coach/wrap-ups/pending',
+    path: '/api/v1/coach/wrap-ups/pending',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CompetitionsIdAttendanceRoute =
+  ApiV1CompetitionsIdAttendanceRouteImport.update({
+    id: '/api/v1/competitions/$id/attendance',
+    path: '/api/v1/competitions/$id/attendance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CompetitionsIdSkaterMatchesRoute =
+  ApiV1CompetitionsIdSkaterMatchesRouteImport.update({
+    id: '/api/v1/competitions/$id/skater-matches',
+    path: '/api/v1/competitions/$id/skater-matches',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianClaimIndexRoute = ApiV1GuardianClaimIndexRouteImport.update({
+  id: '/api/v1/guardian/claim/',
+  path: '/api/v1/guardian/claim/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1GuardianClaimContextRoute =
+  ApiV1GuardianClaimContextRouteImport.update({
+    id: '/api/v1/guardian/claim/context',
+    path: '/api/v1/guardian/claim/context',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianClaimMergeRoute = ApiV1GuardianClaimMergeRouteImport.update({
+  id: '/api/v1/guardian/claim/merge',
+  path: '/api/v1/guardian/claim/merge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1GuardianClaimMergeOptionsRoute =
+  ApiV1GuardianClaimMergeOptionsRouteImport.update({
+    id: '/api/v1/guardian/claim/merge-options',
+    path: '/api/v1/guardian/claim/merge-options',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianClaimSelfRoute = ApiV1GuardianClaimSelfRouteImport.update({
+  id: '/api/v1/guardian/claim/self',
+  path: '/api/v1/guardian/claim/self',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1GuardianClaimSummaryRoute =
+  ApiV1GuardianClaimSummaryRouteImport.update({
+    id: '/api/v1/guardian/claim/summary',
+    path: '/api/v1/guardian/claim/summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationCompleteRoute =
+  ApiV1GuardianVerificationCompleteRouteImport.update({
+    id: '/api/v1/guardian/verification/complete',
+    path: '/api/v1/guardian/verification/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationStartRoute =
+  ApiV1GuardianVerificationStartRouteImport.update({
+    id: '/api/v1/guardian/verification/start',
+    path: '/api/v1/guardian/verification/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianVerificationStatusRoute =
+  ApiV1GuardianVerificationStatusRouteImport.update({
+    id: '/api/v1/guardian/verification/status',
+    path: '/api/v1/guardian/verification/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1InvitesAdultAthleteClaimRoute =
+  ApiV1InvitesAdultAthleteClaimRouteImport.update({
+    id: '/api/v1/invites/adult-athlete/claim',
+    path: '/api/v1/invites/adult-athlete/claim',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1InvitesAdultAthletePreviewRoute =
+  ApiV1InvitesAdultAthletePreviewRouteImport.update({
+    id: '/api/v1/invites/adult-athlete/preview',
+    path: '/api/v1/invites/adult-athlete/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1InvitesParentClaimRoute = ApiV1InvitesParentClaimRouteImport.update({
+  id: '/api/v1/invites/parent/claim',
+  path: '/api/v1/invites/parent/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1InvitesParentPreviewRoute =
+  ApiV1InvitesParentPreviewRouteImport.update({
+    id: '/api/v1/invites/parent/preview',
+    path: '/api/v1/invites/parent/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1LiveActivitiesTokensIndexRoute =
+  ApiV1LiveActivitiesTokensIndexRouteImport.update({
+    id: '/api/v1/live-activities/tokens/',
+    path: '/api/v1/live-activities/tokens/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1LiveActivitiesTokensTokenRoute =
+  ApiV1LiveActivitiesTokensTokenRouteImport.update({
+    id: '/api/v1/live-activities/tokens/$token',
+    path: '/api/v1/live-activities/tokens/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MeCelebrationsIndexRoute =
+  ApiV1MeCelebrationsIndexRouteImport.update({
+    id: '/api/v1/me/celebrations/',
+    path: '/api/v1/me/celebrations/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
+  id: '/api/v1/me/terms_/accept',
+  path: '/api/v1/me/terms/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ParentAthletesIndexRoute =
+  ApiV1ParentAthletesIndexRouteImport.update({
+    id: '/api/v1/parent/athletes/',
+    path: '/api/v1/parent/athletes/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentTeamIndexRoute = ApiV1ParentTeamIndexRouteImport.update({
+  id: '/api/v1/parent/team/',
+  path: '/api/v1/parent/team/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdIndexRoute = ApiV1PlansIdIndexRouteImport.update({
+  id: '/api/v1/plans/$id/',
+  path: '/api/v1/plans/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdShareTokenRoute = ApiV1PlansIdShareTokenRouteImport.update({
+  id: '/api/v1/plans/$id/share-token',
+  path: '/api/v1/plans/$id/share-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdStatusRoute = ApiV1PlansIdStatusRouteImport.update({
+  id: '/api/v1/plans/$id/status',
+  path: '/api/v1/plans/$id/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansImportTokenRoute = ApiV1PlansImportTokenRouteImport.update({
+  id: '/api/v1/plans/import/$token',
+  path: '/api/v1/plans/import/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicBoardsIndexRoute = ApiV1PublicBoardsIndexRouteImport.update({
+  id: '/api/v1/public/boards/',
+  path: '/api/v1/public/boards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicBoardsSlugRoute = ApiV1PublicBoardsSlugRouteImport.update({
+  id: '/api/v1/public/boards/$slug',
+  path: '/api/v1/public/boards/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicBoardsSearchRoute = ApiV1PublicBoardsSearchRouteImport.update({
+  id: '/api/v1/public/boards/search',
+  path: '/api/v1/public/boards/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PublicPlansTokenRoute = ApiV1PublicPlansTokenRouteImport.update({
+  id: '/api/v1/public/plans/$token',
+  path: '/api/v1/public/plans/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RecapsIdDismissRoute = ApiV1RecapsIdDismissRouteImport.update({
+  id: '/api/v1/recaps/$id/dismiss',
+  path: '/api/v1/recaps/$id/dismiss',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ResourcesIdSignedUrlRoute =
+  ApiV1ResourcesIdSignedUrlRouteImport.update({
+    id: '/api/v1/resources/$id/signed-url',
+    path: '/api/v1/resources/$id/signed-url',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1RoomsIdIndexRoute = ApiV1RoomsIdIndexRouteImport.update({
+  id: '/api/v1/rooms/$id/',
+  path: '/api/v1/rooms/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdActivePlansRoute = ApiV1RoomsIdActivePlansRouteImport.update({
+  id: '/api/v1/rooms/$id/active-plans',
+  path: '/api/v1/rooms/$id/active-plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdMessagesRoute = ApiV1RoomsIdMessagesRouteImport.update({
+  id: '/api/v1/rooms/$id/messages',
+  path: '/api/v1/rooms/$id/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1RoomsIdReadRoute = ApiV1RoomsIdReadRouteImport.update({
+  id: '/api/v1/rooms/$id/read',
+  path: '/api/v1/rooms/$id/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SafetyBlocksIndexRoute = ApiV1SafetyBlocksIndexRouteImport.update({
+  id: '/api/v1/safety/blocks/',
+  path: '/api/v1/safety/blocks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SafetyBlocksUserIdRoute = ApiV1SafetyBlocksUserIdRouteImport.update({
+  id: '/api/v1/safety/blocks/$userId',
+  path: '/api/v1/safety/blocks/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupAthleteClaimRoute = ApiV1SignupAthleteClaimRouteImport.update({
+  id: '/api/v1/signup/athlete/claim',
+  path: '/api/v1/signup/athlete/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupAthleteInviteSummaryRoute =
+  ApiV1SignupAthleteInviteSummaryRouteImport.update({
+    id: '/api/v1/signup/athlete/invite-summary',
+    path: '/api/v1/signup/athlete/invite-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupAthleteUsernameRoute =
+  ApiV1SignupAthleteUsernameRouteImport.update({
+    id: '/api/v1/signup/athlete/username',
+    path: '/api/v1/signup/athlete/username',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentAthletesForCodeRoute =
+  ApiV1SignupParentAthletesForCodeRouteImport.update({
+    id: '/api/v1/signup/parent/athletes-for-code',
+    path: '/api/v1/signup/parent/athletes-for-code',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentCoachPreviewRoute =
+  ApiV1SignupParentCoachPreviewRouteImport.update({
+    id: '/api/v1/signup/parent/coach-preview',
+    path: '/api/v1/signup/parent/coach-preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentGoalsRoute = ApiV1SignupParentGoalsRouteImport.update({
+  id: '/api/v1/signup/parent/goals',
+  path: '/api/v1/signup/parent/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentLinkCoachRoute =
+  ApiV1SignupParentLinkCoachRouteImport.update({
+    id: '/api/v1/signup/parent/link-coach',
+    path: '/api/v1/signup/parent/link-coach',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentScheduleRoute =
+  ApiV1SignupParentScheduleRouteImport.update({
+    id: '/api/v1/signup/parent/schedule',
+    path: '/api/v1/signup/parent/schedule',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1SignupParentStartRoute = ApiV1SignupParentStartRouteImport.update({
+  id: '/api/v1/signup/parent/start',
+  path: '/api/v1/signup/parent/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentStatusRoute = ApiV1SignupParentStatusRouteImport.update({
+  id: '/api/v1/signup/parent/status',
+  path: '/api/v1/signup/parent/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SignupParentValidateCodeRoute =
+  ApiV1SignupParentValidateCodeRouteImport.update({
+    id: '/api/v1/signup/parent/validate-code',
+    path: '/api/v1/signup/parent/validate-code',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1AdultAthleteCoachesIdIndexRoute =
@@ -1938,158 +1868,16 @@ const ApiV1AdultAthleteCoachesIdIndexRoute =
     path: '/api/v1/adult-athlete/coaches/$id/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1PlansIdSessionsSummaryRoute =
-  ApiV1PlansIdSessionsSummaryRouteImport.update({
-    id: '/api/v1/plans/$id/sessions/summary',
-    path: '/api/v1/plans/$id/sessions/summary',
+const ApiV1AdultAthleteCoachesIdSportsRoute =
+  ApiV1AdultAthleteCoachesIdSportsRouteImport.update({
+    id: '/api/v1/adult-athlete/coaches/$id/sports',
+    path: '/api/v1/adult-athlete/coaches/$id/sports',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1PlansIdMovesOrderRoute = ApiV1PlansIdMovesOrderRouteImport.update({
-  id: '/api/v1/plans/$id/moves/order',
-  path: '/api/v1/plans/$id/moves/order',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1PlansIdMovesFromLibraryRoute =
-  ApiV1PlansIdMovesFromLibraryRouteImport.update({
-    id: '/api/v1/plans/$id/moves/from-library',
-    path: '/api/v1/plans/$id/moves/from-library',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1PlansIdMovesMoveIdRoute = ApiV1PlansIdMovesMoveIdRouteImport.update({
-  id: '/api/v1/plans/$id/moves/$moveId',
-  path: '/api/v1/plans/$id/moves/$moveId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1ParentTeamGuardiansIdRoute =
-  ApiV1ParentTeamGuardiansIdRouteImport.update({
-    id: '/api/v1/parent/team/guardians/$id',
-    path: '/api/v1/parent/team/guardians/$id',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdScheduleRoute =
-  ApiV1ParentAthletesIdScheduleRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/schedule',
-    path: '/api/v1/parent/athletes/$id/schedule',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdResetPasswordRoute =
-  ApiV1ParentAthletesIdResetPasswordRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/reset-password',
-    path: '/api/v1/parent/athletes/$id/reset-password',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdPrimaryCoachRoute =
-  ApiV1ParentAthletesIdPrimaryCoachRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/primary-coach',
-    path: '/api/v1/parent/athletes/$id/primary-coach',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdGoalsRoute =
-  ApiV1ParentAthletesIdGoalsRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/goals',
-    path: '/api/v1/parent/athletes/$id/goals',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1MeCelebrationsIdAckRoute =
-  ApiV1MeCelebrationsIdAckRouteImport.update({
-    id: '/api/v1/me/celebrations/$id/ack',
-    path: '/api/v1/me/celebrations/$id/ack',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1GuardianInvitesIdResendRoute =
-  ApiV1GuardianInvitesIdResendRouteImport.update({
-    id: '/api/v1/guardian/invites/$id/resend',
-    path: '/api/v1/guardian/invites/$id/resend',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachVisibilityIdRespondRoute =
-  ApiV1CoachVisibilityIdRespondRouteImport.update({
-    id: '/api/v1/coach/visibility/$id/respond',
-    path: '/api/v1/coach/visibility/$id/respond',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachStarterPlansIdAdoptRoute =
-  ApiV1CoachStarterPlansIdAdoptRouteImport.update({
-    id: '/api/v1/coach/starter-plans/$id/adopt',
-    path: '/api/v1/coach/starter-plans/$id/adopt',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachRosterAthletesAthleteIdRoute =
-  ApiV1CoachRosterAthletesAthleteIdRouteImport.update({
-    id: '/api/v1/coach/roster/athletes/$athleteId',
-    path: '/api/v1/coach/roster/athletes/$athleteId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachPostEventIdDismissRoute =
-  ApiV1CoachPostEventIdDismissRouteImport.update({
-    id: '/api/v1/coach/post-event/$id/dismiss',
-    path: '/api/v1/coach/post-event/$id/dismiss',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachMovesIdUpdateFromPlanMoveRoute =
-  ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport.update({
-    id: '/api/v1/coach/moves/$id/update-from-plan-move',
-    path: '/api/v1/coach/moves/$id/update-from-plan-move',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachMovesIdArchiveRoute =
-  ApiV1CoachMovesIdArchiveRouteImport.update({
-    id: '/api/v1/coach/moves/$id/archive',
-    path: '/api/v1/coach/moves/$id/archive',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachInvoicesIdStatusRoute =
-  ApiV1CoachInvoicesIdStatusRouteImport.update({
-    id: '/api/v1/coach/invoices/$id/status',
-    path: '/api/v1/coach/invoices/$id/status',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachCompetitionsIdRosterRoute =
-  ApiV1CoachCompetitionsIdRosterRouteImport.update({
-    id: '/api/v1/coach/competitions/$id/roster',
-    path: '/api/v1/coach/competitions/$id/roster',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdRateRoute =
-  ApiV1CoachAthletesIdRateRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/rate',
-    path: '/api/v1/coach/athletes/$id/rate',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdPracticeTargetRoute =
-  ApiV1CoachAthletesIdPracticeTargetRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/practice-target',
-    path: '/api/v1/coach/athletes/$id/practice-target',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdBriefingRoute =
-  ApiV1CoachAthletesIdBriefingRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/briefing',
-    path: '/api/v1/coach/athletes/$id/briefing',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdBillingRoute =
-  ApiV1CoachAthletesIdBillingRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/billing',
-    path: '/api/v1/coach/athletes/$id/billing',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdAiSummaryRoute =
-  ApiV1CoachAthletesIdAiSummaryRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/ai-summary',
-    path: '/api/v1/coach/athletes/$id/ai-summary',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachAthletesIdActivePlansRoute =
-  ApiV1CoachAthletesIdActivePlansRouteImport.update({
-    id: '/api/v1/coach/athletes/$id/active-plans',
-    path: '/api/v1/coach/athletes/$id/active-plans',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1BoardsSlugFollowsNameRoute =
-  ApiV1BoardsSlugFollowsNameRouteImport.update({
-    id: '/api/v1/boards/$slug/follows/$name',
-    path: '/api/v1/boards/$slug/follows/$name',
+const ApiV1AthletesIdCompetitionLinksIndexRoute =
+  ApiV1AthletesIdCompetitionLinksIndexRouteImport.update({
+    id: '/api/v1/athletes/$id/competition-links/',
+    path: '/api/v1/athletes/$id/competition-links/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1AthletesIdCompetitionLinksLinkIdRoute =
@@ -2098,22 +1886,223 @@ const ApiV1AthletesIdCompetitionLinksLinkIdRoute =
     path: '/api/v1/athletes/$id/competition-links/$linkId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1AdultAthleteCoachesIdSportsRoute =
-  ApiV1AdultAthleteCoachesIdSportsRouteImport.update({
-    id: '/api/v1/adult-athlete/coaches/$id/sports',
-    path: '/api/v1/adult-athlete/coaches/$id/sports',
+const ApiV1AthletesIdCompetitionResultsIndexRoute =
+  ApiV1AthletesIdCompetitionResultsIndexRouteImport.update({
+    id: '/api/v1/athletes/$id/competition-results/',
+    path: '/api/v1/athletes/$id/competition-results/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentTeamGuardiansInvitesIndexRoute =
-  ApiV1ParentTeamGuardiansInvitesIndexRouteImport.update({
-    id: '/api/v1/parent/team/guardians/invites/',
-    path: '/api/v1/parent/team/guardians/invites/',
+const ApiV1BoardsSlugFollowsIndexRoute =
+  ApiV1BoardsSlugFollowsIndexRouteImport.update({
+    id: '/api/v1/boards/$slug/follows/',
+    path: '/api/v1/boards/$slug/follows/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentAthletesIdCoachesIndexRoute =
-  ApiV1ParentAthletesIdCoachesIndexRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/coaches/',
-    path: '/api/v1/parent/athletes/$id/coaches/',
+const ApiV1BoardsSlugFollowsNameRoute =
+  ApiV1BoardsSlugFollowsNameRouteImport.update({
+    id: '/api/v1/boards/$slug/follows/$name',
+    path: '/api/v1/boards/$slug/follows/$name',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdIndexRoute =
+  ApiV1CoachAthletesIdIndexRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/',
+    path: '/api/v1/coach/athletes/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdActivePlansRoute =
+  ApiV1CoachAthletesIdActivePlansRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/active-plans',
+    path: '/api/v1/coach/athletes/$id/active-plans',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdAiSummaryRoute =
+  ApiV1CoachAthletesIdAiSummaryRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/ai-summary',
+    path: '/api/v1/coach/athletes/$id/ai-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdBillingRoute =
+  ApiV1CoachAthletesIdBillingRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/billing',
+    path: '/api/v1/coach/athletes/$id/billing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdBriefingRoute =
+  ApiV1CoachAthletesIdBriefingRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/briefing',
+    path: '/api/v1/coach/athletes/$id/briefing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdPracticeTargetRoute =
+  ApiV1CoachAthletesIdPracticeTargetRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/practice-target',
+    path: '/api/v1/coach/athletes/$id/practice-target',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachAthletesIdRateRoute =
+  ApiV1CoachAthletesIdRateRouteImport.update({
+    id: '/api/v1/coach/athletes/$id/rate',
+    path: '/api/v1/coach/athletes/$id/rate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachCompetitionsIdRosterRoute =
+  ApiV1CoachCompetitionsIdRosterRouteImport.update({
+    id: '/api/v1/coach/competitions/$id/roster',
+    path: '/api/v1/coach/competitions/$id/roster',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachInvoicesIdIndexRoute =
+  ApiV1CoachInvoicesIdIndexRouteImport.update({
+    id: '/api/v1/coach/invoices/$id/',
+    path: '/api/v1/coach/invoices/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachInvoicesIdStatusRoute =
+  ApiV1CoachInvoicesIdStatusRouteImport.update({
+    id: '/api/v1/coach/invoices/$id/status',
+    path: '/api/v1/coach/invoices/$id/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachLessonSlotsIdIndexRoute =
+  ApiV1CoachLessonSlotsIdIndexRouteImport.update({
+    id: '/api/v1/coach/lesson-slots/$id/',
+    path: '/api/v1/coach/lesson-slots/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachMovesIdArchiveRoute =
+  ApiV1CoachMovesIdArchiveRouteImport.update({
+    id: '/api/v1/coach/moves/$id/archive',
+    path: '/api/v1/coach/moves/$id/archive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachMovesIdUpdateFromPlanMoveRoute =
+  ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport.update({
+    id: '/api/v1/coach/moves/$id/update-from-plan-move',
+    path: '/api/v1/coach/moves/$id/update-from-plan-move',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachPostEventIdDismissRoute =
+  ApiV1CoachPostEventIdDismissRouteImport.update({
+    id: '/api/v1/coach/post-event/$id/dismiss',
+    path: '/api/v1/coach/post-event/$id/dismiss',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachRosterAthletesIndexRoute =
+  ApiV1CoachRosterAthletesIndexRouteImport.update({
+    id: '/api/v1/coach/roster/athletes/',
+    path: '/api/v1/coach/roster/athletes/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachRosterAthletesAthleteIdRoute =
+  ApiV1CoachRosterAthletesAthleteIdRouteImport.update({
+    id: '/api/v1/coach/roster/athletes/$athleteId',
+    path: '/api/v1/coach/roster/athletes/$athleteId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachStarterPlansIdAdoptRoute =
+  ApiV1CoachStarterPlansIdAdoptRouteImport.update({
+    id: '/api/v1/coach/starter-plans/$id/adopt',
+    path: '/api/v1/coach/starter-plans/$id/adopt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachVisibilityIdIndexRoute =
+  ApiV1CoachVisibilityIdIndexRouteImport.update({
+    id: '/api/v1/coach/visibility/$id/',
+    path: '/api/v1/coach/visibility/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1CoachVisibilityIdRespondRoute =
+  ApiV1CoachVisibilityIdRespondRouteImport.update({
+    id: '/api/v1/coach/visibility/$id/respond',
+    path: '/api/v1/coach/visibility/$id/respond',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1GuardianInvitesIdResendRoute =
+  ApiV1GuardianInvitesIdResendRouteImport.update({
+    id: '/api/v1/guardian/invites/$id/resend',
+    path: '/api/v1/guardian/invites/$id/resend',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MeCelebrationsIdAckRoute =
+  ApiV1MeCelebrationsIdAckRouteImport.update({
+    id: '/api/v1/me/celebrations/$id/ack',
+    path: '/api/v1/me/celebrations/$id/ack',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdIndexRoute =
+  ApiV1ParentAthletesIdIndexRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/',
+    path: '/api/v1/parent/athletes/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdGoalsRoute =
+  ApiV1ParentAthletesIdGoalsRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/goals',
+    path: '/api/v1/parent/athletes/$id/goals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdPrimaryCoachRoute =
+  ApiV1ParentAthletesIdPrimaryCoachRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/primary-coach',
+    path: '/api/v1/parent/athletes/$id/primary-coach',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdResetPasswordRoute =
+  ApiV1ParentAthletesIdResetPasswordRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/reset-password',
+    path: '/api/v1/parent/athletes/$id/reset-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdScheduleRoute =
+  ApiV1ParentAthletesIdScheduleRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/schedule',
+    path: '/api/v1/parent/athletes/$id/schedule',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentTeamGuardiansIndexRoute =
+  ApiV1ParentTeamGuardiansIndexRouteImport.update({
+    id: '/api/v1/parent/team/guardians/',
+    path: '/api/v1/parent/team/guardians/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentTeamGuardiansIdRoute =
+  ApiV1ParentTeamGuardiansIdRouteImport.update({
+    id: '/api/v1/parent/team/guardians/$id',
+    path: '/api/v1/parent/team/guardians/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PlansIdMovesIndexRoute = ApiV1PlansIdMovesIndexRouteImport.update({
+  id: '/api/v1/plans/$id/moves/',
+  path: '/api/v1/plans/$id/moves/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdMovesMoveIdRoute = ApiV1PlansIdMovesMoveIdRouteImport.update({
+  id: '/api/v1/plans/$id/moves/$moveId',
+  path: '/api/v1/plans/$id/moves/$moveId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdMovesFromLibraryRoute =
+  ApiV1PlansIdMovesFromLibraryRouteImport.update({
+    id: '/api/v1/plans/$id/moves/from-library',
+    path: '/api/v1/plans/$id/moves/from-library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PlansIdMovesOrderRoute = ApiV1PlansIdMovesOrderRouteImport.update({
+  id: '/api/v1/plans/$id/moves/order',
+  path: '/api/v1/plans/$id/moves/order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdSessionsIndexRoute =
+  ApiV1PlansIdSessionsIndexRouteImport.update({
+    id: '/api/v1/plans/$id/sessions/',
+    path: '/api/v1/plans/$id/sessions/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PlansIdSessionsSummaryRoute =
+  ApiV1PlansIdSessionsSummaryRouteImport.update({
+    id: '/api/v1/plans/$id/sessions/summary',
+    path: '/api/v1/plans/$id/sessions/summary',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute =
@@ -2122,40 +2111,22 @@ const ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute =
     path: '/api/v1/athletes/$id/competition-results/$resultId/generate-plan',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentTeamGuardiansInvitesIdIndexRoute =
-  ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport.update({
-    id: '/api/v1/parent/team/guardians/invites/$id/',
-    path: '/api/v1/parent/team/guardians/invites/$id/',
+const ApiV1ParentAthletesIdCoachesIndexRoute =
+  ApiV1ParentAthletesIdCoachesIndexRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/coaches/',
+    path: '/api/v1/parent/athletes/$id/coaches/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentAthletesIdCoachesCoachIdIndexRoute =
-  ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/coaches/$coachId/',
-    path: '/api/v1/parent/athletes/$id/coaches/$coachId/',
+const ApiV1ParentTeamGuardiansInvitesIndexRoute =
+  ApiV1ParentTeamGuardiansInvitesIndexRouteImport.update({
+    id: '/api/v1/parent/team/guardians/invites/',
+    path: '/api/v1/parent/team/guardians/invites/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1ParentTeamGuardiansInvitesIdResendRoute =
-  ApiV1ParentTeamGuardiansInvitesIdResendRouteImport.update({
-    id: '/api/v1/parent/team/guardians/invites/$id/resend',
-    path: '/api/v1/parent/team/guardians/invites/$id/resend',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdCoachesCoachIdSportsRoute =
-  ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/coaches/$coachId/sports',
-    path: '/api/v1/parent/athletes/$id/coaches/$coachId/sports',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute =
-  ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport.update({
-    id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
-    path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute =
-  ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport.update({
-    id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule',
-    path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule',
+const ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute =
+  ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport.update({
+    id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel',
+    path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute =
@@ -2164,10 +2135,40 @@ const ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRoute =
     path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/override',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute =
-  ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport.update({
-    id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel',
-    path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel',
+const ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRoute =
+  ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport.update({
+    id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule',
+    path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdCoachesCoachIdIndexRoute =
+  ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/coaches/$coachId/',
+    path: '/api/v1/parent/athletes/$id/coaches/$coachId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdCoachesCoachIdMessagingRoute =
+  ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
+    path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentAthletesIdCoachesCoachIdSportsRoute =
+  ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport.update({
+    id: '/api/v1/parent/athletes/$id/coaches/$coachId/sports',
+    path: '/api/v1/parent/athletes/$id/coaches/$coachId/sports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentTeamGuardiansInvitesIdIndexRoute =
+  ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport.update({
+    id: '/api/v1/parent/team/guardians/invites/$id/',
+    path: '/api/v1/parent/team/guardians/invites/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1ParentTeamGuardiansInvitesIdResendRoute =
+  ApiV1ParentTeamGuardiansInvitesIdResendRouteImport.update({
+    id: '/api/v1/parent/team/guardians/invites/$id/resend',
+    path: '/api/v1/parent/team/guardians/invites/$id/resend',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -2213,11 +2214,11 @@ export interface FileRoutesByFullPath {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -2539,11 +2540,11 @@ export interface FileRoutesByTo {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -2871,11 +2872,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/_authenticated/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/_authenticated/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/_authenticated/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/_authenticated/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/_authenticated/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -3204,11 +3205,11 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
-    | '/admin/paused-athletes'
     | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
+    | '/admin/paused-athletes'
     | '/admin/promo-codes'
     | '/admin/reporting'
     | '/admin/reports'
@@ -3530,11 +3531,11 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
-    | '/admin/paused-athletes'
     | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
+    | '/admin/paused-athletes'
     | '/admin/promo-codes'
     | '/admin/reporting'
     | '/admin/reports'
@@ -3861,11 +3862,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/impersonation'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
-    | '/_authenticated/admin/paused-athletes'
     | '/_authenticated/admin/library-rights'
     | '/_authenticated/admin/map'
     | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/parent-invites'
+    | '/_authenticated/admin/paused-athletes'
     | '/_authenticated/admin/promo-codes'
     | '/_authenticated/admin/reporting'
     | '/_authenticated/admin/reports'
@@ -4405,60 +4406,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verified': {
-      id: '/verified'
-      path: '/verified'
-      fullPath: '/verified'
-      preLoaderRoute: typeof VerifiedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -4468,123 +4420,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/board/': {
-      id: '/board/'
-      path: '/board'
-      fullPath: '/board/'
-      preLoaderRoute: typeof BoardIndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/team/$token': {
-      id: '/team/$token'
-      path: '/team/$token'
-      fullPath: '/team/$token'
-      preLoaderRoute: typeof TeamTokenRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup/parent': {
-      id: '/signup/parent'
-      path: '/signup/parent'
-      fullPath: '/signup/parent'
-      preLoaderRoute: typeof SignupParentRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup/coach': {
-      id: '/signup/coach'
-      path: '/signup/coach'
-      fullPath: '/signup/coach'
-      preLoaderRoute: typeof SignupCoachRouteImport
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup/athlete': {
-      id: '/signup/athlete'
-      path: '/signup/athlete'
-      fullPath: '/signup/athlete'
-      preLoaderRoute: typeof SignupAthleteRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup/admin': {
-      id: '/signup/admin'
-      path: '/signup/admin'
-      fullPath: '/signup/admin'
-      preLoaderRoute: typeof SignupAdminRouteImport
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/p/$token': {
-      id: '/p/$token'
-      path: '/p/$token'
-      fullPath: '/p/$token'
-      preLoaderRoute: typeof PTokenRouteImport
+    '/verified': {
+      id: '/verified'
+      path: '/verified'
+      fullPath: '/verified'
+      preLoaderRoute: typeof VerifiedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/i/$code': {
-      id: '/i/$code'
-      path: '/i/$code'
-      fullPath: '/i/$code'
-      preLoaderRoute: typeof ICodeRouteImport
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/g/$token': {
-      id: '/g/$token'
-      path: '/g/$token'
-      fullPath: '/g/$token'
-      preLoaderRoute: typeof GTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/paywall-preview': {
-      id: '/dev/paywall-preview'
-      path: '/dev/paywall-preview'
-      fullPath: '/dev/paywall-preview'
-      preLoaderRoute: typeof DevPaywallPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/board/$slug': {
-      id: '/board/$slug'
-      path: '/board/$slug'
-      fullPath: '/board/$slug'
-      preLoaderRoute: typeof BoardSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/handoff': {
-      id: '/auth/handoff'
-      path: '/auth/handoff'
-      fullPath: '/auth/handoff'
-      preLoaderRoute: typeof AuthHandoffRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/parent': {
-      id: '/_authenticated/parent'
-      path: '/parent'
-      fullPath: '/parent'
-      preLoaderRoute: typeof AuthenticatedParentRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/org-admin': {
-      id: '/_authenticated/org-admin'
-      path: '/org-admin'
-      fullPath: '/org-admin'
-      preLoaderRoute: typeof AuthenticatedOrgAdminRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/coach': {
-      id: '/_authenticated/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof AuthenticatedCoachRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/athlete': {
@@ -4594,410 +4497,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAthleteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/coach': {
+      id: '/_authenticated/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AuthenticatedCoachRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/.well-known/apple-app-site-association': {
-      id: '/.well-known/apple-app-site-association'
-      path: '/.well-known/apple-app-site-association'
-      fullPath: '/.well-known/apple-app-site-association'
-      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
+    '/_authenticated/org-admin': {
+      id: '/_authenticated/org-admin'
+      path: '/org-admin'
+      fullPath: '/org-admin'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/parent': {
+      id: '/_authenticated/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof AuthenticatedParentRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/handoff': {
+      id: '/auth/handoff'
+      path: '/auth/handoff'
+      fullPath: '/auth/handoff'
+      preLoaderRoute: typeof AuthHandoffRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/parent/': {
-      id: '/_authenticated/parent/'
-      path: '/'
-      fullPath: '/parent/'
-      preLoaderRoute: typeof AuthenticatedParentIndexRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
+    '/board/': {
+      id: '/board/'
+      path: '/board'
+      fullPath: '/board/'
+      preLoaderRoute: typeof BoardIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/org-admin/': {
-      id: '/_authenticated/org-admin/'
-      path: '/'
-      fullPath: '/org-admin/'
-      preLoaderRoute: typeof AuthenticatedOrgAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
+    '/board/$slug': {
+      id: '/board/$slug'
+      path: '/board/$slug'
+      fullPath: '/board/$slug'
+      preLoaderRoute: typeof BoardSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/coach/': {
-      id: '/_authenticated/coach/'
-      path: '/'
-      fullPath: '/coach/'
-      preLoaderRoute: typeof AuthenticatedCoachIndexRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
+    '/dev/paywall-preview': {
+      id: '/dev/paywall-preview'
+      path: '/dev/paywall-preview'
+      fullPath: '/dev/paywall-preview'
+      preLoaderRoute: typeof DevPaywallPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/athlete/': {
-      id: '/_authenticated/athlete/'
-      path: '/'
-      fullPath: '/athlete/'
-      preLoaderRoute: typeof AuthenticatedAthleteIndexRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/g/$token': {
+      id: '/g/$token'
+      path: '/g/$token'
+      fullPath: '/g/$token'
+      preLoaderRoute: typeof GTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/admin': {
+      id: '/signup/admin'
+      path: '/signup/admin'
+      fullPath: '/signup/admin'
+      preLoaderRoute: typeof SignupAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/athlete': {
+      id: '/signup/athlete'
+      path: '/signup/athlete'
+      fullPath: '/signup/athlete'
+      preLoaderRoute: typeof SignupAthleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/coach': {
+      id: '/signup/coach'
+      path: '/signup/coach'
+      fullPath: '/signup/coach'
+      preLoaderRoute: typeof SignupCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/parent': {
+      id: '/signup/parent'
+      path: '/signup/parent'
+      fullPath: '/signup/parent'
+      preLoaderRoute: typeof SignupParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team/$token': {
+      id: '/team/$token'
+      path: '/team/$token'
+      fullPath: '/team/$token'
+      preLoaderRoute: typeof TeamTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/signup/parent/schedule': {
-      id: '/signup/parent/schedule'
-      path: '/schedule'
-      fullPath: '/signup/parent/schedule'
-      preLoaderRoute: typeof SignupParentScheduleRouteImport
-      parentRoute: typeof SignupParentRoute
-    }
-    '/signup/parent/goals': {
-      id: '/signup/parent/goals'
-      path: '/goals'
-      fullPath: '/signup/parent/goals'
-      preLoaderRoute: typeof SignupParentGoalsRouteImport
-      parentRoute: typeof SignupParentRoute
-    }
-    '/signup/parent/athletes': {
-      id: '/signup/parent/athletes'
-      path: '/athletes'
-      fullPath: '/signup/parent/athletes'
-      preLoaderRoute: typeof SignupParentAthletesRouteImport
-      parentRoute: typeof SignupParentRoute
-    }
-    '/signup/athlete/confirm': {
-      id: '/signup/athlete/confirm'
-      path: '/confirm'
-      fullPath: '/signup/athlete/confirm'
-      preLoaderRoute: typeof SignupAthleteConfirmRouteImport
-      parentRoute: typeof SignupAthleteRoute
-    }
-    '/signup/athlete/adult': {
-      id: '/signup/athlete/adult'
-      path: '/adult'
-      fullPath: '/signup/athlete/adult'
-      preLoaderRoute: typeof SignupAthleteAdultRouteImport
-      parentRoute: typeof SignupAthleteRoute
-    }
-    '/signup/athlete/account': {
-      id: '/signup/athlete/account'
-      path: '/account'
-      fullPath: '/signup/athlete/account'
-      preLoaderRoute: typeof SignupAthleteAccountRouteImport
-      parentRoute: typeof SignupAthleteRoute
-    }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/board/$slug_/wall': {
-      id: '/board/$slug_/wall'
-      path: '/board/$slug/wall'
-      fullPath: '/board/$slug/wall'
-      preLoaderRoute: typeof BoardSlugWallRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/message-targets': {
-      id: '/api/v1/message-targets'
-      path: '/api/v1/message-targets'
-      fullPath: '/api/v1/message-targets'
-      preLoaderRoute: typeof ApiV1MessageTargetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/feedback': {
-      id: '/api/v1/feedback'
-      path: '/api/v1/feedback'
-      fullPath: '/api/v1/feedback'
-      preLoaderRoute: typeof ApiV1FeedbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/errors': {
-      id: '/api/v1/errors'
-      path: '/api/v1/errors'
-      fullPath: '/api/v1/errors'
-      preLoaderRoute: typeof ApiV1ErrorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/ask': {
-      id: '/api/v1/ask'
-      path: '/api/v1/ask'
-      fullPath: '/api/v1/ask'
-      preLoaderRoute: typeof ApiV1AskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/parent/team': {
-      id: '/_authenticated/parent/team'
-      path: '/team'
-      fullPath: '/parent/team'
-      preLoaderRoute: typeof AuthenticatedParentTeamRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/settings': {
-      id: '/_authenticated/parent/settings'
-      path: '/settings'
-      fullPath: '/parent/settings'
-      preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/org-admin/templates': {
-      id: '/_authenticated/org-admin/templates'
-      path: '/templates'
-      fullPath: '/org-admin/templates'
-      preLoaderRoute: typeof AuthenticatedOrgAdminTemplatesRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/org-admin/settings': {
-      id: '/_authenticated/org-admin/settings'
-      path: '/settings'
-      fullPath: '/org-admin/settings'
-      preLoaderRoute: typeof AuthenticatedOrgAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/org-admin/roster': {
-      id: '/_authenticated/org-admin/roster'
-      path: '/roster'
-      fullPath: '/org-admin/roster'
-      preLoaderRoute: typeof AuthenticatedOrgAdminRosterRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/org-admin/resources': {
-      id: '/_authenticated/org-admin/resources'
-      path: '/resources'
-      fullPath: '/org-admin/resources'
-      preLoaderRoute: typeof AuthenticatedOrgAdminResourcesRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/org-admin/moves': {
-      id: '/_authenticated/org-admin/moves'
-      path: '/moves'
-      fullPath: '/org-admin/moves'
-      preLoaderRoute: typeof AuthenticatedOrgAdminMovesRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/org-admin/calendar': {
-      id: '/_authenticated/org-admin/calendar'
-      path: '/calendar'
-      fullPath: '/org-admin/calendar'
-      preLoaderRoute: typeof AuthenticatedOrgAdminCalendarRouteImport
-      parentRoute: typeof AuthenticatedOrgAdminRoute
-    }
-    '/_authenticated/coach/settings': {
-      id: '/_authenticated/coach/settings'
-      path: '/settings'
-      fullPath: '/coach/settings'
-      preLoaderRoute: typeof AuthenticatedCoachSettingsRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/roster': {
-      id: '/_authenticated/coach/roster'
-      path: '/roster'
-      fullPath: '/coach/roster'
-      preLoaderRoute: typeof AuthenticatedCoachRosterRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/plans': {
-      id: '/_authenticated/coach/plans'
-      path: '/plans'
-      fullPath: '/coach/plans'
-      preLoaderRoute: typeof AuthenticatedCoachPlansRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/paywall': {
-      id: '/_authenticated/coach/paywall'
-      path: '/paywall'
-      fullPath: '/coach/paywall'
-      preLoaderRoute: typeof AuthenticatedCoachPaywallRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/onboarding': {
-      id: '/_authenticated/coach/onboarding'
-      path: '/onboarding'
-      fullPath: '/coach/onboarding'
-      preLoaderRoute: typeof AuthenticatedCoachOnboardingRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/celebration-preview': {
-      id: '/_authenticated/coach/celebration-preview'
-      path: '/celebration-preview'
-      fullPath: '/coach/celebration-preview'
-      preLoaderRoute: typeof AuthenticatedCoachCelebrationPreviewRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/athlete/settings': {
-      id: '/_authenticated/athlete/settings'
-      path: '/settings'
-      fullPath: '/athlete/settings'
-      preLoaderRoute: typeof AuthenticatedAthleteSettingsRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/athlete/onboarding': {
-      id: '/_authenticated/athlete/onboarding'
-      path: '/onboarding'
-      fullPath: '/athlete/onboarding'
-      preLoaderRoute: typeof AuthenticatedAthleteOnboardingRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/admin/usage': {
-      id: '/_authenticated/admin/usage'
-      path: '/usage'
-      fullPath: '/admin/usage'
-      preLoaderRoute: typeof AuthenticatedAdminUsageRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/social-plans': {
-      id: '/_authenticated/admin/social-plans'
-      path: '/social-plans'
-      fullPath: '/admin/social-plans'
-      preLoaderRoute: typeof AuthenticatedAdminSocialPlansRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/sessions': {
-      id: '/_authenticated/admin/sessions'
-      path: '/sessions'
-      fullPath: '/admin/sessions'
-      preLoaderRoute: typeof AuthenticatedAdminSessionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/reports': {
-      id: '/_authenticated/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/reporting': {
-      id: '/_authenticated/admin/reporting'
-      path: '/reporting'
-      fullPath: '/admin/reporting'
-      preLoaderRoute: typeof AuthenticatedAdminReportingRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/promo-codes': {
-      id: '/_authenticated/admin/promo-codes'
-      path: '/promo-codes'
-      fullPath: '/admin/promo-codes'
-      preLoaderRoute: typeof AuthenticatedAdminPromoCodesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/parent-invites': {
-      id: '/_authenticated/admin/parent-invites'
-      path: '/parent-invites'
-      fullPath: '/admin/parent-invites'
-      preLoaderRoute: typeof AuthenticatedAdminParentInvitesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/organizations': {
-      id: '/_authenticated/admin/organizations'
-      path: '/organizations'
-      fullPath: '/admin/organizations'
-      preLoaderRoute: typeof AuthenticatedAdminOrganizationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/map': {
-      id: '/_authenticated/admin/map'
-      path: '/map'
-      fullPath: '/admin/map'
-      preLoaderRoute: typeof AuthenticatedAdminMapRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/paused-athletes': {
-      id: '/_authenticated/admin/paused-athletes'
-      path: '/paused-athletes'
-      fullPath: '/admin/paused-athletes'
-      preLoaderRoute: typeof AuthenticatedAdminPausedAthletesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/library-rights': {
-      id: '/_authenticated/admin/library-rights'
-      path: '/library-rights'
-      fullPath: '/admin/library-rights'
-      preLoaderRoute: typeof AuthenticatedAdminLibraryRightsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/leads': {
-      id: '/_authenticated/admin/leads'
-      path: '/leads'
-      fullPath: '/admin/leads'
-      preLoaderRoute: typeof AuthenticatedAdminLeadsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/knowledge': {
-      id: '/_authenticated/admin/knowledge'
-      path: '/knowledge'
-      fullPath: '/admin/knowledge'
-      preLoaderRoute: typeof AuthenticatedAdminKnowledgeRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/impersonation': {
-      id: '/_authenticated/admin/impersonation'
-      path: '/impersonation'
-      fullPath: '/admin/impersonation'
-      preLoaderRoute: typeof AuthenticatedAdminImpersonationRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/feedback': {
-      id: '/_authenticated/admin/feedback'
-      path: '/feedback'
-      fullPath: '/admin/feedback'
-      preLoaderRoute: typeof AuthenticatedAdminFeedbackRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/errors': {
-      id: '/_authenticated/admin/errors'
-      path: '/errors'
-      fullPath: '/admin/errors'
-      preLoaderRoute: typeof AuthenticatedAdminErrorsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/email-health': {
-      id: '/_authenticated/admin/email-health'
-      path: '/email-health'
-      fullPath: '/admin/email-health'
-      preLoaderRoute: typeof AuthenticatedAdminEmailHealthRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/demo-accounts': {
-      id: '/_authenticated/admin/demo-accounts'
-      path: '/demo-accounts'
-      fullPath: '/admin/demo-accounts'
-      preLoaderRoute: typeof AuthenticatedAdminDemoAccountsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/competitions': {
-      id: '/_authenticated/admin/competitions'
-      path: '/competitions'
-      fullPath: '/admin/competitions'
-      preLoaderRoute: typeof AuthenticatedAdminCompetitionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/billing': {
-      id: '/_authenticated/admin/billing'
-      path: '/billing'
-      fullPath: '/admin/billing'
-      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/ask': {
-      id: '/_authenticated/admin/ask'
-      path: '/ask'
-      fullPath: '/admin/ask'
-      preLoaderRoute: typeof AuthenticatedAdminAskRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/announcements': {
-      id: '/_authenticated/admin/announcements'
-      path: '/announcements'
-      fullPath: '/admin/announcements'
-      preLoaderRoute: typeof AuthenticatedAdminAnnouncementsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/activity': {
-      id: '/_authenticated/admin/activity'
-      path: '/activity'
-      fullPath: '/admin/activity'
-      preLoaderRoute: typeof AuthenticatedAdminActivityRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/active': {
@@ -5007,117 +4623,390 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminActiveRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/v1/saved-answers/': {
-      id: '/api/v1/saved-answers/'
-      path: '/api/v1/saved-answers'
-      fullPath: '/api/v1/saved-answers/'
-      preLoaderRoute: typeof ApiV1SavedAnswersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/rooms/': {
-      id: '/api/v1/rooms/'
-      path: '/api/v1/rooms'
-      fullPath: '/api/v1/rooms/'
-      preLoaderRoute: typeof ApiV1RoomsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/resources/': {
-      id: '/api/v1/resources/'
-      path: '/api/v1/resources'
-      fullPath: '/api/v1/resources/'
-      preLoaderRoute: typeof ApiV1ResourcesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/recaps/': {
-      id: '/api/v1/recaps/'
-      path: '/api/v1/recaps'
-      fullPath: '/api/v1/recaps/'
-      preLoaderRoute: typeof ApiV1RecapsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/': {
-      id: '/api/v1/me/'
-      path: '/api/v1/me'
-      fullPath: '/api/v1/me/'
-      preLoaderRoute: typeof ApiV1MeIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/devices/': {
-      id: '/api/v1/devices/'
-      path: '/api/v1/devices'
-      fullPath: '/api/v1/devices/'
-      preLoaderRoute: typeof ApiV1DevicesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/parent/resources/': {
-      id: '/_authenticated/parent/resources/'
-      path: '/resources'
-      fullPath: '/parent/resources/'
-      preLoaderRoute: typeof AuthenticatedParentResourcesIndexRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/plans/': {
-      id: '/_authenticated/parent/plans/'
-      path: '/plans'
-      fullPath: '/parent/plans/'
-      preLoaderRoute: typeof AuthenticatedParentPlansIndexRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/messages/': {
-      id: '/_authenticated/parent/messages/'
-      path: '/messages'
-      fullPath: '/parent/messages/'
-      preLoaderRoute: typeof AuthenticatedParentMessagesIndexRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/coach/resources/': {
-      id: '/_authenticated/coach/resources/'
-      path: '/resources'
-      fullPath: '/coach/resources/'
-      preLoaderRoute: typeof AuthenticatedCoachResourcesIndexRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/plans/': {
-      id: '/_authenticated/coach/plans/'
-      path: '/'
-      fullPath: '/coach/plans/'
-      preLoaderRoute: typeof AuthenticatedCoachPlansIndexRouteImport
-      parentRoute: typeof AuthenticatedCoachPlansRoute
-    }
-    '/_authenticated/coach/messages/': {
-      id: '/_authenticated/coach/messages/'
-      path: '/messages'
-      fullPath: '/coach/messages/'
-      preLoaderRoute: typeof AuthenticatedCoachMessagesIndexRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/athlete/resources/': {
-      id: '/_authenticated/athlete/resources/'
-      path: '/resources'
-      fullPath: '/athlete/resources/'
-      preLoaderRoute: typeof AuthenticatedAthleteResourcesIndexRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/athlete/plans/': {
-      id: '/_authenticated/athlete/plans/'
-      path: '/plans'
-      fullPath: '/athlete/plans/'
-      preLoaderRoute: typeof AuthenticatedAthletePlansIndexRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/athlete/messages/': {
-      id: '/_authenticated/athlete/messages/'
-      path: '/messages'
-      fullPath: '/athlete/messages/'
-      preLoaderRoute: typeof AuthenticatedAthleteMessagesIndexRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/admin/users/': {
-      id: '/_authenticated/admin/users/'
-      path: '/users'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
+    '/_authenticated/admin/activity': {
+      id: '/_authenticated/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AuthenticatedAdminActivityRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/announcements': {
+      id: '/_authenticated/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AuthenticatedAdminAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/ask': {
+      id: '/_authenticated/admin/ask'
+      path: '/ask'
+      fullPath: '/admin/ask'
+      preLoaderRoute: typeof AuthenticatedAdminAskRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/billing': {
+      id: '/_authenticated/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/competitions': {
+      id: '/_authenticated/admin/competitions'
+      path: '/competitions'
+      fullPath: '/admin/competitions'
+      preLoaderRoute: typeof AuthenticatedAdminCompetitionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/demo-accounts': {
+      id: '/_authenticated/admin/demo-accounts'
+      path: '/demo-accounts'
+      fullPath: '/admin/demo-accounts'
+      preLoaderRoute: typeof AuthenticatedAdminDemoAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/email-health': {
+      id: '/_authenticated/admin/email-health'
+      path: '/email-health'
+      fullPath: '/admin/email-health'
+      preLoaderRoute: typeof AuthenticatedAdminEmailHealthRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/errors': {
+      id: '/_authenticated/admin/errors'
+      path: '/errors'
+      fullPath: '/admin/errors'
+      preLoaderRoute: typeof AuthenticatedAdminErrorsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/feedback': {
+      id: '/_authenticated/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AuthenticatedAdminFeedbackRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/impersonation': {
+      id: '/_authenticated/admin/impersonation'
+      path: '/impersonation'
+      fullPath: '/admin/impersonation'
+      preLoaderRoute: typeof AuthenticatedAdminImpersonationRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/knowledge': {
+      id: '/_authenticated/admin/knowledge'
+      path: '/knowledge'
+      fullPath: '/admin/knowledge'
+      preLoaderRoute: typeof AuthenticatedAdminKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/leads': {
+      id: '/_authenticated/admin/leads'
+      path: '/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AuthenticatedAdminLeadsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/library-rights': {
+      id: '/_authenticated/admin/library-rights'
+      path: '/library-rights'
+      fullPath: '/admin/library-rights'
+      preLoaderRoute: typeof AuthenticatedAdminLibraryRightsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/map': {
+      id: '/_authenticated/admin/map'
+      path: '/map'
+      fullPath: '/admin/map'
+      preLoaderRoute: typeof AuthenticatedAdminMapRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/organizations': {
+      id: '/_authenticated/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof AuthenticatedAdminOrganizationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/parent-invites': {
+      id: '/_authenticated/admin/parent-invites'
+      path: '/parent-invites'
+      fullPath: '/admin/parent-invites'
+      preLoaderRoute: typeof AuthenticatedAdminParentInvitesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/paused-athletes': {
+      id: '/_authenticated/admin/paused-athletes'
+      path: '/paused-athletes'
+      fullPath: '/admin/paused-athletes'
+      preLoaderRoute: typeof AuthenticatedAdminPausedAthletesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/promo-codes': {
+      id: '/_authenticated/admin/promo-codes'
+      path: '/promo-codes'
+      fullPath: '/admin/promo-codes'
+      preLoaderRoute: typeof AuthenticatedAdminPromoCodesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/reporting': {
+      id: '/_authenticated/admin/reporting'
+      path: '/reporting'
+      fullPath: '/admin/reporting'
+      preLoaderRoute: typeof AuthenticatedAdminReportingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/reports': {
+      id: '/_authenticated/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/sessions': {
+      id: '/_authenticated/admin/sessions'
+      path: '/sessions'
+      fullPath: '/admin/sessions'
+      preLoaderRoute: typeof AuthenticatedAdminSessionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/social-plans': {
+      id: '/_authenticated/admin/social-plans'
+      path: '/social-plans'
+      fullPath: '/admin/social-plans'
+      preLoaderRoute: typeof AuthenticatedAdminSocialPlansRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/usage': {
+      id: '/_authenticated/admin/usage'
+      path: '/usage'
+      fullPath: '/admin/usage'
+      preLoaderRoute: typeof AuthenticatedAdminUsageRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/athlete/': {
+      id: '/_authenticated/athlete/'
+      path: '/'
+      fullPath: '/athlete/'
+      preLoaderRoute: typeof AuthenticatedAthleteIndexRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/onboarding': {
+      id: '/_authenticated/athlete/onboarding'
+      path: '/onboarding'
+      fullPath: '/athlete/onboarding'
+      preLoaderRoute: typeof AuthenticatedAthleteOnboardingRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/settings': {
+      id: '/_authenticated/athlete/settings'
+      path: '/settings'
+      fullPath: '/athlete/settings'
+      preLoaderRoute: typeof AuthenticatedAthleteSettingsRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/coach/': {
+      id: '/_authenticated/coach/'
+      path: '/'
+      fullPath: '/coach/'
+      preLoaderRoute: typeof AuthenticatedCoachIndexRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/celebration-preview': {
+      id: '/_authenticated/coach/celebration-preview'
+      path: '/celebration-preview'
+      fullPath: '/coach/celebration-preview'
+      preLoaderRoute: typeof AuthenticatedCoachCelebrationPreviewRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/onboarding': {
+      id: '/_authenticated/coach/onboarding'
+      path: '/onboarding'
+      fullPath: '/coach/onboarding'
+      preLoaderRoute: typeof AuthenticatedCoachOnboardingRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/paywall': {
+      id: '/_authenticated/coach/paywall'
+      path: '/paywall'
+      fullPath: '/coach/paywall'
+      preLoaderRoute: typeof AuthenticatedCoachPaywallRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/plans': {
+      id: '/_authenticated/coach/plans'
+      path: '/plans'
+      fullPath: '/coach/plans'
+      preLoaderRoute: typeof AuthenticatedCoachPlansRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/roster': {
+      id: '/_authenticated/coach/roster'
+      path: '/roster'
+      fullPath: '/coach/roster'
+      preLoaderRoute: typeof AuthenticatedCoachRosterRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/settings': {
+      id: '/_authenticated/coach/settings'
+      path: '/settings'
+      fullPath: '/coach/settings'
+      preLoaderRoute: typeof AuthenticatedCoachSettingsRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/org-admin/': {
+      id: '/_authenticated/org-admin/'
+      path: '/'
+      fullPath: '/org-admin/'
+      preLoaderRoute: typeof AuthenticatedOrgAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/calendar': {
+      id: '/_authenticated/org-admin/calendar'
+      path: '/calendar'
+      fullPath: '/org-admin/calendar'
+      preLoaderRoute: typeof AuthenticatedOrgAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/moves': {
+      id: '/_authenticated/org-admin/moves'
+      path: '/moves'
+      fullPath: '/org-admin/moves'
+      preLoaderRoute: typeof AuthenticatedOrgAdminMovesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/resources': {
+      id: '/_authenticated/org-admin/resources'
+      path: '/resources'
+      fullPath: '/org-admin/resources'
+      preLoaderRoute: typeof AuthenticatedOrgAdminResourcesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/roster': {
+      id: '/_authenticated/org-admin/roster'
+      path: '/roster'
+      fullPath: '/org-admin/roster'
+      preLoaderRoute: typeof AuthenticatedOrgAdminRosterRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/settings': {
+      id: '/_authenticated/org-admin/settings'
+      path: '/settings'
+      fullPath: '/org-admin/settings'
+      preLoaderRoute: typeof AuthenticatedOrgAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/templates': {
+      id: '/_authenticated/org-admin/templates'
+      path: '/templates'
+      fullPath: '/org-admin/templates'
+      preLoaderRoute: typeof AuthenticatedOrgAdminTemplatesRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/parent/': {
+      id: '/_authenticated/parent/'
+      path: '/'
+      fullPath: '/parent/'
+      preLoaderRoute: typeof AuthenticatedParentIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/settings': {
+      id: '/_authenticated/parent/settings'
+      path: '/settings'
+      fullPath: '/parent/settings'
+      preLoaderRoute: typeof AuthenticatedParentSettingsRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/team': {
+      id: '/_authenticated/parent/team'
+      path: '/team'
+      fullPath: '/parent/team'
+      preLoaderRoute: typeof AuthenticatedParentTeamRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/api/v1/ask': {
+      id: '/api/v1/ask'
+      path: '/api/v1/ask'
+      fullPath: '/api/v1/ask'
+      preLoaderRoute: typeof ApiV1AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/errors': {
+      id: '/api/v1/errors'
+      path: '/api/v1/errors'
+      fullPath: '/api/v1/errors'
+      preLoaderRoute: typeof ApiV1ErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/feedback': {
+      id: '/api/v1/feedback'
+      path: '/api/v1/feedback'
+      fullPath: '/api/v1/feedback'
+      preLoaderRoute: typeof ApiV1FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/message-targets': {
+      id: '/api/v1/message-targets'
+      path: '/api/v1/message-targets'
+      fullPath: '/api/v1/message-targets'
+      preLoaderRoute: typeof ApiV1MessageTargetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/board/$slug_/wall': {
+      id: '/board/$slug_/wall'
+      path: '/board/$slug/wall'
+      fullPath: '/board/$slug/wall'
+      preLoaderRoute: typeof BoardSlugWallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup/athlete/account': {
+      id: '/signup/athlete/account'
+      path: '/account'
+      fullPath: '/signup/athlete/account'
+      preLoaderRoute: typeof SignupAthleteAccountRouteImport
+      parentRoute: typeof SignupAthleteRoute
+    }
+    '/signup/athlete/adult': {
+      id: '/signup/athlete/adult'
+      path: '/adult'
+      fullPath: '/signup/athlete/adult'
+      preLoaderRoute: typeof SignupAthleteAdultRouteImport
+      parentRoute: typeof SignupAthleteRoute
+    }
+    '/signup/athlete/confirm': {
+      id: '/signup/athlete/confirm'
+      path: '/confirm'
+      fullPath: '/signup/athlete/confirm'
+      preLoaderRoute: typeof SignupAthleteConfirmRouteImport
+      parentRoute: typeof SignupAthleteRoute
+    }
+    '/signup/parent/athletes': {
+      id: '/signup/parent/athletes'
+      path: '/athletes'
+      fullPath: '/signup/parent/athletes'
+      preLoaderRoute: typeof SignupParentAthletesRouteImport
+      parentRoute: typeof SignupParentRoute
+    }
+    '/signup/parent/goals': {
+      id: '/signup/parent/goals'
+      path: '/goals'
+      fullPath: '/signup/parent/goals'
+      preLoaderRoute: typeof SignupParentGoalsRouteImport
+      parentRoute: typeof SignupParentRoute
+    }
+    '/signup/parent/schedule': {
+      id: '/signup/parent/schedule'
+      path: '/schedule'
+      fullPath: '/signup/parent/schedule'
+      preLoaderRoute: typeof SignupParentScheduleRouteImport
+      parentRoute: typeof SignupParentRoute
     }
     '/_authenticated/admin/emails/': {
       id: '/_authenticated/admin/emails/'
@@ -5126,599 +5015,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/voice/transcribe': {
-      id: '/api/v1/voice/transcribe'
-      path: '/api/v1/voice/transcribe'
-      fullPath: '/api/v1/voice/transcribe'
-      preLoaderRoute: typeof ApiV1VoiceTranscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/voice/build-plan': {
-      id: '/api/v1/voice/build-plan'
-      path: '/api/v1/voice/build-plan'
-      fullPath: '/api/v1/voice/build-plan'
-      preLoaderRoute: typeof ApiV1VoiceBuildPlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/team-invites/preview': {
-      id: '/api/v1/team-invites/preview'
-      path: '/api/v1/team-invites/preview'
-      fullPath: '/api/v1/team-invites/preview'
-      preLoaderRoute: typeof ApiV1TeamInvitesPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/team-invites/claim': {
-      id: '/api/v1/team-invites/claim'
-      path: '/api/v1/team-invites/claim'
-      fullPath: '/api/v1/team-invites/claim'
-      preLoaderRoute: typeof ApiV1TeamInvitesClaimRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/signup/adult-athlete': {
-      id: '/api/v1/signup/adult-athlete'
-      path: '/api/v1/signup/adult-athlete'
-      fullPath: '/api/v1/signup/adult-athlete'
-      preLoaderRoute: typeof ApiV1SignupAdultAthleteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/saved-answers/$id': {
-      id: '/api/v1/saved-answers/$id'
-      path: '/api/v1/saved-answers/$id'
-      fullPath: '/api/v1/saved-answers/$id'
-      preLoaderRoute: typeof ApiV1SavedAnswersIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/safety/reports': {
-      id: '/api/v1/safety/reports'
-      path: '/api/v1/safety/reports'
-      fullPath: '/api/v1/safety/reports'
-      preLoaderRoute: typeof ApiV1SafetyReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/rooms/ensure': {
-      id: '/api/v1/rooms/ensure'
-      path: '/api/v1/rooms/ensure'
-      fullPath: '/api/v1/rooms/ensure'
-      preLoaderRoute: typeof ApiV1RoomsEnsureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/recaps/pending': {
-      id: '/api/v1/recaps/pending'
-      path: '/api/v1/recaps/pending'
-      fullPath: '/api/v1/recaps/pending'
-      preLoaderRoute: typeof ApiV1RecapsPendingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/recaps/coaches': {
-      id: '/api/v1/recaps/coaches'
-      path: '/api/v1/recaps/coaches'
-      fullPath: '/api/v1/recaps/coaches'
-      preLoaderRoute: typeof ApiV1RecapsCoachesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/promo-codes/validate': {
-      id: '/api/v1/promo-codes/validate'
-      path: '/api/v1/promo-codes/validate'
-      fullPath: '/api/v1/promo-codes/validate'
-      preLoaderRoute: typeof ApiV1PromoCodesValidateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/settings': {
-      id: '/api/v1/parent/settings'
-      path: '/api/v1/parent/settings'
-      fullPath: '/api/v1/parent/settings'
-      preLoaderRoute: typeof ApiV1ParentSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/profile': {
-      id: '/api/v1/parent/profile'
-      path: '/api/v1/parent/profile'
-      fullPath: '/api/v1/parent/profile'
-      preLoaderRoute: typeof ApiV1ParentProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/plans': {
-      id: '/api/v1/parent/plans'
-      path: '/api/v1/parent/plans'
-      fullPath: '/api/v1/parent/plans'
-      preLoaderRoute: typeof ApiV1ParentPlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/invite-code': {
-      id: '/api/v1/parent/invite-code'
-      path: '/api/v1/parent/invite-code'
-      fullPath: '/api/v1/parent/invite-code'
-      preLoaderRoute: typeof ApiV1ParentInviteCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/goals': {
-      id: '/api/v1/parent/goals'
-      path: '/api/v1/parent/goals'
-      fullPath: '/api/v1/parent/goals'
-      preLoaderRoute: typeof ApiV1ParentGoalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/coach-visibility': {
-      id: '/api/v1/parent/coach-visibility'
-      path: '/api/v1/parent/coach-visibility'
-      fullPath: '/api/v1/parent/coach-visibility'
-      preLoaderRoute: typeof ApiV1ParentCoachVisibilityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/verify-code': {
-      id: '/api/v1/orgs/verify-code'
-      path: '/api/v1/orgs/verify-code'
-      fullPath: '/api/v1/orgs/verify-code'
-      preLoaderRoute: typeof ApiV1OrgsVerifyCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/search': {
-      id: '/api/v1/orgs/search'
-      path: '/api/v1/orgs/search'
-      fullPath: '/api/v1/orgs/search'
-      preLoaderRoute: typeof ApiV1OrgsSearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/popular': {
-      id: '/api/v1/orgs/popular'
-      path: '/api/v1/orgs/popular'
-      fullPath: '/api/v1/orgs/popular'
-      preLoaderRoute: typeof ApiV1OrgsPopularRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/lookup-code': {
-      id: '/api/v1/orgs/lookup-code'
-      path: '/api/v1/orgs/lookup-code'
-      fullPath: '/api/v1/orgs/lookup-code'
-      preLoaderRoute: typeof ApiV1OrgsLookupCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/lead': {
-      id: '/api/v1/orgs/lead'
-      path: '/api/v1/orgs/lead'
-      fullPath: '/api/v1/orgs/lead'
-      preLoaderRoute: typeof ApiV1OrgsLeadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/join': {
-      id: '/api/v1/orgs/join'
-      path: '/api/v1/orgs/join'
-      fullPath: '/api/v1/orgs/join'
-      preLoaderRoute: typeof ApiV1OrgsJoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/orgs/claim-code': {
-      id: '/api/v1/orgs/claim-code'
-      path: '/api/v1/orgs/claim-code'
-      fullPath: '/api/v1/orgs/claim-code'
-      preLoaderRoute: typeof ApiV1OrgsClaimCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/meta/config': {
-      id: '/api/v1/meta/config'
-      path: '/api/v1/meta/config'
-      fullPath: '/api/v1/meta/config'
-      preLoaderRoute: typeof ApiV1MetaConfigRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/meta/client-policy': {
-      id: '/api/v1/meta/client-policy'
-      path: '/api/v1/meta/client-policy'
-      fullPath: '/api/v1/meta/client-policy'
-      preLoaderRoute: typeof ApiV1MetaClientPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/messages/unread-total': {
-      id: '/api/v1/messages/unread-total'
-      path: '/api/v1/messages/unread-total'
-      fullPath: '/api/v1/messages/unread-total'
-      preLoaderRoute: typeof ApiV1MessagesUnreadTotalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/terms': {
-      id: '/api/v1/me/terms'
-      path: '/api/v1/me/terms'
-      fullPath: '/api/v1/me/terms'
-      preLoaderRoute: typeof ApiV1MeTermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/promo-code': {
-      id: '/api/v1/me/promo-code'
-      path: '/api/v1/me/promo-code'
-      fullPath: '/api/v1/me/promo-code'
-      preLoaderRoute: typeof ApiV1MePromoCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/presence': {
-      id: '/api/v1/me/presence'
-      path: '/api/v1/me/presence'
-      fullPath: '/api/v1/me/presence'
-      preLoaderRoute: typeof ApiV1MePresenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/deletion-impact': {
-      id: '/api/v1/me/deletion-impact'
-      path: '/api/v1/me/deletion-impact'
-      fullPath: '/api/v1/me/deletion-impact'
-      preLoaderRoute: typeof ApiV1MeDeletionImpactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/app-transaction': {
-      id: '/api/v1/me/app-transaction'
-      path: '/api/v1/me/app-transaction'
-      fullPath: '/api/v1/me/app-transaction'
-      preLoaderRoute: typeof ApiV1MeAppTransactionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/invites/resolve': {
-      id: '/api/v1/invites/resolve'
-      path: '/api/v1/invites/resolve'
-      fullPath: '/api/v1/invites/resolve'
-      preLoaderRoute: typeof ApiV1InvitesResolveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/guardian/status': {
-      id: '/api/v1/guardian/status'
-      path: '/api/v1/guardian/status'
-      fullPath: '/api/v1/guardian/status'
-      preLoaderRoute: typeof ApiV1GuardianStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/devices/$token': {
-      id: '/api/v1/devices/$token'
-      path: '/api/v1/devices/$token'
-      fullPath: '/api/v1/devices/$token'
-      preLoaderRoute: typeof ApiV1DevicesTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/competitions/finished': {
-      id: '/api/v1/competitions/finished'
-      path: '/api/v1/competitions/finished'
-      fullPath: '/api/v1/competitions/finished'
-      preLoaderRoute: typeof ApiV1CompetitionsFinishedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/profile': {
-      id: '/api/v1/coach/profile'
-      path: '/api/v1/coach/profile'
-      fullPath: '/api/v1/coach/profile'
-      preLoaderRoute: typeof ApiV1CoachProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/org': {
-      id: '/api/v1/coach/org'
-      path: '/api/v1/coach/org'
-      fullPath: '/api/v1/coach/org'
-      preLoaderRoute: typeof ApiV1CoachOrgRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/levels': {
-      id: '/api/v1/coach/levels'
-      path: '/api/v1/coach/levels'
-      fullPath: '/api/v1/coach/levels'
-      preLoaderRoute: typeof ApiV1CoachLevelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/checklist': {
-      id: '/api/v1/coach/checklist'
-      path: '/api/v1/coach/checklist'
-      fullPath: '/api/v1/coach/checklist'
-      preLoaderRoute: typeof ApiV1CoachChecklistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/billing': {
-      id: '/api/v1/coach/billing'
-      path: '/api/v1/coach/billing'
-      fullPath: '/api/v1/coach/billing'
-      preLoaderRoute: typeof ApiV1CoachBillingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/boards/my-skaters': {
-      id: '/api/v1/boards/my-skaters'
-      path: '/api/v1/boards/my-skaters'
-      fullPath: '/api/v1/boards/my-skaters'
-      preLoaderRoute: typeof ApiV1BoardsMySkatersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/auth/web-session': {
-      id: '/api/v1/auth/web-session'
-      path: '/api/v1/auth/web-session'
-      fullPath: '/api/v1/auth/web-session'
-      preLoaderRoute: typeof ApiV1AuthWebSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/auth/recover': {
-      id: '/api/v1/auth/recover'
-      path: '/api/v1/auth/recover'
-      fullPath: '/api/v1/auth/recover'
-      preLoaderRoute: typeof ApiV1AuthRecoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/auth/password': {
-      id: '/api/v1/auth/password'
-      path: '/api/v1/auth/password'
-      fullPath: '/api/v1/auth/password'
-      preLoaderRoute: typeof ApiV1AuthPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/auth/google': {
-      id: '/api/v1/auth/google'
-      path: '/api/v1/auth/google'
-      fullPath: '/api/v1/auth/google'
-      preLoaderRoute: typeof ApiV1AuthGoogleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/auth/apple': {
-      id: '/api/v1/auth/apple'
-      path: '/api/v1/auth/apple'
-      fullPath: '/api/v1/auth/apple'
-      preLoaderRoute: typeof ApiV1AuthAppleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/athlete/settings': {
-      id: '/api/v1/athlete/settings'
-      path: '/api/v1/athlete/settings'
-      fullPath: '/api/v1/athlete/settings'
-      preLoaderRoute: typeof ApiV1AthleteSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/athlete/plans': {
-      id: '/api/v1/athlete/plans'
-      path: '/api/v1/athlete/plans'
-      fullPath: '/api/v1/athlete/plans'
-      preLoaderRoute: typeof ApiV1AthletePlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/athlete/me': {
-      id: '/api/v1/athlete/me'
-      path: '/api/v1/athlete/me'
-      fullPath: '/api/v1/athlete/me'
-      preLoaderRoute: typeof ApiV1AthleteMeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/analytics/events': {
-      id: '/api/v1/analytics/events'
-      path: '/api/v1/analytics/events'
-      fullPath: '/api/v1/analytics/events'
-      preLoaderRoute: typeof ApiV1AnalyticsEventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/adult-athlete/onboarding': {
-      id: '/api/v1/adult-athlete/onboarding'
-      path: '/api/v1/adult-athlete/onboarding'
-      fullPath: '/api/v1/adult-athlete/onboarding'
-      preLoaderRoute: typeof ApiV1AdultAthleteOnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/adult-athlete/goals': {
-      id: '/api/v1/adult-athlete/goals'
-      path: '/api/v1/adult-athlete/goals'
-      fullPath: '/api/v1/adult-athlete/goals'
-      preLoaderRoute: typeof ApiV1AdultAthleteGoalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/webhooks/kws': {
-      id: '/api/public/webhooks/kws'
-      path: '/api/public/webhooks/kws'
-      fullPath: '/api/public/webhooks/kws'
-      preLoaderRoute: typeof ApiPublicWebhooksKwsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/webhooks/app-store': {
-      id: '/api/public/webhooks/app-store'
-      path: '/api/public/webhooks/app-store'
-      fullPath: '/api/public/webhooks/app-store'
-      preLoaderRoute: typeof ApiPublicWebhooksAppStoreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/payments/webhook': {
-      id: '/api/public/payments/webhook'
-      path: '/api/public/payments/webhook'
-      fullPath: '/api/public/payments/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/voice-transcripts': {
-      id: '/api/public/hooks/voice-transcripts'
-      path: '/api/public/hooks/voice-transcripts'
-      fullPath: '/api/public/hooks/voice-transcripts'
-      preLoaderRoute: typeof ApiPublicHooksVoiceTranscriptsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/skill-inference': {
-      id: '/api/public/hooks/skill-inference'
-      path: '/api/public/hooks/skill-inference'
-      fullPath: '/api/public/hooks/skill-inference'
-      preLoaderRoute: typeof ApiPublicHooksSkillInferenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/practice-nudges': {
-      id: '/api/public/hooks/practice-nudges'
-      path: '/api/public/hooks/practice-nudges'
-      fullPath: '/api/public/hooks/practice-nudges'
-      preLoaderRoute: typeof ApiPublicHooksPracticeNudgesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/lifecycle-emails': {
-      id: '/api/public/hooks/lifecycle-emails'
-      path: '/api/public/hooks/lifecycle-emails'
-      fullPath: '/api/public/hooks/lifecycle-emails'
-      preLoaderRoute: typeof ApiPublicHooksLifecycleEmailsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/lesson-wrap-ups': {
-      id: '/api/public/hooks/lesson-wrap-ups'
-      path: '/api/public/hooks/lesson-wrap-ups'
-      fullPath: '/api/public/hooks/lesson-wrap-ups'
-      preLoaderRoute: typeof ApiPublicHooksLessonWrapUpsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/lesson-reminders': {
-      id: '/api/public/hooks/lesson-reminders'
-      path: '/api/public/hooks/lesson-reminders'
-      fullPath: '/api/public/hooks/lesson-reminders'
-      preLoaderRoute: typeof ApiPublicHooksLessonRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/knowledge-ingest': {
-      id: '/api/public/hooks/knowledge-ingest'
-      path: '/api/public/hooks/knowledge-ingest'
-      fullPath: '/api/public/hooks/knowledge-ingest'
-      preLoaderRoute: typeof ApiPublicHooksKnowledgeIngestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/ijs-catalog-sweep': {
-      id: '/api/public/hooks/ijs-catalog-sweep'
-      path: '/api/public/hooks/ijs-catalog-sweep'
-      fullPath: '/api/public/hooks/ijs-catalog-sweep'
-      preLoaderRoute: typeof ApiPublicHooksIjsCatalogSweepRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/error-digest': {
-      id: '/api/public/hooks/error-digest'
-      path: '/api/public/hooks/error-digest'
-      fullPath: '/api/public/hooks/error-digest'
-      preLoaderRoute: typeof ApiPublicHooksErrorDigestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/consent-retention': {
-      id: '/api/public/hooks/consent-retention'
-      path: '/api/public/hooks/consent-retention'
-      fullPath: '/api/public/hooks/consent-retention'
-      preLoaderRoute: typeof ApiPublicHooksConsentRetentionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/competition-recaps': {
-      id: '/api/public/hooks/competition-recaps'
-      path: '/api/public/hooks/competition-recaps'
-      fullPath: '/api/public/hooks/competition-recaps'
-      preLoaderRoute: typeof ApiPublicHooksCompetitionRecapsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/billing-notices': {
-      id: '/api/public/hooks/billing-notices'
-      path: '/api/public/hooks/billing-notices'
-      fullPath: '/api/public/hooks/billing-notices'
-      preLoaderRoute: typeof ApiPublicHooksBillingNoticesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/board/refresh': {
-      id: '/api/public/board/refresh'
-      path: '/api/public/board/refresh'
-      fullPath: '/api/public/board/refresh'
-      preLoaderRoute: typeof ApiPublicBoardRefreshRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/parent/settings_/account': {
-      id: '/_authenticated/parent/settings_/account'
-      path: '/settings/account'
-      fullPath: '/parent/settings/account'
-      preLoaderRoute: typeof AuthenticatedParentSettingsAccountRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/plans/$planId': {
-      id: '/_authenticated/parent/plans/$planId'
-      path: '/plans/$planId'
-      fullPath: '/parent/plans/$planId'
-      preLoaderRoute: typeof AuthenticatedParentPlansPlanIdRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/parent/messages/$roomId': {
-      id: '/_authenticated/parent/messages/$roomId'
-      path: '/messages/$roomId'
-      fullPath: '/parent/messages/$roomId'
-      preLoaderRoute: typeof AuthenticatedParentMessagesRoomIdRouteImport
-      parentRoute: typeof AuthenticatedParentRoute
-    }
-    '/_authenticated/coach/settings_/account': {
-      id: '/_authenticated/coach/settings_/account'
-      path: '/settings/account'
-      fullPath: '/coach/settings/account'
-      preLoaderRoute: typeof AuthenticatedCoachSettingsAccountRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/coach/plans/$planId': {
-      id: '/_authenticated/coach/plans/$planId'
-      path: '/$planId'
-      fullPath: '/coach/plans/$planId'
-      preLoaderRoute: typeof AuthenticatedCoachPlansPlanIdRouteImport
-      parentRoute: typeof AuthenticatedCoachPlansRoute
-    }
-    '/_authenticated/coach/messages/$roomId': {
-      id: '/_authenticated/coach/messages/$roomId'
-      path: '/messages/$roomId'
-      fullPath: '/coach/messages/$roomId'
-      preLoaderRoute: typeof AuthenticatedCoachMessagesRoomIdRouteImport
-      parentRoute: typeof AuthenticatedCoachRoute
-    }
-    '/_authenticated/athlete/settings_/account': {
-      id: '/_authenticated/athlete/settings_/account'
-      path: '/settings/account'
-      fullPath: '/athlete/settings/account'
-      preLoaderRoute: typeof AuthenticatedAthleteSettingsAccountRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/athlete/plans/$planId': {
-      id: '/_authenticated/athlete/plans/$planId'
-      path: '/plans/$planId'
-      fullPath: '/athlete/plans/$planId'
-      preLoaderRoute: typeof AuthenticatedAthletePlansPlanIdRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/athlete/messages/$roomId': {
-      id: '/_authenticated/athlete/messages/$roomId'
-      path: '/messages/$roomId'
-      fullPath: '/athlete/messages/$roomId'
-      preLoaderRoute: typeof AuthenticatedAthleteMessagesRoomIdRouteImport
-      parentRoute: typeof AuthenticatedAthleteRoute
-    }
-    '/_authenticated/admin/users/$userId': {
-      id: '/_authenticated/admin/users/$userId'
-      path: '/users/$userId'
-      fullPath: '/admin/users/$userId'
-      preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/plans/$planId': {
-      id: '/_authenticated/admin/plans/$planId'
-      path: '/plans/$planId'
-      fullPath: '/admin/plans/$planId'
-      preLoaderRoute: typeof AuthenticatedAdminPlansPlanIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/list/$kind': {
-      id: '/_authenticated/admin/list/$kind'
-      path: '/list/$kind'
-      fullPath: '/admin/list/$kind'
-      preLoaderRoute: typeof AuthenticatedAdminListKindRouteImport
+    '/_authenticated/admin/emails/$name': {
+      id: '/_authenticated/admin/emails/$name'
+      path: '/emails/$name'
+      fullPath: '/admin/emails/$name'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/errors/$id': {
@@ -5728,620 +5029,711 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminErrorsIdRouteImport
       parentRoute: typeof AuthenticatedAdminErrorsRoute
     }
-    '/_authenticated/admin/emails/$name': {
-      id: '/_authenticated/admin/emails/$name'
-      path: '/emails/$name'
-      fullPath: '/admin/emails/$name'
-      preLoaderRoute: typeof AuthenticatedAdminEmailsNameRouteImport
+    '/_authenticated/admin/list/$kind': {
+      id: '/_authenticated/admin/list/$kind'
+      path: '/list/$kind'
+      fullPath: '/admin/list/$kind'
+      preLoaderRoute: typeof AuthenticatedAdminListKindRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/v1/safety/blocks/': {
-      id: '/api/v1/safety/blocks/'
-      path: '/api/v1/safety/blocks'
-      fullPath: '/api/v1/safety/blocks/'
-      preLoaderRoute: typeof ApiV1SafetyBlocksIndexRouteImport
+    '/_authenticated/admin/plans/$planId': {
+      id: '/_authenticated/admin/plans/$planId'
+      path: '/plans/$planId'
+      fullPath: '/admin/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedAdminPlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users/': {
+      id: '/_authenticated/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users/$userId': {
+      id: '/_authenticated/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/athlete/messages/': {
+      id: '/_authenticated/athlete/messages/'
+      path: '/messages'
+      fullPath: '/athlete/messages/'
+      preLoaderRoute: typeof AuthenticatedAthleteMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/messages/$roomId': {
+      id: '/_authenticated/athlete/messages/$roomId'
+      path: '/messages/$roomId'
+      fullPath: '/athlete/messages/$roomId'
+      preLoaderRoute: typeof AuthenticatedAthleteMessagesRoomIdRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/plans/': {
+      id: '/_authenticated/athlete/plans/'
+      path: '/plans'
+      fullPath: '/athlete/plans/'
+      preLoaderRoute: typeof AuthenticatedAthletePlansIndexRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/plans/$planId': {
+      id: '/_authenticated/athlete/plans/$planId'
+      path: '/plans/$planId'
+      fullPath: '/athlete/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedAthletePlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/resources/': {
+      id: '/_authenticated/athlete/resources/'
+      path: '/resources'
+      fullPath: '/athlete/resources/'
+      preLoaderRoute: typeof AuthenticatedAthleteResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/athlete/settings_/account': {
+      id: '/_authenticated/athlete/settings_/account'
+      path: '/settings/account'
+      fullPath: '/athlete/settings/account'
+      preLoaderRoute: typeof AuthenticatedAthleteSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedAthleteRoute
+    }
+    '/_authenticated/coach/messages/': {
+      id: '/_authenticated/coach/messages/'
+      path: '/messages'
+      fullPath: '/coach/messages/'
+      preLoaderRoute: typeof AuthenticatedCoachMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/messages/$roomId': {
+      id: '/_authenticated/coach/messages/$roomId'
+      path: '/messages/$roomId'
+      fullPath: '/coach/messages/$roomId'
+      preLoaderRoute: typeof AuthenticatedCoachMessagesRoomIdRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/plans/': {
+      id: '/_authenticated/coach/plans/'
+      path: '/'
+      fullPath: '/coach/plans/'
+      preLoaderRoute: typeof AuthenticatedCoachPlansIndexRouteImport
+      parentRoute: typeof AuthenticatedCoachPlansRoute
+    }
+    '/_authenticated/coach/plans/$planId': {
+      id: '/_authenticated/coach/plans/$planId'
+      path: '/$planId'
+      fullPath: '/coach/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedCoachPlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedCoachPlansRoute
+    }
+    '/_authenticated/coach/resources/': {
+      id: '/_authenticated/coach/resources/'
+      path: '/resources'
+      fullPath: '/coach/resources/'
+      preLoaderRoute: typeof AuthenticatedCoachResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/coach/settings_/account': {
+      id: '/_authenticated/coach/settings_/account'
+      path: '/settings/account'
+      fullPath: '/coach/settings/account'
+      preLoaderRoute: typeof AuthenticatedCoachSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedCoachRoute
+    }
+    '/_authenticated/parent/messages/': {
+      id: '/_authenticated/parent/messages/'
+      path: '/messages'
+      fullPath: '/parent/messages/'
+      preLoaderRoute: typeof AuthenticatedParentMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/messages/$roomId': {
+      id: '/_authenticated/parent/messages/$roomId'
+      path: '/messages/$roomId'
+      fullPath: '/parent/messages/$roomId'
+      preLoaderRoute: typeof AuthenticatedParentMessagesRoomIdRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/plans/': {
+      id: '/_authenticated/parent/plans/'
+      path: '/plans'
+      fullPath: '/parent/plans/'
+      preLoaderRoute: typeof AuthenticatedParentPlansIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/plans/$planId': {
+      id: '/_authenticated/parent/plans/$planId'
+      path: '/plans/$planId'
+      fullPath: '/parent/plans/$planId'
+      preLoaderRoute: typeof AuthenticatedParentPlansPlanIdRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/resources/': {
+      id: '/_authenticated/parent/resources/'
+      path: '/resources'
+      fullPath: '/parent/resources/'
+      preLoaderRoute: typeof AuthenticatedParentResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/_authenticated/parent/settings_/account': {
+      id: '/_authenticated/parent/settings_/account'
+      path: '/settings/account'
+      fullPath: '/parent/settings/account'
+      preLoaderRoute: typeof AuthenticatedParentSettingsAccountRouteImport
+      parentRoute: typeof AuthenticatedParentRoute
+    }
+    '/api/public/board/refresh': {
+      id: '/api/public/board/refresh'
+      path: '/api/public/board/refresh'
+      fullPath: '/api/public/board/refresh'
+      preLoaderRoute: typeof ApiPublicBoardRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/billing-notices': {
+      id: '/api/public/hooks/billing-notices'
+      path: '/api/public/hooks/billing-notices'
+      fullPath: '/api/public/hooks/billing-notices'
+      preLoaderRoute: typeof ApiPublicHooksBillingNoticesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/competition-recaps': {
+      id: '/api/public/hooks/competition-recaps'
+      path: '/api/public/hooks/competition-recaps'
+      fullPath: '/api/public/hooks/competition-recaps'
+      preLoaderRoute: typeof ApiPublicHooksCompetitionRecapsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/consent-retention': {
+      id: '/api/public/hooks/consent-retention'
+      path: '/api/public/hooks/consent-retention'
+      fullPath: '/api/public/hooks/consent-retention'
+      preLoaderRoute: typeof ApiPublicHooksConsentRetentionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/error-digest': {
+      id: '/api/public/hooks/error-digest'
+      path: '/api/public/hooks/error-digest'
+      fullPath: '/api/public/hooks/error-digest'
+      preLoaderRoute: typeof ApiPublicHooksErrorDigestRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/rooms/$id/': {
-      id: '/api/v1/rooms/$id/'
-      path: '/api/v1/rooms/$id'
-      fullPath: '/api/v1/rooms/$id/'
-      preLoaderRoute: typeof ApiV1RoomsIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/public/boards/': {
-      id: '/api/v1/public/boards/'
-      path: '/api/v1/public/boards'
-      fullPath: '/api/v1/public/boards/'
-      preLoaderRoute: typeof ApiV1PublicBoardsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/plans/$id/': {
-      id: '/api/v1/plans/$id/'
-      path: '/api/v1/plans/$id'
-      fullPath: '/api/v1/plans/$id/'
-      preLoaderRoute: typeof ApiV1PlansIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/team/': {
-      id: '/api/v1/parent/team/'
-      path: '/api/v1/parent/team'
-      fullPath: '/api/v1/parent/team/'
-      preLoaderRoute: typeof ApiV1ParentTeamIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/': {
-      id: '/api/v1/parent/athletes/'
-      path: '/api/v1/parent/athletes'
-      fullPath: '/api/v1/parent/athletes/'
-      preLoaderRoute: typeof ApiV1ParentAthletesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/celebrations/': {
-      id: '/api/v1/me/celebrations/'
-      path: '/api/v1/me/celebrations'
-      fullPath: '/api/v1/me/celebrations/'
-      preLoaderRoute: typeof ApiV1MeCelebrationsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/live-activities/tokens/': {
-      id: '/api/v1/live-activities/tokens/'
-      path: '/api/v1/live-activities/tokens'
-      fullPath: '/api/v1/live-activities/tokens/'
-      preLoaderRoute: typeof ApiV1LiveActivitiesTokensIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/guardian/claim/': {
-      id: '/api/v1/guardian/claim/'
-      path: '/api/v1/guardian/claim'
-      fullPath: '/api/v1/guardian/claim/'
-      preLoaderRoute: typeof ApiV1GuardianClaimIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/wrap-ups/': {
-      id: '/api/v1/coach/wrap-ups/'
-      path: '/api/v1/coach/wrap-ups'
-      fullPath: '/api/v1/coach/wrap-ups/'
-      preLoaderRoute: typeof ApiV1CoachWrapUpsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/roster/': {
-      id: '/api/v1/coach/roster/'
-      path: '/api/v1/coach/roster'
-      fullPath: '/api/v1/coach/roster/'
-      preLoaderRoute: typeof ApiV1CoachRosterIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/resources/': {
-      id: '/api/v1/coach/resources/'
-      path: '/api/v1/coach/resources'
-      fullPath: '/api/v1/coach/resources/'
-      preLoaderRoute: typeof ApiV1CoachResourcesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/post-event/': {
-      id: '/api/v1/coach/post-event/'
-      path: '/api/v1/coach/post-event'
-      fullPath: '/api/v1/coach/post-event/'
-      preLoaderRoute: typeof ApiV1CoachPostEventIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/plans/': {
-      id: '/api/v1/coach/plans/'
-      path: '/api/v1/coach/plans'
-      fullPath: '/api/v1/coach/plans/'
-      preLoaderRoute: typeof ApiV1CoachPlansIndexRouteImport
+    }
+    '/api/public/hooks/ijs-catalog-sweep': {
+      id: '/api/public/hooks/ijs-catalog-sweep'
+      path: '/api/public/hooks/ijs-catalog-sweep'
+      fullPath: '/api/public/hooks/ijs-catalog-sweep'
+      preLoaderRoute: typeof ApiPublicHooksIjsCatalogSweepRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/moves/': {
-      id: '/api/v1/coach/moves/'
-      path: '/api/v1/coach/moves'
-      fullPath: '/api/v1/coach/moves/'
-      preLoaderRoute: typeof ApiV1CoachMovesIndexRouteImport
+    '/api/public/hooks/knowledge-ingest': {
+      id: '/api/public/hooks/knowledge-ingest'
+      path: '/api/public/hooks/knowledge-ingest'
+      fullPath: '/api/public/hooks/knowledge-ingest'
+      preLoaderRoute: typeof ApiPublicHooksKnowledgeIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/lesson-slots/': {
-      id: '/api/v1/coach/lesson-slots/'
-      path: '/api/v1/coach/lesson-slots'
-      fullPath: '/api/v1/coach/lesson-slots/'
-      preLoaderRoute: typeof ApiV1CoachLessonSlotsIndexRouteImport
+    '/api/public/hooks/lesson-reminders': {
+      id: '/api/public/hooks/lesson-reminders'
+      path: '/api/public/hooks/lesson-reminders'
+      fullPath: '/api/public/hooks/lesson-reminders'
+      preLoaderRoute: typeof ApiPublicHooksLessonRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/invoices/': {
-      id: '/api/v1/coach/invoices/'
-      path: '/api/v1/coach/invoices'
-      fullPath: '/api/v1/coach/invoices/'
-      preLoaderRoute: typeof ApiV1CoachInvoicesIndexRouteImport
+    '/api/public/hooks/lesson-wrap-ups': {
+      id: '/api/public/hooks/lesson-wrap-ups'
+      path: '/api/public/hooks/lesson-wrap-ups'
+      fullPath: '/api/public/hooks/lesson-wrap-ups'
+      preLoaderRoute: typeof ApiPublicHooksLessonWrapUpsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/invite-code/': {
-      id: '/api/v1/coach/invite-code/'
-      path: '/api/v1/coach/invite-code'
-      fullPath: '/api/v1/coach/invite-code/'
-      preLoaderRoute: typeof ApiV1CoachInviteCodeIndexRouteImport
+    '/api/public/hooks/lifecycle-emails': {
+      id: '/api/public/hooks/lifecycle-emails'
+      path: '/api/public/hooks/lifecycle-emails'
+      fullPath: '/api/public/hooks/lifecycle-emails'
+      preLoaderRoute: typeof ApiPublicHooksLifecycleEmailsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athlete/goals/': {
-      id: '/api/v1/athlete/goals/'
-      path: '/api/v1/athlete/goals'
-      fullPath: '/api/v1/athlete/goals/'
-      preLoaderRoute: typeof ApiV1AthleteGoalsIndexRouteImport
+    '/api/public/hooks/practice-nudges': {
+      id: '/api/public/hooks/practice-nudges'
+      path: '/api/public/hooks/practice-nudges'
+      fullPath: '/api/public/hooks/practice-nudges'
+      preLoaderRoute: typeof ApiPublicHooksPracticeNudgesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/schedules/': {
-      id: '/api/v1/adult-athlete/schedules/'
-      path: '/api/v1/adult-athlete/schedules'
-      fullPath: '/api/v1/adult-athlete/schedules/'
-      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesIndexRouteImport
+    '/api/public/hooks/skill-inference': {
+      id: '/api/public/hooks/skill-inference'
+      path: '/api/public/hooks/skill-inference'
+      fullPath: '/api/public/hooks/skill-inference'
+      preLoaderRoute: typeof ApiPublicHooksSkillInferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/coaches/': {
-      id: '/api/v1/adult-athlete/coaches/'
-      path: '/api/v1/adult-athlete/coaches'
-      fullPath: '/api/v1/adult-athlete/coaches/'
-      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIndexRouteImport
+    '/api/public/hooks/voice-transcripts': {
+      id: '/api/public/hooks/voice-transcripts'
+      path: '/api/public/hooks/voice-transcripts'
+      fullPath: '/api/public/hooks/voice-transcripts'
+      preLoaderRoute: typeof ApiPublicHooksVoiceTranscriptsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/validate-code': {
-      id: '/api/v1/signup/parent/validate-code'
-      path: '/api/v1/signup/parent/validate-code'
-      fullPath: '/api/v1/signup/parent/validate-code'
-      preLoaderRoute: typeof ApiV1SignupParentValidateCodeRouteImport
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/status': {
-      id: '/api/v1/signup/parent/status'
-      path: '/api/v1/signup/parent/status'
-      fullPath: '/api/v1/signup/parent/status'
-      preLoaderRoute: typeof ApiV1SignupParentStatusRouteImport
+    '/api/public/webhooks/app-store': {
+      id: '/api/public/webhooks/app-store'
+      path: '/api/public/webhooks/app-store'
+      fullPath: '/api/public/webhooks/app-store'
+      preLoaderRoute: typeof ApiPublicWebhooksAppStoreRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/start': {
-      id: '/api/v1/signup/parent/start'
-      path: '/api/v1/signup/parent/start'
-      fullPath: '/api/v1/signup/parent/start'
-      preLoaderRoute: typeof ApiV1SignupParentStartRouteImport
+    '/api/public/webhooks/kws': {
+      id: '/api/public/webhooks/kws'
+      path: '/api/public/webhooks/kws'
+      fullPath: '/api/public/webhooks/kws'
+      preLoaderRoute: typeof ApiPublicWebhooksKwsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/schedule': {
-      id: '/api/v1/signup/parent/schedule'
-      path: '/api/v1/signup/parent/schedule'
-      fullPath: '/api/v1/signup/parent/schedule'
-      preLoaderRoute: typeof ApiV1SignupParentScheduleRouteImport
+    '/api/v1/adult-athlete/goals': {
+      id: '/api/v1/adult-athlete/goals'
+      path: '/api/v1/adult-athlete/goals'
+      fullPath: '/api/v1/adult-athlete/goals'
+      preLoaderRoute: typeof ApiV1AdultAthleteGoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/link-coach': {
-      id: '/api/v1/signup/parent/link-coach'
-      path: '/api/v1/signup/parent/link-coach'
-      fullPath: '/api/v1/signup/parent/link-coach'
-      preLoaderRoute: typeof ApiV1SignupParentLinkCoachRouteImport
+    '/api/v1/adult-athlete/onboarding': {
+      id: '/api/v1/adult-athlete/onboarding'
+      path: '/api/v1/adult-athlete/onboarding'
+      fullPath: '/api/v1/adult-athlete/onboarding'
+      preLoaderRoute: typeof ApiV1AdultAthleteOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/goals': {
-      id: '/api/v1/signup/parent/goals'
-      path: '/api/v1/signup/parent/goals'
-      fullPath: '/api/v1/signup/parent/goals'
-      preLoaderRoute: typeof ApiV1SignupParentGoalsRouteImport
+    '/api/v1/analytics/events': {
+      id: '/api/v1/analytics/events'
+      path: '/api/v1/analytics/events'
+      fullPath: '/api/v1/analytics/events'
+      preLoaderRoute: typeof ApiV1AnalyticsEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/coach-preview': {
-      id: '/api/v1/signup/parent/coach-preview'
-      path: '/api/v1/signup/parent/coach-preview'
-      fullPath: '/api/v1/signup/parent/coach-preview'
-      preLoaderRoute: typeof ApiV1SignupParentCoachPreviewRouteImport
+    '/api/v1/athlete/me': {
+      id: '/api/v1/athlete/me'
+      path: '/api/v1/athlete/me'
+      fullPath: '/api/v1/athlete/me'
+      preLoaderRoute: typeof ApiV1AthleteMeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/parent/athletes-for-code': {
-      id: '/api/v1/signup/parent/athletes-for-code'
-      path: '/api/v1/signup/parent/athletes-for-code'
-      fullPath: '/api/v1/signup/parent/athletes-for-code'
-      preLoaderRoute: typeof ApiV1SignupParentAthletesForCodeRouteImport
+    '/api/v1/athlete/plans': {
+      id: '/api/v1/athlete/plans'
+      path: '/api/v1/athlete/plans'
+      fullPath: '/api/v1/athlete/plans'
+      preLoaderRoute: typeof ApiV1AthletePlansRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/athlete/username': {
-      id: '/api/v1/signup/athlete/username'
-      path: '/api/v1/signup/athlete/username'
-      fullPath: '/api/v1/signup/athlete/username'
-      preLoaderRoute: typeof ApiV1SignupAthleteUsernameRouteImport
+    '/api/v1/athlete/settings': {
+      id: '/api/v1/athlete/settings'
+      path: '/api/v1/athlete/settings'
+      fullPath: '/api/v1/athlete/settings'
+      preLoaderRoute: typeof ApiV1AthleteSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/athlete/invite-summary': {
-      id: '/api/v1/signup/athlete/invite-summary'
-      path: '/api/v1/signup/athlete/invite-summary'
-      fullPath: '/api/v1/signup/athlete/invite-summary'
-      preLoaderRoute: typeof ApiV1SignupAthleteInviteSummaryRouteImport
+    '/api/v1/auth/apple': {
+      id: '/api/v1/auth/apple'
+      path: '/api/v1/auth/apple'
+      fullPath: '/api/v1/auth/apple'
+      preLoaderRoute: typeof ApiV1AuthAppleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/signup/athlete/claim': {
-      id: '/api/v1/signup/athlete/claim'
-      path: '/api/v1/signup/athlete/claim'
-      fullPath: '/api/v1/signup/athlete/claim'
-      preLoaderRoute: typeof ApiV1SignupAthleteClaimRouteImport
+    '/api/v1/auth/google': {
+      id: '/api/v1/auth/google'
+      path: '/api/v1/auth/google'
+      fullPath: '/api/v1/auth/google'
+      preLoaderRoute: typeof ApiV1AuthGoogleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/safety/blocks/$userId': {
-      id: '/api/v1/safety/blocks/$userId'
-      path: '/api/v1/safety/blocks/$userId'
-      fullPath: '/api/v1/safety/blocks/$userId'
-      preLoaderRoute: typeof ApiV1SafetyBlocksUserIdRouteImport
+    '/api/v1/auth/password': {
+      id: '/api/v1/auth/password'
+      path: '/api/v1/auth/password'
+      fullPath: '/api/v1/auth/password'
+      preLoaderRoute: typeof ApiV1AuthPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/rooms/$id/read': {
-      id: '/api/v1/rooms/$id/read'
-      path: '/api/v1/rooms/$id/read'
-      fullPath: '/api/v1/rooms/$id/read'
-      preLoaderRoute: typeof ApiV1RoomsIdReadRouteImport
+    '/api/v1/auth/recover': {
+      id: '/api/v1/auth/recover'
+      path: '/api/v1/auth/recover'
+      fullPath: '/api/v1/auth/recover'
+      preLoaderRoute: typeof ApiV1AuthRecoverRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/rooms/$id/messages': {
-      id: '/api/v1/rooms/$id/messages'
-      path: '/api/v1/rooms/$id/messages'
-      fullPath: '/api/v1/rooms/$id/messages'
-      preLoaderRoute: typeof ApiV1RoomsIdMessagesRouteImport
+    '/api/v1/auth/web-session': {
+      id: '/api/v1/auth/web-session'
+      path: '/api/v1/auth/web-session'
+      fullPath: '/api/v1/auth/web-session'
+      preLoaderRoute: typeof ApiV1AuthWebSessionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/rooms/$id/active-plans': {
-      id: '/api/v1/rooms/$id/active-plans'
-      path: '/api/v1/rooms/$id/active-plans'
-      fullPath: '/api/v1/rooms/$id/active-plans'
-      preLoaderRoute: typeof ApiV1RoomsIdActivePlansRouteImport
+    '/api/v1/boards/my-skaters': {
+      id: '/api/v1/boards/my-skaters'
+      path: '/api/v1/boards/my-skaters'
+      fullPath: '/api/v1/boards/my-skaters'
+      preLoaderRoute: typeof ApiV1BoardsMySkatersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/resources/$id/signed-url': {
-      id: '/api/v1/resources/$id/signed-url'
-      path: '/api/v1/resources/$id/signed-url'
-      fullPath: '/api/v1/resources/$id/signed-url'
-      preLoaderRoute: typeof ApiV1ResourcesIdSignedUrlRouteImport
+    '/api/v1/coach/billing': {
+      id: '/api/v1/coach/billing'
+      path: '/api/v1/coach/billing'
+      fullPath: '/api/v1/coach/billing'
+      preLoaderRoute: typeof ApiV1CoachBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/recaps/$id/dismiss': {
-      id: '/api/v1/recaps/$id/dismiss'
-      path: '/api/v1/recaps/$id/dismiss'
-      fullPath: '/api/v1/recaps/$id/dismiss'
-      preLoaderRoute: typeof ApiV1RecapsIdDismissRouteImport
+    '/api/v1/coach/checklist': {
+      id: '/api/v1/coach/checklist'
+      path: '/api/v1/coach/checklist'
+      fullPath: '/api/v1/coach/checklist'
+      preLoaderRoute: typeof ApiV1CoachChecklistRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/public/plans/$token': {
-      id: '/api/v1/public/plans/$token'
-      path: '/api/v1/public/plans/$token'
-      fullPath: '/api/v1/public/plans/$token'
-      preLoaderRoute: typeof ApiV1PublicPlansTokenRouteImport
+    '/api/v1/coach/levels': {
+      id: '/api/v1/coach/levels'
+      path: '/api/v1/coach/levels'
+      fullPath: '/api/v1/coach/levels'
+      preLoaderRoute: typeof ApiV1CoachLevelsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/public/boards/search': {
-      id: '/api/v1/public/boards/search'
-      path: '/api/v1/public/boards/search'
-      fullPath: '/api/v1/public/boards/search'
-      preLoaderRoute: typeof ApiV1PublicBoardsSearchRouteImport
+    '/api/v1/coach/org': {
+      id: '/api/v1/coach/org'
+      path: '/api/v1/coach/org'
+      fullPath: '/api/v1/coach/org'
+      preLoaderRoute: typeof ApiV1CoachOrgRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/public/boards/$slug': {
-      id: '/api/v1/public/boards/$slug'
-      path: '/api/v1/public/boards/$slug'
-      fullPath: '/api/v1/public/boards/$slug'
-      preLoaderRoute: typeof ApiV1PublicBoardsSlugRouteImport
+    '/api/v1/coach/profile': {
+      id: '/api/v1/coach/profile'
+      path: '/api/v1/coach/profile'
+      fullPath: '/api/v1/coach/profile'
+      preLoaderRoute: typeof ApiV1CoachProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/import/$token': {
-      id: '/api/v1/plans/import/$token'
-      path: '/api/v1/plans/import/$token'
-      fullPath: '/api/v1/plans/import/$token'
-      preLoaderRoute: typeof ApiV1PlansImportTokenRouteImport
+    '/api/v1/competitions/finished': {
+      id: '/api/v1/competitions/finished'
+      path: '/api/v1/competitions/finished'
+      fullPath: '/api/v1/competitions/finished'
+      preLoaderRoute: typeof ApiV1CompetitionsFinishedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/status': {
-      id: '/api/v1/plans/$id/status'
-      path: '/api/v1/plans/$id/status'
-      fullPath: '/api/v1/plans/$id/status'
-      preLoaderRoute: typeof ApiV1PlansIdStatusRouteImport
+    '/api/v1/devices/': {
+      id: '/api/v1/devices/'
+      path: '/api/v1/devices'
+      fullPath: '/api/v1/devices/'
+      preLoaderRoute: typeof ApiV1DevicesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/share-token': {
-      id: '/api/v1/plans/$id/share-token'
-      path: '/api/v1/plans/$id/share-token'
-      fullPath: '/api/v1/plans/$id/share-token'
-      preLoaderRoute: typeof ApiV1PlansIdShareTokenRouteImport
+    '/api/v1/devices/$token': {
+      id: '/api/v1/devices/$token'
+      path: '/api/v1/devices/$token'
+      fullPath: '/api/v1/devices/$token'
+      preLoaderRoute: typeof ApiV1DevicesTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/me/terms_/accept': {
-      id: '/api/v1/me/terms_/accept'
-      path: '/api/v1/me/terms/accept'
-      fullPath: '/api/v1/me/terms/accept'
-      preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
+    '/api/v1/guardian/status': {
+      id: '/api/v1/guardian/status'
+      path: '/api/v1/guardian/status'
+      fullPath: '/api/v1/guardian/status'
+      preLoaderRoute: typeof ApiV1GuardianStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/live-activities/tokens/$token': {
-      id: '/api/v1/live-activities/tokens/$token'
-      path: '/api/v1/live-activities/tokens/$token'
-      fullPath: '/api/v1/live-activities/tokens/$token'
-      preLoaderRoute: typeof ApiV1LiveActivitiesTokensTokenRouteImport
+    '/api/v1/invites/resolve': {
+      id: '/api/v1/invites/resolve'
+      path: '/api/v1/invites/resolve'
+      fullPath: '/api/v1/invites/resolve'
+      preLoaderRoute: typeof ApiV1InvitesResolveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/invites/parent/preview': {
-      id: '/api/v1/invites/parent/preview'
-      path: '/api/v1/invites/parent/preview'
-      fullPath: '/api/v1/invites/parent/preview'
-      preLoaderRoute: typeof ApiV1InvitesParentPreviewRouteImport
+    '/api/v1/me/': {
+      id: '/api/v1/me/'
+      path: '/api/v1/me'
+      fullPath: '/api/v1/me/'
+      preLoaderRoute: typeof ApiV1MeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/invites/parent/claim': {
-      id: '/api/v1/invites/parent/claim'
-      path: '/api/v1/invites/parent/claim'
-      fullPath: '/api/v1/invites/parent/claim'
-      preLoaderRoute: typeof ApiV1InvitesParentClaimRouteImport
+    '/api/v1/me/app-transaction': {
+      id: '/api/v1/me/app-transaction'
+      path: '/api/v1/me/app-transaction'
+      fullPath: '/api/v1/me/app-transaction'
+      preLoaderRoute: typeof ApiV1MeAppTransactionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/invites/adult-athlete/preview': {
-      id: '/api/v1/invites/adult-athlete/preview'
-      path: '/api/v1/invites/adult-athlete/preview'
-      fullPath: '/api/v1/invites/adult-athlete/preview'
-      preLoaderRoute: typeof ApiV1InvitesAdultAthletePreviewRouteImport
+    '/api/v1/me/deletion-impact': {
+      id: '/api/v1/me/deletion-impact'
+      path: '/api/v1/me/deletion-impact'
+      fullPath: '/api/v1/me/deletion-impact'
+      preLoaderRoute: typeof ApiV1MeDeletionImpactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/invites/adult-athlete/claim': {
-      id: '/api/v1/invites/adult-athlete/claim'
-      path: '/api/v1/invites/adult-athlete/claim'
-      fullPath: '/api/v1/invites/adult-athlete/claim'
-      preLoaderRoute: typeof ApiV1InvitesAdultAthleteClaimRouteImport
+    '/api/v1/me/presence': {
+      id: '/api/v1/me/presence'
+      path: '/api/v1/me/presence'
+      fullPath: '/api/v1/me/presence'
+      preLoaderRoute: typeof ApiV1MePresenceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/verification/status': {
-      id: '/api/v1/guardian/verification/status'
-      path: '/api/v1/guardian/verification/status'
-      fullPath: '/api/v1/guardian/verification/status'
-      preLoaderRoute: typeof ApiV1GuardianVerificationStatusRouteImport
+    '/api/v1/me/promo-code': {
+      id: '/api/v1/me/promo-code'
+      path: '/api/v1/me/promo-code'
+      fullPath: '/api/v1/me/promo-code'
+      preLoaderRoute: typeof ApiV1MePromoCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/verification/start': {
-      id: '/api/v1/guardian/verification/start'
-      path: '/api/v1/guardian/verification/start'
-      fullPath: '/api/v1/guardian/verification/start'
-      preLoaderRoute: typeof ApiV1GuardianVerificationStartRouteImport
+    '/api/v1/me/terms': {
+      id: '/api/v1/me/terms'
+      path: '/api/v1/me/terms'
+      fullPath: '/api/v1/me/terms'
+      preLoaderRoute: typeof ApiV1MeTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/verification/complete': {
-      id: '/api/v1/guardian/verification/complete'
-      path: '/api/v1/guardian/verification/complete'
-      fullPath: '/api/v1/guardian/verification/complete'
-      preLoaderRoute: typeof ApiV1GuardianVerificationCompleteRouteImport
+    '/api/v1/messages/unread-total': {
+      id: '/api/v1/messages/unread-total'
+      path: '/api/v1/messages/unread-total'
+      fullPath: '/api/v1/messages/unread-total'
+      preLoaderRoute: typeof ApiV1MessagesUnreadTotalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/claim/summary': {
-      id: '/api/v1/guardian/claim/summary'
-      path: '/api/v1/guardian/claim/summary'
-      fullPath: '/api/v1/guardian/claim/summary'
-      preLoaderRoute: typeof ApiV1GuardianClaimSummaryRouteImport
+    '/api/v1/meta/client-policy': {
+      id: '/api/v1/meta/client-policy'
+      path: '/api/v1/meta/client-policy'
+      fullPath: '/api/v1/meta/client-policy'
+      preLoaderRoute: typeof ApiV1MetaClientPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/claim/self': {
-      id: '/api/v1/guardian/claim/self'
-      path: '/api/v1/guardian/claim/self'
-      fullPath: '/api/v1/guardian/claim/self'
-      preLoaderRoute: typeof ApiV1GuardianClaimSelfRouteImport
+    '/api/v1/meta/config': {
+      id: '/api/v1/meta/config'
+      path: '/api/v1/meta/config'
+      fullPath: '/api/v1/meta/config'
+      preLoaderRoute: typeof ApiV1MetaConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/claim/merge-options': {
-      id: '/api/v1/guardian/claim/merge-options'
-      path: '/api/v1/guardian/claim/merge-options'
-      fullPath: '/api/v1/guardian/claim/merge-options'
-      preLoaderRoute: typeof ApiV1GuardianClaimMergeOptionsRouteImport
+    '/api/v1/orgs/claim-code': {
+      id: '/api/v1/orgs/claim-code'
+      path: '/api/v1/orgs/claim-code'
+      fullPath: '/api/v1/orgs/claim-code'
+      preLoaderRoute: typeof ApiV1OrgsClaimCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/claim/merge': {
-      id: '/api/v1/guardian/claim/merge'
-      path: '/api/v1/guardian/claim/merge'
-      fullPath: '/api/v1/guardian/claim/merge'
-      preLoaderRoute: typeof ApiV1GuardianClaimMergeRouteImport
+    '/api/v1/orgs/join': {
+      id: '/api/v1/orgs/join'
+      path: '/api/v1/orgs/join'
+      fullPath: '/api/v1/orgs/join'
+      preLoaderRoute: typeof ApiV1OrgsJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/guardian/claim/context': {
-      id: '/api/v1/guardian/claim/context'
-      path: '/api/v1/guardian/claim/context'
-      fullPath: '/api/v1/guardian/claim/context'
-      preLoaderRoute: typeof ApiV1GuardianClaimContextRouteImport
+    '/api/v1/orgs/lead': {
+      id: '/api/v1/orgs/lead'
+      path: '/api/v1/orgs/lead'
+      fullPath: '/api/v1/orgs/lead'
+      preLoaderRoute: typeof ApiV1OrgsLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/competitions/$id/skater-matches': {
-      id: '/api/v1/competitions/$id/skater-matches'
-      path: '/api/v1/competitions/$id/skater-matches'
-      fullPath: '/api/v1/competitions/$id/skater-matches'
-      preLoaderRoute: typeof ApiV1CompetitionsIdSkaterMatchesRouteImport
+    '/api/v1/orgs/lookup-code': {
+      id: '/api/v1/orgs/lookup-code'
+      path: '/api/v1/orgs/lookup-code'
+      fullPath: '/api/v1/orgs/lookup-code'
+      preLoaderRoute: typeof ApiV1OrgsLookupCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/competitions/$id/attendance': {
-      id: '/api/v1/competitions/$id/attendance'
-      path: '/api/v1/competitions/$id/attendance'
-      fullPath: '/api/v1/competitions/$id/attendance'
-      preLoaderRoute: typeof ApiV1CompetitionsIdAttendanceRouteImport
+    '/api/v1/orgs/popular': {
+      id: '/api/v1/orgs/popular'
+      path: '/api/v1/orgs/popular'
+      fullPath: '/api/v1/orgs/popular'
+      preLoaderRoute: typeof ApiV1OrgsPopularRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/wrap-ups/pending': {
-      id: '/api/v1/coach/wrap-ups/pending'
-      path: '/api/v1/coach/wrap-ups/pending'
-      fullPath: '/api/v1/coach/wrap-ups/pending'
-      preLoaderRoute: typeof ApiV1CoachWrapUpsPendingRouteImport
+    '/api/v1/orgs/search': {
+      id: '/api/v1/orgs/search'
+      path: '/api/v1/orgs/search'
+      fullPath: '/api/v1/orgs/search'
+      preLoaderRoute: typeof ApiV1OrgsSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/visibility/mine': {
-      id: '/api/v1/coach/visibility/mine'
-      path: '/api/v1/coach/visibility/mine'
-      fullPath: '/api/v1/coach/visibility/mine'
-      preLoaderRoute: typeof ApiV1CoachVisibilityMineRouteImport
+    '/api/v1/orgs/verify-code': {
+      id: '/api/v1/orgs/verify-code'
+      path: '/api/v1/orgs/verify-code'
+      fullPath: '/api/v1/orgs/verify-code'
+      preLoaderRoute: typeof ApiV1OrgsVerifyCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/schedule-import/parse': {
-      id: '/api/v1/coach/schedule-import/parse'
-      path: '/api/v1/coach/schedule-import/parse'
-      fullPath: '/api/v1/coach/schedule-import/parse'
-      preLoaderRoute: typeof ApiV1CoachScheduleImportParseRouteImport
+    '/api/v1/parent/coach-visibility': {
+      id: '/api/v1/parent/coach-visibility'
+      path: '/api/v1/parent/coach-visibility'
+      fullPath: '/api/v1/parent/coach-visibility'
+      preLoaderRoute: typeof ApiV1ParentCoachVisibilityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/schedule-import/commit': {
-      id: '/api/v1/coach/schedule-import/commit'
-      path: '/api/v1/coach/schedule-import/commit'
-      fullPath: '/api/v1/coach/schedule-import/commit'
-      preLoaderRoute: typeof ApiV1CoachScheduleImportCommitRouteImport
+    '/api/v1/parent/goals': {
+      id: '/api/v1/parent/goals'
+      path: '/api/v1/parent/goals'
+      fullPath: '/api/v1/parent/goals'
+      preLoaderRoute: typeof ApiV1ParentGoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/roster/practice-summaries': {
-      id: '/api/v1/coach/roster/practice-summaries'
-      path: '/api/v1/coach/roster/practice-summaries'
-      fullPath: '/api/v1/coach/roster/practice-summaries'
-      preLoaderRoute: typeof ApiV1CoachRosterPracticeSummariesRouteImport
+    '/api/v1/parent/invite-code': {
+      id: '/api/v1/parent/invite-code'
+      path: '/api/v1/parent/invite-code'
+      fullPath: '/api/v1/parent/invite-code'
+      preLoaderRoute: typeof ApiV1ParentInviteCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/resources/upload-url': {
-      id: '/api/v1/coach/resources/upload-url'
-      path: '/api/v1/coach/resources/upload-url'
-      fullPath: '/api/v1/coach/resources/upload-url'
-      preLoaderRoute: typeof ApiV1CoachResourcesUploadUrlRouteImport
+    '/api/v1/parent/plans': {
+      id: '/api/v1/parent/plans'
+      path: '/api/v1/parent/plans'
+      fullPath: '/api/v1/parent/plans'
+      preLoaderRoute: typeof ApiV1ParentPlansRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/resources/$id': {
-      id: '/api/v1/coach/resources/$id'
-      path: '/api/v1/coach/resources/$id'
-      fullPath: '/api/v1/coach/resources/$id'
-      preLoaderRoute: typeof ApiV1CoachResourcesIdRouteImport
+    '/api/v1/parent/profile': {
+      id: '/api/v1/parent/profile'
+      path: '/api/v1/parent/profile'
+      fullPath: '/api/v1/parent/profile'
+      preLoaderRoute: typeof ApiV1ParentProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/other-plans/$planId': {
-      id: '/api/v1/coach/other-plans/$planId'
-      path: '/api/v1/coach/other-plans/$planId'
-      fullPath: '/api/v1/coach/other-plans/$planId'
-      preLoaderRoute: typeof ApiV1CoachOtherPlansPlanIdRouteImport
+    '/api/v1/parent/settings': {
+      id: '/api/v1/parent/settings'
+      path: '/api/v1/parent/settings'
+      fullPath: '/api/v1/parent/settings'
+      preLoaderRoute: typeof ApiV1ParentSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/onboarding/complete': {
-      id: '/api/v1/coach/onboarding/complete'
-      path: '/api/v1/coach/onboarding/complete'
-      fullPath: '/api/v1/coach/onboarding/complete'
-      preLoaderRoute: typeof ApiV1CoachOnboardingCompleteRouteImport
+    '/api/v1/promo-codes/validate': {
+      id: '/api/v1/promo-codes/validate'
+      path: '/api/v1/promo-codes/validate'
+      fullPath: '/api/v1/promo-codes/validate'
+      preLoaderRoute: typeof ApiV1PromoCodesValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/moves/from-plan-move': {
-      id: '/api/v1/coach/moves/from-plan-move'
-      path: '/api/v1/coach/moves/from-plan-move'
-      fullPath: '/api/v1/coach/moves/from-plan-move'
-      preLoaderRoute: typeof ApiV1CoachMovesFromPlanMoveRouteImport
+    '/api/v1/recaps/': {
+      id: '/api/v1/recaps/'
+      path: '/api/v1/recaps'
+      fullPath: '/api/v1/recaps/'
+      preLoaderRoute: typeof ApiV1RecapsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/moves/fork-from-plan-move': {
-      id: '/api/v1/coach/moves/fork-from-plan-move'
-      path: '/api/v1/coach/moves/fork-from-plan-move'
-      fullPath: '/api/v1/coach/moves/fork-from-plan-move'
-      preLoaderRoute: typeof ApiV1CoachMovesForkFromPlanMoveRouteImport
+    '/api/v1/recaps/coaches': {
+      id: '/api/v1/recaps/coaches'
+      path: '/api/v1/recaps/coaches'
+      fullPath: '/api/v1/recaps/coaches'
+      preLoaderRoute: typeof ApiV1RecapsCoachesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/invoices/preview': {
-      id: '/api/v1/coach/invoices/preview'
-      path: '/api/v1/coach/invoices/preview'
-      fullPath: '/api/v1/coach/invoices/preview'
-      preLoaderRoute: typeof ApiV1CoachInvoicesPreviewRouteImport
+    '/api/v1/recaps/pending': {
+      id: '/api/v1/recaps/pending'
+      path: '/api/v1/recaps/pending'
+      fullPath: '/api/v1/recaps/pending'
+      preLoaderRoute: typeof ApiV1RecapsPendingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/invite-code/rotate': {
-      id: '/api/v1/coach/invite-code/rotate'
-      path: '/api/v1/coach/invite-code/rotate'
-      fullPath: '/api/v1/coach/invite-code/rotate'
-      preLoaderRoute: typeof ApiV1CoachInviteCodeRotateRouteImport
+    '/api/v1/resources/': {
+      id: '/api/v1/resources/'
+      path: '/api/v1/resources'
+      fullPath: '/api/v1/resources/'
+      preLoaderRoute: typeof ApiV1ResourcesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/founding/restore': {
-      id: '/api/v1/coach/founding/restore'
-      path: '/api/v1/coach/founding/restore'
-      fullPath: '/api/v1/coach/founding/restore'
-      preLoaderRoute: typeof ApiV1CoachFoundingRestoreRouteImport
+    '/api/v1/rooms/': {
+      id: '/api/v1/rooms/'
+      path: '/api/v1/rooms'
+      fullPath: '/api/v1/rooms/'
+      preLoaderRoute: typeof ApiV1RoomsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/founding/claim': {
-      id: '/api/v1/coach/founding/claim'
-      path: '/api/v1/coach/founding/claim'
-      fullPath: '/api/v1/coach/founding/claim'
-      preLoaderRoute: typeof ApiV1CoachFoundingClaimRouteImport
+    '/api/v1/rooms/ensure': {
+      id: '/api/v1/rooms/ensure'
+      path: '/api/v1/rooms/ensure'
+      fullPath: '/api/v1/rooms/ensure'
+      preLoaderRoute: typeof ApiV1RoomsEnsureRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/username/resolve': {
-      id: '/api/v1/auth/username/resolve'
-      path: '/api/v1/auth/username/resolve'
-      fullPath: '/api/v1/auth/username/resolve'
-      preLoaderRoute: typeof ApiV1AuthUsernameResolveRouteImport
+    '/api/v1/safety/reports': {
+      id: '/api/v1/safety/reports'
+      path: '/api/v1/safety/reports'
+      fullPath: '/api/v1/safety/reports'
+      preLoaderRoute: typeof ApiV1SafetyReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/username/check': {
-      id: '/api/v1/auth/username/check'
-      path: '/api/v1/auth/username/check'
-      fullPath: '/api/v1/auth/username/check'
-      preLoaderRoute: typeof ApiV1AuthUsernameCheckRouteImport
+    '/api/v1/saved-answers/': {
+      id: '/api/v1/saved-answers/'
+      path: '/api/v1/saved-answers'
+      fullPath: '/api/v1/saved-answers/'
+      preLoaderRoute: typeof ApiV1SavedAnswersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/signup/parent': {
-      id: '/api/v1/auth/signup/parent'
-      path: '/api/v1/auth/signup/parent'
-      fullPath: '/api/v1/auth/signup/parent'
-      preLoaderRoute: typeof ApiV1AuthSignupParentRouteImport
+    '/api/v1/saved-answers/$id': {
+      id: '/api/v1/saved-answers/$id'
+      path: '/api/v1/saved-answers/$id'
+      fullPath: '/api/v1/saved-answers/$id'
+      preLoaderRoute: typeof ApiV1SavedAnswersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/signup/coach': {
-      id: '/api/v1/auth/signup/coach'
-      path: '/api/v1/auth/signup/coach'
-      fullPath: '/api/v1/auth/signup/coach'
-      preLoaderRoute: typeof ApiV1AuthSignupCoachRouteImport
+    '/api/v1/signup/adult-athlete': {
+      id: '/api/v1/signup/adult-athlete'
+      path: '/api/v1/signup/adult-athlete'
+      fullPath: '/api/v1/signup/adult-athlete'
+      preLoaderRoute: typeof ApiV1SignupAdultAthleteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/signup/adult-athlete': {
-      id: '/api/v1/auth/signup/adult-athlete'
-      path: '/api/v1/auth/signup/adult-athlete'
-      fullPath: '/api/v1/auth/signup/adult-athlete'
-      preLoaderRoute: typeof ApiV1AuthSignupAdultAthleteRouteImport
+    '/api/v1/team-invites/claim': {
+      id: '/api/v1/team-invites/claim'
+      path: '/api/v1/team-invites/claim'
+      fullPath: '/api/v1/team-invites/claim'
+      preLoaderRoute: typeof ApiV1TeamInvitesClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/auth/attest/register': {
-      id: '/api/v1/auth/attest/register'
-      path: '/api/v1/auth/attest/register'
-      fullPath: '/api/v1/auth/attest/register'
-      preLoaderRoute: typeof ApiV1AuthAttestRegisterRouteImport
+    '/api/v1/team-invites/preview': {
+      id: '/api/v1/team-invites/preview'
+      path: '/api/v1/team-invites/preview'
+      fullPath: '/api/v1/team-invites/preview'
+      preLoaderRoute: typeof ApiV1TeamInvitesPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athletes/$id/recaps': {
-      id: '/api/v1/athletes/$id/recaps'
-      path: '/api/v1/athletes/$id/recaps'
-      fullPath: '/api/v1/athletes/$id/recaps'
-      preLoaderRoute: typeof ApiV1AthletesIdRecapsRouteImport
+    '/api/v1/voice/build-plan': {
+      id: '/api/v1/voice/build-plan'
+      path: '/api/v1/voice/build-plan'
+      fullPath: '/api/v1/voice/build-plan'
+      preLoaderRoute: typeof ApiV1VoiceBuildPlanRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athlete/goals/motivation': {
-      id: '/api/v1/athlete/goals/motivation'
-      path: '/api/v1/athlete/goals/motivation'
-      fullPath: '/api/v1/athlete/goals/motivation'
-      preLoaderRoute: typeof ApiV1AthleteGoalsMotivationRouteImport
+    '/api/v1/voice/transcribe': {
+      id: '/api/v1/voice/transcribe'
+      path: '/api/v1/voice/transcribe'
+      fullPath: '/api/v1/voice/transcribe'
+      preLoaderRoute: typeof ApiV1VoiceTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athlete/goals/long-term': {
-      id: '/api/v1/athlete/goals/long-term'
-      path: '/api/v1/athlete/goals/long-term'
-      fullPath: '/api/v1/athlete/goals/long-term'
-      preLoaderRoute: typeof ApiV1AthleteGoalsLongTermRouteImport
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/schedules/$coachId': {
-      id: '/api/v1/adult-athlete/schedules/$coachId'
-      path: '/api/v1/adult-athlete/schedules/$coachId'
-      fullPath: '/api/v1/adult-athlete/schedules/$coachId'
-      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesCoachIdRouteImport
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/coach/sports-offered': {
-      id: '/api/v1/adult-athlete/coach/sports-offered'
-      path: '/api/v1/adult-athlete/coach/sports-offered'
-      fullPath: '/api/v1/adult-athlete/coach/sports-offered'
-      preLoaderRoute: typeof ApiV1AdultAthleteCoachSportsOfferedRouteImport
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/coach/preview': {
-      id: '/api/v1/adult-athlete/coach/preview'
-      path: '/api/v1/adult-athlete/coach/preview'
-      fullPath: '/api/v1/adult-athlete/coach/preview'
-      preLoaderRoute: typeof ApiV1AdultAthleteCoachPreviewRouteImport
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/adult-athlete/coach/link': {
@@ -6351,88 +5743,613 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AdultAthleteCoachLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/sessions/': {
-      id: '/api/v1/plans/$id/sessions/'
-      path: '/api/v1/plans/$id/sessions'
-      fullPath: '/api/v1/plans/$id/sessions/'
-      preLoaderRoute: typeof ApiV1PlansIdSessionsIndexRouteImport
+    '/api/v1/adult-athlete/coach/preview': {
+      id: '/api/v1/adult-athlete/coach/preview'
+      path: '/api/v1/adult-athlete/coach/preview'
+      fullPath: '/api/v1/adult-athlete/coach/preview'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/moves/': {
-      id: '/api/v1/plans/$id/moves/'
-      path: '/api/v1/plans/$id/moves'
-      fullPath: '/api/v1/plans/$id/moves/'
-      preLoaderRoute: typeof ApiV1PlansIdMovesIndexRouteImport
+    '/api/v1/adult-athlete/coach/sports-offered': {
+      id: '/api/v1/adult-athlete/coach/sports-offered'
+      path: '/api/v1/adult-athlete/coach/sports-offered'
+      fullPath: '/api/v1/adult-athlete/coach/sports-offered'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachSportsOfferedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/team/guardians/': {
-      id: '/api/v1/parent/team/guardians/'
-      path: '/api/v1/parent/team/guardians'
-      fullPath: '/api/v1/parent/team/guardians/'
-      preLoaderRoute: typeof ApiV1ParentTeamGuardiansIndexRouteImport
+    '/api/v1/adult-athlete/coaches/': {
+      id: '/api/v1/adult-athlete/coaches/'
+      path: '/api/v1/adult-athlete/coaches'
+      fullPath: '/api/v1/adult-athlete/coaches/'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/athletes/$id/': {
-      id: '/api/v1/parent/athletes/$id/'
-      path: '/api/v1/parent/athletes/$id'
-      fullPath: '/api/v1/parent/athletes/$id/'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdIndexRouteImport
+    '/api/v1/adult-athlete/schedules/': {
+      id: '/api/v1/adult-athlete/schedules/'
+      path: '/api/v1/adult-athlete/schedules'
+      fullPath: '/api/v1/adult-athlete/schedules/'
+      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/visibility/$id/': {
-      id: '/api/v1/coach/visibility/$id/'
-      path: '/api/v1/coach/visibility/$id'
-      fullPath: '/api/v1/coach/visibility/$id/'
-      preLoaderRoute: typeof ApiV1CoachVisibilityIdIndexRouteImport
+    '/api/v1/adult-athlete/schedules/$coachId': {
+      id: '/api/v1/adult-athlete/schedules/$coachId'
+      path: '/api/v1/adult-athlete/schedules/$coachId'
+      fullPath: '/api/v1/adult-athlete/schedules/$coachId'
+      preLoaderRoute: typeof ApiV1AdultAthleteSchedulesCoachIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/roster/athletes/': {
-      id: '/api/v1/coach/roster/athletes/'
-      path: '/api/v1/coach/roster/athletes'
-      fullPath: '/api/v1/coach/roster/athletes/'
-      preLoaderRoute: typeof ApiV1CoachRosterAthletesIndexRouteImport
+    '/api/v1/athlete/goals/': {
+      id: '/api/v1/athlete/goals/'
+      path: '/api/v1/athlete/goals'
+      fullPath: '/api/v1/athlete/goals/'
+      preLoaderRoute: typeof ApiV1AthleteGoalsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/lesson-slots/$id/': {
-      id: '/api/v1/coach/lesson-slots/$id/'
-      path: '/api/v1/coach/lesson-slots/$id'
-      fullPath: '/api/v1/coach/lesson-slots/$id/'
-      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdIndexRouteImport
+    '/api/v1/athlete/goals/long-term': {
+      id: '/api/v1/athlete/goals/long-term'
+      path: '/api/v1/athlete/goals/long-term'
+      fullPath: '/api/v1/athlete/goals/long-term'
+      preLoaderRoute: typeof ApiV1AthleteGoalsLongTermRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/invoices/$id/': {
-      id: '/api/v1/coach/invoices/$id/'
-      path: '/api/v1/coach/invoices/$id'
-      fullPath: '/api/v1/coach/invoices/$id/'
-      preLoaderRoute: typeof ApiV1CoachInvoicesIdIndexRouteImport
+    '/api/v1/athlete/goals/motivation': {
+      id: '/api/v1/athlete/goals/motivation'
+      path: '/api/v1/athlete/goals/motivation'
+      fullPath: '/api/v1/athlete/goals/motivation'
+      preLoaderRoute: typeof ApiV1AthleteGoalsMotivationRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/athletes/$id/': {
-      id: '/api/v1/coach/athletes/$id/'
-      path: '/api/v1/coach/athletes/$id'
-      fullPath: '/api/v1/coach/athletes/$id/'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdIndexRouteImport
+    '/api/v1/athletes/$id/recaps': {
+      id: '/api/v1/athletes/$id/recaps'
+      path: '/api/v1/athletes/$id/recaps'
+      fullPath: '/api/v1/athletes/$id/recaps'
+      preLoaderRoute: typeof ApiV1AthletesIdRecapsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/boards/$slug/follows/': {
-      id: '/api/v1/boards/$slug/follows/'
-      path: '/api/v1/boards/$slug/follows'
-      fullPath: '/api/v1/boards/$slug/follows/'
-      preLoaderRoute: typeof ApiV1BoardsSlugFollowsIndexRouteImport
+    '/api/v1/auth/attest/register': {
+      id: '/api/v1/auth/attest/register'
+      path: '/api/v1/auth/attest/register'
+      fullPath: '/api/v1/auth/attest/register'
+      preLoaderRoute: typeof ApiV1AuthAttestRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athletes/$id/competition-results/': {
-      id: '/api/v1/athletes/$id/competition-results/'
-      path: '/api/v1/athletes/$id/competition-results'
-      fullPath: '/api/v1/athletes/$id/competition-results/'
-      preLoaderRoute: typeof ApiV1AthletesIdCompetitionResultsIndexRouteImport
+    '/api/v1/auth/signup/adult-athlete': {
+      id: '/api/v1/auth/signup/adult-athlete'
+      path: '/api/v1/auth/signup/adult-athlete'
+      fullPath: '/api/v1/auth/signup/adult-athlete'
+      preLoaderRoute: typeof ApiV1AuthSignupAdultAthleteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/athletes/$id/competition-links/': {
-      id: '/api/v1/athletes/$id/competition-links/'
-      path: '/api/v1/athletes/$id/competition-links'
-      fullPath: '/api/v1/athletes/$id/competition-links/'
-      preLoaderRoute: typeof ApiV1AthletesIdCompetitionLinksIndexRouteImport
+    '/api/v1/auth/signup/coach': {
+      id: '/api/v1/auth/signup/coach'
+      path: '/api/v1/auth/signup/coach'
+      fullPath: '/api/v1/auth/signup/coach'
+      preLoaderRoute: typeof ApiV1AuthSignupCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/signup/parent': {
+      id: '/api/v1/auth/signup/parent'
+      path: '/api/v1/auth/signup/parent'
+      fullPath: '/api/v1/auth/signup/parent'
+      preLoaderRoute: typeof ApiV1AuthSignupParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/username/check': {
+      id: '/api/v1/auth/username/check'
+      path: '/api/v1/auth/username/check'
+      fullPath: '/api/v1/auth/username/check'
+      preLoaderRoute: typeof ApiV1AuthUsernameCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/username/resolve': {
+      id: '/api/v1/auth/username/resolve'
+      path: '/api/v1/auth/username/resolve'
+      fullPath: '/api/v1/auth/username/resolve'
+      preLoaderRoute: typeof ApiV1AuthUsernameResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/founding/claim': {
+      id: '/api/v1/coach/founding/claim'
+      path: '/api/v1/coach/founding/claim'
+      fullPath: '/api/v1/coach/founding/claim'
+      preLoaderRoute: typeof ApiV1CoachFoundingClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/founding/restore': {
+      id: '/api/v1/coach/founding/restore'
+      path: '/api/v1/coach/founding/restore'
+      fullPath: '/api/v1/coach/founding/restore'
+      preLoaderRoute: typeof ApiV1CoachFoundingRestoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invite-code/': {
+      id: '/api/v1/coach/invite-code/'
+      path: '/api/v1/coach/invite-code'
+      fullPath: '/api/v1/coach/invite-code/'
+      preLoaderRoute: typeof ApiV1CoachInviteCodeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invite-code/rotate': {
+      id: '/api/v1/coach/invite-code/rotate'
+      path: '/api/v1/coach/invite-code/rotate'
+      fullPath: '/api/v1/coach/invite-code/rotate'
+      preLoaderRoute: typeof ApiV1CoachInviteCodeRotateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invoices/': {
+      id: '/api/v1/coach/invoices/'
+      path: '/api/v1/coach/invoices'
+      fullPath: '/api/v1/coach/invoices/'
+      preLoaderRoute: typeof ApiV1CoachInvoicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invoices/preview': {
+      id: '/api/v1/coach/invoices/preview'
+      path: '/api/v1/coach/invoices/preview'
+      fullPath: '/api/v1/coach/invoices/preview'
+      preLoaderRoute: typeof ApiV1CoachInvoicesPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/lesson-slots/': {
+      id: '/api/v1/coach/lesson-slots/'
+      path: '/api/v1/coach/lesson-slots'
+      fullPath: '/api/v1/coach/lesson-slots/'
+      preLoaderRoute: typeof ApiV1CoachLessonSlotsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/moves/': {
+      id: '/api/v1/coach/moves/'
+      path: '/api/v1/coach/moves'
+      fullPath: '/api/v1/coach/moves/'
+      preLoaderRoute: typeof ApiV1CoachMovesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/moves/fork-from-plan-move': {
+      id: '/api/v1/coach/moves/fork-from-plan-move'
+      path: '/api/v1/coach/moves/fork-from-plan-move'
+      fullPath: '/api/v1/coach/moves/fork-from-plan-move'
+      preLoaderRoute: typeof ApiV1CoachMovesForkFromPlanMoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/moves/from-plan-move': {
+      id: '/api/v1/coach/moves/from-plan-move'
+      path: '/api/v1/coach/moves/from-plan-move'
+      fullPath: '/api/v1/coach/moves/from-plan-move'
+      preLoaderRoute: typeof ApiV1CoachMovesFromPlanMoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/onboarding/complete': {
+      id: '/api/v1/coach/onboarding/complete'
+      path: '/api/v1/coach/onboarding/complete'
+      fullPath: '/api/v1/coach/onboarding/complete'
+      preLoaderRoute: typeof ApiV1CoachOnboardingCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/other-plans/$planId': {
+      id: '/api/v1/coach/other-plans/$planId'
+      path: '/api/v1/coach/other-plans/$planId'
+      fullPath: '/api/v1/coach/other-plans/$planId'
+      preLoaderRoute: typeof ApiV1CoachOtherPlansPlanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/plans/': {
+      id: '/api/v1/coach/plans/'
+      path: '/api/v1/coach/plans'
+      fullPath: '/api/v1/coach/plans/'
+      preLoaderRoute: typeof ApiV1CoachPlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/post-event/': {
+      id: '/api/v1/coach/post-event/'
+      path: '/api/v1/coach/post-event'
+      fullPath: '/api/v1/coach/post-event/'
+      preLoaderRoute: typeof ApiV1CoachPostEventIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/resources/': {
+      id: '/api/v1/coach/resources/'
+      path: '/api/v1/coach/resources'
+      fullPath: '/api/v1/coach/resources/'
+      preLoaderRoute: typeof ApiV1CoachResourcesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/resources/$id': {
+      id: '/api/v1/coach/resources/$id'
+      path: '/api/v1/coach/resources/$id'
+      fullPath: '/api/v1/coach/resources/$id'
+      preLoaderRoute: typeof ApiV1CoachResourcesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/resources/upload-url': {
+      id: '/api/v1/coach/resources/upload-url'
+      path: '/api/v1/coach/resources/upload-url'
+      fullPath: '/api/v1/coach/resources/upload-url'
+      preLoaderRoute: typeof ApiV1CoachResourcesUploadUrlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/roster/': {
+      id: '/api/v1/coach/roster/'
+      path: '/api/v1/coach/roster'
+      fullPath: '/api/v1/coach/roster/'
+      preLoaderRoute: typeof ApiV1CoachRosterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/roster/practice-summaries': {
+      id: '/api/v1/coach/roster/practice-summaries'
+      path: '/api/v1/coach/roster/practice-summaries'
+      fullPath: '/api/v1/coach/roster/practice-summaries'
+      preLoaderRoute: typeof ApiV1CoachRosterPracticeSummariesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/schedule-import/commit': {
+      id: '/api/v1/coach/schedule-import/commit'
+      path: '/api/v1/coach/schedule-import/commit'
+      fullPath: '/api/v1/coach/schedule-import/commit'
+      preLoaderRoute: typeof ApiV1CoachScheduleImportCommitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/schedule-import/parse': {
+      id: '/api/v1/coach/schedule-import/parse'
+      path: '/api/v1/coach/schedule-import/parse'
+      fullPath: '/api/v1/coach/schedule-import/parse'
+      preLoaderRoute: typeof ApiV1CoachScheduleImportParseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/visibility/mine': {
+      id: '/api/v1/coach/visibility/mine'
+      path: '/api/v1/coach/visibility/mine'
+      fullPath: '/api/v1/coach/visibility/mine'
+      preLoaderRoute: typeof ApiV1CoachVisibilityMineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/wrap-ups/': {
+      id: '/api/v1/coach/wrap-ups/'
+      path: '/api/v1/coach/wrap-ups'
+      fullPath: '/api/v1/coach/wrap-ups/'
+      preLoaderRoute: typeof ApiV1CoachWrapUpsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/wrap-ups/pending': {
+      id: '/api/v1/coach/wrap-ups/pending'
+      path: '/api/v1/coach/wrap-ups/pending'
+      fullPath: '/api/v1/coach/wrap-ups/pending'
+      preLoaderRoute: typeof ApiV1CoachWrapUpsPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/competitions/$id/attendance': {
+      id: '/api/v1/competitions/$id/attendance'
+      path: '/api/v1/competitions/$id/attendance'
+      fullPath: '/api/v1/competitions/$id/attendance'
+      preLoaderRoute: typeof ApiV1CompetitionsIdAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/competitions/$id/skater-matches': {
+      id: '/api/v1/competitions/$id/skater-matches'
+      path: '/api/v1/competitions/$id/skater-matches'
+      fullPath: '/api/v1/competitions/$id/skater-matches'
+      preLoaderRoute: typeof ApiV1CompetitionsIdSkaterMatchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/': {
+      id: '/api/v1/guardian/claim/'
+      path: '/api/v1/guardian/claim'
+      fullPath: '/api/v1/guardian/claim/'
+      preLoaderRoute: typeof ApiV1GuardianClaimIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/context': {
+      id: '/api/v1/guardian/claim/context'
+      path: '/api/v1/guardian/claim/context'
+      fullPath: '/api/v1/guardian/claim/context'
+      preLoaderRoute: typeof ApiV1GuardianClaimContextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/merge': {
+      id: '/api/v1/guardian/claim/merge'
+      path: '/api/v1/guardian/claim/merge'
+      fullPath: '/api/v1/guardian/claim/merge'
+      preLoaderRoute: typeof ApiV1GuardianClaimMergeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/merge-options': {
+      id: '/api/v1/guardian/claim/merge-options'
+      path: '/api/v1/guardian/claim/merge-options'
+      fullPath: '/api/v1/guardian/claim/merge-options'
+      preLoaderRoute: typeof ApiV1GuardianClaimMergeOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/self': {
+      id: '/api/v1/guardian/claim/self'
+      path: '/api/v1/guardian/claim/self'
+      fullPath: '/api/v1/guardian/claim/self'
+      preLoaderRoute: typeof ApiV1GuardianClaimSelfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/claim/summary': {
+      id: '/api/v1/guardian/claim/summary'
+      path: '/api/v1/guardian/claim/summary'
+      fullPath: '/api/v1/guardian/claim/summary'
+      preLoaderRoute: typeof ApiV1GuardianClaimSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/complete': {
+      id: '/api/v1/guardian/verification/complete'
+      path: '/api/v1/guardian/verification/complete'
+      fullPath: '/api/v1/guardian/verification/complete'
+      preLoaderRoute: typeof ApiV1GuardianVerificationCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/start': {
+      id: '/api/v1/guardian/verification/start'
+      path: '/api/v1/guardian/verification/start'
+      fullPath: '/api/v1/guardian/verification/start'
+      preLoaderRoute: typeof ApiV1GuardianVerificationStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/verification/status': {
+      id: '/api/v1/guardian/verification/status'
+      path: '/api/v1/guardian/verification/status'
+      fullPath: '/api/v1/guardian/verification/status'
+      preLoaderRoute: typeof ApiV1GuardianVerificationStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/adult-athlete/claim': {
+      id: '/api/v1/invites/adult-athlete/claim'
+      path: '/api/v1/invites/adult-athlete/claim'
+      fullPath: '/api/v1/invites/adult-athlete/claim'
+      preLoaderRoute: typeof ApiV1InvitesAdultAthleteClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/adult-athlete/preview': {
+      id: '/api/v1/invites/adult-athlete/preview'
+      path: '/api/v1/invites/adult-athlete/preview'
+      fullPath: '/api/v1/invites/adult-athlete/preview'
+      preLoaderRoute: typeof ApiV1InvitesAdultAthletePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/parent/claim': {
+      id: '/api/v1/invites/parent/claim'
+      path: '/api/v1/invites/parent/claim'
+      fullPath: '/api/v1/invites/parent/claim'
+      preLoaderRoute: typeof ApiV1InvitesParentClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/invites/parent/preview': {
+      id: '/api/v1/invites/parent/preview'
+      path: '/api/v1/invites/parent/preview'
+      fullPath: '/api/v1/invites/parent/preview'
+      preLoaderRoute: typeof ApiV1InvitesParentPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/live-activities/tokens/': {
+      id: '/api/v1/live-activities/tokens/'
+      path: '/api/v1/live-activities/tokens'
+      fullPath: '/api/v1/live-activities/tokens/'
+      preLoaderRoute: typeof ApiV1LiveActivitiesTokensIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/live-activities/tokens/$token': {
+      id: '/api/v1/live-activities/tokens/$token'
+      path: '/api/v1/live-activities/tokens/$token'
+      fullPath: '/api/v1/live-activities/tokens/$token'
+      preLoaderRoute: typeof ApiV1LiveActivitiesTokensTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/celebrations/': {
+      id: '/api/v1/me/celebrations/'
+      path: '/api/v1/me/celebrations'
+      fullPath: '/api/v1/me/celebrations/'
+      preLoaderRoute: typeof ApiV1MeCelebrationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/terms_/accept': {
+      id: '/api/v1/me/terms_/accept'
+      path: '/api/v1/me/terms/accept'
+      fullPath: '/api/v1/me/terms/accept'
+      preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/': {
+      id: '/api/v1/parent/athletes/'
+      path: '/api/v1/parent/athletes'
+      fullPath: '/api/v1/parent/athletes/'
+      preLoaderRoute: typeof ApiV1ParentAthletesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/team/': {
+      id: '/api/v1/parent/team/'
+      path: '/api/v1/parent/team'
+      fullPath: '/api/v1/parent/team/'
+      preLoaderRoute: typeof ApiV1ParentTeamIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/': {
+      id: '/api/v1/plans/$id/'
+      path: '/api/v1/plans/$id'
+      fullPath: '/api/v1/plans/$id/'
+      preLoaderRoute: typeof ApiV1PlansIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/share-token': {
+      id: '/api/v1/plans/$id/share-token'
+      path: '/api/v1/plans/$id/share-token'
+      fullPath: '/api/v1/plans/$id/share-token'
+      preLoaderRoute: typeof ApiV1PlansIdShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/status': {
+      id: '/api/v1/plans/$id/status'
+      path: '/api/v1/plans/$id/status'
+      fullPath: '/api/v1/plans/$id/status'
+      preLoaderRoute: typeof ApiV1PlansIdStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/import/$token': {
+      id: '/api/v1/plans/import/$token'
+      path: '/api/v1/plans/import/$token'
+      fullPath: '/api/v1/plans/import/$token'
+      preLoaderRoute: typeof ApiV1PlansImportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/boards/': {
+      id: '/api/v1/public/boards/'
+      path: '/api/v1/public/boards'
+      fullPath: '/api/v1/public/boards/'
+      preLoaderRoute: typeof ApiV1PublicBoardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/boards/$slug': {
+      id: '/api/v1/public/boards/$slug'
+      path: '/api/v1/public/boards/$slug'
+      fullPath: '/api/v1/public/boards/$slug'
+      preLoaderRoute: typeof ApiV1PublicBoardsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/boards/search': {
+      id: '/api/v1/public/boards/search'
+      path: '/api/v1/public/boards/search'
+      fullPath: '/api/v1/public/boards/search'
+      preLoaderRoute: typeof ApiV1PublicBoardsSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/public/plans/$token': {
+      id: '/api/v1/public/plans/$token'
+      path: '/api/v1/public/plans/$token'
+      fullPath: '/api/v1/public/plans/$token'
+      preLoaderRoute: typeof ApiV1PublicPlansTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/recaps/$id/dismiss': {
+      id: '/api/v1/recaps/$id/dismiss'
+      path: '/api/v1/recaps/$id/dismiss'
+      fullPath: '/api/v1/recaps/$id/dismiss'
+      preLoaderRoute: typeof ApiV1RecapsIdDismissRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/resources/$id/signed-url': {
+      id: '/api/v1/resources/$id/signed-url'
+      path: '/api/v1/resources/$id/signed-url'
+      fullPath: '/api/v1/resources/$id/signed-url'
+      preLoaderRoute: typeof ApiV1ResourcesIdSignedUrlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/': {
+      id: '/api/v1/rooms/$id/'
+      path: '/api/v1/rooms/$id'
+      fullPath: '/api/v1/rooms/$id/'
+      preLoaderRoute: typeof ApiV1RoomsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/active-plans': {
+      id: '/api/v1/rooms/$id/active-plans'
+      path: '/api/v1/rooms/$id/active-plans'
+      fullPath: '/api/v1/rooms/$id/active-plans'
+      preLoaderRoute: typeof ApiV1RoomsIdActivePlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/messages': {
+      id: '/api/v1/rooms/$id/messages'
+      path: '/api/v1/rooms/$id/messages'
+      fullPath: '/api/v1/rooms/$id/messages'
+      preLoaderRoute: typeof ApiV1RoomsIdMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/rooms/$id/read': {
+      id: '/api/v1/rooms/$id/read'
+      path: '/api/v1/rooms/$id/read'
+      fullPath: '/api/v1/rooms/$id/read'
+      preLoaderRoute: typeof ApiV1RoomsIdReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/safety/blocks/': {
+      id: '/api/v1/safety/blocks/'
+      path: '/api/v1/safety/blocks'
+      fullPath: '/api/v1/safety/blocks/'
+      preLoaderRoute: typeof ApiV1SafetyBlocksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/safety/blocks/$userId': {
+      id: '/api/v1/safety/blocks/$userId'
+      path: '/api/v1/safety/blocks/$userId'
+      fullPath: '/api/v1/safety/blocks/$userId'
+      preLoaderRoute: typeof ApiV1SafetyBlocksUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/claim': {
+      id: '/api/v1/signup/athlete/claim'
+      path: '/api/v1/signup/athlete/claim'
+      fullPath: '/api/v1/signup/athlete/claim'
+      preLoaderRoute: typeof ApiV1SignupAthleteClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/invite-summary': {
+      id: '/api/v1/signup/athlete/invite-summary'
+      path: '/api/v1/signup/athlete/invite-summary'
+      fullPath: '/api/v1/signup/athlete/invite-summary'
+      preLoaderRoute: typeof ApiV1SignupAthleteInviteSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/athlete/username': {
+      id: '/api/v1/signup/athlete/username'
+      path: '/api/v1/signup/athlete/username'
+      fullPath: '/api/v1/signup/athlete/username'
+      preLoaderRoute: typeof ApiV1SignupAthleteUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/athletes-for-code': {
+      id: '/api/v1/signup/parent/athletes-for-code'
+      path: '/api/v1/signup/parent/athletes-for-code'
+      fullPath: '/api/v1/signup/parent/athletes-for-code'
+      preLoaderRoute: typeof ApiV1SignupParentAthletesForCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/coach-preview': {
+      id: '/api/v1/signup/parent/coach-preview'
+      path: '/api/v1/signup/parent/coach-preview'
+      fullPath: '/api/v1/signup/parent/coach-preview'
+      preLoaderRoute: typeof ApiV1SignupParentCoachPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/goals': {
+      id: '/api/v1/signup/parent/goals'
+      path: '/api/v1/signup/parent/goals'
+      fullPath: '/api/v1/signup/parent/goals'
+      preLoaderRoute: typeof ApiV1SignupParentGoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/link-coach': {
+      id: '/api/v1/signup/parent/link-coach'
+      path: '/api/v1/signup/parent/link-coach'
+      fullPath: '/api/v1/signup/parent/link-coach'
+      preLoaderRoute: typeof ApiV1SignupParentLinkCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/schedule': {
+      id: '/api/v1/signup/parent/schedule'
+      path: '/api/v1/signup/parent/schedule'
+      fullPath: '/api/v1/signup/parent/schedule'
+      preLoaderRoute: typeof ApiV1SignupParentScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/start': {
+      id: '/api/v1/signup/parent/start'
+      path: '/api/v1/signup/parent/start'
+      fullPath: '/api/v1/signup/parent/start'
+      preLoaderRoute: typeof ApiV1SignupParentStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/status': {
+      id: '/api/v1/signup/parent/status'
+      path: '/api/v1/signup/parent/status'
+      fullPath: '/api/v1/signup/parent/status'
+      preLoaderRoute: typeof ApiV1SignupParentStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/signup/parent/validate-code': {
+      id: '/api/v1/signup/parent/validate-code'
+      path: '/api/v1/signup/parent/validate-code'
+      fullPath: '/api/v1/signup/parent/validate-code'
+      preLoaderRoute: typeof ApiV1SignupParentValidateCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/adult-athlete/coaches/$id/': {
@@ -6442,186 +6359,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AdultAthleteCoachesIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/sessions/summary': {
-      id: '/api/v1/plans/$id/sessions/summary'
-      path: '/api/v1/plans/$id/sessions/summary'
-      fullPath: '/api/v1/plans/$id/sessions/summary'
-      preLoaderRoute: typeof ApiV1PlansIdSessionsSummaryRouteImport
+    '/api/v1/adult-athlete/coaches/$id/sports': {
+      id: '/api/v1/adult-athlete/coaches/$id/sports'
+      path: '/api/v1/adult-athlete/coaches/$id/sports'
+      fullPath: '/api/v1/adult-athlete/coaches/$id/sports'
+      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIdSportsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/plans/$id/moves/order': {
-      id: '/api/v1/plans/$id/moves/order'
-      path: '/api/v1/plans/$id/moves/order'
-      fullPath: '/api/v1/plans/$id/moves/order'
-      preLoaderRoute: typeof ApiV1PlansIdMovesOrderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/plans/$id/moves/from-library': {
-      id: '/api/v1/plans/$id/moves/from-library'
-      path: '/api/v1/plans/$id/moves/from-library'
-      fullPath: '/api/v1/plans/$id/moves/from-library'
-      preLoaderRoute: typeof ApiV1PlansIdMovesFromLibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/plans/$id/moves/$moveId': {
-      id: '/api/v1/plans/$id/moves/$moveId'
-      path: '/api/v1/plans/$id/moves/$moveId'
-      fullPath: '/api/v1/plans/$id/moves/$moveId'
-      preLoaderRoute: typeof ApiV1PlansIdMovesMoveIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/team/guardians/$id': {
-      id: '/api/v1/parent/team/guardians/$id'
-      path: '/api/v1/parent/team/guardians/$id'
-      fullPath: '/api/v1/parent/team/guardians/$id'
-      preLoaderRoute: typeof ApiV1ParentTeamGuardiansIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/schedule': {
-      id: '/api/v1/parent/athletes/$id/schedule'
-      path: '/api/v1/parent/athletes/$id/schedule'
-      fullPath: '/api/v1/parent/athletes/$id/schedule'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdScheduleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/reset-password': {
-      id: '/api/v1/parent/athletes/$id/reset-password'
-      path: '/api/v1/parent/athletes/$id/reset-password'
-      fullPath: '/api/v1/parent/athletes/$id/reset-password'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/primary-coach': {
-      id: '/api/v1/parent/athletes/$id/primary-coach'
-      path: '/api/v1/parent/athletes/$id/primary-coach'
-      fullPath: '/api/v1/parent/athletes/$id/primary-coach'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdPrimaryCoachRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/goals': {
-      id: '/api/v1/parent/athletes/$id/goals'
-      path: '/api/v1/parent/athletes/$id/goals'
-      fullPath: '/api/v1/parent/athletes/$id/goals'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdGoalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/me/celebrations/$id/ack': {
-      id: '/api/v1/me/celebrations/$id/ack'
-      path: '/api/v1/me/celebrations/$id/ack'
-      fullPath: '/api/v1/me/celebrations/$id/ack'
-      preLoaderRoute: typeof ApiV1MeCelebrationsIdAckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/guardian/invites/$id/resend': {
-      id: '/api/v1/guardian/invites/$id/resend'
-      path: '/api/v1/guardian/invites/$id/resend'
-      fullPath: '/api/v1/guardian/invites/$id/resend'
-      preLoaderRoute: typeof ApiV1GuardianInvitesIdResendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/visibility/$id/respond': {
-      id: '/api/v1/coach/visibility/$id/respond'
-      path: '/api/v1/coach/visibility/$id/respond'
-      fullPath: '/api/v1/coach/visibility/$id/respond'
-      preLoaderRoute: typeof ApiV1CoachVisibilityIdRespondRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/starter-plans/$id/adopt': {
-      id: '/api/v1/coach/starter-plans/$id/adopt'
-      path: '/api/v1/coach/starter-plans/$id/adopt'
-      fullPath: '/api/v1/coach/starter-plans/$id/adopt'
-      preLoaderRoute: typeof ApiV1CoachStarterPlansIdAdoptRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/roster/athletes/$athleteId': {
-      id: '/api/v1/coach/roster/athletes/$athleteId'
-      path: '/api/v1/coach/roster/athletes/$athleteId'
-      fullPath: '/api/v1/coach/roster/athletes/$athleteId'
-      preLoaderRoute: typeof ApiV1CoachRosterAthletesAthleteIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/post-event/$id/dismiss': {
-      id: '/api/v1/coach/post-event/$id/dismiss'
-      path: '/api/v1/coach/post-event/$id/dismiss'
-      fullPath: '/api/v1/coach/post-event/$id/dismiss'
-      preLoaderRoute: typeof ApiV1CoachPostEventIdDismissRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/moves/$id/update-from-plan-move': {
-      id: '/api/v1/coach/moves/$id/update-from-plan-move'
-      path: '/api/v1/coach/moves/$id/update-from-plan-move'
-      fullPath: '/api/v1/coach/moves/$id/update-from-plan-move'
-      preLoaderRoute: typeof ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/moves/$id/archive': {
-      id: '/api/v1/coach/moves/$id/archive'
-      path: '/api/v1/coach/moves/$id/archive'
-      fullPath: '/api/v1/coach/moves/$id/archive'
-      preLoaderRoute: typeof ApiV1CoachMovesIdArchiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/invoices/$id/status': {
-      id: '/api/v1/coach/invoices/$id/status'
-      path: '/api/v1/coach/invoices/$id/status'
-      fullPath: '/api/v1/coach/invoices/$id/status'
-      preLoaderRoute: typeof ApiV1CoachInvoicesIdStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/competitions/$id/roster': {
-      id: '/api/v1/coach/competitions/$id/roster'
-      path: '/api/v1/coach/competitions/$id/roster'
-      fullPath: '/api/v1/coach/competitions/$id/roster'
-      preLoaderRoute: typeof ApiV1CoachCompetitionsIdRosterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/rate': {
-      id: '/api/v1/coach/athletes/$id/rate'
-      path: '/api/v1/coach/athletes/$id/rate'
-      fullPath: '/api/v1/coach/athletes/$id/rate'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdRateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/practice-target': {
-      id: '/api/v1/coach/athletes/$id/practice-target'
-      path: '/api/v1/coach/athletes/$id/practice-target'
-      fullPath: '/api/v1/coach/athletes/$id/practice-target'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdPracticeTargetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/briefing': {
-      id: '/api/v1/coach/athletes/$id/briefing'
-      path: '/api/v1/coach/athletes/$id/briefing'
-      fullPath: '/api/v1/coach/athletes/$id/briefing'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdBriefingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/billing': {
-      id: '/api/v1/coach/athletes/$id/billing'
-      path: '/api/v1/coach/athletes/$id/billing'
-      fullPath: '/api/v1/coach/athletes/$id/billing'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdBillingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/ai-summary': {
-      id: '/api/v1/coach/athletes/$id/ai-summary'
-      path: '/api/v1/coach/athletes/$id/ai-summary'
-      fullPath: '/api/v1/coach/athletes/$id/ai-summary'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdAiSummaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/athletes/$id/active-plans': {
-      id: '/api/v1/coach/athletes/$id/active-plans'
-      path: '/api/v1/coach/athletes/$id/active-plans'
-      fullPath: '/api/v1/coach/athletes/$id/active-plans'
-      preLoaderRoute: typeof ApiV1CoachAthletesIdActivePlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/boards/$slug/follows/$name': {
-      id: '/api/v1/boards/$slug/follows/$name'
-      path: '/api/v1/boards/$slug/follows/$name'
-      fullPath: '/api/v1/boards/$slug/follows/$name'
-      preLoaderRoute: typeof ApiV1BoardsSlugFollowsNameRouteImport
+    '/api/v1/athletes/$id/competition-links/': {
+      id: '/api/v1/athletes/$id/competition-links/'
+      path: '/api/v1/athletes/$id/competition-links'
+      fullPath: '/api/v1/athletes/$id/competition-links/'
+      preLoaderRoute: typeof ApiV1AthletesIdCompetitionLinksIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/athletes/$id/competition-links/$linkId': {
@@ -6631,25 +6380,263 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AthletesIdCompetitionLinksLinkIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/adult-athlete/coaches/$id/sports': {
-      id: '/api/v1/adult-athlete/coaches/$id/sports'
-      path: '/api/v1/adult-athlete/coaches/$id/sports'
-      fullPath: '/api/v1/adult-athlete/coaches/$id/sports'
-      preLoaderRoute: typeof ApiV1AdultAthleteCoachesIdSportsRouteImport
+    '/api/v1/athletes/$id/competition-results/': {
+      id: '/api/v1/athletes/$id/competition-results/'
+      path: '/api/v1/athletes/$id/competition-results'
+      fullPath: '/api/v1/athletes/$id/competition-results/'
+      preLoaderRoute: typeof ApiV1AthletesIdCompetitionResultsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/team/guardians/invites/': {
-      id: '/api/v1/parent/team/guardians/invites/'
-      path: '/api/v1/parent/team/guardians/invites'
-      fullPath: '/api/v1/parent/team/guardians/invites/'
-      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIndexRouteImport
+    '/api/v1/boards/$slug/follows/': {
+      id: '/api/v1/boards/$slug/follows/'
+      path: '/api/v1/boards/$slug/follows'
+      fullPath: '/api/v1/boards/$slug/follows/'
+      preLoaderRoute: typeof ApiV1BoardsSlugFollowsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/athletes/$id/coaches/': {
-      id: '/api/v1/parent/athletes/$id/coaches/'
-      path: '/api/v1/parent/athletes/$id/coaches'
-      fullPath: '/api/v1/parent/athletes/$id/coaches/'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesIndexRouteImport
+    '/api/v1/boards/$slug/follows/$name': {
+      id: '/api/v1/boards/$slug/follows/$name'
+      path: '/api/v1/boards/$slug/follows/$name'
+      fullPath: '/api/v1/boards/$slug/follows/$name'
+      preLoaderRoute: typeof ApiV1BoardsSlugFollowsNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/': {
+      id: '/api/v1/coach/athletes/$id/'
+      path: '/api/v1/coach/athletes/$id'
+      fullPath: '/api/v1/coach/athletes/$id/'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/active-plans': {
+      id: '/api/v1/coach/athletes/$id/active-plans'
+      path: '/api/v1/coach/athletes/$id/active-plans'
+      fullPath: '/api/v1/coach/athletes/$id/active-plans'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdActivePlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/ai-summary': {
+      id: '/api/v1/coach/athletes/$id/ai-summary'
+      path: '/api/v1/coach/athletes/$id/ai-summary'
+      fullPath: '/api/v1/coach/athletes/$id/ai-summary'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdAiSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/billing': {
+      id: '/api/v1/coach/athletes/$id/billing'
+      path: '/api/v1/coach/athletes/$id/billing'
+      fullPath: '/api/v1/coach/athletes/$id/billing'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/briefing': {
+      id: '/api/v1/coach/athletes/$id/briefing'
+      path: '/api/v1/coach/athletes/$id/briefing'
+      fullPath: '/api/v1/coach/athletes/$id/briefing'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdBriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/practice-target': {
+      id: '/api/v1/coach/athletes/$id/practice-target'
+      path: '/api/v1/coach/athletes/$id/practice-target'
+      fullPath: '/api/v1/coach/athletes/$id/practice-target'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdPracticeTargetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/athletes/$id/rate': {
+      id: '/api/v1/coach/athletes/$id/rate'
+      path: '/api/v1/coach/athletes/$id/rate'
+      fullPath: '/api/v1/coach/athletes/$id/rate'
+      preLoaderRoute: typeof ApiV1CoachAthletesIdRateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/competitions/$id/roster': {
+      id: '/api/v1/coach/competitions/$id/roster'
+      path: '/api/v1/coach/competitions/$id/roster'
+      fullPath: '/api/v1/coach/competitions/$id/roster'
+      preLoaderRoute: typeof ApiV1CoachCompetitionsIdRosterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invoices/$id/': {
+      id: '/api/v1/coach/invoices/$id/'
+      path: '/api/v1/coach/invoices/$id'
+      fullPath: '/api/v1/coach/invoices/$id/'
+      preLoaderRoute: typeof ApiV1CoachInvoicesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/invoices/$id/status': {
+      id: '/api/v1/coach/invoices/$id/status'
+      path: '/api/v1/coach/invoices/$id/status'
+      fullPath: '/api/v1/coach/invoices/$id/status'
+      preLoaderRoute: typeof ApiV1CoachInvoicesIdStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/lesson-slots/$id/': {
+      id: '/api/v1/coach/lesson-slots/$id/'
+      path: '/api/v1/coach/lesson-slots/$id'
+      fullPath: '/api/v1/coach/lesson-slots/$id/'
+      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/moves/$id/archive': {
+      id: '/api/v1/coach/moves/$id/archive'
+      path: '/api/v1/coach/moves/$id/archive'
+      fullPath: '/api/v1/coach/moves/$id/archive'
+      preLoaderRoute: typeof ApiV1CoachMovesIdArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/moves/$id/update-from-plan-move': {
+      id: '/api/v1/coach/moves/$id/update-from-plan-move'
+      path: '/api/v1/coach/moves/$id/update-from-plan-move'
+      fullPath: '/api/v1/coach/moves/$id/update-from-plan-move'
+      preLoaderRoute: typeof ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/post-event/$id/dismiss': {
+      id: '/api/v1/coach/post-event/$id/dismiss'
+      path: '/api/v1/coach/post-event/$id/dismiss'
+      fullPath: '/api/v1/coach/post-event/$id/dismiss'
+      preLoaderRoute: typeof ApiV1CoachPostEventIdDismissRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/roster/athletes/': {
+      id: '/api/v1/coach/roster/athletes/'
+      path: '/api/v1/coach/roster/athletes'
+      fullPath: '/api/v1/coach/roster/athletes/'
+      preLoaderRoute: typeof ApiV1CoachRosterAthletesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/roster/athletes/$athleteId': {
+      id: '/api/v1/coach/roster/athletes/$athleteId'
+      path: '/api/v1/coach/roster/athletes/$athleteId'
+      fullPath: '/api/v1/coach/roster/athletes/$athleteId'
+      preLoaderRoute: typeof ApiV1CoachRosterAthletesAthleteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/starter-plans/$id/adopt': {
+      id: '/api/v1/coach/starter-plans/$id/adopt'
+      path: '/api/v1/coach/starter-plans/$id/adopt'
+      fullPath: '/api/v1/coach/starter-plans/$id/adopt'
+      preLoaderRoute: typeof ApiV1CoachStarterPlansIdAdoptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/visibility/$id/': {
+      id: '/api/v1/coach/visibility/$id/'
+      path: '/api/v1/coach/visibility/$id'
+      fullPath: '/api/v1/coach/visibility/$id/'
+      preLoaderRoute: typeof ApiV1CoachVisibilityIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/visibility/$id/respond': {
+      id: '/api/v1/coach/visibility/$id/respond'
+      path: '/api/v1/coach/visibility/$id/respond'
+      fullPath: '/api/v1/coach/visibility/$id/respond'
+      preLoaderRoute: typeof ApiV1CoachVisibilityIdRespondRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/invites/$id/resend': {
+      id: '/api/v1/guardian/invites/$id/resend'
+      path: '/api/v1/guardian/invites/$id/resend'
+      fullPath: '/api/v1/guardian/invites/$id/resend'
+      preLoaderRoute: typeof ApiV1GuardianInvitesIdResendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/celebrations/$id/ack': {
+      id: '/api/v1/me/celebrations/$id/ack'
+      path: '/api/v1/me/celebrations/$id/ack'
+      fullPath: '/api/v1/me/celebrations/$id/ack'
+      preLoaderRoute: typeof ApiV1MeCelebrationsIdAckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/': {
+      id: '/api/v1/parent/athletes/$id/'
+      path: '/api/v1/parent/athletes/$id'
+      fullPath: '/api/v1/parent/athletes/$id/'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/goals': {
+      id: '/api/v1/parent/athletes/$id/goals'
+      path: '/api/v1/parent/athletes/$id/goals'
+      fullPath: '/api/v1/parent/athletes/$id/goals'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdGoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/primary-coach': {
+      id: '/api/v1/parent/athletes/$id/primary-coach'
+      path: '/api/v1/parent/athletes/$id/primary-coach'
+      fullPath: '/api/v1/parent/athletes/$id/primary-coach'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdPrimaryCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/reset-password': {
+      id: '/api/v1/parent/athletes/$id/reset-password'
+      path: '/api/v1/parent/athletes/$id/reset-password'
+      fullPath: '/api/v1/parent/athletes/$id/reset-password'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/schedule': {
+      id: '/api/v1/parent/athletes/$id/schedule'
+      path: '/api/v1/parent/athletes/$id/schedule'
+      fullPath: '/api/v1/parent/athletes/$id/schedule'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/team/guardians/': {
+      id: '/api/v1/parent/team/guardians/'
+      path: '/api/v1/parent/team/guardians'
+      fullPath: '/api/v1/parent/team/guardians/'
+      preLoaderRoute: typeof ApiV1ParentTeamGuardiansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/team/guardians/$id': {
+      id: '/api/v1/parent/team/guardians/$id'
+      path: '/api/v1/parent/team/guardians/$id'
+      fullPath: '/api/v1/parent/team/guardians/$id'
+      preLoaderRoute: typeof ApiV1ParentTeamGuardiansIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/moves/': {
+      id: '/api/v1/plans/$id/moves/'
+      path: '/api/v1/plans/$id/moves'
+      fullPath: '/api/v1/plans/$id/moves/'
+      preLoaderRoute: typeof ApiV1PlansIdMovesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/moves/$moveId': {
+      id: '/api/v1/plans/$id/moves/$moveId'
+      path: '/api/v1/plans/$id/moves/$moveId'
+      fullPath: '/api/v1/plans/$id/moves/$moveId'
+      preLoaderRoute: typeof ApiV1PlansIdMovesMoveIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/moves/from-library': {
+      id: '/api/v1/plans/$id/moves/from-library'
+      path: '/api/v1/plans/$id/moves/from-library'
+      fullPath: '/api/v1/plans/$id/moves/from-library'
+      preLoaderRoute: typeof ApiV1PlansIdMovesFromLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/moves/order': {
+      id: '/api/v1/plans/$id/moves/order'
+      path: '/api/v1/plans/$id/moves/order'
+      fullPath: '/api/v1/plans/$id/moves/order'
+      preLoaderRoute: typeof ApiV1PlansIdMovesOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/sessions/': {
+      id: '/api/v1/plans/$id/sessions/'
+      path: '/api/v1/plans/$id/sessions'
+      fullPath: '/api/v1/plans/$id/sessions/'
+      preLoaderRoute: typeof ApiV1PlansIdSessionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/sessions/summary': {
+      id: '/api/v1/plans/$id/sessions/summary'
+      path: '/api/v1/plans/$id/sessions/summary'
+      fullPath: '/api/v1/plans/$id/sessions/summary'
+      preLoaderRoute: typeof ApiV1PlansIdSessionsSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/athletes/$id/competition-results/$resultId/generate-plan': {
@@ -6659,46 +6646,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/team/guardians/invites/$id/': {
-      id: '/api/v1/parent/team/guardians/invites/$id/'
-      path: '/api/v1/parent/team/guardians/invites/$id'
-      fullPath: '/api/v1/parent/team/guardians/invites/$id/'
-      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport
+    '/api/v1/parent/athletes/$id/coaches/': {
+      id: '/api/v1/parent/athletes/$id/coaches/'
+      path: '/api/v1/parent/athletes/$id/coaches'
+      fullPath: '/api/v1/parent/athletes/$id/coaches/'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/athletes/$id/coaches/$coachId/': {
-      id: '/api/v1/parent/athletes/$id/coaches/$coachId/'
-      path: '/api/v1/parent/athletes/$id/coaches/$coachId'
-      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport
+    '/api/v1/parent/team/guardians/invites/': {
+      id: '/api/v1/parent/team/guardians/invites/'
+      path: '/api/v1/parent/team/guardians/invites'
+      fullPath: '/api/v1/parent/team/guardians/invites/'
+      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/parent/team/guardians/invites/$id/resend': {
-      id: '/api/v1/parent/team/guardians/invites/$id/resend'
-      path: '/api/v1/parent/team/guardians/invites/$id/resend'
-      fullPath: '/api/v1/parent/team/guardians/invites/$id/resend'
-      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIdResendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/coaches/$coachId/sports': {
-      id: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
-      path: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
-      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': {
-      id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
-      path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
-      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
-      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': {
-      id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
-      path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
-      fullPath: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
-      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport
+    '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': {
+      id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
+      path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
+      fullPath: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
+      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/coach/lesson-slots/$id/occurrences/$date/override': {
@@ -6708,11 +6674,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': {
-      id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
-      path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
-      fullPath: '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
-      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport
+    '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule': {
+      id: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+      path: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+      fullPath: '/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
+      preLoaderRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/coaches/$coachId/': {
+      id: '/api/v1/parent/athletes/$id/coaches/$coachId/'
+      path: '/api/v1/parent/athletes/$id/coaches/$coachId'
+      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/coaches/$coachId/messaging': {
+      id: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      path: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/messaging'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdMessagingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/athletes/$id/coaches/$coachId/sports': {
+      id: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
+      path: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
+      fullPath: '/api/v1/parent/athletes/$id/coaches/$coachId/sports'
+      preLoaderRoute: typeof ApiV1ParentAthletesIdCoachesCoachIdSportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/team/guardians/invites/$id/': {
+      id: '/api/v1/parent/team/guardians/invites/$id/'
+      path: '/api/v1/parent/team/guardians/invites/$id'
+      fullPath: '/api/v1/parent/team/guardians/invites/$id/'
+      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/team/guardians/invites/$id/resend': {
+      id: '/api/v1/parent/team/guardians/invites/$id/resend'
+      path: '/api/v1/parent/team/guardians/invites/$id/resend'
+      fullPath: '/api/v1/parent/team/guardians/invites/$id/resend'
+      preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIdResendRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -6746,11 +6747,11 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminImpersonationRoute: typeof AuthenticatedAdminImpersonationRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
-  AuthenticatedAdminPausedAthletesRoute: typeof AuthenticatedAdminPausedAthletesRoute
   AuthenticatedAdminLibraryRightsRoute: typeof AuthenticatedAdminLibraryRightsRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminParentInvitesRoute: typeof AuthenticatedAdminParentInvitesRoute
+  AuthenticatedAdminPausedAthletesRoute: typeof AuthenticatedAdminPausedAthletesRoute
   AuthenticatedAdminPromoCodesRoute: typeof AuthenticatedAdminPromoCodesRoute
   AuthenticatedAdminReportingRoute: typeof AuthenticatedAdminReportingRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
@@ -6780,11 +6781,11 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminImpersonationRoute: AuthenticatedAdminImpersonationRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
-  AuthenticatedAdminPausedAthletesRoute: AuthenticatedAdminPausedAthletesRoute,
   AuthenticatedAdminLibraryRightsRoute: AuthenticatedAdminLibraryRightsRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminParentInvitesRoute: AuthenticatedAdminParentInvitesRoute,
+  AuthenticatedAdminPausedAthletesRoute: AuthenticatedAdminPausedAthletesRoute,
   AuthenticatedAdminPromoCodesRoute: AuthenticatedAdminPromoCodesRoute,
   AuthenticatedAdminReportingRoute: AuthenticatedAdminReportingRoute,
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
