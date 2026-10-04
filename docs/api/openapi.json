@@ -4838,6 +4838,15 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "claimStatus": {
+                            "type": "string",
+                            "enum": [
+                              "claimed",
+                              "waitingForParent",
+                              "waitingForAthlete",
+                              "notInvited"
+                            ]
                           }
                         },
                         "required": [

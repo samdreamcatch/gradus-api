@@ -6,6 +6,7 @@ import {
   addLessonSlotInput,
   cancelLessonOccurrence,
   deleteLessonSlot,
+  rosterClaimStatus,
   slotTimesInput,
   updateLessonSlot,
 } from "./coach-roster.server";
@@ -340,6 +341,72 @@ describe("getPendingLessonWrapUps", () => {
     });
     expect(await getPendingLessonWrapUps({ userId: "u", supabase: fakeClient({}) }, query)).toEqual(
       [],
+    );
+  });
+});
+
+describe("rosterClaimStatus", () => {
+  const off = { verificationRequired: false };
+  const on = { verificationRequired: true };
+  const MINOR = "2014-05-01";
+  const ADULT = "1990-05-01";
+  const coachAdded = {
+    parent_id: null,
+    self_managed: false,
+    guardian_email: "parent@example.com",
+    guardian_claimed_at: null,
+    invite_recipient: "guardian",
+    birthdate: MINOR,
+    account_state: "active",
+    parent_adult_verified_at: null,
+  };
+
+  it("waits for the parent while a parent invite is out and unclaimed (decision #30)", () => {
+    expect(rosterClaimStatus(coachAdded, off)).toBe("waitingForParent");
+    // No birthdate counts as a minor, and rows from before invite_recipient read as a parent invite.
+    expect(rosterClaimStatus({ ...coachAdded, birthdate: null, invite_recipient: null }, off)).toBe(
+      "waitingForParent",
+    );
+  });
+
+  it("waits for the athlete when a known adult was invited directly, and is claimed once they claim", () => {
+    const adult = { ...coachAdded, birthdate: ADULT, invite_recipient: "athlete" };
+    expect(rosterClaimStatus(adult, on)).toBe("waitingForAthlete");
+    expect(
+      rosterClaimStatus(
+        {
+          ...adult,
+          self_managed: true,
+          guardian_email: null,
+          guardian_claimed_at: "2026-10-03T00:00:00Z",
+        },
+        on,
+      ),
+    ).toBe("claimed");
+  });
+
+  it("a minor with a parent on file is claimed, unless verification is required and the parent hasn't verified", () => {
+    const linked = { ...coachAdded, parent_id: "p-1", guardian_claimed_at: "2026-10-03T00:00:00Z" };
+    expect(rosterClaimStatus(linked, off)).toBe("claimed");
+    expect(rosterClaimStatus(linked, on)).toBe("waitingForParent");
+    expect(
+      rosterClaimStatus({ ...linked, parent_adult_verified_at: "2026-10-03T00:00:00Z" }, on),
+    ).toBe("claimed");
+  });
+
+  it("a provisional minor always waits for the parent; a pre-S1 self-sign-up minor waits only once verification is required", () => {
+    const selfSignUp = { ...coachAdded, self_managed: true };
+    expect(rosterClaimStatus({ ...selfSignUp, account_state: "provisional" }, off)).toBe(
+      "waitingForParent",
+    );
+    expect(rosterClaimStatus(selfSignUp, off)).toBe("claimed");
+    expect(rosterClaimStatus(selfSignUp, on)).toBe("waitingForParent");
+  });
+
+  it("is not invited when no email is on file", () => {
+    expect(rosterClaimStatus({ ...coachAdded, guardian_email: null }, off)).toBe("notInvited");
+    expect(rosterClaimStatus({ ...coachAdded, birthdate: ADULT, guardian_email: null }, off)).toBe(
+      "notInvited",
     );
   });
 });

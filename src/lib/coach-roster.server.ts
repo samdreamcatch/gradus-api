@@ -19,6 +19,8 @@ import { ApiError } from "./api/errors";
 import { getSportLevel } from "./coach-sports";
 import { dbError } from "./db-error";
 import type { LessonFrequency } from "./lesson-recurrence";
+import { isMinorOrUnconfirmed } from "./athlete-age";
+import { verificationRequired } from "./guardian-verification.server";
 import { checkRosterRoom } from "./roster-limits";
 
 type Admin = typeof supabaseAdmin;
@@ -47,6 +49,59 @@ export type RosterSlot = {
   overrides: SlotOverride[];
 };
 
+/**
+ * Whether the athlete's room can open as far as the claim goes (PRD §6.13
+ * A5, decision #30), mirroring `athleteRoomGate` in
+ * guardian-verification.server.ts so the roster never says "claimed" where
+ * the gate would refuse:
+ *  - `claimed`: an adult who is linked or claimed their account; a minor
+ *    whose parent is on file (and verified, while verification is required);
+ *    or a pre-S1 self-sign-up minor while verification is not required.
+ *  - `waitingForParent`: a parent invite is out and unclaimed, a minor is
+ *    provisional, or the minor's parent still has to verify.
+ *  - `waitingForAthlete`: a known adult was invited directly and hasn't
+ *    claimed yet.
+ *  - `notInvited`: no email on file, so nobody can claim yet.
+ * A closed set: add a field rather than a value (iOS decodes it as an enum).
+ */
+export type RosterClaimStatus = "claimed" | "waitingForParent" | "waitingForAthlete" | "notInvited";
+
+export type RosterClaimRow = {
+  parent_id: string | null;
+  self_managed: boolean | null;
+  guardian_email: string | null;
+  guardian_claimed_at: string | null;
+  invite_recipient: string | null;
+  birthdate: string | null;
+  account_state: string | null;
+  parent_adult_verified_at: string | null;
+};
+
+export function rosterClaimStatus(
+  row: RosterClaimRow,
+  opts: { verificationRequired: boolean },
+): RosterClaimStatus {
+  const invited = (): RosterClaimStatus =>
+    !row.guardian_email
+      ? "notInvited"
+      : row.invite_recipient === "athlete"
+        ? "waitingForAthlete"
+        : "waitingForParent";
+
+  if (!isMinorOrUnconfirmed(row.birthdate)) {
+    if (row.parent_id || row.guardian_claimed_at || row.self_managed === true) return "claimed";
+    return invited();
+  }
+  if ((row.account_state ?? "active") === "provisional") return "waitingForParent";
+  if (row.parent_id) {
+    return opts.verificationRequired && !row.parent_adult_verified_at
+      ? "waitingForParent"
+      : "claimed";
+  }
+  if (row.self_managed === true) return opts.verificationRequired ? "waitingForParent" : "claimed";
+  return invited();
+}
+
 export type RosterAthlete = {
   athleteId: string;
   firstName: string;
@@ -61,6 +116,9 @@ export type RosterAthlete = {
   otherCoachCount: number;
   // When N=1, the single other coach's last name for the "+ D. Wallace" chip.
   otherCoachLastName: string | null;
+  // Always set here; optional only because the API contract marks it so
+  // (see roster-schema.ts).
+  claimStatus?: RosterClaimStatus;
 };
 
 export type CoachRoster = {
@@ -95,7 +153,7 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
   const links = await admin
     .from("coach_athletes")
     .select(
-      "athlete_id, athletes!inner(id, first_name, last_name, self_managed, parent_profiles(first_name, last_name))",
+      "athlete_id, athletes!inner(id, first_name, last_name, self_managed, parent_id, guardian_email, guardian_claimed_at, invite_recipient, birthdate, account_state, parent_profiles(first_name, last_name, adult_verified_at))",
     )
     .eq("coach_id", coachId);
   if (links.error) dbError(links.error);
@@ -196,14 +254,18 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
     otherByAthlete.set(l.athlete_id, arr);
   }
 
+  const required = verificationRequired();
   const result: RosterAthlete[] = rows.map((r) => {
     const a = r.athletes as unknown as {
       id: string;
       first_name: string;
       last_name: string;
-      self_managed: boolean | null;
-      parent_profiles: { first_name: string; last_name: string } | null;
-    };
+      parent_profiles: {
+        first_name: string;
+        last_name: string;
+        adult_verified_at: string | null;
+      } | null;
+    } & Omit<RosterClaimRow, "parent_adult_verified_at">;
     const others = otherByAthlete.get(a.id) ?? [];
     return {
       athleteId: a.id,
@@ -216,6 +278,10 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       slots: slotsByAthlete.get(a.id) ?? [],
       otherCoachCount: others.length,
       otherCoachLastName: others.length === 1 ? others[0] : null,
+      claimStatus: rosterClaimStatus(
+        { ...a, parent_adult_verified_at: a.parent_profiles?.adult_verified_at ?? null },
+        { verificationRequired: required },
+      ),
     };
   });
 
@@ -523,23 +589,36 @@ const timeRange = z
   .object({ startMinute: minuteSchema, endMinute: minuteSchema })
   .refine((v) => v.startMinute < v.endMinute, { message: "Invalid time range" });
 
-const frequencySchema = z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]).default("weekly");
+const frequencySchema = z
+  .enum(["weekly", "biweekly", "twice_monthly", "monthly"])
+  .default("weekly");
 const weeksOfMonthSchema = z.array(z.number().int().min(1).max(5)).default([]);
 const startsOnSchema = isoDateSchema.nullable().default(null);
 
 /** Same cardinality/anchor rules as the web's `schedule-editor.tsx` `validateSlots()`, enforced server-side here for the first time. */
-function refineCadence<T extends { frequency: string; weeksOfMonth: number[]; startsOn: string | null }>(
-  v: T,
-  ctx: z.RefinementCtx,
-) {
+function refineCadence<
+  T extends { frequency: string; weeksOfMonth: number[]; startsOn: string | null },
+>(v: T, ctx: z.RefinementCtx) {
   if (v.frequency === "twice_monthly" && v.weeksOfMonth.length !== 2) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick exactly 2 weeks of the month", path: ["weeksOfMonth"] });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pick exactly 2 weeks of the month",
+      path: ["weeksOfMonth"],
+    });
   }
   if (v.frequency === "monthly" && v.weeksOfMonth.length !== 1) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick exactly 1 week of the month", path: ["weeksOfMonth"] });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pick exactly 1 week of the month",
+      path: ["weeksOfMonth"],
+    });
   }
   if (v.frequency === "biweekly" && !v.startsOn) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Pick a starting date for a biweekly lesson", path: ["startsOn"] });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pick a starting date for a biweekly lesson",
+      path: ["startsOn"],
+    });
   }
 }
 
@@ -620,7 +699,8 @@ export async function addLessonSlot(
       start_minute: data.startMinute,
       end_minute: data.endMinute,
       frequency: data.frequency,
-      weeks_of_month: data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
+      weeks_of_month:
+        data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
       starts_on: data.frequency === "biweekly" ? data.startsOn : null,
     })
     .select("id")
@@ -645,7 +725,8 @@ export async function updateLessonSlot(
       start_minute: data.startMinute,
       end_minute: data.endMinute,
       frequency: data.frequency,
-      weeks_of_month: data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
+      weeks_of_month:
+        data.frequency === "biweekly" || data.frequency === "weekly" ? [] : data.weeksOfMonth,
       starts_on: data.frequency === "biweekly" ? data.startsOn : null,
     })
     .eq("id", slotId);

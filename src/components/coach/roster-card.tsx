@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { MoreVertical, UserMinus, Users } from "lucide-react";
+import { Clock, MoreVertical, UserMinus, Users } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { RosterAthlete } from "@/lib/coach-roster.functions";
+import type { RosterAthlete, RosterClaimStatus } from "@/lib/coach-roster.functions";
 import { removeAthleteFromRoster } from "@/lib/coach-roster-mutations.functions";
 import { isSampleAthlete } from "@/data/sample-athlete";
 import { useSampleAthleteDismissed } from "@/hooks/use-sample-athlete";
@@ -23,6 +23,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// PRD §6.13 A5: where the athlete's account stands with whoever has to claim it.
+const CLAIM_LABEL: Record<RosterClaimStatus, string | null> = {
+  claimed: null,
+  waitingForParent: "Waiting for parent",
+  waitingForAthlete: "Waiting for athlete",
+  notInvited: "No invite sent",
+};
+
+const CLAIM_HINT: Record<RosterClaimStatus, string | undefined> = {
+  claimed: undefined,
+  waitingForParent:
+    "The parent hasn't claimed this athlete's account yet, or still has to verify as an adult.",
+  waitingForAthlete: "The athlete hasn't claimed their account yet.",
+  notInvited: "No email on file, so nobody can claim this athlete yet.",
+};
 
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -45,6 +61,7 @@ export function RosterCard({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const qc = useQueryClient();
   const isSample = isSampleAthlete(athlete.athleteId);
+  const claimStatus = athlete.claimStatus ?? "claimed";
   const { dismiss } = useSampleAthleteDismissed();
 
   const removeMutation = useMutation({
@@ -125,6 +142,15 @@ export function RosterCard({
               ))}
             </ul>
           )}
+          {CLAIM_LABEL[claimStatus] ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[11px] font-medium text-text-secondary"
+              title={CLAIM_HINT[claimStatus]}
+            >
+              <Clock className="-ml-0.5 size-3" aria-hidden />
+              {CLAIM_LABEL[claimStatus]}
+            </span>
+          ) : null}
           {athlete.otherCoachCount > 0 ? (
             <span
               className="inline-flex items-center gap-1 rounded-pill border border-secondary-accent/30 bg-secondary-accent-wash px-2 py-0.5 text-[11px] font-medium text-secondary-accent-ink"

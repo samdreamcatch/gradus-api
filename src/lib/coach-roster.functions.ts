@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getCoachRoster as getCoachRosterShared } from "./coach-roster.server";
 
-export type { CoachRoster, RosterAthlete, RosterSlot, SlotOverride } from "./coach-roster.server";
+export type {
+  CoachRoster,
+  RosterAthlete,
+  RosterClaimStatus,
+  RosterSlot,
+  SlotOverride,
+} from "./coach-roster.server";
 
 /*
  * Thin wrapper over src/lib/coach-roster.server.ts, shared with

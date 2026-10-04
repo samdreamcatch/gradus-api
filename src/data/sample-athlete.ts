@@ -80,6 +80,7 @@ export function buildSampleRosterAthlete(now: Date = new Date()): RosterAthlete 
     ],
     otherCoachCount: 0,
     otherCoachLastName: null,
+    claimStatus: "claimed",
   };
 }
 

@@ -50,6 +50,11 @@ export const rosterAthleteSchema = z.object({
   slots: z.array(rosterSlotSchema),
   otherCoachCount: z.number().int(),
   otherCoachLastName: z.string().nullable(),
+  // Always sent. Optional in the contract only so an iOS build that knows the
+  // field still decodes the roster from a server that hasn't been published
+  // with it yet (Xcode Cloud ships main; Lovable publishes by hand).
+  // A closed set: iOS decodes it as an enum, so add a field rather than a value.
+  claimStatus: z.enum(["claimed", "waitingForParent", "waitingForAthlete", "notInvited"]).optional(),
 });
 
 export const coachRosterSchema = z.object({
