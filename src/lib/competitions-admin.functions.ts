@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { parseDateRange } from "./competition-window";
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -56,14 +57,6 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 60);
-}
-
-/** `08/18/2026 - 08/23/2026 (EDT)` -> ISO start/end dates. */
-function parseDateRange(label: string): { startsOn: string | null; endsOn: string | null } {
-  const dates = [...label.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)].map(
-    (m) => `${m[3]}-${m[1]}-${m[2]}`,
-  );
-  return { startsOn: dates[0] ?? null, endsOn: dates[dates.length - 1] ?? dates[0] ?? null };
 }
 
 export const listCompetitions = createServerFn({ method: "GET" })

@@ -12,6 +12,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { BoardPayload, BoardResponse } from "./board-types";
 import { DEMO_LIST_ENTRY, DEMO_SLUG, buildDemoBoard } from "./board-demo";
+import {
+  competitionWindow,
+  dayKeyIn,
+  isWithinWindow,
+  parseDateRange,
+  settleBoardPayload,
+  wantsRefresh,
+} from "./competition-window";
 
 /** One row of the board index. */
 export interface BoardListEntry {
@@ -73,9 +81,23 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
     error: string | null;
   } | null;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const isLiveWindow =
-    c.active && (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today);
+  // Rows saved before the date parser took `9/11/2026` have no dates; read
+  // them from the label, and store them so recaps and ordering see them too.
+  if (!c.starts_on || !c.ends_on) {
+    const parsed = parseDateRange(c.dates_label ?? "");
+    if (parsed.startsOn && parsed.endsOn) {
+      c.starts_on = c.starts_on ?? parsed.startsOn;
+      c.ends_on = c.ends_on ?? parsed.endsOn;
+      try {
+        await admin
+          .from("competitions")
+          .update({ starts_on: c.starts_on, ends_on: c.ends_on })
+          .eq("id", c.id);
+      } catch {
+        // Best effort: the board reads the label either way.
+      }
+    }
+  }
 
   let payload = cached?.payload ?? null;
   // The cache row comes back as `+00:00`, a fresh refresh as `Z`. One shape,
@@ -83,7 +105,21 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
   let generatedAt = cached?.generated_at ? new Date(cached.generated_at).toISOString() : null;
   const stale = !generatedAt || Date.now() - new Date(generatedAt).getTime() > REFRESH_INTERVAL_MS;
 
-  if ((isLiveWindow && stale) || !payload) {
+  const now = new Date();
+  const windowOf = (p: BoardPayload | null) =>
+    competitionWindow({
+      startsOn: c.starts_on,
+      endsOn: c.ends_on,
+      datesLabel: c.dates_label,
+      schedule: p?.schedule,
+    });
+  const timeZone = payload?.competition.timeZone;
+  const generatedKey = generatedAt ? dayKeyIn(new Date(generatedAt), timeZone) : null;
+
+  if (
+    !payload ||
+    (c.active && stale && wantsRefresh(windowOf(payload), dayKeyIn(now, timeZone), generatedKey))
+  ) {
     const fresh = await refreshCompetition({
       id: c.id,
       ijs_base_url: c.ijs_base_url,
@@ -95,6 +131,13 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
       payload = fresh;
       generatedAt = fresh.generatedAt;
     }
+  }
+
+  // Live means today, venue-local, falls inside the competition's days.
+  const todayKey = dayKeyIn(now, payload?.competition.timeZone);
+  const isLiveWindow = c.active && isWithinWindow(windowOf(payload), todayKey);
+  if (payload) {
+    payload = settleBoardPayload(payload, { now, todayKey, inWindow: isLiveWindow });
   }
 
   return {
@@ -125,7 +168,7 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
     // Table not available yet — the built-in sample board still lists.
     rows = [];
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dayKeyIn(new Date());
 
   // Every IJS competition on today, found by the catalog sweep, joins the
   // boards set up in admin ("Happening now" with no setup; 2026-09-26).
@@ -149,7 +192,10 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
       name: c.name as string,
       datesLabel: c.dates_label as string,
       location: c.location as string,
-      isLiveWindow: (!c.starts_on || c.starts_on <= today) && (!c.ends_on || c.ends_on >= today),
+      isLiveWindow: isWithinWindow(
+        competitionWindow({ startsOn: c.starts_on, endsOn: c.ends_on, datesLabel: c.dates_label }),
+        today,
+      ),
     })),
     ...catalog,
   ];

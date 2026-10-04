@@ -20,6 +20,7 @@
  */
 import { IJS_USER_AGENT, decodeLatin1, parseIndex } from "./ijs-scrape.server";
 import type { BoardListEntry } from "./board.server";
+import { competitionWindow, dayKeyIn, isWithinWindow, parseDateRange } from "./competition-window";
 
 /** Service-role client, cast loosely for the un-typed competition tables. */
 export type CatalogDb = { from: (table: string) => any };
@@ -65,14 +66,6 @@ export function catalogSlug(year: number, compId: number): string {
 export function parseCatalogSlug(slug: string): { year: number; compId: number } | null {
   const m = /^ijs-(\d{4})-(\d{3,7})$/.exec(slug);
   return m ? { year: Number(m[1]), compId: Number(m[2]) } : null;
-}
-
-/** `08/18/2026 - 08/23/2026 (EDT)` -> ISO start/end dates. */
-export function parseDateRange(label: string): { startsOn: string | null; endsOn: string | null } {
-  const dates = [...label.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)].map(
-    (m) => `${m[3]}-${m[1]}-${m[2]}`,
-  );
-  return { startsOn: dates[0] ?? null, endsOn: dates[dates.length - 1] ?? dates[0] ?? null };
 }
 
 /** The calendar years whose folders are swept: this one, plus next year's from mid-December. */
@@ -404,7 +397,10 @@ export async function toBoardEntries(
     name: e.name,
     datesLabel: e.datesLabel,
     location: e.location,
-    isLiveWindow: (!e.startsOn || e.startsOn <= today) && (!e.endsOn || e.endsOn >= today),
+    isLiveWindow: isWithinWindow(
+      competitionWindow({ startsOn: e.startsOn, endsOn: e.endsOn, datesLabel: e.datesLabel }),
+      today,
+    ),
   }));
 }
 
@@ -421,7 +417,7 @@ export async function searchCatalog(
   deps: { fetchImpl?: typeof fetch; now?: () => Date } = {},
 ): Promise<BoardListEntry[]> {
   const now = (deps.now ?? (() => new Date()))();
-  const today = now.toISOString().slice(0, 10);
+  const today = dayKeyIn(now);
   const ref = parseIjsReference(q);
   if (ref) {
     const hit = await resolveReference(db, ref, deps);

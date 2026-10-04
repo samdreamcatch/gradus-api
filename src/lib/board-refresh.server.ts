@@ -19,6 +19,7 @@ import {
   type IjsSkater,
 } from "./ijs-scrape.server";
 import type { BoardEvent, BoardPayload, BoardRink, BoardSkater } from "./board-types";
+import { canStillBeLive } from "./competition-window";
 
 export const REFRESH_INTERVAL_MS = 30_000;
 /** How long a claimed refresh is assumed to be in flight before another may run. */
@@ -82,6 +83,7 @@ export async function buildPayload(
   const { competition, events } = parseIndex(await fetchPage(`${base}/index.asp`), year);
   const timeZone = competition.timeZone;
   const now = new Date();
+  const todayKey = dayKeyOf(now, timeZone);
   const errors: string[] = [];
   const venues = { ...venueCache };
   const orders: Record<string, CachedEvent> = {};
@@ -136,7 +138,13 @@ export async function buildPayload(
   const rinks: BoardRink[] = [];
   for (const name of [...byRink.keys()].sort()) {
     const evs = (byRink.get(name) ?? []).sort((a, b) => +a.startAt - +b.startAt);
-    const live = evs.filter((e) => e.status.toLowerCase() === LIVE_STATUS);
+    // IJS leaves an event "live unofficial" until officials close it, sometimes
+    // for days; only today's events (venue-local) can be on the ice now.
+    const live = evs.filter(
+      (e) =>
+        e.status.toLowerCase() === LIVE_STATUS &&
+        canStillBeLive(e.startAt, dayKeyOf(e.startAt, timeZone), now, todayKey),
+    );
     const started = live.filter((e) => e.startAt <= now);
     const primary = started.length
       ? started.reduce((a, b) => (b.startAt > a.startAt ? b : a))
@@ -229,10 +237,16 @@ export async function buildPayload(
   const schedule: BoardEvent[] = [];
   for (const e of dated) {
     const raw = e.status.toLowerCase();
+    const dayKey = dayKeyOf(e.startAt, timeZone);
+    // A "live" event from an earlier day finished; it reads as results.
     const status: BoardEvent["status"] = DONE_STATUSES.includes(raw)
       ? "final"
       : raw === LIVE_STATUS
-        ? "live"
+        ? canStillBeLive(e.startAt, dayKey, now, todayKey)
+          ? "live"
+          : dayKey < todayKey
+            ? "final"
+            : "scheduled"
         : "scheduled";
     const key = `${e.file}:${raw}`;
     const withProtocol = +e.startAt >= Date.now() - PROTOCOL_WINDOW_MS;
@@ -266,7 +280,7 @@ export async function buildPayload(
       status,
       count: entry?.count ?? null,
       dayLabel: e.day,
-      dayKey: dayKeyOf(e.startAt, timeZone),
+      dayKey,
       results: entry?.results ?? [],
     });
   }
