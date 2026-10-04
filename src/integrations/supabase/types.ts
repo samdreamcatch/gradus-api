@@ -140,6 +140,27 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_opt_outs: {
+        Row: {
+          note: string
+          recorded_by: string | null
+          requested_at: string
+          user_id: string
+        }
+        Insert: {
+          note?: string
+          recorded_by?: string | null
+          requested_at?: string
+          user_id: string
+        }
+        Update: {
+          note?: string
+          recorded_by?: string | null
+          requested_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_weekly: {
         Row: {
           age_band: string
@@ -4276,6 +4297,10 @@ export type Database = {
           resource_id: string
           shares: number
         }[]
+      }
+      analytics_withdraw_consent: {
+        Args: { p_note: string; p_recorded_by: string; p_user_id: string }
+        Returns: number
       }
       athlete_can_self_connect: {
         Args: { _athlete_id: string }

@@ -77,10 +77,10 @@ import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminReportingRouteImport } from './routes/_authenticated/admin.reporting'
 import { Route as AuthenticatedAdminPromoCodesRouteImport } from './routes/_authenticated/admin.promo-codes'
+import { Route as AuthenticatedAdminPausedAthletesRouteImport } from './routes/_authenticated/admin.paused-athletes'
 import { Route as AuthenticatedAdminParentInvitesRouteImport } from './routes/_authenticated/admin.parent-invites'
 import { Route as AuthenticatedAdminOrganizationsRouteImport } from './routes/_authenticated/admin.organizations'
 import { Route as AuthenticatedAdminMapRouteImport } from './routes/_authenticated/admin.map'
-import { Route as AuthenticatedAdminPausedAthletesRouteImport } from './routes/_authenticated/admin.paused-athletes'
 import { Route as AuthenticatedAdminLibraryRightsRouteImport } from './routes/_authenticated/admin.library-rights'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin.leads'
 import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authenticated/admin.knowledge'
@@ -702,6 +702,12 @@ const AuthenticatedAdminPromoCodesRoute =
     path: '/promo-codes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPausedAthletesRoute =
+  AuthenticatedAdminPausedAthletesRouteImport.update({
+    id: '/paused-athletes',
+    path: '/paused-athletes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminParentInvitesRoute =
   AuthenticatedAdminParentInvitesRouteImport.update({
     id: '/parent-invites',
@@ -717,11 +723,6 @@ const AuthenticatedAdminOrganizationsRoute =
 const AuthenticatedAdminMapRoute = AuthenticatedAdminMapRouteImport.update({
   id: '/map',
   path: '/map',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminPausedAthletesRoute = AuthenticatedAdminPausedAthletesRouteImport.update({
-  id: '/paused-athletes',
-  path: '/paused-athletes',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminLibraryRightsRoute =
@@ -2213,11 +2214,11 @@ export interface FileRoutesByFullPath {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -2539,11 +2540,11 @@ export interface FileRoutesByTo {
   '/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/admin/map': typeof AuthenticatedAdminMapRoute
   '/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -2871,11 +2872,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/impersonation': typeof AuthenticatedAdminImpersonationRoute
   '/_authenticated/admin/knowledge': typeof AuthenticatedAdminKnowledgeRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/_authenticated/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/_authenticated/admin/library-rights': typeof AuthenticatedAdminLibraryRightsRoute
   '/_authenticated/admin/map': typeof AuthenticatedAdminMapRoute
   '/_authenticated/admin/organizations': typeof AuthenticatedAdminOrganizationsRoute
   '/_authenticated/admin/parent-invites': typeof AuthenticatedAdminParentInvitesRoute
+  '/_authenticated/admin/paused-athletes': typeof AuthenticatedAdminPausedAthletesRoute
   '/_authenticated/admin/promo-codes': typeof AuthenticatedAdminPromoCodesRoute
   '/_authenticated/admin/reporting': typeof AuthenticatedAdminReportingRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -3204,11 +3205,11 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
-    | '/admin/paused-athletes'
     | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
+    | '/admin/paused-athletes'
     | '/admin/promo-codes'
     | '/admin/reporting'
     | '/admin/reports'
@@ -3530,11 +3531,11 @@ export interface FileRouteTypes {
     | '/admin/impersonation'
     | '/admin/knowledge'
     | '/admin/leads'
-    | '/admin/paused-athletes'
     | '/admin/library-rights'
     | '/admin/map'
     | '/admin/organizations'
     | '/admin/parent-invites'
+    | '/admin/paused-athletes'
     | '/admin/promo-codes'
     | '/admin/reporting'
     | '/admin/reports'
@@ -3861,11 +3862,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/impersonation'
     | '/_authenticated/admin/knowledge'
     | '/_authenticated/admin/leads'
-    | '/_authenticated/admin/paused-athletes'
     | '/_authenticated/admin/library-rights'
     | '/_authenticated/admin/map'
     | '/_authenticated/admin/organizations'
     | '/_authenticated/admin/parent-invites'
+    | '/_authenticated/admin/paused-athletes'
     | '/_authenticated/admin/promo-codes'
     | '/_authenticated/admin/reporting'
     | '/_authenticated/admin/reports'
@@ -4881,6 +4882,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPromoCodesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/paused-athletes': {
+      id: '/_authenticated/admin/paused-athletes'
+      path: '/paused-athletes'
+      fullPath: '/admin/paused-athletes'
+      preLoaderRoute: typeof AuthenticatedAdminPausedAthletesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/parent-invites': {
       id: '/_authenticated/admin/parent-invites'
       path: '/parent-invites'
@@ -4900,13 +4908,6 @@ declare module '@tanstack/react-router' {
       path: '/map'
       fullPath: '/admin/map'
       preLoaderRoute: typeof AuthenticatedAdminMapRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/paused-athletes': {
-      id: '/_authenticated/admin/paused-athletes'
-      path: '/paused-athletes'
-      fullPath: '/admin/paused-athletes'
-      preLoaderRoute: typeof AuthenticatedAdminPausedAthletesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/library-rights': {
@@ -6746,11 +6747,11 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminImpersonationRoute: typeof AuthenticatedAdminImpersonationRoute
   AuthenticatedAdminKnowledgeRoute: typeof AuthenticatedAdminKnowledgeRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
-  AuthenticatedAdminPausedAthletesRoute: typeof AuthenticatedAdminPausedAthletesRoute
   AuthenticatedAdminLibraryRightsRoute: typeof AuthenticatedAdminLibraryRightsRoute
   AuthenticatedAdminMapRoute: typeof AuthenticatedAdminMapRoute
   AuthenticatedAdminOrganizationsRoute: typeof AuthenticatedAdminOrganizationsRoute
   AuthenticatedAdminParentInvitesRoute: typeof AuthenticatedAdminParentInvitesRoute
+  AuthenticatedAdminPausedAthletesRoute: typeof AuthenticatedAdminPausedAthletesRoute
   AuthenticatedAdminPromoCodesRoute: typeof AuthenticatedAdminPromoCodesRoute
   AuthenticatedAdminReportingRoute: typeof AuthenticatedAdminReportingRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
@@ -6780,11 +6781,11 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminImpersonationRoute: AuthenticatedAdminImpersonationRoute,
   AuthenticatedAdminKnowledgeRoute: AuthenticatedAdminKnowledgeRoute,
   AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
-  AuthenticatedAdminPausedAthletesRoute: AuthenticatedAdminPausedAthletesRoute,
   AuthenticatedAdminLibraryRightsRoute: AuthenticatedAdminLibraryRightsRoute,
   AuthenticatedAdminMapRoute: AuthenticatedAdminMapRoute,
   AuthenticatedAdminOrganizationsRoute: AuthenticatedAdminOrganizationsRoute,
   AuthenticatedAdminParentInvitesRoute: AuthenticatedAdminParentInvitesRoute,
+  AuthenticatedAdminPausedAthletesRoute: AuthenticatedAdminPausedAthletesRoute,
   AuthenticatedAdminPromoCodesRoute: AuthenticatedAdminPromoCodesRoute,
   AuthenticatedAdminReportingRoute: AuthenticatedAdminReportingRoute,
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,

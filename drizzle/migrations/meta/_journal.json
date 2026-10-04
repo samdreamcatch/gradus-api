@@ -22,6 +22,13 @@
       "when": 1791125131770,
       "tag": "0002_retention_dormant_athletes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791151885196,
+      "tag": "0003_analytics_opt_outs",
+      "breakpoints": true
     }
   ]
 }
