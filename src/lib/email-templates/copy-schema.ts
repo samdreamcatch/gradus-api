@@ -38,6 +38,7 @@ const WELCOME_VARS = ["firstName", "settingsUrl", "siteUrl"] as const;
 const BILLING_VARS = ["firstName", "eventDate", "planLabel", "billingUrl", "siteUrl"] as const;
 
 const GUARDIAN_INVITE_VARS = ["athleteName", "coachName", "claimUrl", "siteUrl"] as const;
+const RETENTION_NOTICE_VARS = ["athleteName", "deleteDate", "siteUrl", "loginUrl"] as const;
 
 const COACH_VISIBILITY_VARS = [
   "coachName",
@@ -472,6 +473,37 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       body: "You're getting this because you're listed as {athleteName}'s parent or guardian and haven't created your Gradus account yet. Create it to reply and see everything in one place.",
       ctaLabel: "Create my parent account",
       footer: "These copies stop as soon as you create your account.",
+    },
+  },
+  "retention-notice": {
+    displayName: "Retention notice (dormant athlete)",
+    category: "App",
+    description:
+      "Sent to every parent or guardian on file 30 days before an athlete account nobody has used for three years is deleted (retention policy, PRD §6.13 A9).",
+    slots: [
+      { key: "preview", label: "Inbox preview", kind: "text", variables: RETENTION_NOTICE_VARS },
+      { key: "subject", label: "Subject line", kind: "text", variables: RETENTION_NOTICE_VARS },
+      { key: "eyebrow", label: "Small caps eyebrow", kind: "text" },
+      { key: "heading", label: "Big headline", kind: "text", variables: RETENTION_NOTICE_VARS },
+      {
+        key: "body",
+        label: "Explainer paragraph (why, what is deleted, how to keep it)",
+        kind: "textarea",
+        variables: RETENTION_NOTICE_VARS,
+      },
+      { key: "ctaLabel", label: "Button label", kind: "text", variables: RETENTION_NOTICE_VARS },
+      { key: "footer", label: "Fine-print footer", kind: "textarea" },
+    ],
+    defaults: {
+      preview:
+        "{athleteName}'s Gradus account will be deleted on {deleteDate} unless someone signs in",
+      subject: "{athleteName}'s Gradus account will be deleted on {deleteDate}",
+      eyebrow: "Account retention",
+      heading: "Still training with Gradus?",
+      body: "Nobody has signed in to {athleteName}'s Gradus account, logged a practice, or exchanged a message in three years. Our retention policy says we don't keep an athlete's information longer than it is being used, so on {deleteDate} we will delete the account and everything in it: their name, date of birth, username, practice logs, goals and messages. To keep it, sign in to Gradus before then. Nothing else is needed.",
+      ctaLabel: "Keep {athleteName}'s account",
+      footer:
+        "If the account is no longer needed, there's nothing to do. Questions: support@gradussports.com.",
     },
   },
   welcome: {

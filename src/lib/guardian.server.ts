@@ -14,6 +14,7 @@ import {
   GuardianActivityEmail,
   guardianActivitySubject,
 } from "./email-templates/guardian-activity";
+import { RetentionNoticeEmail, retentionNoticeSubject } from "./email-templates/retention-notice";
 import { fetchOverridesFor } from "./email-templates/overrides.server";
 import { buildAppEmailPayload } from "./email-queue-payload";
 
@@ -34,13 +35,14 @@ export function newGuardianToken(): string {
     .join("");
 }
 
+/** True when the message reached the queue; false is logged, never thrown, for the invite paths. */
 async function enqueue(opts: {
   to: string;
   subject: string;
   html: string;
   text: string;
   label: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const messageId = `${opts.label}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
@@ -52,7 +54,7 @@ async function enqueue(opts: {
   });
   if (pendingError) {
     console.error("[guardian] pending log failed (%s)", opts.label, pendingError);
-    return;
+    return false;
   }
 
   const payload = buildAppEmailPayload({
@@ -90,7 +92,9 @@ async function enqueue(opts: {
       status: "failed",
       error_message: error.message,
     });
+    return false;
   }
+  return true;
 }
 
 /** Send (or re-send) the guardian invite for an athlete. Never throws. */
@@ -229,5 +233,47 @@ export async function mirrorGuardianActivity(params: {
     });
   } catch (e) {
     console.error("[guardian] activity mirror failed", e);
+  }
+}
+
+/** "November 2, 2026": the day the dormant sweep will delete the account, in UTC. */
+export function formatDeleteDate(deleteOn: Date): string {
+  return deleteOn.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * The dormant-account notice (retention policy, PRD §6.13 A9, decision #41):
+ * thirty days' warning to a guardian on file. Unlike the invite senders this
+ * THROWS when the email did not reach the queue: the sweep must not stamp a
+ * notice nobody received.
+ */
+export async function sendRetentionNotice(params: {
+  to: string;
+  athleteName: string;
+  deleteOn: Date;
+}): Promise<void> {
+  {
+    const copyOverrides = await fetchOverridesFor("retention-notice");
+    const data = {
+      athleteName: params.athleteName,
+      deleteDate: formatDeleteDate(params.deleteOn),
+      siteUrl: SITE_URL,
+    };
+    const element = React.createElement(RetentionNoticeEmail, { ...data, copyOverrides });
+    const html = await render(element);
+    const text = await render(element, { plainText: true });
+    const queued = await enqueue({
+      to: params.to,
+      subject: retentionNoticeSubject(data, copyOverrides),
+      html,
+      text,
+      label: "retention-notice",
+    });
+    if (!queued) throw new Error(`retention notice to ${params.to} was not queued`);
   }
 }

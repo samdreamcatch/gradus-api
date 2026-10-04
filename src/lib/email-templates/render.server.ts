@@ -11,6 +11,7 @@ import { GuardianInviteEmail } from "./guardian-invite";
 import { GuardianActivityEmail } from "./guardian-activity";
 import { WelcomeEmail } from "./welcome";
 import { ActivationEmail } from "./activation";
+import { RetentionNoticeEmail } from "./retention-notice";
 
 const TEMPLATES: Record<string, React.ComponentType<any>> = {
   signup: SignupEmail,
@@ -23,6 +24,7 @@ const TEMPLATES: Record<string, React.ComponentType<any>> = {
   "guardian-activity": GuardianActivityEmail,
   welcome: WelcomeEmail,
   activation: ActivationEmail,
+  "retention-notice": RetentionNoticeEmail,
 };
 
 const SAMPLE_PROPS: Record<string, Record<string, any>> = {
@@ -78,6 +80,11 @@ const SAMPLE_PROPS: Record<string, Record<string, any>> = {
     settingsUrl: "https://gradus.training/parent/settings",
     siteUrl: "https://gradus.training",
   },
+  "retention-notice": {
+    athleteName: "Sample Athlete",
+    deleteDate: "November 2, 2026",
+    siteUrl: "https://gradus.training",
+  },
 };
 
 /** Role-specific sample props, used by the admin preview's user-type selector. */
@@ -88,8 +95,16 @@ const ROLE_PROPS: Record<string, Record<string, Record<string, any>>> = {
     athlete: { firstName: "Jordan", settingsUrl: "https://gradus.training/athlete/settings" },
   },
   activation: {
-    coach: { role: "coach", firstName: "Tami", settingsUrl: "https://gradus.training/coach/settings" },
-    parent: { role: "parent", firstName: "Alex", settingsUrl: "https://gradus.training/parent/settings" },
+    coach: {
+      role: "coach",
+      firstName: "Tami",
+      settingsUrl: "https://gradus.training/coach/settings",
+    },
+    parent: {
+      role: "parent",
+      firstName: "Alex",
+      settingsUrl: "https://gradus.training/parent/settings",
+    },
     athlete: {
       role: "athlete",
       firstName: "Jordan",
