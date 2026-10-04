@@ -190,8 +190,8 @@ const PAST = new Date(Date.now() - 86400_000).toISOString();
 const PAYER = {
   id: "p1",
   user_id: "payer-u",
-  first_name: "Pat",
-  last_name: "Lee",
+  first_name: "Corin",
+  last_name: "Abbott",
   subscription_status: "active",
   current_period_end: FUTURE,
 };
@@ -214,8 +214,8 @@ const OTHER = {
 const ATHLETE = {
   id: "a1",
   parent_id: PAYER.id,
-  first_name: "Ava",
-  last_name: "Lee",
+  first_name: "Maeve",
+  last_name: "Abbott",
   created_at: "2026-01-01T00:00:00Z",
 };
 // `athletes` is the embedded-select shape guardianAthleteAccess reads (this
@@ -277,12 +277,12 @@ describe("listTeamGuardians", () => {
       athletes: [
         {
           id: "a1",
-          firstName: "Ava",
-          lastName: "Lee",
+          firstName: "Maeve",
+          lastName: "Abbott",
           isPrimary: true,
           locked: false,
           guardians: [
-            { id: "g-primary", parentId: "p1", name: "Pat Lee", role: "primary", isSelf: true },
+            { id: "g-primary", parentId: "p1", name: "Corin Abbott", role: "primary", isSelf: true },
             { id: "g-co", parentId: "p2", name: "Sam Rivera", role: "co", isSelf: false },
           ],
           invites: [
@@ -326,8 +326,8 @@ describe("listTeamGuardians", () => {
     expect(out.athletes).toEqual([
       {
         id: "a1",
-        firstName: "Ava",
-        lastName: "Lee",
+        firstName: "Maeve",
+        lastName: "Abbott",
         isPrimary: false,
         locked: true,
         guardians: [],
@@ -465,8 +465,8 @@ describe("resendTeamGuardianInvite", () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]).toEqual({
       to: "grandma@example.com",
-      athleteName: "Ava Lee",
-      inviterName: "Pat Lee",
+      athleteName: "Maeve Abbott",
+      inviterName: "Corin Abbott",
       token: PENDING.token,
       code: "ABCD2345",
     });
@@ -664,13 +664,13 @@ describe("previewGuardianInvite", () => {
     const { admin } = fakeAdmin(seedTeam());
     expect(await previewGuardianInvite(admin, null, { token: PENDING.token })).toEqual({
       found: true,
-      athleteName: "Ava Lee",
-      inviterName: "Pat Lee",
+      athleteName: "Maeve Abbott",
+      inviterName: "Corin Abbott",
     });
     expect(await previewGuardianInvite(admin, null, { code: "abcd2345" })).toEqual({
       found: true,
-      athleteName: "Ava Lee",
-      inviterName: "Pat Lee",
+      athleteName: "Maeve Abbott",
+      inviterName: "Corin Abbott",
     });
   });
 

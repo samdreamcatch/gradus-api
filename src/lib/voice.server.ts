@@ -293,8 +293,8 @@ SLOTS: athleteName "Sarah"; moves[0].name "Crosscourt forehands", description "H
 TRANSCRIPT: "Add a five minute split-step drill — low athletic stance, helps her first step."
 SLOTS: moves[0].name "Split-step drill", description "Five-minute split-step practice.", cue "Low athletic stance", why "Helps her first step.", targetKind "mins", targetValue 5.
 
-TRANSCRIPT: "Plan for Leon. He needs single axel landings about five times every session, then double salchow eight or so times working on the tempo of the entry, and his double toe four or five times — don't twist too early on the ice."
-SLOTS: athleteName "Leon"; moves[0].name "Single axel landings", description "Land single axels cleanly.", targetKind "reps", targetValue 5; moves[1].name "Double salchow", description "Work on tempo of the entry.", cue "Hold the entry tempo", targetKind "reps", targetValue 8; moves[2].name "Double toe", description "Double toe loop reps.", cue "Don't twist too early", targetKind "reps", targetValue 5.
+TRANSCRIPT: "Plan for Tobias. He needs single axel landings about five times every session, then double salchow eight or so times working on the tempo of the entry, and his double toe four or five times — don't twist too early on the ice."
+SLOTS: athleteName "Tobias"; moves[0].name "Single axel landings", description "Land single axels cleanly.", targetKind "reps", targetValue 5; moves[1].name "Double salchow", description "Work on tempo of the entry.", cue "Hold the entry tempo", targetKind "reps", targetValue 8; moves[2].name "Double toe", description "Double toe loop reps.", cue "Don't twist too early", targetKind "reps", targetValue 5.
 
 Cue = ONE short phrase. Why = ONE sentence. Don't lump everything into description. Every move needs a name.`;
 

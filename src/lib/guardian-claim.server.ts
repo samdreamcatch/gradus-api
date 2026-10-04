@@ -559,7 +559,7 @@ export async function getGuardianClaimContext(
 
 const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
-/** Small edit distance, used to catch nickname/typo variants like Leo / Leon. */
+/** Small edit distance, used to catch nickname/typo variants like Leo / Leopold. */
 function levenshtein(a: string, b: string): number {
   const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i += 1) {

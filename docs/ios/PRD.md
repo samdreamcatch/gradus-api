@@ -591,7 +591,7 @@ Decisions #36 and #37; supersedes the "no Apple Watch" line of #7. **Why.** Coac
 | Deploy a plan | athlete, coach | assign (`PATCH /plans/{id}`), activate (`POST .../status`), bench-conflict handling | spoken list of drafts, pick by tap, spoken confirmation; the 409 conflict is spoken, not shown. Athletes activate **their own** plan only |
 | Plan → audio | athlete, parent, coach | role-aware plan detail for all three | **new** `PlanNarration` in `GradusCore` (shared with iPhone): title, then every move with target, cue and why, in order (**full read**, #36); a player with next and previous; plan cache on the watch |
 | Pre-lesson briefing | coach | `GET /coach/athletes/{id}/briefing` (`narrative`), the 15-minute "up next" push | spoken **on tap only** (#36); a compact `GET /coach/up-next` so the wrist never pulls the whole roster |
-| Post-lesson wrap-up | coach | pending wrap-ups, voice edit on `activePlanId`, `POST /coach/wrap-ups` (`edited` / `redeployed` / `dismissed` / `did_not_happen`) | spoken prompt ("Nora's lesson just ended. What changed?"), record, spoken result, one-tap action |
+| Post-lesson wrap-up | coach | pending wrap-ups, voice edit on `activePlanId`, `POST /coach/wrap-ups` (`edited` / `redeployed` / `dismissed` / `did_not_happen`) | spoken prompt ("Greta's lesson just ended. What changed?"), record, spoken result, one-tap action |
 
 **Minors on the wrist.** Voice→plan is allowed for under-18 athletes under #37 (transcribe and discard). Everything else is role-gated as on iPhone.
 

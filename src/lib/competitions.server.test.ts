@@ -44,8 +44,8 @@ const COMP = { id: "c1", slug: "skate-detroit" };
 describe("recordAttendance", () => {
   it("records a parent with their single figure-skating athlete attached, by slug or by id", async () => {
     const { admin, inserted } = fakeAdmin({
-      parent_profiles: [{ id: "p1", user_id: "u1", first_name: "Pat", last_name: "Lee" }],
-      athletes: [{ id: "a1", parent_id: "p1", first_name: "Ava", last_name: "Lee" }],
+      parent_profiles: [{ id: "p1", user_id: "u1", first_name: "Corin", last_name: "Abbott" }],
+      athletes: [{ id: "a1", parent_id: "p1", first_name: "Maeve", last_name: "Abbott" }],
       athlete_guardians: [],
       coach_athlete_sports: [{ athlete_id: "a1", sport: "figure_skating" }],
       competitions: [COMP],
@@ -78,10 +78,10 @@ describe("recordAttendance", () => {
 
   it("returns ok: false for an unknown competition and leaves the athlete open when ambiguous", async () => {
     const { admin, inserted } = fakeAdmin({
-      parent_profiles: [{ id: "p1", user_id: "u1", first_name: "Pat", last_name: "Lee" }],
+      parent_profiles: [{ id: "p1", user_id: "u1", first_name: "Corin", last_name: "Abbott" }],
       athletes: [
-        { id: "a1", parent_id: "p1", first_name: "Ava", last_name: "Lee" },
-        { id: "a2", parent_id: "p1", first_name: "Bo", last_name: "Lee" },
+        { id: "a1", parent_id: "p1", first_name: "Maeve", last_name: "Abbott" },
+        { id: "a2", parent_id: "p1", first_name: "Bo", last_name: "Abbott" },
       ],
       athlete_guardians: [],
       coach_athlete_sports: [

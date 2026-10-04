@@ -33,7 +33,7 @@ describe("salvageSlots", () => {
   it("keeps good moves and drops only the malformed one", () => {
     const slots = salvageSlots({
       title: "Jump consistency",
-      athleteName: "Leon",
+      athleteName: "Tobias",
       moves: [
         { name: "Single axel", targetKind: "reps", targetValue: 10 },
         { description: "no name at all" },
@@ -66,7 +66,7 @@ describe("salvageSlots", () => {
 describe("slotWithRetries", () => {
   const ctx: ParseContext = {
     mode: "create",
-    transcript: "Plan for Leon, single axel five times",
+    transcript: "Plan for Tobias, single axel five times",
     athletes: [],
     library: [],
   };

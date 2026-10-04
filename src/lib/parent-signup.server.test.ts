@@ -117,7 +117,7 @@ describe("validateSignupCode", () => {
 describe("linkAthletesToCoach", () => {
   const input = {
     code: "COACHAAA",
-    athletes: [{ firstName: "Nora", lastName: "G", birthdate: "2015-01-01" }],
+    athletes: [{ firstName: "Greta", lastName: "G", birthdate: "2015-01-01" }],
   };
 
   it("refuses a full roster before creating any athlete rows", async () => {

@@ -91,7 +91,7 @@ describe("the batch schema", () => {
     expect(bad({})).toBe(true);
     expect(bad({ event: "page_view" })).toBe(false);
     expect(bad({ area: "billing" })).toBe(false);
-    expect(bad({ screen: "Nora's plan" })).toBe(false);
+    expect(bad({ screen: "Greta's plan" })).toBe(false);
     expect(bad({ durationMs: 31 * 60 * 1000 })).toBe(false);
     const many = Array.from({ length: 101 }, (_, i) => ({
       id: uuid(i + 1),
@@ -218,7 +218,7 @@ describe("recordAnalyticsBatch", () => {
   });
 
   it("refuses free text in the sport prop and version strings", () => {
-    expect(cleanProps("resource_open", { sport: "Nora's secret" })).toEqual({});
+    expect(cleanProps("resource_open", { sport: "Greta's secret" })).toEqual({});
     expect(cleanProps("resource_open", { sport: "figure_skating" })).toEqual({
       sport: "figure_skating",
     });

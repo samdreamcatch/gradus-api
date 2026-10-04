@@ -22,7 +22,7 @@ export interface DemoResult {
   protocol: SkaterProtocol;
 }
 
-const LEON_SHORT: SkaterProtocol = {
+const TOBIAS_SHORT: SkaterProtocol = {
   total: "48.62",
   elementsScore: "25.14",
   componentsScore: "23.48",
@@ -45,7 +45,7 @@ const LEON_SHORT: SkaterProtocol = {
   deductions: [],
 };
 
-const LEON_FREE: SkaterProtocol = {
+const TOBIAS_FREE: SkaterProtocol = {
   total: "78.15",
   elementsScore: "41.15",
   componentsScore: "38.00",
@@ -141,7 +141,7 @@ const DEMO_RESULTS: Record<string, DemoResult[]> = {
       protocol: JAMIE_FREE,
     },
   ],
-  [normalizeName("Leon Gillespie")]: [
+  [normalizeName("Tobias Fairbank")]: [
 
     {
       eventName: "Intermediate Men",
@@ -152,7 +152,7 @@ const DEMO_RESULTS: Record<string, DemoResult[]> = {
       placement: "3",
       segmentScore: "48.62",
       totalScore: "48.62",
-      protocol: LEON_SHORT,
+      protocol: TOBIAS_SHORT,
     },
     {
       eventName: "Intermediate Men",
@@ -163,7 +163,7 @@ const DEMO_RESULTS: Record<string, DemoResult[]> = {
       placement: "2",
       segmentScore: "78.15",
       totalScore: "126.77",
-      protocol: LEON_FREE,
+      protocol: TOBIAS_FREE,
     },
   ],
 };

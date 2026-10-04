@@ -66,14 +66,14 @@ describe("pushPayload", () => {
       pushPayload({
         type: "message",
         route: "rooms/r1",
-        title: "Coach Alyson",
+        title: "Coach Linnea",
         body: "Nice loop",
         threadId: "room:r1",
       }),
     ).toEqual({
       payload: {
         aps: {
-          alert: { title: "Coach Alyson", body: "Nice loop" },
+          alert: { title: "Coach Linnea", body: "Nice loop" },
           sound: "default",
           "thread-id": "room:r1",
         },

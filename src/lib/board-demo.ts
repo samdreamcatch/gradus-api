@@ -112,14 +112,14 @@ const A_ORDER: BoardSkater[] = [
     total: "56.44",
     place: "4",
   }),
-  skater(7, 12, "Juniper Hale", "Northwind SC", {
+  skater(7, 12, "Clementine Voss", "Northwind SC", {
     segScore: "62.41",
     total: "62.41",
     place: "1",
   }),
-  skater(8, 12, "Nora Donaldson", "Lakeshore SA"),
-  skater(9, 12, "Delphine Rocca", "Riverbend FSC"),
-  skater(10, 12, "Leon Gillespie", "Northwind SC"),
+  skater(8, 12, "Greta Halvorsen", "Lakeshore SA"),
+  skater(9, 12, "Annika Bergstrom", "Riverbend FSC"),
+  skater(10, 12, "Tobias Fairbank", "Northwind SC"),
   skater(11, 12, "Wren Delacroix", "Pinecrest SC"),
   skater(12, 12, "Thea Solberg", "Harborview FSC"),
 ];
@@ -132,7 +132,7 @@ const C_ORDER: BoardSkater[] = [
 ];
 
 const B_DONE: BoardSkater[] = [
-  skater(1, 6, "Isolde Faraday", "Northwind SC", { segScore: "38.92", total: "38.92", place: "1" }),
+  skater(1, 6, "Elsie Varga", "Northwind SC", { segScore: "38.92", total: "38.92", place: "1" }),
   skater(2, 6, "Jamie Gilmore", "Harborview FSC", {
     segScore: "35.10",
     total: "35.10",
@@ -202,7 +202,7 @@ const RINKS: BoardRink[] = [
     },
     justFinished: {
       event: "Pre-Juvenile Ladies Free Skate",
-      winner: { name: "Isolde Faraday", club: "Northwind SC", score: "38.92" },
+      winner: { name: "Elsie Varga", club: "Northwind SC", score: "38.92" },
     },
     alsoLive: [],
     dayEvents: 7,
@@ -265,7 +265,7 @@ const DAY_MIN = 60 * 24;
 
 /** Yesterday's finished event, so past-day standings are visible in the demo. */
 const YESTERDAY_RESULTS: BoardSkater[] = [
-  skater(1, 5, "Nora Lindgren", "Northwind SC", {
+  skater(1, 5, "Greta Lindgren", "Northwind SC", {
     segScore: "61.44",
     total: "61.44",
     place: "2",
@@ -275,7 +275,7 @@ const YESTERDAY_RESULTS: BoardSkater[] = [
     total: "64.90",
     place: "1",
   }),
-  skater(3, 5, "Priya Sandhu", "Pinecrest SC", { segScore: "58.31", total: "58.31", place: "3" }),
+  skater(3, 5, "Ingrid Sandhu", "Pinecrest SC", { segScore: "58.31", total: "58.31", place: "3" }),
   skater(4, 5, "Tamsin Whitlock", "Riverbend FSC", {
     segScore: "52.07",
     total: "52.07",

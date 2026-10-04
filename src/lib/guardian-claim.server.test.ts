@@ -217,14 +217,14 @@ const MINE_ID = "22222222-2222-4222-8222-222222222222";
 const OTHER_ATHLETE_ID = "33333333-3333-4333-8333-333333333333";
 
 const COACH = { id: "coach-1", user_id: "coach-u", first_name: "Sam", last_name: "Ortiz" };
-const PARENT = { id: "parent-1", user_id: USER, first_name: "Pat", last_name: "Lee" };
+const PARENT = { id: "parent-1", user_id: USER, first_name: "Corin", last_name: "Abbott" };
 const OTHER_PARENT = { id: "parent-2", user_id: OTHER_USER, first_name: "Jo", last_name: "Ng" };
 
 function pendingAthlete(over: Row = {}): Row {
   return {
     id: ATHLETE_ID,
     first_name: "Leo",
-    last_name: "Lee",
+    last_name: "Abbott",
     birthdate: "2014-05-01",
     parent_id: null,
     user_id: null,
@@ -259,7 +259,7 @@ describe("getGuardianClaimSummary", () => {
     const out = await getGuardianClaimSummary(admin, { token: TOKEN });
     expect(out).toEqual({
       athleteFirstName: "Leo",
-      athleteLastName: "Lee",
+      athleteLastName: "Abbott",
       coachName: "Sam Ortiz",
       needsBirthdate: false,
       inviteRecipient: "guardian",
@@ -281,7 +281,7 @@ describe("getGuardianClaimSummary", () => {
     const out = await getGuardianClaimSummary(admin, { token: TOKEN });
     expect(out).toEqual({
       athleteFirstName: "Leo",
-      athleteLastName: "Lee",
+      athleteLastName: "Abbott",
       coachName: null,
       needsBirthdate: true,
       inviteRecipient: "guardian",
@@ -387,12 +387,12 @@ describe("claimGuardianAthlete", () => {
     const { admin, tables, inserted } = fakeAdmin({ athletes: [pendingAthlete()] });
     const out = await claimGuardianAthlete(admin, USER, {
       token: TOKEN,
-      firstName: "Pat",
-      lastName: "Lee",
+      firstName: "Corin",
+      lastName: "Abbott",
     });
     expect(out).toEqual({ ok: true, athleteFirstName: "Leo" });
     expect(inserted.parent_profiles).toEqual([
-      { id: expect.stringMatching(/^row_/), user_id: USER, first_name: "Pat", last_name: "Lee" },
+      { id: expect.stringMatching(/^row_/), user_id: USER, first_name: "Corin", last_name: "Abbott" },
     ]);
     const athlete = tables.athletes![0]!;
     expect(athlete.parent_id).toBe(inserted.parent_profiles![0]!.id);
@@ -415,12 +415,12 @@ describe("claimGuardianAthlete", () => {
     });
     await claimGuardianAthlete(admin, USER, {
       token: TOKEN,
-      firstName: "Patricia",
-      lastName: "Lee",
+      firstName: "Corinne",
+      lastName: "Abbott",
       birthdate: "2015-02-03",
     });
     expect(inserted.parent_profiles).toBeUndefined();
-    expect(tables.parent_profiles![0]).toMatchObject({ first_name: "Patricia", last_name: "Lee" });
+    expect(tables.parent_profiles![0]).toMatchObject({ first_name: "Corinne", last_name: "Abbott" });
     expect(tables.athletes![0]).toMatchObject({ parent_id: PARENT.id, birthdate: "2015-02-03" });
   });
 
@@ -534,7 +534,7 @@ describe("claimGuardianAthlete", () => {
             id: MINE_ID,
             user_id: USER,
             first_name: "Kid",
-            last_name: "Lee",
+            last_name: "Abbott",
             birthdate,
             self_managed: false,
             parent_id: OTHER_PARENT.id,
@@ -558,7 +558,7 @@ describe("claimGuardianAthlete", () => {
     const adult = fakeAdmin({
       athletes: [
         pendingAthlete(),
-        { id: MINE_ID, user_id: USER, first_name: "Me", last_name: "Lee", birthdate: yearsAgo(30) },
+        { id: MINE_ID, user_id: USER, first_name: "Me", last_name: "Abbott", birthdate: yearsAgo(30) },
       ],
     });
     const out = await claimGuardianAthlete(
@@ -577,7 +577,7 @@ describe("claimGuardianAthlete", () => {
           id: MINE_ID,
           user_id: USER,
           first_name: "Kid",
-          last_name: "Lee",
+          last_name: "Abbott",
           birthdate: yearsAgo(15),
         },
       ],
@@ -600,7 +600,7 @@ describe("resendGuardianInvite", () => {
       expect(sent).toEqual([
         {
           to: "guardian@example.com",
-          athleteName: "Leo Lee",
+          athleteName: "Leo Abbott",
           coachName: "Sam Ortiz",
           token: TOKEN,
           recipient: "guardian",
@@ -834,7 +834,7 @@ describe("getGuardianClaimContext", () => {
     const { admin } = fakeAdmin({ parent_profiles: [PARENT] });
     expect(await getGuardianClaimContext(admin, USER)).toEqual({
       hasParentProfile: true,
-      parentName: "Pat Lee",
+      parentName: "Corin Abbott",
     });
   });
 
@@ -853,22 +853,22 @@ describe("getGuardianClaimMergeOptions", () => {
   it("ranks the caller's own athletes exact → close → other, then by name", async () => {
     const { admin } = fakeAdmin({
       athletes: [
-        pendingAthlete({ first_name: "Leo", last_name: "Lee" }),
-        { id: "m1", parent_id: PARENT.id, first_name: "Maxwell", last_name: "Lee" },
-        { id: "m2", parent_id: PARENT.id, first_name: "Leon", last_name: "Lee" },
-        { id: "m3", parent_id: PARENT.id, first_name: "LEO ", last_name: " lee" },
-        { id: "m4", parent_id: PARENT.id, first_name: "Ann", last_name: "Lee" },
-        { id: "other", parent_id: OTHER_PARENT.id, first_name: "Leo", last_name: "Lee" },
+        pendingAthlete({ first_name: "Leo", last_name: "Abbott" }),
+        { id: "m1", parent_id: PARENT.id, first_name: "Maxwell", last_name: "Abbott" },
+        { id: "m2", parent_id: PARENT.id, first_name: "Leopold", last_name: "Abbott" },
+        { id: "m3", parent_id: PARENT.id, first_name: "LEO ", last_name: " abbott" },
+        { id: "m4", parent_id: PARENT.id, first_name: "Ann", last_name: "Abbott" },
+        { id: "other", parent_id: OTHER_PARENT.id, first_name: "Leo", last_name: "Abbott" },
       ],
       parent_profiles: [PARENT, OTHER_PARENT],
     });
     const out = await getGuardianClaimMergeOptions(admin, USER, { token: TOKEN });
     expect(out).toEqual({
       options: [
-        { athleteId: "m3", name: "LEO   lee", rank: "exact" },
-        { athleteId: "m2", name: "Leon Lee", rank: "close" },
-        { athleteId: "m4", name: "Ann Lee", rank: "other" },
-        { athleteId: "m1", name: "Maxwell Lee", rank: "other" },
+        { athleteId: "m3", name: "LEO   abbott", rank: "exact" },
+        { athleteId: "m2", name: "Leopold Abbott", rank: "close" },
+        { athleteId: "m4", name: "Ann Abbott", rank: "other" },
+        { athleteId: "m1", name: "Maxwell Abbott", rank: "other" },
       ],
     });
   });
@@ -903,7 +903,7 @@ describe("mergeGuardianClaim", () => {
     return {
       athletes: [
         pendingAthlete(),
-        { id: MINE_ID, parent_id: PARENT.id, first_name: "Leo", last_name: "Lee" },
+        { id: MINE_ID, parent_id: PARENT.id, first_name: "Leo", last_name: "Abbott" },
         { id: OTHER_ATHLETE_ID, parent_id: OTHER_PARENT.id, first_name: "X", last_name: "Y" },
       ],
       parent_profiles: [PARENT, OTHER_PARENT],

@@ -296,7 +296,7 @@ describe("the profile in each prompt", () => {
     const admin = fakeAdmin({
       coach_profiles: { id: "c1", first_name: "Mia", last_name: "" },
       coach_athletes: { athlete_id: "a1" },
-      athletes: { first_name: "Nora" },
+      athletes: { first_name: "Greta" },
       pre_lesson_briefings: { generated_at: NOW.toISOString() },
     });
     const prompts: string[] = [];
@@ -322,7 +322,7 @@ describe("the profile in each prompt", () => {
       {
         coach_profiles: { id: "c1" },
         coach_athletes: { athlete_id: "a1" },
-        athletes: { first_name: "Nora" },
+        athletes: { first_name: "Greta" },
       },
       {
         plan_sessions: [
@@ -378,7 +378,7 @@ describe("the profile in each prompt", () => {
             year: 2026,
             ends_on: "2026-09-20",
           },
-          athletes: { first_name: "Nora" },
+          athletes: { first_name: "Greta" },
           plans: { id: "p-new" },
         },
         {

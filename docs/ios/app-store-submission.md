@@ -192,7 +192,7 @@ Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3
 - **iPhone 6.9" (required):** 1320 × 2868 portrait. The automated simulator (iPhone 17 Pro Max) captures exactly this size. 3–10 per locale; Apple scales these for smaller iPhones.
 - **iPad 13" (required while the app runs on iPad):** 2064 × 2752. `TARGETED_DEVICE_FAMILY` is `1,2` today, so App Store Connect will require iPad screenshots. **Decision for Mariah:** keep iPad (PRD §12 #12 chose "works, not optimized") and capture iPad screenshots, or ship iPhone-only for 1.0.
 - **Proposed set (6.9"):** coach roster/schedule · plan editor with voice capture · parent dashboard with goals · athlete practice timer (with the Live Activity) · messages thread · Live Board following a skater.
-- **Data:** capture from the marketing demo mode (gradus-ios PR #31, still open and stacked on an old branch). It needs rebasing onto `main` first. Mock data from `-GradusMock` is the fallback; neither shows real users.
+- **Data:** capture from the `-GradusMock` data with the harness in gradus-ios `Tools/AppStoreScreenshots` (`run.sh` writes both sizes, clean status bar). *2026-10-04:* every person in mock data is invented; the founders' and their families' real names were removed from the mocks (decision: real people never appear in mock, demo, test or screenshot data). Do **not** use gradus-ios PR #31's demo mode: it uses real names and is to be closed.
 - App Preview video: optional; skip for 1.0.
 
 ---

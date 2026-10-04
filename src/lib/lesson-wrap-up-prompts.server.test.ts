@@ -89,7 +89,7 @@ function baseTables(overrides: Partial<Record<string, Row[]>> = {}): Record<stri
     lesson_slot_overrides: [],
     lesson_wrap_ups: [],
     coach_profiles: [{ id: "coach-1", user_id: "coach-user-1" }],
-    athletes: [{ id: "athlete-1", first_name: "Nora", last_name: "Donaldson" }],
+    athletes: [{ id: "athlete-1", first_name: "Greta", last_name: "Halvorsen" }],
     device_tokens: [{ user_id: "coach-user-1", token: "coach-tok", platform: "ios" }],
     ...overrides,
   };
@@ -109,7 +109,7 @@ describe("computeLessonWrapUpPrompts", () => {
       v: 1,
     });
     expect((sent[0].payload.aps as { alert: { body: string } }).alert.body).toContain(
-      "Nora Donaldson",
+      "Greta Halvorsen",
     );
     expect(sent[0].collapseId).toBe("wrapup:slot-1:2026-09-15");
     expect(recorded).toHaveLength(1);

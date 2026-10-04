@@ -11,13 +11,13 @@
     { "name": "Edge pulls", "category": "Skating skills" },
     { "name": "Spiral sequence", "category": "Skating skills" }
   ],
-  "athletes": ["Leon Gillespie", "Jamie Carter", "Sarah Nguyen"],
+  "athletes": ["Tobias Fairbank", "Jamie Carter", "Sarah Nguyen"],
   "cases": [
     {
       "id": "clean-multi",
       "mode": "create",
-      "expect": { "minMoves": 4, "athlete": "Leon", "title": true },
-      "transcript": "Okay, new plan for Leon. Let's call it Fall jump consistency. I want single axel landings five times every session, then double salchow eight times working on the tempo of the entry, double toe loop five times, and finish with camel spin for two minutes holding the position."
+      "expect": { "minMoves": 4, "athlete": "Tobias", "title": true },
+      "transcript": "Okay, new plan for Tobias. Let's call it Fall jump consistency. I want single axel landings five times every session, then double salchow eight times working on the tempo of the entry, double toe loop five times, and finish with camel spin for two minutes holding the position."
     },
     {
       "id": "rambling-self-correction",
@@ -53,13 +53,13 @@
       "id": "cut-off-midsentence",
       "mode": "create",
       "expect": { "minMoves": 1 },
-      "transcript": "Alright for Leon, start with eight double salchows, keep the shoulders quiet, and then after that we should probably do the"
+      "transcript": "Alright for Tobias, start with eight double salchows, keep the shoulders quiet, and then after that we should probably do the"
     },
     {
       "id": "long-ten-move",
       "mode": "create",
-      "expect": { "minMoves": 7, "athlete": "Leon" },
-      "transcript": "Big session plan for Leon this week. Warm up with backward stroking, five minutes, deep knee bend. Then edge pulls, twenty each side, push from the ankle. Three-turn sequence, twelve reps, quiet upper body. Single axel, ten landings, check out strong. Double salchow, eight, hold the entry tempo. Double toe loop, six, don't twist too early. Camel spin, six entries, reach through the free leg. Sit spin, six, sit lower than feels comfortable. Layback spin, four, open the shoulders. And finish with a spiral sequence, two minutes, hold each position five seconds."
+      "expect": { "minMoves": 7, "athlete": "Tobias" },
+      "transcript": "Big session plan for Tobias this week. Warm up with backward stroking, five minutes, deep knee bend. Then edge pulls, twenty each side, push from the ankle. Three-turn sequence, twelve reps, quiet upper body. Single axel, ten landings, check out strong. Double salchow, eight, hold the entry tempo. Double toe loop, six, don't twist too early. Camel spin, six entries, reach through the free leg. Sit spin, six, sit lower than feels comfortable. Layback spin, four, open the shoulders. And finish with a spiral sequence, two minutes, hold each position five seconds."
     },
     {
       "id": "target-only-no-cues",

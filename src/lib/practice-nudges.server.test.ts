@@ -98,7 +98,7 @@ function household(extra: Record<string, Row[]> = {}) {
   return {
     athlete_lesson_slots: [SATURDAY_SLOT],
     athletes: [
-      { id: "athlete-1", user_id: "athlete-user", parent_id: "parent-1", first_name: "Nora" },
+      { id: "athlete-1", user_id: "athlete-user", parent_id: "parent-1", first_name: "Greta" },
     ],
     parent_profiles: [{ id: "parent-1", user_id: "parent-user", subscription_status: null }],
     plans: [{ athlete_id: "athlete-1", kind: "plan", status: "active" }],
@@ -152,7 +152,7 @@ describe("computePracticeNudges", () => {
         route: "plans",
         type: "practice_nudge",
         title: "Time to practice?",
-        body: "It's been 3 days since Nora's lesson. Log a practice session to keep their plan moving.",
+        body: "It's been 3 days since Greta's lesson. Log a practice session to keep their plan moving.",
       },
     ]);
   });
@@ -341,7 +341,7 @@ describe("computePracticeNudges", () => {
             id: "athlete-1",
             user_id: "athlete-user",
             parent_id: "parent-1",
-            first_name: "Nora",
+            first_name: "Greta",
             account_state: "paused",
           },
         ],
@@ -392,7 +392,7 @@ describe("computePracticeNudges", () => {
   it("nudges only the parent when the athlete has no login of their own", async () => {
     const { admin } = fakeDb(
       household({
-        athletes: [{ id: "athlete-1", user_id: null, parent_id: "parent-1", first_name: "Nora" }],
+        athletes: [{ id: "athlete-1", user_id: null, parent_id: "parent-1", first_name: "Greta" }],
       }),
     );
     const { push, pushes } = recordingPush();

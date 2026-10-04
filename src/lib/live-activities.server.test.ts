@@ -128,7 +128,7 @@ function skater(start: number, name: string, segScore = ""): BoardSkater {
 function payloadWith(done: number, status: "live" | "final" = "live"): BoardPayload {
   const results = [
     skater(1, "Ava Reyes", done >= 1 ? "60.10" : ""),
-    skater(2, "Nora Donaldson", done >= 2 ? "62.41" : ""),
+    skater(2, "Greta Halvorsen", done >= 2 ? "62.41" : ""),
     skater(3, "Ben Ito", done >= 3 ? "58.00" : ""),
     skater(4, "Mia Chen", done >= 4 ? "55.30" : ""),
   ];
@@ -157,7 +157,7 @@ function payloadWith(done: number, status: "live" | "final" = "live"): BoardPayl
 
 const NOW = Date.UTC(2026, 8, 19, 15, 0, 30);
 const NOW_SEC = Math.floor(NOW / 1000);
-const NORA_KEY = "winter|ev1|nora donaldson";
+const GRETA_KEY = "winter|ev1|greta halvorsen";
 const ON_ICE = stateFingerprint({
   lane: "onIce",
   startPosition: 2,
@@ -171,14 +171,14 @@ const deps = (send: SendFn) => ({ config, send, now: () => NOW });
 
 describe("planActivities", () => {
   it("mirrors the app's planner: live events only, ranked by lane, keyed by slug|file|normalized name", () => {
-    const matches = findMySkaters(payloadWith(1), ["nora donaldson", "Mia Chen", "Ava Reyes"]);
+    const matches = findMySkaters(payloadWith(1), ["greta halvorsen", "Mia Chen", "Ava Reyes"]);
     const plans = planActivities(
       matches,
       { slug: "winter", name: "Winter Classic", generatedAt: "2026-09-19T15:00:00.000Z" },
       NOW,
     );
     expect(plans.map((p) => [p.attributes.activityKey, p.state.lane])).toEqual([
-      [NORA_KEY, "onIce"], // start 2, one score posted → ahead 0
+      [GRETA_KEY, "onIce"], // start 2, one score posted → ahead 0
       ["winter|ev1|ava reyes", "justScored"], // scored with ahead -1
       ["winter|ev1|mia chen", "waiting"],
     ]);
@@ -194,7 +194,7 @@ describe("planActivities", () => {
     expect(plans[1].state.place).toBe("1");
     expect(
       planActivities(
-        findMySkaters(payloadWith(0, "final"), ["Nora Donaldson"]),
+        findMySkaters(payloadWith(0, "final"), ["Greta Halvorsen"]),
         { slug: "w", name: "W", generatedAt: null },
         NOW,
       ),
@@ -215,8 +215,8 @@ describe("syncBoardLiveActivities", () => {
   const base = () => ({
     competitions: [{ id: "c1", slug: "winter", name: "Winter Classic" }],
     board_follows: [
-      { user_id: "u1", skater_name: "Nora Donaldson", competition_slug: "winter" },
-      { user_id: null, skater_name: "Nora Donaldson", competition_slug: "winter", device_id: "d" },
+      { user_id: "u1", skater_name: "Greta Halvorsen", competition_slug: "winter" },
+      { user_id: null, skater_name: "Greta Halvorsen", competition_slug: "winter", device_id: "d" },
     ],
     live_activity_tokens: [
       { user_id: "u1", token: "start-tok", kind: "board_start", activity_key: null },
@@ -226,7 +226,7 @@ describe("syncBoardLiveActivities", () => {
   const openSession = (lastState = ON_ICE): Row => ({
     user_id: "u1",
     competition_slug: "winter",
-    activity_key: NORA_KEY,
+    activity_key: GRETA_KEY,
     last_state: lastState,
     started_at: new Date(NOW - 60_000).toISOString(),
     ended_at: null,
@@ -247,22 +247,22 @@ describe("syncBoardLiveActivities", () => {
     expect(aps.event).toBe("start");
     expect(aps["attributes-type"]).toBe("BoardActivityAttributes");
     expect(aps.attributes).toEqual({
-      activityKey: NORA_KEY,
+      activityKey: GRETA_KEY,
       slug: "winter",
       competitionName: "Winter Classic",
-      skaterName: "Nora Donaldson",
+      skaterName: "Greta Halvorsen",
       eventName: "Juvenile Girls",
       segment: "Free Skate",
       rink: "Main Rink",
     });
     expect((aps["content-state"] as { lane: string }).lane).toBe("onIce");
     expect(aps["stale-date"]).toBe(NOW_SEC + 180);
-    expect(aps.alert).toEqual({ title: "Nora: On the ice", body: "Juvenile Girls · Main Rink" });
+    expect(aps.alert).toEqual({ title: "Greta: On the ice", body: "Juvenile Girls · Main Rink" });
     expect(aps["input-push-token"]).toBe(1);
     expect(sessions).toHaveLength(1);
     expect(sessions[0]).toMatchObject({
       user_id: "u1",
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
       competition_slug: "winter",
       ended_at: null,
     });
@@ -317,7 +317,7 @@ describe("syncBoardLiveActivities", () => {
       user_id: "u1",
       token: "upd-tok",
       kind: "board_update",
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
     });
     const { admin, sessions } = fakeAdmin(fixtures);
     const { send, sent } = sendSpy();
@@ -348,7 +348,7 @@ describe("syncBoardLiveActivities", () => {
       user_id: "u1",
       token: "upd-tok",
       kind: "board_update",
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
     });
     tracked.live_activity_sessions = [openSession()];
     const { send, sent } = sendSpy();
@@ -361,7 +361,7 @@ describe("syncBoardLiveActivities", () => {
         deps(send),
       ),
     ).toMatchObject({ updated: 0 });
-    // Nora scores: justScored → one update, urgent.
+    // Greta scores: justScored → one update, urgent.
     const { admin, sessions } = fakeAdmin(tracked);
     const report = await syncBoardLiveActivities(admin, { id: "c1" }, payloadWith(2), deps(send));
     expect(report).toEqual({ followers: 1, started: 0, adopted: 0, updated: 1, ended: 0 });
@@ -378,7 +378,7 @@ describe("syncBoardLiveActivities", () => {
       done: 2,
     });
     expect(sessions[0]).toMatchObject({
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
       ended_at: null,
       last_state: stateFingerprint({
         lane: "justScored",
@@ -399,7 +399,7 @@ describe("syncBoardLiveActivities", () => {
       user_id: "u1",
       token: "upd-tok",
       kind: "board_update",
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
     });
     tracked.live_activity_sessions = [
       openSession(
@@ -430,7 +430,7 @@ describe("syncBoardLiveActivities", () => {
     expect(aps["dismissal-date"]).toBe(NOW_SEC + 15 * 60);
     expect(aps["content-state"]).toMatchObject({ lane: "ended", score: "62.41", startPosition: 2 });
     expect(sessions[0]).toMatchObject({
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
       ended_at: new Date(NOW).toISOString(),
     });
   });
@@ -442,7 +442,7 @@ describe("syncBoardLiveActivities", () => {
       user_id: "u1",
       token: "upd-tok",
       kind: "board_update",
-      activity_key: NORA_KEY,
+      activity_key: GRETA_KEY,
     });
     unfollowed.live_activity_sessions = [openSession()];
     const { send, sent } = sendSpy();
@@ -535,7 +535,7 @@ describe("registerLiveActivityToken", () => {
     );
     await registerLiveActivityToken(
       { userId: "u1", admin: store.admin },
-      { token: "ijklmnop", kind: "board_update", activityKey: NORA_KEY },
+      { token: "ijklmnop", kind: "board_update", activityKey: GRETA_KEY },
     );
     await expect(
       registerLiveActivityToken(

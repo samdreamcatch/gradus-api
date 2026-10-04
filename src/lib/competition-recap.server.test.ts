@@ -146,13 +146,13 @@ function fakeAdmin(seed: Record<string, Row[]>) {
   };
 }
 
-const PARENT = { id: "p1", user_id: "parent-u", first_name: "Pat", last_name: "Lee" };
+const PARENT = { id: "p1", user_id: "parent-u", first_name: "Corin", last_name: "Abbott" };
 const ATHLETE = {
   id: "a1",
   parent_id: PARENT.id,
   user_id: "athlete-u",
-  first_name: "Ava",
-  last_name: "Lee",
+  first_name: "Maeve",
+  last_name: "Abbott",
 };
 const COACH = { id: "co1", user_id: "coach-u", first_name: "Coach", last_name: "K" };
 

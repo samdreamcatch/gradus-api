@@ -73,8 +73,8 @@ describe("roomsDigest", () => {
 
 describe("toMessageDTO", () => {
   const participants: RoomParticipant[] = [
-    { userId: "coach-u", role: "coach", firstName: "Alyson", lastName: "S" },
-    { userId: "ath-u", role: "athlete", firstName: "Ava", lastName: "L" },
+    { userId: "coach-u", role: "coach", firstName: "Linnea", lastName: "C" },
+    { userId: "ath-u", role: "athlete", firstName: "Maeve", lastName: "A" },
   ];
   const base = {
     id: "m1",
@@ -93,7 +93,7 @@ describe("toMessageDTO", () => {
 
   it("resolves the sender by user id, then by role", () => {
     const dto = toMessageDTO(base, "r1", participants, [], null, null);
-    expect(dto.senderFirstName).toBe("Alyson");
+    expect(dto.senderFirstName).toBe("Linnea");
     expect(dto.roomId).toBe("r1");
     expect(dto.senderDeletedAt).toBeNull();
     const byRole = toMessageDTO(
@@ -129,7 +129,7 @@ describe("toMessageDTO", () => {
         null,
       ).transcript,
     ).toBe("Nice loop.");
-    expect(byRole.senderFirstName).toBe("Ava");
+    expect(byRole.senderFirstName).toBe("Maeve");
   });
 
   it("blanks a deleted sender and stamps senderDeletedAt from the message", () => {

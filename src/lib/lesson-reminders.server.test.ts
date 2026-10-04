@@ -144,7 +144,7 @@ describe("computeLessonReminders", () => {
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
@@ -180,7 +180,7 @@ describe("computeLessonReminders", () => {
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
     });
 
     const first = await computeLessonReminders({ admin }, now);
@@ -230,7 +230,7 @@ describe("computeLessonReminders", () => {
         },
       ],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
@@ -242,7 +242,7 @@ describe("computeLessonReminders", () => {
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
       deviceTokens: [],
     });
     const result = await computeLessonReminders({ admin }, now);
@@ -260,7 +260,7 @@ describe("computeLessonReminders", () => {
       const { admin } = fakeDb({
         slots: [slot],
         coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-        athletes: [{ id: "athlete-1", first_name: "Nora" }],
+        athletes: [{ id: "athlete-1", first_name: "Greta" }],
         deviceTokens: [{ user_id: "coach-user-1", token: "coach-tok", platform: "ios" }],
       });
       await computeLessonReminders({ admin }, now);
@@ -283,7 +283,7 @@ describe("computeLessonReminders", () => {
     const { admin } = fakeDb({
       slots: [{ ...BASE_SLOT, start_minute: 9 * 60 + 15 }],
       coaches: [{ id: "coach-1", user_id: "coach-user-1" }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
       deviceTokens: [
         { user_id: "coach-user-1", token: "coach-tok", platform: "ios" },
         { user_id: "athlete-user-1", token: "athlete-tok", platform: "ios" },
@@ -326,7 +326,7 @@ describe("computeLessonReminders", () => {
         token: "coach-tok",
         route: "coach/roster/briefing/athlete-1",
         alert: {
-          title: "Nora is up next",
+          title: "Greta is up next",
           body: "See what they've been practicing since you last coached them.",
         },
         collapseId: "lesson:slot-1:" + nowInRinkTz(now).dateIso + ":coach",
@@ -375,7 +375,7 @@ describe("computeLessonReminders", () => {
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
@@ -409,7 +409,7 @@ describe("computeLessonReminders", () => {
     const { admin } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
     });
     const result = await computeLessonReminders({ admin }, now);
     expect(result).toEqual({ scanned: 1, wouldSend: 1, sent: 0 });
@@ -427,7 +427,7 @@ describe("computeLessonReminders", () => {
     const { admin, sent } = fakeDb({
       slots: [slot],
       coaches: [{ id: "coach-1", user_id: null }],
-      athletes: [{ id: "athlete-1", first_name: "Nora" }],
+      athletes: [{ id: "athlete-1", first_name: "Greta" }],
       // Already recorded for tomorrow's date — must be skipped, not
       // re-sent, and must NOT be mistaken for a dedupe row on tonight's date.
       alreadySent: [

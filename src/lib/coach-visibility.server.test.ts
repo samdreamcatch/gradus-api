@@ -195,8 +195,8 @@ function fakeAdmin(seed: Record<string, Row[]>, emails: Record<string, string | 
 const PAYER = {
   id: "p1",
   user_id: "payer-u",
-  first_name: "Pat",
-  last_name: "Lee",
+  first_name: "Corin",
+  last_name: "Abbott",
   subscription_status: "active",
   current_period_end: null,
 };
@@ -212,7 +212,7 @@ const CO = {
   id: "p3",
   user_id: "co-u",
   first_name: "Cam",
-  last_name: "Lee",
+  last_name: "Abbott",
   subscription_status: null,
   current_period_end: null,
 };
@@ -220,7 +220,7 @@ const CO = {
 const A1 = {
   id: "a1",
   first_name: "Jamie",
-  last_name: "Lee",
+  last_name: "Abbott",
   parent_id: "p1",
   created_at: "2026-01-01",
 };
@@ -307,7 +307,7 @@ describe("listCoachVisibility", () => {
         {
           id: "a1",
           firstName: "Jamie",
-          lastName: "Lee",
+          lastName: "Abbott",
           locked: false,
           coaches: [
             {
@@ -403,7 +403,7 @@ describe("listCoachVisibility", () => {
     const { admin } = seed({ parent_profiles: [lapsedPayer, NO_PLAN, CO] });
     const out = await listCoachVisibility(admin, "co-u");
     expect(out.athletes).toEqual([
-      { id: "a1", firstName: "Jamie", lastName: "Lee", locked: true, coaches: [] },
+      { id: "a1", firstName: "Jamie", lastName: "Abbott", locked: true, coaches: [] },
     ]);
   });
 
@@ -500,8 +500,8 @@ describe("setCoachVisibility", () => {
       to: "tami@example.com",
       coachName: "Tami Taylor",
       otherCoachName: "David Wallace",
-      athleteName: "Jamie Lee",
-      parentName: "Pat Lee",
+      athleteName: "Jamie Abbott",
+      parentName: "Corin Abbott",
     });
   });
 
@@ -634,7 +634,7 @@ describe("listMyCoachVisibility", () => {
         {
           id: "l1",
           athleteId: "a1",
-          athleteName: "Jamie Lee",
+          athleteName: "Jamie Abbott",
           coachName: "Tami Taylor",
           myStatus: "pending",
           theirStatus: "accepted",
@@ -644,7 +644,7 @@ describe("listMyCoachVisibility", () => {
         {
           id: "l2",
           athleteId: "a1",
-          athleteName: "Jamie Lee",
+          athleteName: "Jamie Abbott",
           coachName: "Coach",
           myStatus: "accepted",
           theirStatus: "accepted",

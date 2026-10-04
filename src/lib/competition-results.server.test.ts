@@ -144,7 +144,7 @@ function fakeAdmin(seed: Record<string, Row[]>) {
 }
 
 const COACH = { id: "co1", user_id: "coach-u" };
-const ATHLETE = { id: "a1", first_name: "Ava", last_name: "Lee" };
+const ATHLETE = { id: "a1", first_name: "Maeve", last_name: "Abbott" };
 const ROSTER = { coach_id: COACH.id, athlete_id: ATHLETE.id };
 
 describe("listFinishedCompetitions", () => {
@@ -351,7 +351,7 @@ describe("listCoachRosterForCompetition", () => {
       ],
     });
     const out = await listCoachRosterForCompetition(admin, COACH.user_id, { competitionId: "c1" });
-    expect(out).toEqual([{ athleteId: ATHLETE.id, name: "Ava Lee", linked: true }]);
+    expect(out).toEqual([{ athleteId: ATHLETE.id, name: "Maeve Abbott", linked: true }]);
   });
 });
 

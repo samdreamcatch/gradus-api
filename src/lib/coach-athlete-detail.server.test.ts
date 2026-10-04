@@ -154,11 +154,11 @@ function scenario(s: Scenario = {}) {
       athletes: [
         {
           id: ATHLETE_ID,
-          first_name: "Ava",
-          last_name: "Lee",
+          first_name: "Maeve",
+          last_name: "Abbott",
           self_managed: false,
           parent_id: PARENT_ID,
-          parent_profiles: { first_name: "Pat", last_name: "Lee" },
+          parent_profiles: { first_name: "Corin", last_name: "Abbott" },
         },
       ],
       parent_profiles: [
