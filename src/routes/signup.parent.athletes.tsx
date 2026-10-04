@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PromoCodeField } from "@/components/signup/promo-code-field";
 import { savePendingPromoCode } from "@/lib/pending-promo-code";
 import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
+import { DirectNotice } from "@/components/consent/direct-notice";
 import { getMyParentVerification } from "@/lib/guardian-verification.functions";
 
 import {
@@ -342,6 +343,15 @@ function ParentAthletesPage() {
               <Plus className="size-4" /> Add another athlete
             </Button>
           </div>
+
+          <DirectNotice
+            athleteName={
+              athletes.length > 1
+                ? "your athletes"
+                : athletes[0]?.firstName.trim() || "your athlete"
+            }
+            consentAct
+          />
 
           <Collapsible open={codesOpen} onOpenChange={setCodesOpen} className="space-y-3">
             <CollapsibleTrigger asChild>

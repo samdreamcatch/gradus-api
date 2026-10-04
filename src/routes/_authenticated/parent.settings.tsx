@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
+import { DirectNotice } from "@/components/consent/direct-notice";
 import {
   LogOut,
   Mail,
@@ -1797,6 +1798,7 @@ function AddAthleteForm({ onDone }: { onDone: () => void }) {
           <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
         </div>
       </div>
+      <DirectNotice className="mt-3" athleteName={firstName.trim() || null} />
       <div className="mt-3 flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={onDone}>
           Cancel

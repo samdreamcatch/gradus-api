@@ -89,6 +89,8 @@ export const GuardianInviteEmail = ({
               <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
               <Text style={{ ...text, marginTop: "20px", fontSize: "13px" }}>
                 {parse(renderTemplateString(c.notice, vars))}
+                {/* Only a 13–17 self-sign-up is swept after three months; a coach-added athlete is not. */}
+                {coachName ? null : " " + renderTemplateString(c.noticeUnclaimed, vars)}
               </Text>
               <Hr style={divider} />
               <Text style={footer}>

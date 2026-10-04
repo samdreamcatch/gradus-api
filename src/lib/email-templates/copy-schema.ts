@@ -5,6 +5,11 @@
 // Variables in copy strings use {curlyBraces}. The renderer substitutes them
 // from real send data; unknown variables render as literal text.
 
+import {
+  DIRECT_NOTICE_EMAIL_DEFAULT,
+  DIRECT_NOTICE_EMAIL_UNCLAIMED_DEFAULT,
+} from "@/lib/consent/direct-notice";
+
 export type SlotKind = "text" | "textarea";
 
 export interface Slot {
@@ -262,7 +267,15 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
       {
         key: "notice",
-        label: "Direct notice (COPPA: what we collect, why, and the deletion window)",
+        label:
+          "Direct notice (COPPA: what we collect, why, who processes it, retention, and the deletion windows)",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "noticeUnclaimed",
+        label:
+          "Direct notice, extra line only when the athlete signed up themselves (the three-month deletion)",
         kind: "textarea",
         variables: GUARDIAN_INVITE_VARS,
       },
@@ -282,8 +295,8 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       ctaLabel: "See {athleteName}'s training",
       fallbackHelp: "Or paste this link into your browser:",
       signOff: "— The Gradus team",
-      notice:
-        "What Gradus keeps for {athleteName}: their name, date of birth, a username, practice logs, goals, and text messages with their coach, which you can always read. We use it only to run their training, never for advertising, and our service providers are listed in our privacy policy at {siteUrl}/privacy. Athletes under 18 can't send voice recordings. If nobody claims this account within three months, it and this email address are deleted. From your parent account you can review or delete their information at any time.",
+      notice: DIRECT_NOTICE_EMAIL_DEFAULT,
+      noticeUnclaimed: DIRECT_NOTICE_EMAIL_UNCLAIMED_DEFAULT,
       footer:
         "If you don't recognize this athlete, you can ignore this email and no account will be created.",
     },

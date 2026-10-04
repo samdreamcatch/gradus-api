@@ -16,6 +16,7 @@ import {
   mergeGuardianClaim,
 } from "@/lib/guardian.functions";
 import { ParentVerificationStep } from "@/components/consent/parent-verification-step";
+import { DirectNotice } from "@/components/consent/direct-notice";
 import { getMyParentVerification } from "@/lib/guardian-verification.functions";
 
 export const Route = createFileRoute("/g/$token")({
@@ -345,6 +346,10 @@ function GuardianClaimPage() {
                     </p>
                   </div>
                 ) : null}
+
+                {isAdultInvite ? null : (
+                  <DirectNotice athleteName={summary?.athleteFirstName ?? null} consentAct />
+                )}
 
                 {needsVerification && !isAdultInvite ? (
                   <ParentVerificationStep
