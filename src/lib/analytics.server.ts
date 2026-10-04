@@ -17,6 +17,13 @@
  *
  * Event ids are client-generated UUIDs and the table's primary key, so a
  * retried batch inserts nothing twice.
+ *
+ * Consent (decision #46, 2026-10-04): there is no in-app switch. Consent is
+ * part of accepting the Terms and Privacy Policy at sign-up; the policy says
+ * to email support@gradussports.com to withdraw it, and an admin records the
+ * request on the user's admin page (`setAnalyticsOptOut`). A withdrawn
+ * account's batches are accepted and discarded (`accepted: 0`), never
+ * refused, so the app keeps working and nothing of theirs is stored.
  */
 import { z } from "zod";
 import { resolveCallerRole } from "./caller-role.server";
@@ -286,13 +293,83 @@ export function analyticsRows(batch: AnalyticsBatch, who: Subject) {
   }));
 }
 
-/** `POST /api/v1/analytics/events`: stores a batch; returns how many events it accepted. */
+/** Postgres `undefined_table`, or PostgREST's schema-cache miss for a table that isn't there yet. */
+function isMissingTable(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "42P01" || error?.code === "PGRST205";
+}
+
+export interface AnalyticsOptOut {
+  requestedAt: string;
+  note: string;
+}
+
+/** The account's withdrawal of consent, if it made one (privacy policy §2.4). */
+export async function getAnalyticsOptOut(
+  admin: AnalyticsDb,
+  userId: string,
+): Promise<AnalyticsOptOut | null> {
+  const row = await admin
+    .from("analytics_opt_outs")
+    .select("requested_at, note")
+    .eq("user_id", userId)
+    .maybeSingle();
+  // Until Lovable applies migration 20261004120000 the table is missing;
+  // nobody can have withdrawn yet, so ingestion and the admin page carry on.
+  if (row.error && isMissingTable(row.error)) return null;
+  if (row.error) dbError(row.error);
+  if (!row.data) return null;
+  return {
+    requestedAt: String((row.data as { requested_at: string }).requested_at),
+    note: String((row.data as { note?: string }).note ?? ""),
+  };
+}
+
+/**
+ * Records (or clears) an account's withdrawal of consent to usage-data
+ * collection, by hand after an emailed request (decision #46). Withdrawing
+ * runs `analytics_withdraw_consent` (migration 20261004120000): one
+ * transaction that inserts the request row and deletes every stored event
+ * carrying the account's user id, returning how many. A minor athlete's
+ * events carry none, so for them it stops future collection only.
+ * Idempotent either way.
+ */
+export async function setAnalyticsOptOut(
+  admin: AnalyticsDb,
+  userId: string,
+  optedOut: boolean,
+  recordedBy: string,
+  note = "",
+): Promise<{ optedOut: boolean; deletedEvents: number }> {
+  if (optedOut) {
+    const res = await admin.rpc("analytics_withdraw_consent", {
+      p_user_id: userId,
+      p_recorded_by: recordedBy,
+      p_note: note.trim().slice(0, 200),
+    });
+    if (res.error) dbError(res.error);
+    return { optedOut: true, deletedEvents: Number(res.data ?? 0) };
+  }
+  const del = await admin.from("analytics_opt_outs").delete().eq("user_id", userId);
+  if (del.error) dbError(del.error);
+  return { optedOut: false, deletedEvents: 0 };
+}
+
+/**
+ * `POST /api/v1/analytics/events`: stores a batch; returns how many events it
+ * accepted. An account that withdrew consent gets `accepted: 0` and nothing
+ * is stored or even looked up about it.
+ */
 export async function recordAnalyticsBatch(
   admin: AnalyticsDb,
   userId: string,
   batch: AnalyticsBatch,
   now: Date = new Date(),
 ): Promise<{ accepted: number }> {
+  // Check-then-write: a batch already past this check when a withdrawal is
+  // recorded can land after that withdrawal's delete. That is at most one
+  // request's worth, and the 13-month sweep removes it; a database-side
+  // guard was judged not worth it for a by-hand process.
+  if (await getAnalyticsOptOut(admin, userId)) return { accepted: 0 };
   const who = await resolveSubject(admin, userId, now);
   const rows = analyticsRows(batch, who);
   const { error } = await admin

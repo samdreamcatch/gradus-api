@@ -239,7 +239,7 @@ function ParentSignupPage() {
                 if (v === true) setShowAgreeHint(false);
               }}
               className="mt-0.5"
-              aria-label="Agree to Terms of Service"
+              aria-label="Agree to Terms of Service and Privacy Policy"
             />
             <span>
               I agree to the{" "}
@@ -252,7 +252,17 @@ function ParentSignupPage() {
               >
                 Gradus Terms of Service
               </Link>{" "}
-              (v{CURRENT_TERMS_VERSION}).
+              (v{CURRENT_TERMS_VERSION}) and{" "}
+              <Link
+                to="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-accent-ink underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Privacy Policy
+              </Link>
+              .
             </span>
           </label>
           {showAgreeHint && !agreed && (

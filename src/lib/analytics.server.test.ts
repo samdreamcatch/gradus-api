@@ -7,7 +7,9 @@ import {
   ageBand,
   analyticsBatchInput,
   cleanProps,
+  getAnalyticsOptOut,
   recordAnalyticsBatch,
+  setAnalyticsOptOut,
 } from "./analytics.server";
 
 const NOW = new Date("2026-09-23T12:00:00Z");
@@ -44,28 +46,45 @@ const batch = (over: Record<string, unknown> = {}) =>
 
 /**
  * A fake admin: tables answer from `rows`, RPCs from `rpcs`; records the
- * upserted rows.
+ * upserted rows, the tables a delete was run against (with its filter), and
+ * every RPC call.
  */
-function fakeAdmin(rows: Record<string, unknown>, rpcs: Record<string, unknown[]> = {}) {
-  const upserts: { rows: Record<string, unknown>[]; opts: unknown }[] = [];
+function fakeAdmin(rows: Record<string, unknown>, rpcs: Record<string, unknown> = {}) {
+  const upserts: { table: string; rows: Record<string, unknown>[]; opts: unknown }[] = [];
+  const deletes: { table: string; eq: unknown[] }[] = [];
+  const rpcCalls: { fn: string; args: unknown }[] = [];
   const from = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of ["select", "eq", "in"]) self[m] = () => self;
+    let pendingDelete: { table: string; eq: unknown[] } | null = null;
+    for (const m of ["select", "in"]) self[m] = () => self;
+    self.eq = (...args: unknown[]) => {
+      if (pendingDelete) pendingDelete.eq.push(args);
+      return self;
+    };
+    self.delete = () => {
+      pendingDelete = { table, eq: [] };
+      deletes.push(pendingDelete);
+      return self;
+    };
     const value = rows[table];
+    const failure = (value as { __error?: unknown } | undefined)?.__error ?? null;
     self.maybeSingle = async () => ({
-      data: Array.isArray(value) ? null : (value ?? null),
-      error: null,
+      data: failure || Array.isArray(value) ? null : (value ?? null),
+      error: failure,
     });
     self.upsert = async (r: Record<string, unknown>[], opts: unknown) => (
-      upserts.push({ rows: r, opts }),
+      upserts.push({ table, rows: r, opts }),
       { error: null }
     );
     self.then = (resolve: (v: unknown) => void) =>
       resolve({ data: Array.isArray(value) ? value : [], error: null });
     return self;
   };
-  const rpc = async (fn: string) => ({ data: rpcs[fn] ?? [], error: null });
-  return { admin: { from, rpc }, upserts };
+  const rpc = async (fn: string, args: unknown) => (
+    rpcCalls.push({ fn, args }),
+    { data: rpcs[fn] ?? [], error: null }
+  );
+  return { admin: { from, rpc }, upserts, deletes, rpcCalls };
 }
 
 describe("the batch schema", () => {
@@ -242,6 +261,16 @@ describe("recordAnalyticsBatch", () => {
     });
   });
 
+  it("accepts and discards a batch from an account that withdrew consent", async () => {
+    const { admin, upserts } = fakeAdmin({
+      coach_profiles: { id: "c1", onboarded_at: "t" },
+      analytics_opt_outs: { requested_at: "2026-10-04T15:00:00Z", note: "email 2026-10-04" },
+    });
+    const r = await recordAnalyticsBatch(admin, "user-1", batch(), NOW);
+    expect(r).toEqual({ accepted: 0 });
+    expect(upserts).toHaveLength(0);
+  });
+
   it("stores a confirmed adult athlete as an adult", async () => {
     const { admin, upserts } = minorWorld("1990-01-01");
     await recordAnalyticsBatch(admin, "user-adult", batch(), NOW);
@@ -251,6 +280,61 @@ describe("recordAnalyticsBatch", () => {
       age_band: "18_plus",
       org_ids: [],
     });
+  });
+});
+
+describe("withdrawal of consent (decision #46)", () => {
+  it("reads the request when there is one", async () => {
+    const none = fakeAdmin({});
+    expect(await getAnalyticsOptOut(none.admin, "user-1")).toBeNull();
+    const some = fakeAdmin({
+      analytics_opt_outs: { requested_at: "2026-10-04T15:00:00Z", note: "email 2026-10-04" },
+    });
+    expect(await getAnalyticsOptOut(some.admin, "user-1")).toEqual({
+      requestedAt: "2026-10-04T15:00:00Z",
+      note: "email 2026-10-04",
+    });
+  });
+
+  it("treats a missing table as no withdrawals, so ingestion works before the migration lands", async () => {
+    const { admin } = fakeAdmin({
+      analytics_opt_outs: { __error: { code: "PGRST205", message: "Could not find the table" } },
+    });
+    expect(await getAnalyticsOptOut(admin, "user-1")).toBeNull();
+    const other = fakeAdmin({
+      analytics_opt_outs: { __error: { code: "42501", message: "permission denied" } },
+    });
+    await expect(getAnalyticsOptOut(other.admin, "user-1")).rejects.toThrow();
+  });
+
+  it("recording a request runs the one-transaction RPC with a trimmed note and reports the count", async () => {
+    const { admin, upserts, deletes, rpcCalls } = fakeAdmin({}, { analytics_withdraw_consent: 7 });
+    const r = await setAnalyticsOptOut(
+      admin,
+      "user-1",
+      true,
+      "admin-9",
+      `  email 2026-10-04 ${"x".repeat(300)}`,
+    );
+    expect(r).toEqual({ optedOut: true, deletedEvents: 7 });
+    expect(upserts).toHaveLength(0);
+    expect(deletes).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(1);
+    expect(rpcCalls[0].fn).toBe("analytics_withdraw_consent");
+    const args = rpcCalls[0].args as { p_user_id: string; p_recorded_by: string; p_note: string };
+    expect(args.p_user_id).toBe("user-1");
+    expect(args.p_recorded_by).toBe("admin-9");
+    expect(args.p_note.startsWith("email 2026-10-04")).toBe(true);
+    expect(args.p_note.length).toBe(200);
+  });
+
+  it("clearing a request deletes only the request row, never events", async () => {
+    const { admin, upserts, deletes, rpcCalls } = fakeAdmin({});
+    const r = await setAnalyticsOptOut(admin, "user-1", false, "admin-9");
+    expect(r).toEqual({ optedOut: false, deletedEvents: 0 });
+    expect(upserts).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(0);
+    expect(deletes).toEqual([{ table: "analytics_opt_outs", eq: [["user_id", "user-1"]] }]);
   });
 });
 

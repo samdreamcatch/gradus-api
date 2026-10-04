@@ -44,13 +44,23 @@ What the code does today, and what each row of Section A relies on.
 | Parent verification result: life of the parent account | Columns on `parent_profiles`; deleted with the row | Live |
 | Consent ledger: life of the athlete account | `guardian_consents.athlete_id ON DELETE CASCADE`; parent deletion revokes and keeps the row | Live |
 | Receipts and tombstones, 5 years | `purgeExpiredRecords` in `retention.server.ts` | **Built 2026-10-03** |
-| Usage events, 13 months | A2's pg_cron job on `analytics_events` | Live (A2) |
+| Usage events, 13 months | A2's pg_cron job on `analytics_events`; on account deletion the row's `user_id` is cleared (FK `ON DELETE SET NULL`, migration `20261004120000`), so a deleted adult's events survive only as de-identified counts | Live (A2); FK **built 2026-10-04** |
+| Usage events of an account that withdrew consent: deleted at once | `setAnalyticsOptOut` in `src/lib/analytics.server.ts` → `analytics_withdraw_consent` (one transaction: request row, then the delete; returns the count), from the admin user page's Usage data card; `analytics_opt_outs` makes the events endpoint discard the account's later batches | **Built 2026-10-04** (decision #46). Minor athletes' events carry no user id, so for them it stops future collection only |
 | Coach content de-identified after coach deletion | `deleteAccountForUser` | Live |
 | Email delivery records, 13 months | — | **Not enforced yet.** `email_send_log` has no sweep; add one to the same hook or publish without the row |
 | Safety reports 7 years, support mail 3 years | Google Workspace mailbox retention for support@gradussports.com; reports also exist as admin emails | **Mailbox setting, not code.** Set a Vault/retention rule or an annual manual review; nothing in the database stores a report |
 | Billing records, 7 years | Stripe's own retention plus accounting records | Provider-side |
 
 Windows are constants: `DORMANT_MONTHS`, `DORMANT_NOTICE_DAYS`, `RECORD_RETENTION_YEARS` in `retention.server.ts`; `provisionalCutoff` in `guardian-verification.server.ts`. Change the constant and this document together.
+
+### Handling a usage-data withdrawal request (by hand)
+
+The privacy policy (§2.4, §8) tells people to email support@gradussports.com to withdraw consent to usage-data collection; there is no in-app switch (decision #46).
+
+1. Confirm the request comes from the email address on the account (reply from the same thread is enough; for an athlete under 18, a verified guardian on the account may ask on their behalf).
+2. Admin → Users → open the account → **Usage data** → enter where the request came from (for example `email 2026-10-04`, never the message text) → **Stop collecting**. This records the withdrawal and deletes the account's stored usage events; the app's later batches are discarded on arrival.
+3. Reply that collection has stopped and the stored usage records were deleted. Keep the thread under the support-mail retention row above.
+4. If the person later asks to resume, **Resume collecting** on the same card.
 
 ### Why these numbers
 

@@ -9,6 +9,11 @@ import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router
  * If the published policy is revised, mirror it into this file unchanged.
  *
  * Last mirrored: 2026-08-30 (published "Last Updated: August 30, 2026").
+ *
+ * Ahead of the published copy (publish these on gradussports.com so the two
+ * match again): the usage-data consent and withdrawal sentences in §2.4 and
+ * the §8 bullet, added 2026-10-04 on Mariah's instruction (PRD decision #46),
+ * and the "Last Updated" date that goes with them.
  */
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -44,7 +49,7 @@ function PrivacyPage() {
         <header>
           <h1 className="font-display text-4xl">Privacy Policy</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            Gradus Sports, Inc. · Effective Date: June 26, 2026 · Last Updated: August 30, 2026
+            Gradus Sports, Inc. · Effective Date: June 26, 2026 · Last Updated: October 4, 2026
           </p>
         </header>
 
@@ -198,6 +203,13 @@ function PrivacyPage() {
               analyze aggregate usage
             </li>
           </ul>
+          <p>
+            Usage information is collected by Gradus directly, not by an advertising or analytics
+            vendor, and is used only for the purposes described in Section 3. By creating an account
+            and accepting the Terms of Service, you consent to this collection. You may withdraw
+            that consent at any time by emailing support@gradussports.com; we will stop collecting
+            usage information from your account and delete the usage records associated with it.
+          </p>
         </section>
 
         <section className="space-y-3">
@@ -406,6 +418,7 @@ function PrivacyPage() {
             <li>Request deletion of personal information</li>
             <li>Request a portable copy of their personal information</li>
             <li>Object to or request restriction of certain processing activities</li>
+            <li>Withdraw consent to the collection of usage information (see Section 2.4)</li>
           </ul>
           <p>
             Account deletion may be initiated directly in the app from your account settings. To

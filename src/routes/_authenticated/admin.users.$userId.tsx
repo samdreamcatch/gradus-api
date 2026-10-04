@@ -10,6 +10,7 @@ import {
   adminSearchParents,
   adminSetAthleteParent,
   adminDeleteUserHard,
+  adminSetAnalyticsOptOut,
 } from "@/lib/admin.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip } from "@/components/ui/chip";
@@ -147,6 +148,13 @@ function UserDetail() {
               />
             </dl>
           </header>
+
+          <UsageDataCard
+            userId={userId}
+            optOut={data.analyticsOptOut}
+            isMinorAthlete={data.analyticsMinor}
+            onChanged={() => refetch()}
+          />
 
           {data.coach && (
             <section className="rounded-xl border border-divider bg-card p-5 space-y-3">
@@ -426,6 +434,131 @@ function CodeList({
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * Usage-data consent (PRD decision #46). There is no in-app switch: consent
+ * comes with the Terms and Privacy Policy at sign-up, and a user withdraws it
+ * by emailing support@. Recording the request here stops collection for the
+ * account server-side and deletes its stored usage events.
+ */
+function UsageDataCard({
+  userId,
+  optOut,
+  isMinorAthlete,
+  onChanged,
+}: {
+  userId: string;
+  optOut: { requestedAt: string; note: string } | null;
+  isMinorAthlete: boolean;
+  onChanged: () => void;
+}) {
+  const setFn = useServerFn(adminSetAnalyticsOptOut);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<"stop" | "resume" | null>(null);
+
+  const change = async (optedOut: boolean) => {
+    setBusy(true);
+    try {
+      const r = await setFn({
+        data: { userId, optedOut, note: optedOut ? note.trim() : undefined },
+      });
+      toast.success(
+        optedOut
+          ? `Usage-data collection stopped; ${r.deletedEvents} stored event${
+              r.deletedEvents === 1 ? "" : "s"
+            } deleted`
+          : "Usage-data collection resumed",
+      );
+      setNote("");
+      onChanged();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not update usage-data consent");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-divider bg-card p-5 space-y-3">
+      <h2 className="font-display text-h3 text-text-primary">Usage data</h2>
+      {optOut ? (
+        <>
+          <p className="text-sm text-text-primary">
+            Consent withdrawn {new Date(optOut.requestedAt).toLocaleDateString()}
+            {optOut.note ? ` · ${optOut.note}` : ""}. The app's usage events for this account are
+            discarded on arrival; the stored ones were deleted when this was recorded.
+          </p>
+          <Chip as="button" tone="muted" disabled={busy} onClick={() => setConfirm("resume")}>
+            {busy ? "Saving…" : "Resume collecting"}
+          </Chip>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-text-secondary">
+            Collecting, under the Terms and Privacy Policy accepted at sign-up. If this person
+            emails support@ to withdraw, record it here: collection stops for the account and its
+            stored usage events are deleted.
+            {isMinorAthlete
+              ? " A minor athlete's events carry no user id, so this stops future collection only."
+              : ""}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label htmlFor="usage-opt-out-note" className="sr-only">
+              Where the request came from
+            </Label>
+            <Input
+              id="usage-opt-out-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. email 2026-10-04"
+              maxLength={200}
+              autoComplete="off"
+              className="max-w-xs"
+            />
+            <Chip as="button" tone="muted" disabled={busy} onClick={() => setConfirm("stop")}>
+              {busy ? "Saving…" : "Stop collecting"}
+            </Chip>
+          </div>
+        </>
+      )}
+
+      <AlertDialog
+        open={confirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirm(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirm === "stop" ? "Stop collecting usage data?" : "Resume collecting usage data?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "stop"
+                ? "This records the withdrawal and deletes every stored usage event for this account. The deletion cannot be undone."
+                : "Only if the person asked to resume. Collection restarts with their next app session."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (e) => {
+                e.preventDefault();
+                const stop = confirm === "stop";
+                setConfirm(null);
+                await change(stop);
+              }}
+            >
+              {confirm === "stop" ? "Stop and delete" : "Resume"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }
 

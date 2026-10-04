@@ -3,6 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 import { isMinorBirthdate } from "./athlete-age";
+import {
+  type AnalyticsDb,
+  ageBand,
+  getAnalyticsOptOut,
+  setAnalyticsOptOut,
+} from "./analytics.server";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 /** Throws if the caller is not an admin. */
@@ -367,7 +373,7 @@ export const getUserDetail = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [authUser, coach, parent, athlete] = await Promise.all([
+    const [authUser, coach, parent, athlete, analyticsOptOut] = await Promise.all([
       supabaseAdmin.auth.admin.getUserById(data.userId),
       supabaseAdmin
         .from("coach_profiles")
@@ -386,6 +392,8 @@ export const getUserDetail = createServerFn({ method: "POST" })
         )
         .eq("user_id", data.userId)
         .maybeSingle(),
+      // Usage-data consent withdrawn by email and recorded here (decision #46).
+      getAnalyticsOptOut(supabaseAdmin as unknown as AnalyticsDb, data.userId),
     ]);
 
     const auth = authUser.data?.user
@@ -620,7 +628,47 @@ export const getUserDetail = createServerFn({ method: "POST" })
     }
 
     const isTest = !!(coach.data?.is_test || parent.data?.is_test || athlete.data?.is_test);
-    return { auth, coach: coachDetail, parent: parentDetail, athlete: athleteDetail, isTest };
+    // The analytics rule: an athlete is a minor unless their birthdate confirms 18+.
+    const analyticsMinor =
+      !!athlete.data && ageBand(athlete.data.birthdate ?? null, new Date()) !== "18_plus";
+    return {
+      auth,
+      coach: coachDetail,
+      parent: parentDetail,
+      athlete: athleteDetail,
+      isTest,
+      analyticsOptOut,
+      analyticsMinor,
+    };
+  });
+
+/**
+ * Records or clears an account's withdrawal of consent to usage-data
+ * collection (privacy policy §2.4; PRD decision #46). Requests arrive by
+ * email and are honored by hand: recording one stops collection for the
+ * account server-side and deletes its stored usage events.
+ */
+export const adminSetAnalyticsOptOut = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        optedOut: z.boolean(),
+        note: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const adminId = await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return setAnalyticsOptOut(
+      supabaseAdmin as unknown as AnalyticsDb,
+      data.userId,
+      data.optedOut,
+      adminId,
+      data.note ?? "",
+    );
   });
 
 const LIST_KINDS = ["coaches", "parents", "athletes", "plans", "beta-signups"] as const;
