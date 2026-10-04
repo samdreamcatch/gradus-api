@@ -51,6 +51,15 @@ export type GuardianClaimOptions = {
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const forbidden = (message: string) => new ApiError({ code: "forbidden", status: 403, message });
+/**
+ * An athlete paused by Apple's RESCIND_CONSENT (PRD §6.13 B4): a claim or a
+ * fresh invite would hand consent back through Gradus, which only support
+ * restores (PRD §12 #29). Same `paused` code the room gates use.
+ */
+export const PAUSED_ATHLETE_MESSAGE =
+  "This athlete's account is paused because consent was withdrawn through Apple. Email support@gradussports.com to restore it.";
+const pausedAthlete = () =>
+  new ApiError({ code: "paused", status: 403, message: PAUSED_ATHLETE_MESSAGE });
 const wrongRole = (message: string) => new ApiError({ code: "wrong_role", status: 403, message });
 const conflict = (message: string) => new ApiError({ code: "conflict", status: 409, message });
 const unprocessable = (message: string) =>
@@ -257,11 +266,16 @@ export async function claimGuardianAthlete(
 ): Promise<GuardianClaimResultDTO> {
   const athlete = await admin
     .from("athletes")
-    .select("id, first_name, birthdate, parent_id, guardian_claimed_at, self_managed, user_id")
+    .select(
+      "id, first_name, birthdate, parent_id, guardian_claimed_at, self_managed, user_id, account_state",
+    )
     .eq("guardian_claim_token", input.token)
     .maybeSingle();
   if (athlete.error) dbError(athlete.error);
   if (!athlete.data) throw notFound(INVALID_LINK);
+  if ((athlete.data as { account_state?: string | null }).account_state === "paused") {
+    throw pausedAthlete();
+  }
 
   // Coaches import athletes without a birthdate; the guardian supplies it here.
   if (athlete.data.birthdate == null && !input.birthdate) {
@@ -403,7 +417,7 @@ export async function resendGuardianInvite(
   const athlete = await admin
     .from("athletes")
     .select(
-      "id, user_id, first_name, last_name, parent_id, guardian_email, guardian_claim_token, guardian_claimed_at, invite_recipient, added_by_coach_id",
+      "id, user_id, first_name, last_name, parent_id, guardian_email, guardian_claim_token, guardian_claimed_at, invite_recipient, added_by_coach_id, account_state",
     )
     .eq("id", input.athleteId)
     .maybeSingle();
@@ -411,6 +425,9 @@ export async function resendGuardianInvite(
   if (!athlete.data) throw notFound("Athlete not found.");
   if (athlete.data.parent_id || athlete.data.guardian_claimed_at) {
     throw conflict("This athlete's parent has already joined.");
+  }
+  if ((athlete.data as { account_state?: string | null }).account_state === "paused") {
+    throw pausedAthlete();
   }
 
   // Authorization: the athlete themselves, or a coach with them on roster.

@@ -570,6 +570,45 @@ describe("sweepProvisionalAthletes", () => {
     expect(deletedUsers).toEqual(["u-old"]);
   });
 
+  it("also sweeps an unclaimed provisional account Apple's RESCIND_CONSENT paused, never a paused adult", async () => {
+    const admin = fakeAdmin({
+      athletes: [
+        {
+          id: "rescinded-teen",
+          user_id: "u-teen",
+          parent_id: null,
+          account_state: "paused",
+          guardian_email: "parent@example.com",
+          guardian_claimed_at: null,
+          birthdate: "2011-03-09",
+          created_at: "2026-05-01T00:00:00Z",
+        },
+        {
+          id: "paused-adult",
+          user_id: "u-adult",
+          parent_id: null,
+          account_state: "paused",
+          guardian_email: null,
+          guardian_claimed_at: null,
+          birthdate: "1990-01-01",
+          created_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+    });
+    const purged: string[] = [];
+    const result = await sweepProvisionalAthletes(admin, {
+      now: NOW,
+      deps: {
+        purgeAthlete: async (id) => {
+          purged.push(id);
+        },
+        deleteAuthUser: async () => {},
+      },
+    });
+    expect(result).toEqual({ scanned: 1, deleted: 1, failed: 0 });
+    expect(purged).toEqual(["rescinded-teen"]);
+  });
+
   it("counts a failure and keeps going", async () => {
     const admin = fakeAdmin({
       athletes: [

@@ -784,17 +784,40 @@ export async function sweepProvisionalAthletes(
   const cutoff = provisionalCutoff(now);
   const deps = opts.deps ?? (await defaultSweepDeps());
 
+  // `paused` too: an unclaimed 13–17 self-sign-up that Apple's RESCIND_CONSENT
+  // paused is still unclaimed, and a withdrawn consent is no reason to keep a
+  // child's data longer (PRD §6.13 A4, B4). Only rows that were provisional:
+  // a guardian email on file, never claimed, and a minor (or no birthdate),
+  // so a paused self-managed adult is never swept.
   const res = await admin
     .from("athletes")
-    .select("id, user_id, created_at")
-    .eq("account_state", "provisional")
+    .select(
+      "id, user_id, created_at, account_state, guardian_email, guardian_claimed_at, birthdate",
+    )
+    .in("account_state", ["provisional", "paused"])
     .is("parent_id", null)
     .lt("created_at", cutoff.toISOString())
     .order("created_at", { ascending: true })
     .limit(opts.limit ?? 200);
   if (res.error) dbError(res.error);
 
-  const rows = (res.data ?? []) as { id: string; user_id: string | null; created_at: string }[];
+  type SweepRow = {
+    id: string;
+    user_id: string | null;
+    created_at: string;
+    account_state: string | null;
+    guardian_email: string | null;
+    guardian_claimed_at: string | null;
+    birthdate: string | null;
+  };
+  const rows = ((res.data ?? []) as SweepRow[]).filter(
+    (r) =>
+      r.account_state === "provisional" ||
+      (r.account_state === "paused" &&
+        !!r.guardian_email &&
+        !r.guardian_claimed_at &&
+        isMinorOrUnconfirmed(r.birthdate)),
+  );
   let deleted = 0;
   let failed = 0;
   for (const row of rows) {

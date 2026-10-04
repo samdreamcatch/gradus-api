@@ -334,6 +334,21 @@ describe("claimGuardianAthlete", () => {
     );
   });
 
+  it("refuses an athlete paused by Apple's RESCIND_CONSENT and leaves the pause in place (PRD §6.13 B4)", async () => {
+    const { admin, tables } = fakeAdmin({
+      athletes: [pendingAthlete({ account_state: "paused", user_id: "teen-user" })],
+      parent_profiles: [PARENT],
+      guardian_consents: [],
+    });
+    await expect(claimGuardianAthlete(admin, USER, { token: TOKEN })).rejects.toMatchObject({
+      code: "paused",
+      status: 403,
+    });
+    expect(tables.athletes[0].account_state).toBe("paused");
+    expect(tables.athletes[0].parent_id ?? null).toBeNull();
+    expect(tables.guardian_consents ?? []).toHaveLength(0);
+  });
+
   it("with the regime switch on, an unverified parent is refused with parent_unverified", async () => {
     const previous = process.env.PARENT_VERIFICATION_REQUIRED;
     process.env.PARENT_VERIFICATION_REQUIRED = "true";
@@ -593,6 +608,22 @@ describe("resendGuardianInvite", () => {
       ]);
       expect(tables.athletes![0]!.guardian_claim_token).toBe(TOKEN);
       expect(tables.athletes![0]!.guardian_invited_at).not.toBe("2026-09-01T00:00:00.000Z");
+    });
+  });
+
+  it("refuses to re-send for an athlete paused by RESCIND_CONSENT", async () => {
+    await withEmailMock(async (sent) => {
+      const { admin } = fakeAdmin({
+        athletes: [pendingAthlete({ user_id: USER, account_state: "paused" })],
+        coach_profiles: [COACH],
+      });
+      await expect(
+        resendGuardianInvite(admin, USER, {
+          athleteId: ATHLETE_ID,
+          guardianEmail: "me@example.com",
+        }),
+      ).rejects.toMatchObject({ code: "paused", status: 403 });
+      expect(sent).toHaveLength(0);
     });
   });
 

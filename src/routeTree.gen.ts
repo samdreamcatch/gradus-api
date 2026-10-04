@@ -145,6 +145,7 @@ import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
 import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-code'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
 import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
+import { Route as ApiV1MeAppTransactionRouteImport } from './routes/api/v1/me/app-transaction'
 import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
 import { Route as ApiV1GuardianStatusRouteImport } from './routes/api/v1/guardian/status'
 import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
@@ -167,6 +168,7 @@ import { Route as ApiV1AnalyticsEventsRouteImport } from './routes/api/v1/analyt
 import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/webhooks/kws'
+import { Route as ApiPublicWebhooksAppStoreRouteImport } from './routes/api/public/webhooks/app-store'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksVoiceTranscriptsRouteImport } from './routes/api/public/hooks/voice-transcripts'
 import { Route as ApiPublicHooksSkillInferenceRouteImport } from './routes/api/public/hooks/skill-inference'
@@ -1067,6 +1069,11 @@ const ApiV1MeDeletionImpactRoute = ApiV1MeDeletionImpactRouteImport.update({
   path: '/api/v1/me/deletion-impact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MeAppTransactionRoute = ApiV1MeAppTransactionRouteImport.update({
+  id: '/api/v1/me/app-transaction',
+  path: '/api/v1/me/app-transaction',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
   id: '/api/v1/invites/resolve',
   path: '/api/v1/invites/resolve',
@@ -1179,6 +1186,12 @@ const ApiPublicWebhooksKwsRoute = ApiPublicWebhooksKwsRouteImport.update({
   path: '/api/public/webhooks/kws',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksAppStoreRoute =
+  ApiPublicWebhooksAppStoreRouteImport.update({
+    id: '/api/public/webhooks/app-store',
+    path: '/api/public/webhooks/app-store',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -2258,6 +2271,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2280,6 +2294,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
@@ -2579,6 +2594,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2601,6 +2617,7 @@ export interface FileRoutesByTo {
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
@@ -2908,6 +2925,7 @@ export interface FileRoutesById {
   '/api/public/hooks/skill-inference': typeof ApiPublicHooksSkillInferenceRoute
   '/api/public/hooks/voice-transcripts': typeof ApiPublicHooksVoiceTranscriptsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -2930,6 +2948,7 @@ export interface FileRoutesById {
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
@@ -3237,6 +3256,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3259,6 +3279,7 @@ export interface FileRouteTypes {
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
@@ -3558,6 +3579,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3580,6 +3602,7 @@ export interface FileRouteTypes {
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
@@ -3886,6 +3909,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/skill-inference'
     | '/api/public/hooks/voice-transcripts'
     | '/api/public/payments/webhook'
+    | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -3908,6 +3932,7 @@ export interface FileRouteTypes {
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
@@ -4146,6 +4171,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSkillInferenceRoute: typeof ApiPublicHooksSkillInferenceRoute
   ApiPublicHooksVoiceTranscriptsRoute: typeof ApiPublicHooksVoiceTranscriptsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicWebhooksAppStoreRoute: typeof ApiPublicWebhooksAppStoreRoute
   ApiPublicWebhooksKwsRoute: typeof ApiPublicWebhooksKwsRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
   ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
@@ -4168,6 +4194,7 @@ export interface RootRouteChildren {
   ApiV1DevicesTokenRoute: typeof ApiV1DevicesTokenRoute
   ApiV1GuardianStatusRoute: typeof ApiV1GuardianStatusRoute
   ApiV1InvitesResolveRoute: typeof ApiV1InvitesResolveRoute
+  ApiV1MeAppTransactionRoute: typeof ApiV1MeAppTransactionRoute
   ApiV1MeDeletionImpactRoute: typeof ApiV1MeDeletionImpactRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
   ApiV1MePromoCodeRoute: typeof ApiV1MePromoCodeRoute
@@ -5305,6 +5332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeDeletionImpactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/me/app-transaction': {
+      id: '/api/v1/me/app-transaction'
+      path: '/api/v1/me/app-transaction'
+      fullPath: '/api/v1/me/app-transaction'
+      preLoaderRoute: typeof ApiV1MeAppTransactionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/invites/resolve': {
       id: '/api/v1/invites/resolve'
       path: '/api/v1/invites/resolve'
@@ -5457,6 +5491,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/kws'
       fullPath: '/api/public/webhooks/kws'
       preLoaderRoute: typeof ApiPublicWebhooksKwsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/app-store': {
+      id: '/api/public/webhooks/app-store'
+      path: '/api/public/webhooks/app-store'
+      fullPath: '/api/public/webhooks/app-store'
+      preLoaderRoute: typeof ApiPublicWebhooksAppStoreRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/webhook': {
@@ -6953,6 +6994,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSkillInferenceRoute: ApiPublicHooksSkillInferenceRoute,
   ApiPublicHooksVoiceTranscriptsRoute: ApiPublicHooksVoiceTranscriptsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicWebhooksAppStoreRoute: ApiPublicWebhooksAppStoreRoute,
   ApiPublicWebhooksKwsRoute: ApiPublicWebhooksKwsRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
   ApiV1AdultAthleteOnboardingRoute: ApiV1AdultAthleteOnboardingRoute,
@@ -6975,6 +7017,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1DevicesTokenRoute: ApiV1DevicesTokenRoute,
   ApiV1GuardianStatusRoute: ApiV1GuardianStatusRoute,
   ApiV1InvitesResolveRoute: ApiV1InvitesResolveRoute,
+  ApiV1MeAppTransactionRoute: ApiV1MeAppTransactionRoute,
   ApiV1MeDeletionImpactRoute: ApiV1MeDeletionImpactRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
   ApiV1MePromoCodeRoute: ApiV1MePromoCodeRoute,
