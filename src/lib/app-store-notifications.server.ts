@@ -28,7 +28,12 @@ import type { Json } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { dbError } from "./db-error";
-import { revokeGuardianConsent } from "./guardian-verification.server";
+import { isMinorOrUnconfirmed } from "./athlete-age";
+import {
+  grantGuardianConsent,
+  revokeGuardianConsent,
+  verificationRequired,
+} from "./guardian-verification.server";
 import {
   AppleSignedDataError,
   verifyAppleJws,
@@ -173,13 +178,25 @@ export async function registerAppTransaction(
   // A download already rescinded before this athlete was bound to it.
   const rescinded = await admin
     .from("app_store_rescinded_transactions")
-    .select("app_transaction_id")
+    .select("app_transaction_id, rescinded_at")
     .eq("app_transaction_id", verified.appTransactionId)
     .eq("environment", verified.environment)
     .maybeSingle();
   if (rescinded.error) dbError(rescinded.error);
-  // Only a newly paused athlete is announced: the app re-reports weekly.
-  if (rescinded.data) await pauseForRescind(admin, [athleteId], deps, { notify: "newlyPaused" });
+  const rescindedAt = (rescinded.data as { rescinded_at?: string | null } | null)?.rescinded_at;
+  if (rescinded.data) {
+    // An admin restore (§12 #29) exempts this athlete from a withdrawal
+    // recorded before the restore; a newer withdrawal applies again.
+    const exempt = await restoreExemptionAt(
+      admin,
+      athleteId,
+      verified.environment,
+      verified.appTransactionId,
+    );
+    const stillWithdrawn = !exempt || ms(rescindedAt) > ms(exempt);
+    // Only a newly paused athlete is announced: the app re-reports weekly.
+    if (stillWithdrawn) await pauseForRescind(admin, [athleteId], deps, { notify: "newlyPaused" });
+  }
   return { ok: true, bound: true };
 }
 
@@ -267,6 +284,19 @@ async function pauseForRescind(
   const newlyPaused = new Set<string>();
   for (const a of athletes) {
     if (a.account_state !== "paused") {
+      // Remembered so an admin restore (§12 #29) puts the account back where
+      // it was, not where a guess would put it.
+      const remembered = await admin.from("webhook_receipts").upsert(
+        {
+          source: PAUSE_RECORD_SOURCE,
+          external_id: a.id,
+          event: "paused",
+          received_at: now.toISOString(),
+          payload: { priorState: a.account_state ?? "active" } as Json,
+        },
+        { onConflict: "source,external_id" },
+      );
+      if (remembered.error) dbError(remembered.error);
       const upd = await admin.from("athletes").update({ account_state: "paused" }).eq("id", a.id);
       if (upd.error) dbError(upd.error);
       paused++;
@@ -420,4 +450,443 @@ export async function handleAppStoreNotification(
   if (receipt.error && (receipt.error as { code?: string }).code !== "23505")
     dbError(receipt.error);
   return json({ ok: true, ...result }, 200);
+}
+
+/* ------------------------------------------------- restore (admin, §12 #29) */
+
+/**
+ * Apple sends no "consent restored" event, so a paused athlete comes back
+ * only through Admin → Paused athletes, on the family's request to support
+ * (PRD §12 #29). Only `RESCIND_CONSENT` ever pauses an athlete today.
+ *
+ * Bookkeeping lives in `webhook_receipts` (no migration):
+ *  - `app_store_pause` / athlete id: the state the athlete had when paused;
+ *  - `admin_restore` / `athleteId:environment:appTransactionId`: this athlete
+ *    is exempt from that download's withdrawal as of `received_at`. The
+ *    stored withdrawal itself is never deleted, so it still applies to a
+ *    sibling on the same download and to anyone who binds to it later, and a
+ *    newer `RESCIND_CONSENT` (a later `rescinded_at`) applies again;
+ *  - `admin_restore_log` / `athleteId:timestamp`: who restored, why, and to
+ *    what, for every restore.
+ */
+export const PAUSE_RECORD_SOURCE = "app_store_pause";
+export const RESTORE_EXEMPTION_SOURCE = "admin_restore";
+export const RESTORE_LOG_SOURCE = "admin_restore_log";
+
+/**
+ * Self-sign-up minors are created provisional since S1 reached production
+ * (code on main 2026-09-25 16:10Z, migration applied 17:48Z, published after);
+ * older ones were created active. Erring late on purpose: a wrong
+ * "provisional" would hand an old account to the unclaimed-account sweep.
+ * Used only when a pause predates the pause record.
+ */
+const S1_PROVISIONAL_SINCE = "2026-09-26T00:00:00Z";
+
+/** Timestamps from Postgres (`+00:00`) and from JS (`Z`) compared as instants, not strings. */
+const ms = (t: string | null | undefined) => (t ? Date.parse(t) : NaN);
+
+const exemptionId = (athleteId: string, environment: string, appTransactionId: string) =>
+  `${athleteId}:${environment}:${appTransactionId}`;
+
+/** When an admin restore exempted this athlete from this download's withdrawal, if ever. */
+async function restoreExemptionAt(
+  admin: Admin,
+  athleteId: string,
+  environment: string,
+  appTransactionId: string,
+): Promise<string | null> {
+  const res = await admin
+    .from("webhook_receipts")
+    .select("received_at")
+    .eq("source", RESTORE_EXEMPTION_SOURCE)
+    .eq("external_id", exemptionId(athleteId, environment, appTransactionId))
+    .maybeSingle();
+  if (res.error) dbError(res.error);
+  return (res.data as { received_at?: string | null } | null)?.received_at ?? null;
+}
+
+export interface PausedAthleteDTO {
+  athleteId: string;
+  userId: string | null;
+  firstName: string;
+  lastName: string;
+  birthdate: string | null;
+  /** When the athlete was paused (the pause record, else the withdrawal or the consent revocation). */
+  pausedAt: string | null;
+  parent: {
+    parentId: string;
+    userId: string | null;
+    firstName: string;
+    lastName: string;
+    adultVerified: boolean;
+  } | null;
+  /** What a restore sets the account to (see `restoredState`). */
+  restoresTo: "active" | "provisional";
+  /** The latest withdrawal on file for the athlete's downloads; later than `pausedAt` means Apple withdrew again. */
+  latestWithdrawalAt: string | null;
+}
+
+type RestorableRow = {
+  parent_id: string | null;
+  birthdate: string | null;
+  created_at?: string | null;
+};
+
+/**
+ * The state a restore returns the athlete to: `active` with a parent on
+ * file; otherwise the one recorded at the pause when there is one. Without a record, a parent on file or a known adult is
+ * `active`, and a minor with no parent is `provisional` only if the account
+ * was created under S1's rules; an older one was created active, and making
+ * it provisional would hand it to the three-month unclaimed-account sweep.
+ */
+export function restoredState(
+  row: RestorableRow,
+  priorState?: string | null,
+): "active" | "provisional" {
+  // A parent on file means a claimed athlete, and a claimed athlete is active
+  // (decision #31), whatever the account was when paused.
+  if (row.parent_id) return "active";
+  if (priorState === "active" || priorState === "provisional") return priorState;
+  if (!isMinorOrUnconfirmed(row.birthdate)) return "active";
+  if (row.created_at && ms(row.created_at) < ms(S1_PROVISIONAL_SINCE)) return "active";
+  return "provisional";
+}
+
+type PausedRow = RestorableRow & {
+  id: string;
+  user_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+const later = (a: string | null | undefined, b: string | null | undefined) =>
+  !a ? (b ?? null) : !b ? a : ms(a) >= ms(b) ? a : b;
+
+export async function listPausedAthletes(admin: Admin): Promise<PausedAthleteDTO[]> {
+  const res = await admin
+    .from("athletes")
+    .select("id, user_id, first_name, last_name, birthdate, parent_id, created_at")
+    .eq("account_state", "paused");
+  if (res.error) dbError(res.error);
+  const rows = (res.data ?? []) as PausedRow[];
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const parentIds = Array.from(
+    new Set(rows.map((r) => r.parent_id).filter((x): x is string => !!x)),
+  );
+  const [pausesRes, revokedRes, boundRes, parentsRes] = await Promise.all([
+    admin
+      .from("webhook_receipts")
+      .select("external_id, received_at, payload")
+      .eq("source", PAUSE_RECORD_SOURCE)
+      .in("external_id", ids),
+    admin
+      .from("guardian_consents")
+      .select("athlete_id, revoked_at")
+      .in("athlete_id", ids)
+      .eq("revoked_reason", RESCIND_CONSENT_REASON),
+    admin
+      .from("app_store_app_transactions")
+      .select("athlete_id, app_transaction_id, environment")
+      .in("athlete_id", ids),
+    parentIds.length
+      ? admin
+          .from("parent_profiles")
+          .select("id, user_id, first_name, last_name, adult_verified_at")
+          .in("id", parentIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (pausesRes.error) dbError(pausesRes.error);
+  if (revokedRes.error) dbError(revokedRes.error);
+  if (boundRes.error) dbError(boundRes.error);
+  if (parentsRes.error) dbError(parentsRes.error);
+
+  const bound = (boundRes.data ?? []) as {
+    athlete_id: string;
+    app_transaction_id: string;
+    environment: string;
+  }[];
+  const txnIds = Array.from(new Set(bound.map((b) => b.app_transaction_id)));
+  const rescindedRes = txnIds.length
+    ? await admin
+        .from("app_store_rescinded_transactions")
+        .select("app_transaction_id, environment, rescinded_at")
+        .in("app_transaction_id", txnIds)
+    : { data: [], error: null };
+  if (rescindedRes.error) dbError(rescindedRes.error);
+  const rescindedAt = new Map(
+    (
+      (rescindedRes.data ?? []) as {
+        app_transaction_id: string;
+        environment: string;
+        rescinded_at: string;
+      }[]
+    ).map((r) => [`${r.environment}:${r.app_transaction_id}`, r.rescinded_at]),
+  );
+
+  const pausedAt = new Map<string, string>();
+  const priorState = new Map<string, string>();
+  for (const p of (pausesRes.data ?? []) as {
+    external_id: string;
+    received_at: string;
+    payload: { priorState?: string } | null;
+  }[]) {
+    pausedAt.set(p.external_id, p.received_at);
+    if (p.payload?.priorState) priorState.set(p.external_id, p.payload.priorState);
+  }
+  const fallbackAt = new Map<string, string>();
+  for (const r of (revokedRes.data ?? []) as { athlete_id: string; revoked_at: string | null }[]) {
+    const at = later(fallbackAt.get(r.athlete_id), r.revoked_at);
+    if (at) fallbackAt.set(r.athlete_id, at);
+  }
+  const latestWithdrawal = new Map<string, string>();
+  for (const b of bound) {
+    const withdrawn = rescindedAt.get(`${b.environment}:${b.app_transaction_id}`);
+    const at = later(fallbackAt.get(b.athlete_id), withdrawn);
+    if (at) fallbackAt.set(b.athlete_id, at);
+    const latest = later(latestWithdrawal.get(b.athlete_id), withdrawn);
+    if (latest) latestWithdrawal.set(b.athlete_id, latest);
+  }
+  const parents = new Map(
+    (
+      (parentsRes.data ?? []) as {
+        id: string;
+        user_id: string | null;
+        first_name: string | null;
+        last_name: string | null;
+        adult_verified_at: string | null;
+      }[]
+    ).map((p) => [p.id, p]),
+  );
+
+  return rows
+    .map((r) => {
+      const p = r.parent_id ? parents.get(r.parent_id) : undefined;
+      return {
+        athleteId: r.id,
+        userId: r.user_id,
+        firstName: r.first_name ?? "",
+        lastName: r.last_name ?? "",
+        birthdate: r.birthdate,
+        pausedAt: pausedAt.get(r.id) ?? fallbackAt.get(r.id) ?? null,
+        parent: p
+          ? {
+              parentId: p.id,
+              userId: p.user_id,
+              firstName: p.first_name ?? "",
+              lastName: p.last_name ?? "",
+              adultVerified: !!p.adult_verified_at,
+            }
+          : null,
+        restoresTo: restoredState(r, priorState.get(r.id)),
+        latestWithdrawalAt: latestWithdrawal.get(r.id) ?? null,
+      };
+    })
+    .sort((a, b) => (ms(b.pausedAt) || 0) - (ms(a.pausedAt) || 0));
+}
+
+export interface RestoreResult {
+  ok: true;
+  state: "active" | "provisional";
+  /** Consent scopes granted fresh (method `admin`); empty with no parent on file. */
+  granted: string[];
+  /** Downloads this athlete is now exempt from (their withdrawal stays for everyone else). */
+  exemptedDownloads: number;
+}
+
+const conflict = (code: string, message: string) => new ApiError({ code, status: 409, message });
+
+/**
+ * Restore one athlete paused by `RESCIND_CONSENT`, in an order that leaves
+ * them paused if anything fails part way (a retry finishes the job):
+ *  1. refuse unless paused, and, while parent verification is required,
+ *     unless the parent on file has verified as an adult;
+ *  2. exempt this athlete, and only this athlete, from the withdrawal of each
+ *     download they are bound to (see the bookkeeping note above);
+ *  3. refuse if Apple withdrew again after the admin looked (or, with no
+ *     `seenWithdrawalAt`, after this restore began), before writing consent;
+ *  4. with a parent on file, record fresh consent from that parent
+ *     (method `admin`; the note and admin id as evidence);
+ *  5. set the state from `restoredState`;
+ *  6. check once more: a withdrawal that landed after step 3 wins, and the
+ *     athlete is paused again;
+ *  7. log the outcome.
+ */
+export async function restorePausedAthlete(
+  admin: Admin,
+  args: {
+    athleteId: string;
+    adminUserId: string;
+    note: string;
+    /** `latestWithdrawalAt` as the admin saw it in the list; a newer one refuses the restore. */
+    seenWithdrawalAt?: string | null;
+    now?: Date;
+    env?: NodeJS.ProcessEnv;
+    notify?: AppStoreDeps["notify"];
+  },
+): Promise<RestoreResult> {
+  const now = args.now ?? new Date();
+  const nowIso = now.toISOString();
+  const res = await admin
+    .from("athletes")
+    .select("id, parent_id, birthdate, account_state, created_at")
+    .eq("id", args.athleteId)
+    .maybeSingle();
+  if (res.error) dbError(res.error);
+  const athlete = res.data as (RestorableRow & { id: string; account_state: string | null }) | null;
+  if (!athlete) {
+    throw new ApiError({ code: "not_found", status: 404, message: "Athlete not found." });
+  }
+  if (athlete.account_state !== "paused") {
+    throw conflict("not_paused", "This athlete isn't paused.");
+  }
+  if (athlete.parent_id && verificationRequired(args.env)) {
+    const parent = await admin
+      .from("parent_profiles")
+      .select("adult_verified_at")
+      .eq("id", athlete.parent_id)
+      .maybeSingle();
+    if (parent.error) dbError(parent.error);
+    if (!(parent.data as { adult_verified_at?: string | null } | null)?.adult_verified_at) {
+      throw conflict(
+        "parent_unverified",
+        "The parent on file has to verify as an adult before this account can be restored.",
+      );
+    }
+  }
+
+  const pause = await admin
+    .from("webhook_receipts")
+    .select("payload")
+    .eq("source", PAUSE_RECORD_SOURCE)
+    .eq("external_id", athlete.id)
+    .maybeSingle();
+  if (pause.error) dbError(pause.error);
+  const priorState = (pause.data as { payload?: { priorState?: string } | null } | null)?.payload
+    ?.priorState;
+  const state = restoredState(athlete, priorState);
+
+  const bound = await admin
+    .from("app_store_app_transactions")
+    .select("app_transaction_id, environment")
+    .eq("athlete_id", athlete.id);
+  if (bound.error) dbError(bound.error);
+  const downloads = (bound.data ?? []) as { app_transaction_id: string; environment: string }[];
+  for (const d of downloads) {
+    const ex = await admin.from("webhook_receipts").upsert(
+      {
+        source: RESTORE_EXEMPTION_SOURCE,
+        external_id: exemptionId(athlete.id, d.environment, d.app_transaction_id),
+        event: "restored",
+        received_at: nowIso,
+        payload: { adminUserId: args.adminUserId, note: args.note } as Json,
+      },
+      { onConflict: "source,external_id" },
+    );
+    if (ex.error) dbError(ex.error);
+  }
+
+  // Nothing but the (harmless, older) exemptions is written before this check.
+  const before = await latestWithdrawalAt(admin, downloads);
+  const seen = args.seenWithdrawalAt === undefined ? nowIso : args.seenWithdrawalAt;
+  if (before && (!seen || ms(before) > ms(seen))) {
+    throw conflict(
+      "withdrawn_again",
+      "Apple reported a newer consent withdrawal for this athlete. Reload the list and check before restoring.",
+    );
+  }
+
+  let granted: string[] = [];
+  if (athlete.parent_id) {
+    const g = await grantGuardianConsent(admin, {
+      athleteId: athlete.id,
+      parentId: athlete.parent_id,
+      method: "admin",
+      evidence: {
+        restored_after: RESCIND_CONSENT_REASON,
+        admin_user_id: args.adminUserId,
+        note: args.note,
+      },
+      now,
+    });
+    granted = g.granted;
+  }
+
+  const upd = await admin
+    .from("athletes")
+    .update({ account_state: state })
+    .eq("id", athlete.id)
+    .eq("account_state", "paused");
+  if (upd.error) dbError(upd.error);
+
+  // A RESCIND_CONSENT that landed after the check above is newer than the
+  // exemption: it wins, and the athlete is paused (and consent revoked) again.
+  const after = await latestWithdrawalAt(admin, downloads);
+  const overridden = !!after && ms(after) > ms(nowIso);
+  if (overridden) {
+    await pauseForRescind(
+      admin,
+      [athlete.id],
+      { now: new Date(Math.max(Date.now(), now.getTime() + 1)), notify: args.notify },
+      { notify: "newlyPaused" },
+    );
+  }
+
+  const logged = await admin.from("webhook_receipts").insert({
+    source: RESTORE_LOG_SOURCE,
+    external_id: `${athlete.id}:${nowIso}`,
+    event: overridden ? "restore_overridden" : "restored",
+    received_at: nowIso,
+    payload: {
+      athleteId: athlete.id,
+      adminUserId: args.adminUserId,
+      note: args.note,
+      state: overridden ? "paused" : state,
+      priorState: priorState ?? null,
+      granted,
+      downloads: downloads.map((d) => `${d.environment}:${d.app_transaction_id}`),
+    } as Json,
+  });
+  if (logged.error) dbError(logged.error);
+  if (overridden) {
+    throw conflict(
+      "withdrawn_again",
+      "Apple reported a new consent withdrawal while restoring. The athlete is paused again.",
+    );
+  }
+
+  console.info("[app-store] restored a paused athlete", {
+    athleteId: athlete.id,
+    state,
+    exemptedDownloads: downloads.length,
+  });
+  return { ok: true, state, granted, exemptedDownloads: downloads.length };
+}
+
+/** The latest `rescinded_at` among these downloads, or null. */
+async function latestWithdrawalAt(
+  admin: Admin,
+  downloads: { app_transaction_id: string; environment: string }[],
+): Promise<string | null> {
+  if (downloads.length === 0) return null;
+  const res = await admin
+    .from("app_store_rescinded_transactions")
+    .select("app_transaction_id, environment, rescinded_at")
+    .in(
+      "app_transaction_id",
+      downloads.map((d) => d.app_transaction_id),
+    );
+  if (res.error) dbError(res.error);
+  const mine = new Set(downloads.map((d) => `${d.environment}:${d.app_transaction_id}`));
+  let latest: string | null = null;
+  for (const r of (res.data ?? []) as {
+    app_transaction_id: string;
+    environment: string;
+    rescinded_at: string;
+  }[]) {
+    if (mine.has(`${r.environment}:${r.app_transaction_id}`))
+      latest = later(latest, r.rescinded_at);
+  }
+  return latest;
 }

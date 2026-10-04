@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   type LucideIcon,
   BookOpen,
+  PauseCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -62,6 +63,7 @@ const GROUPS: Group[] = [
       { to: "/admin/leads", label: "Waitlist & leads", icon: UserPlus },
       { to: "/admin/impersonation", label: "Impersonation", icon: UserCheck },
       { to: "/admin/demo-accounts", label: "Demo accounts", icon: UserPlus },
+      { to: "/admin/paused-athletes", label: "Paused athletes", icon: PauseCircle },
     ],
   },
   {

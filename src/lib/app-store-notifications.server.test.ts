@@ -1,8 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
   RESCIND_CONSENT_REASON,
+  applyRescindConsent,
   handleAppStoreNotification,
+  listPausedAthletes,
   registerAppTransaction,
+  restorePausedAthlete,
+  restoredState,
   type AppStoreDeps,
 } from "./app-store-notifications.server";
 import { ApiError } from "./api/errors";
@@ -176,6 +180,10 @@ const post = (body: unknown) =>
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 
+/** The notification receipts only (the pause and restore records share the table). */
+const notificationReceipts = (admin: { tables: Record<string, Row[]> }) =>
+  (admin.tables.webhook_receipts ?? []).filter((r) => r.source === "app_store");
+
 const deps = (notify: AppStoreDeps["notify"]): AppStoreDeps => ({
   roots: TEST_ROOTS,
   now: NOW,
@@ -213,8 +221,8 @@ describe("POST /api/public/webhooks/app-store — RESCIND_CONSENT", () => {
     expect(sent[1].userIds).toEqual([COACH_USER]);
     expect(sent[1].message).toMatchObject({ type: "consent_rescinded", route: "coach/roster" });
 
-    expect(admin.tables.webhook_receipts).toHaveLength(1);
-    expect(admin.tables.webhook_receipts[0]).toMatchObject({
+    expect(notificationReceipts(admin)).toHaveLength(1);
+    expect(notificationReceipts(admin)[0]).toMatchObject({
       source: "app_store",
       event: "RESCIND_CONSENT",
     });
@@ -272,13 +280,13 @@ describe("POST /api/public/webhooks/app-store — RESCIND_CONSENT", () => {
       threw = true;
     }
     expect(threw).toBe(true);
-    expect(admin.tables.webhook_receipts).toHaveLength(0);
+    expect(notificationReceipts(admin)).toHaveLength(0);
     expect(sent).toHaveLength(0);
 
     opts.failUpdatesOn = undefined; // the database is back; Apple retries
     const retry = await handleAppStoreNotification(admin, post(body), deps(notify));
     expect(await retry.json()).toEqual({ ok: true, paused: 1, revoked: 2 });
-    expect(admin.tables.webhook_receipts).toHaveLength(1);
+    expect(notificationReceipts(admin)).toHaveLength(1);
     expect(sent.map((p) => p.userIds)).toEqual([[PARENT_USER], [COACH_USER]]);
   });
 
@@ -399,7 +407,7 @@ describe("POST /api/public/webhooks/app-store — RESCIND_CONSENT", () => {
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, ignored: true });
-    expect(admin.tables.webhook_receipts).toHaveLength(0);
+    expect(notificationReceipts(admin)).toHaveLength(0);
   });
 
   it("answers 400 to a body that is not a notification", async () => {
@@ -475,5 +483,362 @@ describe("registerAppTransaction (POST /api/v1/me/app-transaction)", () => {
     }
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).code).toBe("invalid_app_transaction");
+  });
+});
+
+describe("restorePausedAthlete (Admin → Paused athletes, §12 #29)", () => {
+  const ADMIN_USER = "uuuuuuuu-0000-4000-8000-0000000000ad";
+  const NEWCOMER = "aaaaaaaa-0000-4000-8000-000000000003";
+  const NEWCOMER_USER = "uuuuuuuu-0000-4000-8000-00000000000d";
+  const RESTORE_AT = new Date(NOW.getTime() + 3600 * 1000);
+
+  /** Ava and Ben paused by one rescinded download, the way the webhook leaves them. */
+  async function pausedByWebhook() {
+    const s: Record<string, Row[]> = seed();
+    s.app_store_app_transactions.push({
+      app_transaction_id: DOWNLOAD,
+      environment: "Sandbox",
+      athlete_id: SIBLING,
+    });
+    const admin = fakeAdmin(s);
+    const { notify } = recorder();
+    const res = await handleAppStoreNotification(
+      admin,
+      post({ signedPayload: await notification() }),
+      deps(notify),
+    );
+    expect(res.status).toBe(200);
+    return admin;
+  }
+
+  const restore = (admin: Admin, athleteId = ATHLETE, extra: Record<string, unknown> = {}) =>
+    restorePausedAthlete(admin, {
+      athleteId,
+      adminUserId: ADMIN_USER,
+      note: "Parent emailed support",
+      now: RESTORE_AT,
+      env: {} as NodeJS.ProcessEnv,
+      ...extra,
+    });
+
+  const stateOf = (admin: { tables: Record<string, Row[]> }, id: string) =>
+    admin.tables.athletes.find((a) => a.id === id)!.account_state;
+
+  async function errorOf(run: () => Promise<unknown>): Promise<ApiError> {
+    try {
+      await run();
+    } catch (e) {
+      return e as ApiError;
+    }
+    throw new Error("expected a refusal");
+  }
+
+  it("exempts only this athlete: the withdrawal stays on file, consent is re-recorded, the state comes back", async () => {
+    const admin = await pausedByWebhook();
+    const out = await restore(admin);
+    expect(out).toEqual({
+      ok: true,
+      state: "active",
+      granted: ["account", "messaging"],
+      exemptedDownloads: 1,
+    });
+    expect(stateOf(admin, ATHLETE)).toBe("active");
+    // The withdrawal is not deleted: it still applies to everyone else on the download.
+    expect(admin.tables.app_store_rescinded_transactions).toHaveLength(1);
+    expect(stateOf(admin, SIBLING)).toBe("paused");
+    const fresh = admin.tables.guardian_consents.filter(
+      (g) => g.athlete_id === ATHLETE && g.revoked_at == null,
+    );
+    expect(fresh.map((g) => g.scope).sort()).toEqual(["account", "messaging"]);
+    expect(fresh[0]).toMatchObject({ parent_id: PARENT, method: "admin" });
+    const log = admin.tables.webhook_receipts.filter((r) => r.source === "admin_restore_log");
+    expect(log).toHaveLength(1);
+    expect(log[0].payload).toMatchObject({
+      adminUserId: ADMIN_USER,
+      note: "Parent emailed support",
+      state: "active",
+      priorState: "active",
+    });
+  });
+
+  it("the weekly re-report leaves a restored athlete alone, but still pauses a newcomer on the same download", async () => {
+    const admin = await pausedByWebhook();
+    await restore(admin);
+    const input = { signedAppTransaction: await appTransaction() };
+    await registerAppTransaction(admin, ATHLETE_USER, input, deps(undefined));
+    expect(stateOf(admin, ATHLETE)).toBe("active");
+
+    admin.tables.athletes.push({
+      id: NEWCOMER,
+      user_id: NEWCOMER_USER,
+      parent_id: PARENT,
+      first_name: "Cleo",
+      account_state: "active",
+    });
+    await registerAppTransaction(admin, NEWCOMER_USER, input, deps(undefined));
+    expect(stateOf(admin, NEWCOMER)).toBe("paused");
+  });
+
+  it("a newer RESCIND_CONSENT pauses a restored athlete again", async () => {
+    const admin = await pausedByWebhook();
+    await restore(admin);
+    expect(stateOf(admin, ATHLETE)).toBe("active");
+    const { notify } = recorder();
+    await applyRescindConsent(
+      admin,
+      { appTransactionId: DOWNLOAD, environment: "Sandbox" },
+      { ...deps(notify), now: new Date(RESTORE_AT.getTime() + 3600 * 1000) },
+    );
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+    // And the weekly re-report keeps them paused: the withdrawal is newer than the exemption.
+    await registerAppTransaction(
+      admin,
+      ATHLETE_USER,
+      { signedAppTransaction: await appTransaction() },
+      deps(undefined),
+    );
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+  });
+
+  it("puts a provisional athlete back to provisional, from the state recorded at the pause", async () => {
+    const s: Record<string, Row[]> = seed();
+    s.athletes[0] = {
+      ...s.athletes[0],
+      parent_id: null,
+      account_state: "provisional",
+      birthdate: "2011-06-01",
+    };
+    const admin = fakeAdmin(s);
+    const { notify } = recorder();
+    await handleAppStoreNotification(
+      admin,
+      post({ signedPayload: await notification() }),
+      deps(notify),
+    );
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+    const out = await restore(admin);
+    expect(out.state).toBe("provisional");
+    expect(out.granted).toEqual([]);
+    // The log is written even with no consent row to carry the note.
+    expect(admin.tables.webhook_receipts.some((r) => r.source === "admin_restore_log")).toBe(true);
+  });
+
+  it("restoredState: the recorded state wins; without one, a pre-S1 minor with no parent goes back to active", () => {
+    const minor = { parent_id: null, birthdate: "2012-01-01" };
+    expect(restoredState({ ...minor, created_at: "2026-10-01T00:00:00Z" }, "active")).toBe(
+      "active",
+    );
+    expect(restoredState({ ...minor, created_at: "2025-05-01T00:00:00Z" }, "provisional")).toBe(
+      "provisional",
+    );
+    expect(restoredState({ ...minor, created_at: "2025-05-01T00:00:00+00:00" })).toBe("active");
+    expect(restoredState({ ...minor, created_at: "2026-10-01T00:00:00Z" })).toBe("provisional");
+    expect(restoredState({ parent_id: PARENT, birthdate: "2014-01-01" })).toBe("active");
+    expect(restoredState({ parent_id: null, birthdate: "1990-01-01" })).toBe("active");
+    expect(
+      restoredState({ parent_id: null, birthdate: null, created_at: "2026-10-01T00:00:00Z" }),
+    ).toBe("provisional");
+  });
+
+  it("refuses while verification is required and the parent hasn't verified; allows it once they have", async () => {
+    const admin = await pausedByWebhook();
+    const env = { PARENT_VERIFICATION_REQUIRED: "true" } as NodeJS.ProcessEnv;
+    const err = await errorOf(() => restore(admin, ATHLETE, { env }));
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.code).toBe("parent_unverified");
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+    admin.tables.parent_profiles[0].adult_verified_at = "2027-01-01T00:00:00Z";
+    expect((await restore(admin, ATHLETE, { env })).state).toBe("active");
+  });
+
+  it("refuses an athlete who isn't paused (409) and an unknown one (404)", async () => {
+    const admin = fakeAdmin(seed());
+    expect((await errorOf(() => restore(admin))).status).toBe(409);
+    expect(
+      (await errorOf(() => restore(admin, "aaaaaaaa-0000-4000-8000-0000000000ff"))).status,
+    ).toBe(404);
+  });
+
+  it("stays paused when Apple reports a newer withdrawal while the restore runs", async () => {
+    const admin = await pausedByWebhook();
+    // A withdrawal stamped after the restore's own clock, as if it landed mid-restore.
+    admin.tables.app_store_rescinded_transactions[0].rescinded_at = new Date(
+      RESTORE_AT.getTime() + 60_000,
+    ).toISOString();
+    const err = await errorOf(() => restore(admin));
+    expect(err.code).toBe("withdrawn_again");
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+  });
+
+  it("lists paused athletes with the pause date, the parent, and what a restore sets", async () => {
+    const admin = await pausedByWebhook();
+    admin.tables.parent_profiles[0] = {
+      ...admin.tables.parent_profiles[0],
+      first_name: "Rosa",
+      last_name: "Reyes",
+      adult_verified_at: "2027-01-01T00:00:00Z",
+    };
+    const rows = await listPausedAthletes(admin);
+    expect(rows.map((r) => r.athleteId).sort()).toEqual([ATHLETE, SIBLING].sort());
+    const ava = rows.find((r) => r.athleteId === ATHLETE)!;
+    expect(ava).toMatchObject({
+      userId: ATHLETE_USER,
+      pausedAt: NOW.toISOString(),
+      restoresTo: "active",
+      parent: { parentId: PARENT, firstName: "Rosa", adultVerified: true },
+    });
+    // The pause record dates Ben too.
+    expect(rows.find((r) => r.athleteId === SIBLING)!.pausedAt).toBe(NOW.toISOString());
+    expect(await listPausedAthletes(fakeAdmin(seed()))).toEqual([]);
+  });
+
+  it("a parent on file restores to active even when the pause recorded provisional", async () => {
+    const s: Record<string, Row[]> = seed();
+    s.athletes[0] = {
+      ...s.athletes[0],
+      parent_id: null,
+      account_state: "provisional",
+      birthdate: "2011-06-01",
+    };
+    const admin = fakeAdmin(s);
+    await handleAppStoreNotification(
+      admin,
+      post({ signedPayload: await notification() }),
+      deps(undefined),
+    );
+    // Support attaches the verified parent while the athlete is paused.
+    admin.tables.athletes[0].parent_id = PARENT;
+    expect((await restore(admin)).state).toBe("active");
+  });
+
+  it("refuses when Apple withdrew again after the admin looked, and writes no consent or log", async () => {
+    const admin = await pausedByWebhook();
+    const seen = admin.tables.app_store_rescinded_transactions[0].rescinded_at as string;
+    // A second withdrawal recorded while the list was open (Postgres-format timestamp).
+    admin.tables.app_store_rescinded_transactions[0].rescinded_at =
+      "2027-03-01T12:30:00.123456+00:00";
+    const err = await errorOf(() => restore(admin, ATHLETE, { seenWithdrawalAt: seen }));
+    expect(err.code).toBe("withdrawn_again");
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+    expect(
+      admin.tables.guardian_consents.filter(
+        (g) => g.athlete_id === ATHLETE && g.revoked_at == null,
+      ),
+    ).toHaveLength(0);
+    expect(admin.tables.webhook_receipts.some((r) => r.source === "admin_restore_log")).toBe(false);
+    // With the newer value acknowledged, the restore goes through.
+    expect(
+      (await restore(admin, ATHLETE, { seenWithdrawalAt: "2027-03-01T12:30:00.123456+00:00" }))
+        .state,
+    ).toBe("active");
+  });
+
+  it("a withdrawal that lands after the state update wins: paused again, consent revoked, logged as overridden", async () => {
+    const admin = await pausedByWebhook();
+    const from = admin.from.bind(admin);
+    (admin as unknown as { from: (t: string) => unknown }).from = (table: string) => {
+      const q = from(table as never) as unknown as Record<string, (...a: unknown[]) => unknown>;
+      if (table === "athletes") {
+        const update = q.update;
+        q.update = (patch: unknown) => {
+          if ((patch as { account_state?: string }).account_state === "active") {
+            admin.tables.app_store_rescinded_transactions[0].rescinded_at = new Date(
+              RESTORE_AT.getTime() + 60_000,
+            ).toISOString();
+          }
+          return update(patch);
+        };
+      }
+      return q;
+    };
+    const err = await errorOf(() => restore(admin));
+    expect(err.code).toBe("withdrawn_again");
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+    expect(
+      admin.tables.guardian_consents.filter(
+        (g) => g.athlete_id === ATHLETE && g.revoked_at == null,
+      ),
+    ).toHaveLength(0);
+    const log = admin.tables.webhook_receipts.filter((r) => r.source === "admin_restore_log");
+    expect(log.map((r) => r.event)).toEqual(["restore_overridden"]);
+  });
+
+  it("a second withdrawal while still paused keeps the state recorded at the first pause", async () => {
+    const s: Record<string, Row[]> = seed();
+    s.athletes[0] = {
+      ...s.athletes[0],
+      parent_id: null,
+      account_state: "provisional",
+      birthdate: "2011-06-01",
+    };
+    const admin = fakeAdmin(s);
+    await handleAppStoreNotification(
+      admin,
+      post({ signedPayload: await notification() }),
+      deps(undefined),
+    );
+    await handleAppStoreNotification(
+      admin,
+      post({
+        signedPayload: await notification({
+          notificationUUID: "99999999-2222-4333-8444-555555555555",
+        }),
+      }),
+      deps(undefined),
+    );
+    const record = admin.tables.webhook_receipts.find(
+      (r) => r.source === "app_store_pause" && r.external_id === ATHLETE,
+    )!;
+    expect(record.payload).toEqual({ priorState: "provisional" });
+    expect((await restore(admin)).state).toBe("provisional");
+  });
+
+  it("an athlete on two downloads is exempted from both; a newer withdrawal on either pauses again", async () => {
+    const OTHER = "804283728740938457";
+    const admin = await pausedByWebhook();
+    admin.tables.app_store_app_transactions.push({
+      app_transaction_id: OTHER,
+      environment: "Sandbox",
+      athlete_id: ATHLETE,
+    });
+    admin.tables.app_store_rescinded_transactions.push({
+      app_transaction_id: OTHER,
+      environment: "Sandbox",
+      rescinded_at: NOW.toISOString(),
+    });
+    expect((await restore(admin)).exemptedDownloads).toBe(2);
+    await registerAppTransaction(
+      admin,
+      ATHLETE_USER,
+      { signedAppTransaction: await appTransaction({ appTransactionId: OTHER }) },
+      deps(undefined),
+    );
+    expect(stateOf(admin, ATHLETE)).toBe("active");
+    await applyRescindConsent(
+      admin,
+      { appTransactionId: OTHER, environment: "Sandbox" },
+      { ...deps(undefined), now: new Date(RESTORE_AT.getTime() + 3600 * 1000) },
+    );
+    expect(stateOf(admin, ATHLETE)).toBe("paused");
+  });
+
+  it("dates a pause without a pause record from the later of the revocation and the withdrawal", async () => {
+    const admin = await pausedByWebhook();
+    admin.tables.webhook_receipts = admin.tables.webhook_receipts.filter(
+      (r) => r.source !== "app_store_pause",
+    );
+    admin.tables.app_store_rescinded_transactions[0].rescinded_at = "2027-02-27T09:00:00+00:00";
+    for (const g of admin.tables.guardian_consents) {
+      if (g.athlete_id === ATHLETE) g.revoked_at = "2027-02-28T09:00:00+00:00";
+      if (g.athlete_id === SIBLING) g.revoked_at = "2027-02-26T09:00:00+00:00";
+    }
+    const rows = await listPausedAthletes(admin);
+    expect(rows.find((r) => r.athleteId === ATHLETE)!.pausedAt).toBe("2027-02-28T09:00:00+00:00");
+    expect(rows.find((r) => r.athleteId === SIBLING)!.pausedAt).toBe("2027-02-27T09:00:00+00:00");
+    expect(rows[0].athleteId).toBe(ATHLETE);
+    expect(rows.find((r) => r.athleteId === SIBLING)!.latestWithdrawalAt).toBe(
+      "2027-02-27T09:00:00+00:00",
+    );
   });
 });
