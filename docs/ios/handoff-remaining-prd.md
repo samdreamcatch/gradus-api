@@ -40,7 +40,7 @@ Between our commits, Lovable's bot pushes "Changes", "Work in progress", "Revert
 
 ### 2.3 KWS (Kids Web Services, Epic)
 
-- Organization `gradus-sports-inc` in the Epic developer portal, admin `mariah@gradussports.com`. Parent Verification terms accepted 2026-09-25. Verification methods: credit and debit card (face scan was ticked too; it is not offered in the US, so it never shows).
+- Organization `gradus-sports-inc` in the Epic developer portal, admin `mariah@gradussports.com`. Parent Verification terms accepted 2026-09-25. Verification methods: every method is on in **production** (2026-10-03, decision #38); in the US that is credit card, debit card and the SSN check; ID and face scan never show there. The **test** environment still has card only, so a run before the secret swap shows one option.
 - **Test environment passed end to end on production on 2026-09-26**: Settings opt-in → KWS email to `mariah+kwstest@gradussports.com` → Stripe test card → webhook and `/verified` redirect → `parent_profiles` row verified → the Settings group disappeared. The test parent "Mariahkws Test" remains on production as evidence.
 - The five Lovable secrets `KWS_CLIENT_ID`, `KWS_API_KEY`, `KWS_API_HOST`, `KWS_WEBHOOK_SECRET`, `KWS_VERIFICATION_SECRET` hold the **test** set. Lovable Cloud has one shared secret set for preview and production, so only one KWS environment can be live at a time.
 - **Production review requested 2026-09-26.** KWS says up to seven business days. What happens on approval is §4 item 1.
@@ -56,7 +56,7 @@ Team ID `79RN82HXPZ`; App IDs, App Group, APNs and Sign in with Apple keys in Lo
 
 ## 3. Decisions made this pass (do not re-ask)
 
-- **#34 (2026-09-25):** opt-in verification in parent Settings while the switch is off; `/support` built nearer go-live; card-only methods.
+- **#34 (2026-09-25):** opt-in verification in parent Settings while the switch is off; `/support` built nearer go-live; card-only methods *(superseded 2026-10-03 by #38: every KWS method)*.
 - The KWS test environment's webhook and redirect point at production `gradus.training`, not the preview (Mariah, 2026-09-25).
 - The switch is **not** flipped now (Mariah asked 2026-09-26; answer: no, see §4 item 1).
 - The dictation-for-minors question from the consent handoff §8 is still unanswered; ask when S2's composer work starts.
@@ -65,7 +65,7 @@ Team ID `79RN82HXPZ`; App IDs, App Group, APNs and Sign in with Apple keys in Lo
 
 ## 4. Owed on Mariah's side (ask at the right moment)
 
-1. **On KWS approval:** in the portal, switch to the production environment, publish **Branding** there too (brand name `Gradus`, privacy `https://gradus.training/privacy`, accent `#d0f000`; KWS refuses `send-email` with `400 ERR_INVALID_REQUEST` until branding is published), set the same webhook and redirect URLs, Publish, copy the five values, and **overwrite** the five `KWS_*` secrets in Lovable. Then the webhook curl (§9) and one real-card verification (five cents, refunded). Only after that, and after the demo parent is confirmed verified, does she set `PARENT_VERIFICATION_REQUIRED=true`. Flipping earlier locks real parents out: the test environment only emails Epic org admins.
+1. **On KWS approval:** in the portal, switch to the production environment, publish **Branding** there too (brand name `Gradus`, privacy `https://gradus.training/privacy`, accent `#d0f000`; KWS refuses `send-email` with `400 ERR_INVALID_REQUEST` until branding is published), set the same webhook and redirect URLs, Publish, copy the five values, and **overwrite** the five `KWS_*` secrets in Lovable. Then the webhook curl (§9) and one real verification (card: five cents, refunded; or the SSN check). Only after that, and after the demo parent is confirmed verified, does she set `PARENT_VERIFICATION_REQUIRED=true`. Flipping earlier locks real parents out: the test environment only emails Epic org admins.
 2. **Merge #151 and #152** (the two handoff docs) so they are on `main`.
 3. **Publish in Lovable** after every merge that must reach production.
 4. **Install Build 5 from TestFlight** on her iPhone 17 Pro and begin `docs/ios/QA.md` (Xcode Cloud itself is done, §2.4).

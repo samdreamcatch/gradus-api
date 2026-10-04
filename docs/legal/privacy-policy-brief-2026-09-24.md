@@ -41,9 +41,9 @@ Each item states what the product does today, the wording problem, and the propo
 
 ## 6. Age assurance (§5, new)
 
-**Today.** Age is a parent-entered birthdate at athlete creation; nothing is verified. **Decided 2026-09-24 (PRD §6.13, decisions #29–#33):** every parent account linked to a minor is verified as an adult once through Kids Web Services (KWS) Parent Verification, payment card only; the iOS app also reads Apple's Declared Age Range signal on device.
+**Today.** Age is a parent-entered birthdate at athlete creation; nothing is verified. **Decided 2026-09-24 (PRD §6.13, decisions #29–#33):** every parent account linked to a minor is verified as an adult once through Kids Web Services (KWS) Parent Verification, payment card only *(superseded 2026-10-03: every KWS method, see Revision §1 below)*; the iOS app also reads Apple's Declared Age Range signal on device.
 
-**Proposal.** In §5.2: "Before a parent can connect a coach to, or message about, an athlete under 18, we confirm that the parent is an adult through Kids Web Services (Epic Games), which performs a nominal payment-card check. Gradus receives only the result and a transaction reference, never the card details." Add Kids Web Services to §4.2 as a processor (adult verification of parents; receives the parent's email address). On the device, the iOS app may request an age range from Apple; Gradus receives an age band, never a birthdate, and uses it only to route sign-up to the right flow.
+**Proposal.** In §5.2: "Before a parent can connect a coach to, or message about, an athlete under 18, we confirm that the parent is an adult through Kids Web Services (Epic Games), which performs a nominal payment-card check. Gradus receives only the result and a transaction reference, never the card details." *(wording superseded by Revision §1 below)* Add Kids Web Services to §4.2 as a processor (adult verification of parents; receives the parent's email address). On the device, the iOS app may request an age range from Apple; Gradus receives an age band, never a birthdate, and uses it only to route sign-up to the right flow.
 
 ## 7. Minor items counsel may want to align
 
@@ -61,7 +61,7 @@ Each item states what the product does today, the wording problem, and the propo
 
 **Proposals for counsel.**
 - §2 (what we collect from athletes): add username, messages, goals and practice logs; state that no audio is collected from athletes under 18.
-- §5 (children): describe the flows above; state that the parent invite email is the COPPA direct notice; state that a provisional account or a parent's contact details are deleted if consent does not arrive within the window in PRD §12 #25 (default 30 days).
+- §5 (children): describe the flows above; state that the parent invite email is the COPPA direct notice; state that a provisional account or a parent's contact details are deleted if consent does not arrive within the window in PRD §12 #25 (3 months, resolved 2026-09-24).
 - §7 (retention): publish the written retention policy the amended COPPA Rule requires (messages, practice logs, voice notes from coaches, verification records, analytics per §4), with the deletion windows.
 - Internal, not policy text: the written information-security program the amended rule requires (owner, annual risk assessment, safeguards, vendor confirmations). Counsel to advise on scope.
 - Confirm whether coach voice-note transcription (ElevenLabs) needs a separate third-party-disclosure consent, or is integral to the service (Mariah's reading: integral, coach-side input only).
@@ -69,3 +69,16 @@ Each item states what the product does today, the wording problem, and the propo
 ## What the app declares to Apple
 
 The App Store "App Privacy" answers in `docs/ios/app-store-submission.md` §4 and the iOS privacy manifest (gradus-ios PR #58) are drafted to match the proposals above: contact info, user content (messages, audio, uploaded files), identifiers, usage data (product interaction, first-party analytics), diagnostics (crash data), none used for tracking. If counsel changes a proposal, those two must change with it.
+
+## Revision 2026-10-03 (decisions #38–#45)
+
+Mariah's instruction to counsel is the proposals above with these changes. Counsel decides the final language.
+
+1. **Age assurance, every KWS method (#38).** Replace §6's "payment card only" with: "Before a parent can connect a coach to, or message about, an athlete under 18, we confirm that the parent is an adult through Kids Web Services (Epic Games). On its own pages Kids Web Services asks for either a payment card, on which it places a nominal temporary charge, or the last four digits of a Social Security number together with name, date of birth and address, checked against identity records by its provider Veratad. Gradus receives only the result and a transaction reference, never the card or Social Security details." Add Kids Web Services to §4.2 as a processor (adult verification of parents; receives the parent's email address), naming Stripe and Veratad as its sub-processors for the card and SSN checks.
+2. **The CCPA statement (Appendix A).** The published sentence "We do not collect Social Security numbers" and "Payment card numbers … are collected and processed directly by Stripe" need a qualifier: Gradus itself collects neither; a parent may provide one or the other to Kids Web Services during adult verification, and Gradus never receives it.
+3. **The retired email mirror (§5.2).** Delete "their parent or guardian receives an email carbon copy of every interaction"; replace with the rule that every conversation with an athlete under 18 includes a verified adult who is not the coach, that athletes under 18 send text only, and that a parent can pause a coach's messaging.
+4. **Existing parents (#39 A2).** Mariah's determination is that the changes since existing parents consented (messages, goals and practice logs as collected categories; Apple push delivery; first-party analytics; Kids Web Services receiving the parent's email) are not a material change to collection, use or disclosure practices, so parents who existed before 2026-09-25 are not re-prompted. Counsel to confirm or disagree.
+5. **Transcription (#39 A3).** Coach voice-note transcription is integral to the service (coach-side input, coach's own recording); no separate third-party-disclosure consent. Counsel to confirm.
+6. **Direct notice (#40).** Now shown in the app wherever a parent enters a minor's details, as well as in the guardian-invite email; the text is in `src/lib/consent/direct-notice.ts`. It names the categories of processors and points to the policy for the retention windows. §5 should say that the notice is given in the parent invite and on the screens where a parent creates or claims an athlete account.
+7. **Retention (#41–#43).** Publish `docs/legal/retention-policy.md` §A as the "Data Retention" section. The windows that matter for children: 3 months for unclaimed provisional accounts; 3 years' inactivity for under-18 accounts with a 30-day notice; life of the account for messages, logs, goals and plans; 5 years for audit receipts and deletion records; 13 months for raw usage events. The published policy's "deleted or de-identified within a reasonable period" becomes these specific windows.
+8. **Security program (#44, #45).** Internal; not policy text. Drafted in `docs/legal/information-security-program.md`; vendor agreements to be filed before submission.
