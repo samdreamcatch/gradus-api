@@ -19,6 +19,7 @@
 | 8   | `API_V1_ENABLED=true` in Lovable secrets, then Publish                                                                                                                                                           | Mariah                                     | The TestFlight build talking to production                                                               |
 | 9   | QA on TestFlight (`docs/ios/QA.md`), the device accessibility pass (gradus-ios `docs/device-accessibility-script.md`), and L1–L3 + L5 merged (PRD §10.7: all before I16)                                         | Mariah + sessions                          | **I16**, submission                                                                                      |
 | 10  | Listing, privacy, age rating, review info (§3–§7), screenshots (§8)                                                                                                                                              | Mariah pastes; session drafts and captures | Submit for review                                                                                        |
+| 11  | App Store Server Notifications **Version 2**, production and sandbox URL `https://gradus.training/api/public/webhooks/app-store` (App Store Connect → the app → App Information → App Store Server Notifications), after the S3 web PR is published | Mariah | `RESCIND_CONSENT` pauses the athlete (PRD §6.13 B4, S3); the sandbox QA row in `docs/ios/QA.md` §8 |
 
 Not blocking, but needed before the Google button and native password reset appear: a Google Cloud iOS OAuth client for `training.gradus.app` (client ID → session + secret `GOOGLE_IOS_CLIENT_ID`), and `gradus://reset-password` in the Supabase Auth redirect allow-list.
 
@@ -41,7 +42,7 @@ Not blocking, but needed before the Google button and native password reset appe
 | Availability       | United States only (PRD §12 #7 default)                                             |
 | Copyright          | 2026 Gradus Sports, Inc.                                                            |
 | Privacy policy URL | https://www.gradussports.com/privacy                                                |
-| Support URL        | https://www.gradussports.com/contact (live; `/support` returns 404 on both domains) |
+| Support URL        | https://gradus.training/support (S4; until its PR is published, https://www.gradussports.com/contact) |
 | Marketing URL      | https://www.gradussports.com                                                        |
 
 ---
@@ -83,7 +84,7 @@ coach,figure skating,tennis,golf,training plan,lesson,drills,athlete,parent,skat
 >
 > BUILT FOR YOUTH SPORT
 > • Athlete accounts for minors are created with a parent. There are no private coach–minor athlete channels.
-> • Report and block in every conversation, and Safe Sport resources built in.
+> • Report and block in every conversation, and Safe Sport resources built in. Every report reaches our team at once and we respond within one business day: support@gradussports.com.
 > • Works offline: sessions, notes, and messages sync when you're back online.
 > • Live Activities for the practice timer and for competitions you follow, plus a Home Screen widget.
 >
@@ -139,7 +140,7 @@ Apple's questionnaire (updated in 2025) computes the rating from the answers. Pr
 | User-generated content                                                                 | Yes: messages and uploaded resources, with Report and Block                                                                                                                                                                |
 | Messaging and chat                                                                     | Yes: restricted to connected coaches, parents, and athletes                                                                                                                                                                |
 | Parental controls                                                                      | Yes: parents create and oversee under-18 athlete accounts, are verified as adults before any coach link or conversation, and can pause a coach's messaging with their athlete (PRD §6.13)                                                                                          |
-| Age assurance                                                                          | **Yes once S1 and S3 ship** (PRD §6.13 B5, 2026-09-24): every parent of a minor is verified as an adult through Kids Web Services (payment card), and the app reads Apple's Declared Age Range on device. Until then the answer stays **No** (parent-entered birthdate only). Earlier note, for the record: "No" (Mariah, 2026-09-24), vendor under evaluation (PRD §12 #23, now resolved) |
+| Age assurance                                                                          | **Yes once S1 and S3 ship** (S1 live; S3 built 2026-10-03, answer Yes once its PRs are merged and published; PRD §6.13 B5, 2026-09-24): every parent of a minor is verified as an adult through Kids Web Services (payment card), and the app reads Apple's Declared Age Range on device. Until then the answer stays **No** (parent-entered birthdate only). Earlier note, for the record: "No" (Mariah, 2026-09-24), vendor under evaluation (PRD §12 #23, now resolved) |
 | Advertising                                                                            | No                                                                                                                                                                                                                         |
 | Made for Kids                                                                          | **No** (the Kids Category forbids external links, and billing links out)                                                                                                                                                   |
 
@@ -178,7 +179,7 @@ All three must be tested on the TestFlight build against production before submi
 > 3. Sign in with Apple is offered alongside email sign-in.
 > 4. User-generated content: every conversation offers Report and Block (message long-press → Report this message; conversation menu → Block). Blocked users are hidden immediately (Guideline 1.2).
 > 5. Account deletion: Settings → Account & security → Delete account (Guideline 5.1.1(v)). It deletes the account and revokes the Sign in with Apple token.
-> 6. Athlete accounts for minors are created by a parent, or (ages 13–17 only) stay provisional until a parent claims them. Every parent linked to a minor is verified as an adult through Kids Web Services before any coach can be linked or any conversation opened; under-13 athletes cannot create accounts themselves. Minors sign in with a username and can only send text. There are no channels between a coach and a minor that exclude the parent, and a parent can pause a coach's messaging at any time. The demo parent account is pre-verified for review. The app is not in the Kids Category.
+> 6. Athlete accounts for minors are created by a parent, or (ages 13–17 only) stay provisional until a parent claims them. Every parent linked to a minor is verified as an adult through Kids Web Services before any coach can be linked or any conversation opened; under-13 athletes cannot create accounts themselves. Minors sign in with a username and can only send text. There are no channels between a coach and a minor that exclude the parent, and a parent can pause a coach's messaging at any time. The demo parent account is pre-verified for review. On iOS 26 the app also reads Apple's Declared Age Range as a tighten-only check: a device whose Apple Account is under 18 can create only an athlete account, and declining to share never blocks anything. A parent's withdrawal of consent through Apple (`RESCIND_CONSENT`) pauses the athlete's account. Reports reach our team at once (support@gradussports.com, a reply within one business day; see gradus.training/support). The app is not in the Kids Category.
 > 7. Demo accounts: coach, parent, and athlete are provided above. The Live Board works with any public competition code; [add a live or demo board code at submission].
 > 8. Live Activities are used for the practice timer and for competitions the user follows.
 
