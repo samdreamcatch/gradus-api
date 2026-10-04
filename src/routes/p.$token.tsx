@@ -45,7 +45,7 @@ export const Route = createFileRoute("/p/$token")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">
       <h1 className="font-display text-2xl font-black">Couldn't load this plan</h1>
-      <p className="mt-2 text-sm text-text-secondary">{error.message}</p>
+      <p className="mt-2 text-sm text-text-secondary">{error instanceof Error ? error.message : String(error)}</p>
       <Link to="/" className="mt-6 inline-block text-sm font-bold text-accent-ink underline">
         Go to Gradus
       </Link>
