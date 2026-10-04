@@ -8,6 +8,20 @@
       "when": 1791078689596,
       "tag": "0000_app_store_app_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791125123533,
+      "tag": "0001_adult_verification_method_kws",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791125131770,
+      "tag": "0002_retention_dormant_athletes",
+      "breakpoints": true
     }
   ]
 }
