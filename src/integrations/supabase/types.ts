@@ -865,8 +865,6 @@ export type Database = {
           motivation: string
           parent_id: string | null
           promo_code: string | null
-          retention_notice_sent_at: string | null
-          retention_checked_at: string | null
           self_managed: boolean
           updated_at: string
           user_id: string | null
@@ -890,8 +888,6 @@ export type Database = {
           motivation?: string
           parent_id?: string | null
           promo_code?: string | null
-          retention_notice_sent_at?: string | null
-          retention_checked_at?: string | null
           self_managed?: boolean
           updated_at?: string
           user_id?: string | null
@@ -915,8 +911,6 @@ export type Database = {
           motivation?: string
           parent_id?: string | null
           promo_code?: string | null
-          retention_notice_sent_at?: string | null
-          retention_checked_at?: string | null
           self_managed?: boolean
           updated_at?: string
           user_id?: string | null
