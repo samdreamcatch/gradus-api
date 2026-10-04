@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/athlete/resources/")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-3 py-6">
       <div className="rounded-2xl border border-divider bg-card p-6 text-sm text-text-secondary">
-        Couldn&apos;t load resources: {error.message}
+        Couldn&apos;t load resources: {error instanceof Error ? error.message : String(error)}
       </div>
     </div>
   ),

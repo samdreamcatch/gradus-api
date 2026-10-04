@@ -121,7 +121,7 @@ export const Route = createFileRoute("/_authenticated/coach/roster")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-4 pt-8 pb-app-chrome" role="alert">
       <PageTitle>Roster</PageTitle>
-      <p className="mt-4 text-text-secondary">Couldn't load your roster: {error.message}</p>
+      <p className="mt-4 text-text-secondary">Couldn't load your roster: {error instanceof Error ? error.message : String(error)}</p>
       <CoachBottomNav />
     </div>
   ),

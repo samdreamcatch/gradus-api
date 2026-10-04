@@ -23,7 +23,7 @@ import { PlansRouteError } from "@/components/plans/plans-error";
 
 export const Route = createFileRoute("/_authenticated/parent/plans/")({
   component: ParentPlansPage,
-  errorComponent: ({ error }) => <PlansRouteError error={error} label="Couldn't load plans" />,
+  errorComponent: ({ error }) => <PlansRouteError error={error instanceof Error ? error : new Error(String(error))} label="Couldn't load plans" />,
 });
 
 type StatusFilter = "active" | "benched";

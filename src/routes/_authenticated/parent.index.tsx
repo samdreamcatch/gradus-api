@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/parent/")({
       <div className="flex min-h-dvh items-center justify-center p-6 text-center">
         <div>
           <p className="text-sm text-text-secondary">Couldn&apos;t load your account.</p>
-          <p className="mt-2 text-xs text-text-tertiary">{error.message}</p>
+          <p className="mt-2 text-xs text-text-tertiary">{error instanceof Error ? error.message : String(error)}</p>
         </div>
       </div>
     );

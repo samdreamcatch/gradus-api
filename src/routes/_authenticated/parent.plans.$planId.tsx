@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/parent/plans/$planId")({
       queryFn: () => getParentPlan({ data: { id: params.planId } }),
     }),
   errorComponent: ({ error }) => (
-    <PlansRouteError error={error} label="Couldn't load this plan" backTo="/parent/plans" />
+    <PlansRouteError error={error instanceof Error ? error : new Error(String(error))} label="Couldn't load this plan" backTo="/parent/plans" />
   ),
   notFoundComponent: () => (
     <div className="mx-auto max-w-2xl px-3 py-8 text-sm text-text-secondary">Plan not found.</div>
