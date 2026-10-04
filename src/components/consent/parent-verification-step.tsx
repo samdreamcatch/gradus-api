@@ -132,8 +132,9 @@ export function ParentVerificationStep({
               : athleteName
                 ? `Before you can connect a coach to ${athleteName} or open their conversations, we confirm once that you're an adult.`
                 : "Before you can connect a coach or open a conversation for an athlete under 18, we confirm once that you're an adult."}{" "}
-            Our partner Kids Web Services runs a quick payment-card check; Gradus never sees the
-            card.
+            {optional
+              ? "Our partner Kids Web Services runs a quick check."
+              : "Our partner Kids Web Services runs a quick payment-card check; Gradus never sees the card."}
           </p>
         </div>
       </div>
