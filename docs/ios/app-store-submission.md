@@ -190,9 +190,9 @@ Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3
 ## 8. Screenshots
 
 - **iPhone 6.9" (required):** 1320 × 2868 portrait. The automated simulator (iPhone 17 Pro Max) captures exactly this size. 3–10 per locale; Apple scales these for smaller iPhones.
-- **iPad 13" (required while the app runs on iPad):** 2064 × 2752. `TARGETED_DEVICE_FAMILY` is `1,2` today, so App Store Connect will require iPad screenshots. **Decision for Mariah:** keep iPad (PRD §12 #12 chose "works, not optimized") and capture iPad screenshots, or ship iPhone-only for 1.0.
-- **Proposed set (6.9"):** coach roster/schedule · plan editor with voice capture · parent dashboard with goals · athlete practice timer (with the Live Activity) · messages thread · Live Board following a skater.
-- **Data:** capture from the `-GradusMock` data with the harness in gradus-ios `Tools/AppStoreScreenshots` (`run.sh` writes both sizes, clean status bar). *2026-10-04:* every person in mock data is invented; the founders' and their families' real names were removed from the mocks (decision: real people never appear in mock, demo, test or screenshot data). Do **not** use gradus-ios PR #31's demo mode: it uses real names and is to be closed.
+- **iPad 13" (required):** 2064 × 2752. iPad ships in 1.0 with adaptive one-column layouts (decision #21), so App Store Connect requires iPad screenshots.
+- **The set (both sizes, in order):** 01 coach week (roster schedule) · 02 athlete detail · 03 plan editor · 04 messages thread · 05 practice session running · 06 goals · 07 Live Board. The harness README in gradus-ios `Tools/AppStoreScreenshots` lists the same shots; Ask Gradus is hidden in 1.0 and never shown.
+- **Data:** capture from the `-GradusMock` data with the harness in gradus-ios `Tools/AppStoreScreenshots` (`run.sh` writes both sizes, clean status bar). *2026-10-04:* every person in mock data is invented; the founders' and their families' real names were removed from the mocks (decision: real people never appear in mock, demo, test or screenshot data). gradus-ios PR #31's demo mode, which used real names, is closed.
 - App Preview video: optional; skip for 1.0.
 
 ---
@@ -201,8 +201,8 @@ Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3
 
 1. **Privacy manifests:** added in gradus-ios PR #58 (neither target had one; App Store uploads need them for UserDefaults). Also adds `NSPhotoLibraryAddUsageDescription`, because the share sheet's Save Image on a shared resource would otherwise terminate the app.
 2. **Policy vs app (counsel):** the policy says Gradus doesn't collect photographs from or about athletes. Coaches can upload schedule photos; resource images are links to public web addresses, never uploads (2026-09-26); confirm that wording still holds. §4.2's provider list doesn't name Apple (push delivery, Sign in with Apple). Once L5 ships, Ask Gradus questions are embedded through the Lovable gateway's OpenAI model (`openai/text-embedding-3-small`), and the policy names only Google for AI inference. Counsel decides wording; this repo's `/privacy` mirrors the published text verbatim.
-3. **Support page:** `/support` is a 404 on both domains; `/contact` works and is used above.
+3. **Support page:** *Resolved 2026-10-04:* `https://gradus.training/support` is live (S4, web #172). Use it as the support URL in App Store Connect and in KWS branding.
 4. **Demo accounts:** create the three seeded accounts with the admin tool against production (§7) and verify each on the TestFlight build.
 5. **Library rights:** apply migration `20260924120000_resources_rights` and mark each curated document in Admin → Content → Library rights; unmarked rows stay off the iOS library.
-6. **Names in dummy data:** the "Gradus Demo Invitational" competition was inserted by hand through Lovable; if its rows carry real names, replace them the way web #143 did for the demo board.
-7. **Scope before I16** (PRD §10.7): L1, L2, L3, and L5 are part of 1.0 and not yet built. L4 is merged.
+6. **Names in dummy data:** *Resolved 2026-10-04:* every person in mock, demo and test data is invented (web #181, gradus-ios #96). Mariah is not concerned about the hand-seeded "Gradus Demo Invitational" rows.
+7. **Scope before I16:** L1–L5 are merged. Still to build before I16: athlete-authored plans AP1–AP4 (§10.10) and the Apple Watch app W0–W6 (§10.11), both in the 1.0 submission.
