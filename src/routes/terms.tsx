@@ -77,10 +77,11 @@ function TermsPage() {
 
           <p>
             <strong>Cloud Service:</strong> Gradus is an app that allows coaches to build
-            structured, between-lesson plans for their youth athletes to practice with their parents
-            or guardians, extending the coach's expertise and guidance between lessons, and arming
-            the parent or guardian with the confidence needed to support their athlete without
-            having to play coach themselves.
+            structured, between-lesson plans for their athletes to practice, and if those athletes
+            are under 18, all communications are mirrored with the athlete's parents or guardians.
+            The app extends the coach's expertise and guidance between lessons, and arms the parent
+            or guardian of a youth athlete with the confidence needed to support their athlete
+            without having to play coach themselves.
           </p>
 
           <p>
