@@ -131,6 +131,27 @@ export const recordWrapUpInput = z.object({
   action: z.enum(["edited", "redeployed", "dismissed", "did_not_happen"]),
 });
 
+const NOT_ON_ROSTER = "Athlete is not on your roster";
+
+/**
+ * The caller must coach this athlete. Mirrors the roster clause of the
+ * lesson_wrap_ups insert and update policies (read through the same RLS client,
+ * so the two cannot disagree). One answer for "not on your roster" and "no such
+ * athlete", so athlete ids cannot be probed.
+ */
+async function assertAthleteOnRoster(supabase: WrapUpClient, coachId: string, athleteId: string) {
+  const { data, error } = await supabase
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (error) dbError(error);
+  if (!data) {
+    throw new ApiError({ code: "forbidden", status: 403, message: NOT_ON_ROSTER });
+  }
+}
+
 /** `recordLessonWrapUp`: one row per (coach, athlete, date); a repeat replaces the action. */
 export async function recordLessonWrapUp(
   ctx: WrapUpContext,
@@ -139,6 +160,7 @@ export async function recordLessonWrapUp(
   const { supabase, userId } = ctx;
   const coachId = await getCoachIdOrNull(supabase, userId);
   if (!coachId) throw new ApiError({ code: "wrong_role", status: 403, message: "Not a coach" });
+  await assertAthleteOnRoster(supabase, coachId, data.athleteId);
 
   const { error } = await supabase.from("lesson_wrap_ups").upsert(
     {
@@ -149,6 +171,11 @@ export async function recordLessonWrapUp(
     },
     { onConflict: "coach_id,athlete_id,lesson_date" },
   );
+  // The write is scoped to the caller's own coach_id, so the roster clause is the
+  // only one that can fail with 42501.
+  if (error?.code === "42501") {
+    throw new ApiError({ code: "forbidden", status: 403, message: NOT_ON_ROSTER });
+  }
   if (error) dbError(error);
   return { ok: true as const };
 }
