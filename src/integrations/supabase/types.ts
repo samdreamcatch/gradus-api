@@ -4406,6 +4406,10 @@ export type Database = {
         Returns: boolean
       }
       import_shared_plan: { Args: { _token: string }; Returns: string }
+      invoice_keeps_athlete: {
+        Args: { _athlete_id: string; _invoice_id: string }
+        Returns: boolean
+      }
       is_any_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_direct_room_participant: {
         Args: { _direct_room_id: string; _user_id: string }
