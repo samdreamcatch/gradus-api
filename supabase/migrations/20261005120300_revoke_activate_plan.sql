@@ -1,0 +1,28 @@
+-- Nobody signed in may call activate_plan(uuid) directly.
+--
+-- activate_plan is SECURITY DEFINER and granted to `authenticated`
+-- (20260528021736, 20260605182738). It checks only that the plan belongs to the
+-- caller, then sets it active and benches the coach's other plans for that
+-- athlete. Because it runs as the function owner it skips row-level security,
+-- so it skips the roster check that "Coaches manage own plans - update"
+-- (PR #192, 20261005110000) puts on plan writes: a coach whose athlete has left
+-- the roster could still call it and put a plan back in front of that athlete's
+-- guardians. It also skips what setPlanStatus (src/lib/plans.server.ts) does on
+-- the same transition: the two-active-plan rule (it silently benches every other
+-- active plan instead of asking which one to bench), the guardian email and the
+-- push, and the "why" audit event.
+--
+-- Nothing calls it. src/ moves plans through setPlanStatus, and the iOS app
+-- reaches plans only through /api/v1; its only other mention is the generated
+-- src/integrations/supabase/types.ts. So the grant is revoked rather than the
+-- function patched: a second implementation of "activate a plan" would have to
+-- be kept in step with setPlanStatus for no caller. The function stays, so
+-- nothing that references it by name breaks and the grant can be restored with
+-- one statement if a caller ever appears.
+--
+-- Revoked from PUBLIC, anon and authenticated, each by name (PUBLIC does not
+-- cover roles that were granted EXECUTE explicitly). service_role keeps it.
+--
+-- No function is replaced. Idempotent: safe to re-apply.
+
+REVOKE EXECUTE ON FUNCTION public.activate_plan(uuid) FROM PUBLIC, anon, authenticated;
