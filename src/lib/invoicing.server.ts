@@ -159,6 +159,10 @@ export async function setAthleteRate(
     },
     { onConflict: "coach_id,athlete_id" },
   );
+  // The write is scoped to the caller's own coach_id, so the roster clause of
+  // "Coaches manage own athlete rates" is the only one that can fail with 42501
+  // (an athlete removed from the roster since the check above).
+  if (error?.code === "42501") throw unprocessable("Athlete is not on your roster");
   if (error) dbError(error);
   return { ok: true as const };
 }
@@ -628,6 +632,10 @@ export async function createInvoice(
     })
     .select("id")
     .single();
+  // The insert is scoped to the caller's own coach_id, so the roster clause of
+  // "Coaches manage own invoices" is the only one that can fail with 42501 (an
+  // athlete removed from the roster since the check above).
+  if (error?.code === "42501") throw unprocessable("Athlete is not on your roster");
   if (error) dbError(error);
 
   const { error: lErr } = await supabase.from("invoice_lines").insert(

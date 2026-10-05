@@ -362,6 +362,38 @@ describe("setAthleteRate", () => {
     expect(err?.message).toBe("Athlete is not on your roster");
     expect(db.tables.coach_athlete_rates).toHaveLength(0);
   });
+
+  it("answers the database's roster refusal (an athlete removed since the check) the same way", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    const realFrom = db.client.from;
+    db.client.from = ((t: string) => {
+      if (t !== "coach_athlete_rates") return realFrom(t);
+      return {
+        ...realFrom(t),
+        upsert: () => ({
+          then(resolve: (v: { data: null; error: { code: string; message: string } }) => void) {
+            resolve({
+              data: null,
+              error: {
+                code: "42501",
+                message:
+                  'new row violates row-level security policy for table "coach_athlete_rates"',
+              },
+            });
+          },
+        }),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
+
+    const err = await caught(() =>
+      setAthleteRate(ctxFor(db), ATHLETE, { rateKind: "per_session", rateCents: 1000 }),
+    );
+    expect(err?.code).toBe("unprocessable");
+    expect(err?.message).toBe("Athlete is not on your roster");
+  });
 });
 
 /* -------------------------------------------------------------------------- */
@@ -801,6 +833,81 @@ describe("createInvoice", () => {
   });
 });
 
+describe("createInvoice stays on the coach's roster", () => {
+  const input = (athleteId: string) => ({
+    athleteId,
+    periodStart: "2026-05-01",
+    periodEnd: "2026-05-31",
+    lines: [
+      {
+        occurrenceDate: "2026-05-01",
+        amountCents: 5000,
+        slotId: null,
+        startMinute: null,
+        endMinute: null,
+        includedReason: "completed" as const,
+      },
+    ],
+  });
+
+  it("refuses an athlete who isn't on the coach's roster and writes nothing", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    // No coach_athletes row for ATHLETE.
+    const err = await caught(() => createInvoice(ctxFor(db), input(ATHLETE)));
+    expect(err?.code).toBe("unprocessable");
+    expect(err?.message).toBe("Athlete is not on your roster");
+    expect(db.tables.invoices).toHaveLength(0);
+    expect(db.tables.invoice_lines).toHaveLength(0);
+  });
+
+  it("answers the database's roster refusal (an athlete removed since the check) the same way", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    const realFrom = db.client.from;
+    db.client.from = ((t: string) => {
+      if (t !== "invoices") return realFrom(t);
+      return {
+        ...realFrom(t),
+        insert: () => ({
+          select: () => ({
+            single: async () => ({
+              data: null,
+              error: {
+                code: "42501",
+                message: 'new row violates row-level security policy for table "invoices"',
+              },
+            }),
+          }),
+        }),
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
+
+    const err = await caught(() => createInvoice(ctxFor(db), input(ATHLETE)));
+    expect(err?.code).toBe("unprocessable");
+    expect(err?.message).toBe("Athlete is not on your roster");
+    expect(db.tables.invoice_lines).toHaveLength(0);
+  });
+});
+
+describe("previewInvoice stays on the coach's roster", () => {
+  it("refuses an athlete who isn't on the coach's roster", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    const err = await caught(() =>
+      previewInvoice(ctxFor(db), {
+        athleteId: ATHLETE,
+        periodStart: "2026-01-05",
+        periodEnd: "2026-01-19",
+      }),
+    );
+    expect(err?.code).toBe("unprocessable");
+    expect(err?.message).toBe("Athlete is not on your roster");
+  });
+});
+
 /* -------------------------------------------------------------------------- */
 /* setInvoiceStatus / deleteInvoice                                           */
 /* -------------------------------------------------------------------------- */
@@ -822,6 +929,18 @@ describe("setInvoiceStatus", () => {
     row = db.tables.invoices.find((r) => r.id === "inv-a")!;
     expect(row.status).toBe("unpaid");
     expect(row.paid_at).toBeNull();
+  });
+
+  it("needs no roster row: a late payment for an athlete who has left can still be recorded", async () => {
+    // The invoices policy lets a coach keep updating an invoice whose athlete is no longer on
+    // their roster (it only refuses re-pointing one), so the API does not check the roster here.
+    const db = makeDb();
+    seedCoach(db);
+    // No coach_athletes row for ATHLETE.
+    seedInvoice(db, { id: "inv-left", athleteId: ATHLETE, status: "unpaid", paidAt: null });
+
+    await setInvoiceStatus(ctxFor(db), "inv-left", { status: "paid" });
+    expect(db.tables.invoices.find((r) => r.id === "inv-left")!.status).toBe("paid");
   });
 
   it("404s instead of silently no-op'ing when the invoice doesn't exist (or belongs to another coach)", async () => {
