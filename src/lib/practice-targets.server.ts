@@ -28,6 +28,27 @@ async function requireCoachId(supabase: Client, userId: string): Promise<string>
   return data.id as string;
 }
 
+const NOT_ON_ROSTER = "Athlete is not on your roster";
+
+/**
+ * The caller must coach this athlete. Mirrors the roster clause of the
+ * "Coach manages own practice targets" policy (read through the same RLS
+ * client, so the two cannot disagree). One answer for "not on your roster" and
+ * "no such athlete", so athlete ids cannot be probed.
+ */
+async function assertAthleteOnRoster(supabase: Client, coachId: string, athleteId: string) {
+  const { data, error } = await supabase
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (error) dbError(error);
+  if (!data) {
+    throw new ApiError({ code: "forbidden", status: 403, message: NOT_ON_ROSTER });
+  }
+}
+
 export const practiceTargetInput = z.object({
   sport: z.string().min(1).max(64),
   hoursPerWeek: z.number().min(0).max(40),
@@ -41,6 +62,7 @@ export async function setPracticeTarget(
   now: Date = new Date(),
 ): Promise<{ ok: true }> {
   const coachId = await requireCoachId(ctx.supabase, ctx.userId);
+  await assertAthleteOnRoster(ctx.supabase, coachId, athleteId);
   const { error } = await ctx.supabase.from("coach_athlete_practice_targets").upsert(
     {
       coach_id: coachId,
@@ -51,11 +73,20 @@ export async function setPracticeTarget(
     },
     { onConflict: "coach_id,athlete_id,sport" },
   );
+  // The write is scoped to the caller's own coach_id, so the roster clause is the
+  // only one that can fail with 42501.
+  if (error?.code === "42501") {
+    throw new ApiError({ code: "forbidden", status: 403, message: NOT_ON_ROSTER });
+  }
   if (error) dbError(error);
   return { ok: true as const };
 }
 
-/** `clearPracticeTarget`: back to the default for (athlete, sport). */
+/**
+ * `clearPracticeTarget`: back to the default for (athlete, sport). No roster
+ * check, on purpose: a coach whose athlete has left can still clear what they
+ * set (the database's policy allows the delete for the same reason).
+ */
 export async function clearPracticeTarget(
   ctx: PracticeTargetContext,
   athleteId: string,
