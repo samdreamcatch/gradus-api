@@ -29,6 +29,49 @@ export const MAX_ACTIVE_PLANS_PER_ATHLETE = 2;
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
+const forbidden = (message: string) => new ApiError({ code: "forbidden", status: 403, message });
+
+const NOT_ON_ROSTER = "Athlete is not on your roster";
+
+/**
+ * The caller must coach this athlete. Mirrors the roster clause of the
+ * "Coaches manage own plans" insert/update policies (read through the same
+ * RLS client, so the two cannot disagree). One answer for "not on your
+ * roster" and "no such athlete", so athlete ids cannot be probed.
+ */
+async function isAthleteOnRoster(supabase: Client, coachId: string, athleteId: string) {
+  const { data, error } = await supabase
+    .from("coach_athletes")
+    .select("athlete_id")
+    .eq("coach_id", coachId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (error) dbError(error);
+  return !!data;
+}
+
+async function assertAthleteOnRoster(supabase: Client, coachId: string, athleteId: string) {
+  if (!(await isAthleteOnRoster(supabase, coachId, athleteId))) throw forbidden(NOT_ON_ROSTER);
+}
+
+/**
+ * The service-role client, imported lazily: this module is re-exported into the
+ * client bundle, so the admin client must stay out of its static import graph
+ * (see `recordCoachReason`).
+ */
+export type LoadAdmin = () => Promise<Client>;
+const loadAdminClient: LoadAdmin = async () =>
+  (await import("@/integrations/supabase/client.server")).supabaseAdmin as Client;
+
+/**
+ * A plans write the roster policy refused. Writes here are scoped to the
+ * caller's own `coach_id`, so the roster clause is the only one that can fail
+ * with 42501 (a non-owned row is filtered out, not refused).
+ */
+function planWriteError(error: { message?: string; code?: string }): never {
+  if (error.code === "42501") throw forbidden(NOT_ON_ROSTER);
+  dbError(error);
+}
 
 /** The caller's coach id, creating the profile on first use; parents are refused. */
 export async function ensureCoachId(supabase: Client, userId: string): Promise<string> {
@@ -433,19 +476,21 @@ export async function savePlan(
   if (planId) {
     // Another coach's id must not reach the move replacement below.
     await assertPlanOwned(supabase, planId, coachId);
+    if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
     const { error } = await supabase
       .from("plans")
       .update(planRow)
       .eq("id", planId)
       .eq("coach_id", coachId);
-    if (error) dbError(error);
+    if (error) planWriteError(error);
   } else {
+    if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
     const { data: inserted, error } = await supabase
       .from("plans")
       .insert({ ...planRow, status: "benched" })
       .select("id")
       .single();
-    if (error) dbError(error);
+    if (error) planWriteError(error);
     planId = inserted.id;
   }
 
@@ -584,6 +629,7 @@ export async function setPlanStatus(
   id: string,
   data: z.infer<typeof setPlanStatusInput>,
   record: RecordCoachReason = recordCoachReason,
+  loadAdmin: LoadAdmin = loadAdminClient,
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
@@ -601,6 +647,9 @@ export async function setPlanStatus(
     // Athlete-scoped conflict logic only runs when an athlete is assigned.
     // A plan with no athlete is a public/social share and activates directly.
     if (owned.athlete_id) {
+      // Going live reaches the athlete's household (email and push below), so a
+      // plan whose athlete is not on the roster is refused up front.
+      await assertAthleteOnRoster(supabase, coachId, owned.athlete_id);
       const { data: others, error: othersErr } = await supabase
         .from("plans")
         .select("id, title")
@@ -639,7 +688,7 @@ export async function setPlanStatus(
           .eq("coach_id", coachId)
           .neq("status", "benched")
           .select("id, athlete_id");
-        if (bErr) dbError(bErr);
+        if (bErr) planWriteError(bErr);
         const replaced = (benched ?? [])[0] as
           | { id: string; athlete_id: string | null }
           | undefined;
@@ -660,7 +709,7 @@ export async function setPlanStatus(
       .update({ status: "active" })
       .eq("id", id)
       .eq("coach_id", coachId);
-    if (error) dbError(error);
+    if (error) planWriteError(error);
 
     // Guardian-on-file: email a copy of the assignment to an unclaimed
     // guardian, but only on the transition into active.
@@ -699,6 +748,32 @@ export async function setPlanStatus(
       });
     }
   } else {
+    // A plan whose athlete has left the roster can no longer be edited or put
+    // live (the roster policy refuses those writes), but its coach may still
+    // take it down: active to benched or draft, nothing else. That one write
+    // goes through the server, after the ownership and shape checks here, and
+    // records no "why" (the coach no longer coaches the athlete).
+    const { data: current, error: curErr } = await supabase
+      .from("plans")
+      .select("id, athlete_id, status")
+      .eq("id", id)
+      .eq("coach_id", coachId)
+      .maybeSingle();
+    if (curErr) dbError(curErr);
+    if (current?.athlete_id && !(await isAthleteOnRoster(supabase, coachId, current.athlete_id))) {
+      if (current.status === data.status) return { ok: true }; // a replay: nothing to change
+      if (current.status !== "active") throw forbidden(NOT_ON_ROSTER);
+      const admin = await loadAdmin();
+      const { error: demoteErr } = await admin
+        .from("plans")
+        .update({ status: data.status })
+        .eq("id", id)
+        .eq("coach_id", coachId)
+        .eq("status", "active");
+      if (demoteErr) dbError(demoteErr);
+      return { ok: true };
+    }
+
     if (data.status === "benched" && data.reason) {
       // A "why" answer only counts on the transition into benched. The
       // conditional update makes that atomic: a replayed request (the iOS
@@ -711,7 +786,7 @@ export async function setPlanStatus(
         .eq("coach_id", coachId)
         .neq("status", "benched")
         .select("id, athlete_id");
-      if (error) dbError(error);
+      if (error) planWriteError(error);
       const plan = (changed ?? [])[0] as { id: string; athlete_id: string | null } | undefined;
       if (plan?.athlete_id) {
         await record({
@@ -728,7 +803,7 @@ export async function setPlanStatus(
         .update({ status: data.status })
         .eq("id", id)
         .eq("coach_id", coachId);
-      if (error) dbError(error);
+      if (error) planWriteError(error);
     }
   }
   return { ok: true };
@@ -783,6 +858,9 @@ export async function createPlan(
 ): Promise<{ id: string }> {
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
+  if (data.kind === "plan" && data.athleteId) {
+    await assertAthleteOnRoster(supabase, coachId, data.athleteId);
+  }
 
   const sourceId = data.fromPlanId ?? data.fromTemplateId;
   let title = data.title ?? "Untitled plan";
@@ -830,7 +908,7 @@ export async function createPlan(
     })
     .select("id")
     .single();
-  if (insErr) dbError(insErr);
+  if (insErr) planWriteError(insErr);
 
   if (sourceMoves.length) {
     const rows = sourceMoves.map((m, i) => ({
@@ -950,6 +1028,7 @@ export async function updatePlan(
     (data.athleteId ?? null) !== (current.athlete_id ?? null);
 
   if (isAthleteChange) {
+    if (data.athleteId) await assertAthleteOnRoster(supabase, coachId, data.athleteId);
     const nextTitle = data.title ?? current.title ?? "Untitled plan";
     const nextNotes = data.notes ?? current.notes ?? "";
     const { data: inserted, error: insErr } = await supabase
@@ -964,7 +1043,7 @@ export async function updatePlan(
       })
       .select("id")
       .single();
-    if (insErr) dbError(insErr);
+    if (insErr) planWriteError(insErr);
 
     const { data: srcMoves, error: mErr } = await supabase
       .from("plan_moves")
@@ -1025,8 +1104,13 @@ export async function updatePlan(
     }
   }
 
+  // The row that results must still be one the coach may hold: the athlete, if
+  // any, is on the roster (the database refuses the write otherwise).
+  const resultingAthlete = patch.athlete_id !== undefined ? patch.athlete_id : current.athlete_id;
+  if (resultingAthlete) await assertAthleteOnRoster(supabase, coachId, resultingAthlete);
+
   const { error } = await supabase.from("plans").update(patch).eq("id", id).eq("coach_id", coachId);
-  if (error) dbError(error);
+  if (error) planWriteError(error);
 
   return { ok: true };
 }

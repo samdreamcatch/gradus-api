@@ -4,41 +4,63 @@ import { addPlanMoveToLibrary, updateLibraryMoveFromPlanMove } from "./moves.ser
 import { resolvePlanViewerRole } from "./plan-detail.server";
 import { listPlanSessionsQuery, submitSessionInput } from "./plan-sessions.server";
 import {
+  createPlan,
   deletePlan,
   removePlanMove,
   savePlan,
   setPlanStatus,
+  updatePlan,
   updatePlanMove,
   type CoachReasonInput,
 } from "./plans.server";
 import { assertAudioSize, audioFilename } from "./voice.server";
 
-/** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
-function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, unknown[]> = {}) {
+/**
+ * A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects.
+ * `opts.writes` collects `table.op` for every insert/update/upsert/delete; `opts.errors["table.op"]`
+ * makes the query that last called that write come back with that error.
+ */
+function fakeClient(
+  rows: Record<string, unknown | null>,
+  lists: Record<string, unknown[]> = {},
+  opts: {
+    writes?: string[];
+    /** `table.column=value` for every `.eq(...)`. */
+    filters?: string[];
+    /** The object passed to every `.update(...)`. */
+    payloads?: unknown[];
+    errors?: Record<string, { code: string; message: string }>;
+  } = {},
+) {
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of [
-      "select",
-      "eq",
-      "neq",
-      "in",
-      "is",
-      "lt",
-      "lte",
-      "gte",
-      "order",
-      "limit",
-      "update",
-      "delete",
-      "insert",
-      "upsert",
-    ]) {
+    let lastWrite: string | null = null;
+    for (const m of ["select", "neq", "in", "is", "lt", "lte", "gte", "order", "limit"]) {
       self[m] = () => self;
     }
-    self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
-    self.single = async () => ({ data: rows[table] ?? null, error: null });
+    self.eq = (column: string, value: unknown) => {
+      opts.filters?.push(`${table}.${column}=${String(value)}`);
+      return self;
+    };
+    for (const m of ["update", "delete", "insert", "upsert"]) {
+      self[m] = (payload?: unknown) => {
+        lastWrite = m;
+        opts.writes?.push(`${table}.${m}`);
+        if (m === "update") opts.payloads?.push(payload);
+        return self;
+      };
+    }
+    const errorOf = () => (lastWrite ? (opts.errors?.[`${table}.${lastWrite}`] ?? null) : null);
+    self.maybeSingle = async () => ({
+      data: errorOf() ? null : (rows[table] ?? null),
+      error: errorOf(),
+    });
+    self.single = async () => ({
+      data: errorOf() ? null : (rows[table] ?? null),
+      error: errorOf(),
+    });
     self.then = (resolve: (v: unknown) => void) =>
-      resolve({ data: lists[table] ?? [], error: null });
+      resolve({ data: errorOf() ? null : (lists[table] ?? []), error: errorOf() });
     return self;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,11 +77,17 @@ async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
 }
 
 const coach = { coach_profiles: { id: "coach-1" } };
+/** The coach has athlete `a1` on their roster; any other athlete id reads as not rostered. */
+const roster = { coach_athletes: { athlete_id: "a1" } };
 
 describe("setPlanStatus", () => {
   it("activating past the per-athlete cap without a choice is 409 with the active plans", async () => {
     const supabase = fakeClient(
-      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
       {
         plans: [
           { id: "p2", title: "Edges" },
@@ -79,7 +107,11 @@ describe("setPlanStatus", () => {
 
   it("a replaceId that is not one of the active plans is refused", async () => {
     const supabase = fakeClient(
-      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
       { plans: [{ id: "p2", title: "Edges" }] },
     );
     const err = await caught(() =>
@@ -124,7 +156,11 @@ describe('coach "why" answers (L1)', () => {
     // `lists.plans` answers both the active-others select and the
     // conditional bench update, so the benched row carries the athlete.
     const supabase = fakeClient(
-      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
       { plans: [{ id: "p2", title: "Edges", athlete_id: "a1" }] },
     );
     const r = recorder();
@@ -148,7 +184,11 @@ describe('coach "why" answers (L1)', () => {
   it("making room without a reason, or when the other plan was already benched, records nothing", async () => {
     const r = recorder();
     const skipped = fakeClient(
-      { ...coach, plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" } },
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
       { plans: [{ id: "p2", title: "Edges", athlete_id: "a1" }] },
     );
     await setPlanStatus(
@@ -280,6 +320,326 @@ describe("savePlan", () => {
     );
     expect(err?.status).toBe(404);
     expect(err?.message).toBe("Plan not found");
+  });
+});
+
+describe("plan writes stay on the coach's roster", () => {
+  // `fakeClient` answers any coach_athletes read with the `roster` row (or null without it), so
+  // "on the roster" and "not on the roster" differ only by whether `...roster` is in the rows.
+  const forbiddenRoster = (err: ApiError | null) => {
+    expect(err?.status).toBe(403);
+    expect(err?.code).toBe("forbidden");
+    expect(err?.message).toBe("Athlete is not on your roster");
+  };
+  const rlsRefusal = {
+    code: "42501",
+    message: 'new row violates row-level security policy for table "plans"',
+  };
+  const owned = {
+    id: "p1",
+    kind: "plan",
+    status: "draft",
+    athlete_id: "a1",
+    title: "T",
+    notes: "",
+  };
+  const input = (athleteId: string | null, kind: "plan" | "template" = "plan") => ({
+    title: "T",
+    notes: "",
+    kind,
+    athleteId,
+    moves: [],
+  });
+
+  describe("savePlan", () => {
+    it("a new plan for an athlete not on the roster is 403 and writes nothing", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: { id: "new-1" } }, {}, { writes });
+      const err = await caught(() => savePlan({ userId: "u", supabase }, input("a-stranger")));
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("re-pointing the coach's own plan at an athlete not on the roster is 403 and writes nothing", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: owned }, {}, { writes });
+      const err = await caught(() =>
+        savePlan({ userId: "u", supabase }, { ...input("a-stranger"), id: "p1" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("a plan for a rostered athlete is saved", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, ...roster, plans: { id: "new-1" } }, {}, { writes });
+      await expect(savePlan({ userId: "u", supabase }, input("a1"))).resolves.toEqual({
+        id: "new-1",
+      });
+      expect(writes).toEqual(["plans.insert", "plan_moves.delete"]);
+    });
+
+    it("a template needs no roster row, whatever athleteId the client sent", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: { id: "t1" } }, {}, { writes });
+      await expect(
+        savePlan({ userId: "u", supabase }, input("a-stranger", "template")),
+      ).resolves.toEqual({ id: "t1" });
+      expect(writes).toContain("plans.insert");
+    });
+
+    it("the database's refusal (the roster policy, if it ever disagrees) is the same 403", async () => {
+      const supabase = fakeClient(
+        { ...coach, ...roster, plans: { id: "new-1" } },
+        {},
+        { errors: { "plans.insert": rlsRefusal } },
+      );
+      forbiddenRoster(await caught(() => savePlan({ userId: "u", supabase }, input("a1"))));
+    });
+  });
+
+  describe("createPlan", () => {
+    it("a plan for an athlete not on the roster is 403 and writes nothing", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: { id: "new-1" } }, {}, { writes });
+      const err = await caught(() =>
+        createPlan({ userId: "u", supabase }, { kind: "plan", athleteId: "a-stranger" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("a plan for a rostered athlete, and a template, are created", async () => {
+      const supabase = fakeClient({ ...coach, ...roster, plans: { id: "new-1" } });
+      await expect(
+        createPlan({ userId: "u", supabase }, { kind: "plan", athleteId: "a1" }),
+      ).resolves.toEqual({ id: "new-1" });
+      const noRoster = fakeClient({ ...coach, plans: { id: "t1" } });
+      await expect(
+        createPlan(
+          { userId: "u", supabase: noRoster },
+          { kind: "template", athleteId: "a-stranger" },
+        ),
+      ).resolves.toEqual({ id: "t1" });
+    });
+  });
+
+  describe("updatePlan", () => {
+    it("assigning a draft to an athlete not on the roster is 403 and writes nothing", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: owned }, {}, { writes });
+      const err = await caught(() =>
+        updatePlan({ userId: "u", supabase }, "p1", { athleteId: "a-stranger" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("reassigning an active plan (the fork) to an athlete not on the roster is 403 and forks nothing", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient(
+        { ...coach, plans: { ...owned, status: "active", athlete_id: "a2" } },
+        {},
+        { writes },
+      );
+      const err = await caught(() =>
+        updatePlan({ userId: "u", supabase }, "p1", { athleteId: "a-stranger" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("reassigning an active plan to a rostered athlete forks it", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient(
+        { ...coach, ...roster, plans: { ...owned, status: "active", athlete_id: "a2" } },
+        {},
+        { writes },
+      );
+      const res = await updatePlan({ userId: "u", supabase }, "p1", { athleteId: "a1" });
+      expect(res.ok).toBe(true);
+      expect(res.forkedId).toBeDefined();
+      expect(writes).toContain("plans.insert");
+    });
+
+    it("editing a plan whose athlete has left the roster is 403, as the database would refuse it", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient({ ...coach, plans: owned }, {}, { writes });
+      const err = await caught(() =>
+        updatePlan({ userId: "u", supabase }, "p1", { title: "New title" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    it("an active plan whose athlete has left can still be converted to a template (athlete cleared, back to draft)", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient(
+        { ...coach, plans: { ...owned, status: "active" } },
+        {},
+        { writes },
+      );
+      await expect(
+        updatePlan({ userId: "u", supabase }, "p1", { kind: "template" }),
+      ).resolves.toEqual({ ok: true });
+      expect(writes).toEqual(["plans.update"]);
+    });
+
+    it("detaching a plan (athleteId null) and editing a rostered plan both work", async () => {
+      const detachWrites: string[] = [];
+      const detach = fakeClient({ ...coach, plans: owned }, {}, { writes: detachWrites });
+      await expect(
+        updatePlan({ userId: "u", supabase: detach }, "p1", { athleteId: null }),
+      ).resolves.toEqual({ ok: true });
+      expect(detachWrites).toEqual(["plans.update"]);
+
+      const edit = fakeClient({ ...coach, ...roster, plans: owned });
+      await expect(
+        updatePlan({ userId: "u", supabase: edit }, "p1", { title: "New title" }),
+      ).resolves.toEqual({ ok: true });
+    });
+  });
+
+  describe("setPlanStatus", () => {
+    it("activating a plan whose athlete is not on the roster is 403 before anything is written or sent", async () => {
+      const writes: string[] = [];
+      const supabase = fakeClient(
+        { ...coach, plans: { id: "p1", athlete_id: "a-stranger", title: "T", status: "draft" } },
+        { plans: [] },
+        { writes },
+      );
+      const err = await caught(() =>
+        setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" }),
+      );
+      forbiddenRoster(err);
+      expect(writes).toEqual([]);
+    });
+
+    describe("a plan whose athlete has left the roster", () => {
+      // The coach may take it down (active to benched or draft) and nothing else.
+      const gone = { ...coach, plans: { id: "p1", athlete_id: "a-gone", status: "active" } };
+      const neverAdmin = async () => {
+        throw new Error("the admin client must not be used here");
+      };
+      const adminSpy = () => {
+        const writes: string[] = [];
+        const filters: string[] = [];
+        const payloads: unknown[] = [];
+        const client = fakeClient({}, {}, { writes, filters, payloads });
+        return { writes, filters, payloads, load: async () => client };
+      };
+
+      for (const status of ["benched", "draft"] as const) {
+        it(`active to ${status} is allowed, written by the server, scoped to this coach's active plan`, async () => {
+          const userWrites: string[] = [];
+          const supabase = fakeClient(gone, {}, { writes: userWrites });
+          const admin = adminSpy();
+          await expect(
+            setPlanStatus({ userId: "u", supabase }, "p1", { status }, undefined, admin.load),
+          ).resolves.toEqual({ ok: true });
+          expect(userWrites).toEqual([]);
+          expect(admin.writes).toEqual(["plans.update"]);
+          expect(admin.payloads).toEqual([{ status }]);
+          expect(admin.filters).toEqual([
+            "plans.id=p1",
+            "plans.coach_id=coach-1",
+            "plans.status=active",
+          ]);
+        });
+      }
+
+      it("benching it records no 'why' (the coach no longer coaches the athlete)", async () => {
+        const seen: CoachReasonInput[] = [];
+        const supabase = fakeClient(gone);
+        const admin = adminSpy();
+        await setPlanStatus(
+          { userId: "u", supabase },
+          "p1",
+          { status: "benched", reason: "parking_it" },
+          async (input) => void seen.push(input),
+          admin.load,
+        );
+        expect(seen).toHaveLength(0);
+        expect(admin.writes).toEqual(["plans.update"]);
+      });
+
+      for (const [from, to] of [
+        ["benched", "draft"],
+        ["draft", "benched"],
+      ] as const) {
+        it(`${from} to ${to} is refused with 403, and the server writes nothing`, async () => {
+          const supabase = fakeClient({
+            ...coach,
+            plans: { id: "p1", athlete_id: "a-gone", status: from },
+          });
+          const err = await caught(() =>
+            setPlanStatus({ userId: "u", supabase }, "p1", { status: to }, undefined, neverAdmin),
+          );
+          forbiddenRoster(err);
+        });
+      }
+
+      it("a replay of a demotion that already happened changes nothing and still succeeds", async () => {
+        const supabase = fakeClient({
+          ...coach,
+          plans: { id: "p1", athlete_id: "a-gone", status: "benched" },
+        });
+        await expect(
+          setPlanStatus(
+            { userId: "u", supabase },
+            "p1",
+            { status: "benched" },
+            undefined,
+            neverAdmin,
+          ),
+        ).resolves.toEqual({ ok: true });
+      });
+
+      it("a rostered athlete's plan is benched through the coach's own client, never the server's", async () => {
+        const userWrites: string[] = [];
+        const supabase = fakeClient({ ...gone, ...roster }, {}, { writes: userWrites });
+        await expect(
+          setPlanStatus(
+            { userId: "u", supabase },
+            "p1",
+            { status: "benched" },
+            undefined,
+            neverAdmin,
+          ),
+        ).resolves.toEqual({ ok: true });
+        expect(userWrites).toEqual(["plans.update"]);
+      });
+    });
+
+    it("benching or drafting a plan the database refuses is the same 403, not a generic error", async () => {
+      const refused = { errors: { "plans.update": rlsRefusal } };
+      const withReason = fakeClient({ ...coach }, { plans: [] }, refused);
+      forbiddenRoster(
+        await caught(() =>
+          setPlanStatus({ userId: "u", supabase: withReason }, "p1", {
+            status: "benched",
+            reason: "parking_it",
+          }),
+        ),
+      );
+      const plain = fakeClient({ ...coach }, { plans: [] }, refused);
+      forbiddenRoster(
+        await caught(() =>
+          setPlanStatus({ userId: "u", supabase: plain }, "p1", { status: "draft" }),
+        ),
+      );
+    });
+
+    it("any other database error stays the generic message", async () => {
+      const supabase = fakeClient(
+        { ...coach },
+        { plans: [] },
+        { errors: { "plans.update": { code: "23514", message: "check constraint" } } },
+      );
+      await expect(
+        setPlanStatus({ userId: "u", supabase }, "p1", { status: "draft" }),
+      ).rejects.toThrow("Something went wrong. Please try again.");
+    });
   });
 });
 
