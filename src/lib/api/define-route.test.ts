@@ -262,6 +262,53 @@ describe("createApiRouteHandler", () => {
     expect(calls).toBe(1);
   });
 
+  it("stores only the shaped body for replay when idempotencyStoredBody is set, and still answers the first call in full", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const words = { words: z.string(), id: z.string() };
+    const fakeAdmin = createFakeAdmin();
+    const stored: unknown[] = [];
+    const admin = {
+      ...fakeAdmin,
+      rpc: async (fn: string, params: Record<string, unknown>) => {
+        if (fn === "complete_idempotency_key") stored.push(params._response_body);
+        return (fakeAdmin as unknown as { rpc: (f: string, p: unknown) => Promise<unknown> }).rpc(
+          fn,
+          params,
+        );
+      },
+    } as unknown as ApiContext["admin"];
+    const ctx: ApiContext = { userId: "user-1", supabase: {} as ApiContext["supabase"], admin };
+    let calls = 0;
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "user",
+        idempotent: true,
+        idempotencyStoredBody: (out) => ({ ...out, words: "" }),
+        output: z.object(words),
+        handler: async () => {
+          calls += 1;
+          return { id: "plan-1", words: "my secret words" };
+        },
+      },
+      { admin, authenticate: async () => ctx },
+    );
+    const req = () =>
+      makeRequest({
+        method: "POST",
+        headers: { authorization: "Bearer t", "idempotency-key": "voice-1" },
+      });
+
+    const first = await (await POST!({ request: req() })).json();
+    const replay = await (await POST!({ request: req() })).json();
+
+    expect(first).toEqual({ id: "plan-1", words: "my secret words" });
+    expect(replay).toEqual({ id: "plan-1", words: "" });
+    expect(JSON.stringify(stored)).not.toContain("secret");
+    expect(calls).toBe(1);
+  });
+
   it("rejects a concurrent duplicate with the same Idempotency-Key instead of also running the handler", async () => {
     process.env.API_V1_ENABLED = "true";
     let calls = 0;

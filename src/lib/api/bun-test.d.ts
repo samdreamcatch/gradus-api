@@ -7,6 +7,8 @@
 declare module "bun:test" {
   export function describe(name: string, fn: () => void): void;
   export function it(name: string, fn: () => void | Promise<void>): void;
+  export function beforeEach(fn: () => void | Promise<void>): void;
+  export function afterEach(fn: () => void | Promise<void>): void;
 
   interface AsyncExpectation {
     toMatchObject(expected: Record<string, unknown>): Promise<void>;
@@ -40,6 +42,8 @@ declare module "bun:test" {
   export namespace expect {
     /** Asymmetric matcher for use inside `toEqual`/`toMatchObject` payloads. */
     function stringMatching(expected: string | RegExp): unknown;
+    /** Asymmetric matcher: the received object has at least these properties. */
+    function objectContaining(expected: Record<string, unknown>): unknown;
   }
 
   /**

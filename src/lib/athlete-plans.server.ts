@@ -13,7 +13,17 @@ import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.ser
 
 type Client = SupabaseClient<Database>;
 
-export type AthletePlansContext = { userId: string; supabase: Client; admin: Client };
+export type AthletePlansContext = {
+  userId: string;
+  supabase: Client;
+  admin: Client;
+  /**
+   * Include the plans the athlete wrote (PRD §6.14). Off by default: the web
+   * pages that call this module know nothing of them (§4.1 zero disruption), so
+   * only the `/api/v1` routes turn it on.
+   */
+  includeAuthored?: boolean;
+};
 
 export type AthletePlanStatus = "active" | "benched";
 export type TargetKind = "reps" | "mins";
@@ -23,6 +33,7 @@ export interface AthletePlanSummaryDTO {
   title: string;
   status: AthletePlanStatus;
   coachId: string;
+  /** For a plan the athlete wrote, the athlete's own first name (there is no coach). */
   coachName: string;
   isGradus: boolean;
   sport: string;
@@ -31,6 +42,19 @@ export interface AthletePlanSummaryDTO {
   updatedAt: string;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
+  /** `plans.source` as a plain string (never an enum on the wire); `"athlete"` marks the athlete's own plans so a client never captions them "from Gradus". Optional so an older server decodes. */
+  source?: string;
+}
+
+/** An unfinished plan the athlete wrote (a voice-built draft, a blank "+"), listed only to its author. */
+export interface AthleteDraftSummaryDTO {
+  id: string;
+  title: string;
+  status: "draft";
+  source: string;
+  moveCount: number;
+  totalMinutes: number;
+  updatedAt: string;
 }
 
 export interface AthletePlanMoveDTO {
@@ -59,11 +83,14 @@ export interface AthletePlanDetailDTO {
   totalMinutes: number;
   updatedAt: string;
   moves: AthletePlanMoveDTO[];
+  source?: string;
 }
 
 export interface AthletePlansDTO {
   athlete: { id: string; firstName: string };
   plans: AthletePlanSummaryDTO[];
+  /** The athlete's own drafts; omitted by a server that predates athlete-authored plans. */
+  drafts?: AthleteDraftSummaryDTO[];
 }
 
 const notFound = () => new ApiError({ code: "not_found", status: 404, message: "Plan not found" });
@@ -88,20 +115,43 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
   const { ensureStarterProgramsForAthlete } = await import("./starter-programs.server");
   await ensureStarterProgramsForAthlete(athlete.id);
 
-  const { data: planRows, error: pErr } = await supabase
+  let planQuery = supabase
     .from("plans")
     .select("id, title, status, coach_id, updated_at, source")
     .eq("athlete_id", athlete.id)
     .eq("kind", "plan")
-    .in("status", ["active", "benched"])
-    .order("updated_at", { ascending: false });
+    .in("status", ["active", "benched"]);
+  if (!ctx.includeAuthored) planQuery = planQuery.neq("source", "athlete");
+  const { data: planRows, error: pErr } = await planQuery.order("updated_at", {
+    ascending: false,
+  });
   if (pErr) dbError(pErr);
 
   const plans = planRows ?? [];
   const me = { id: athlete.id, firstName: athlete.first_name };
-  if (!plans.length) return { athlete: me, plans: [] };
 
-  const planIds = plans.map((p) => p.id);
+  // The athlete's own unfinished plans, listed to them alone (never to the web).
+  let drafts: { id: string; title: string; updated_at: string }[] = [];
+  if (ctx.includeAuthored) {
+    const { data: draftRows, error: dErr } = await supabase
+      .from("plans")
+      .select("id, title, updated_at")
+      .eq("athlete_id", athlete.id)
+      .eq("source", "athlete")
+      .eq("kind", "plan")
+      .eq("status", "draft")
+      .order("updated_at", { ascending: false });
+    if (dErr) dbError(dErr);
+    drafts = draftRows ?? [];
+  }
+
+  if (!plans.length && !drafts.length) {
+    return ctx.includeAuthored
+      ? { athlete: me, plans: [], drafts: [] }
+      : { athlete: me, plans: [] };
+  }
+
+  const planIds = [...plans.map((p) => p.id), ...drafts.map((d) => d.id)];
   const coachIds = Array.from(
     new Set(plans.map((p) => p.coach_id).filter((v): v is string => !!v)),
   );
@@ -159,7 +209,20 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
   }
 
   // Same reasoning as moves above: plan IDs are already authorized.
-  const sessionsByPlan = await loadSessionsByPlanIds(admin, planIds);
+  const sessionsByPlan = await loadSessionsByPlanIds(
+    admin,
+    plans.map((p) => p.id),
+  );
+
+  // A plan the athlete wrote has no coach, so its sport comes from the
+  // athlete's own goals (when they train one sport, that one).
+  const authoredSport = await (async () => {
+    if (!plans.some((p) => p.source === "athlete")) return "";
+    const g = await admin.from("athlete_goals").select("sport").eq("athlete_id", athlete.id);
+    if (g.error) dbError(g.error);
+    const sports = Array.from(new Set((g.data ?? []).map((r) => r.sport)));
+    return sports.length === 1 ? sports[0] : "";
+  })();
 
   const result: AthletePlanSummaryDTO[] = plans.map((p) => {
     const a = agg.get(p.id) ?? { count: 0, minutes: 0, firstMoveSport: "" };
@@ -168,14 +231,17 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
       sessionsTotal: 0,
     };
     const cid = p.coach_id ?? "";
-    const isGradus = p.source === "gradus" || !cid;
-    const sport = (cid && coachSport.get(cid)) || a.firstMoveSport || "";
+    const authored = p.source === "athlete";
+    const isGradus = !authored && (p.source === "gradus" || !cid);
+    const sport = authored
+      ? authoredSport || a.firstMoveSport
+      : (cid && coachSport.get(cid)) || a.firstMoveSport || "";
     return {
       id: p.id,
       title: p.title || "Untitled plan",
       status: p.status as AthletePlanStatus,
       coachId: cid,
-      coachName: (cid && coachName.get(cid)) || "Gradus",
+      coachName: authored ? athlete.first_name : (cid && coachName.get(cid)) || "Gradus",
       isGradus,
       sport,
       moveCount: a.count,
@@ -183,10 +249,26 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
       updatedAt: p.updated_at,
       sessionsByState: sessions.sessionsByState,
       sessionsTotal: sessions.sessionsTotal,
+      ...(authored ? { source: "athlete" } : {}),
     };
   });
 
-  return { athlete: me, plans: result };
+  const draftSummaries: AthleteDraftSummaryDTO[] = drafts.map((d) => {
+    const a = agg.get(d.id) ?? { count: 0, minutes: 0, firstMoveSport: "" };
+    return {
+      id: d.id,
+      title: d.title || "Untitled plan",
+      status: "draft",
+      source: "athlete",
+      moveCount: a.count,
+      totalMinutes: a.minutes,
+      updatedAt: d.updated_at,
+    };
+  });
+
+  return ctx.includeAuthored
+    ? { athlete: me, plans: result, drafts: draftSummaries }
+    : { athlete: me, plans: result };
 }
 
 /* ---------------- detail ---------------- */
@@ -206,6 +288,8 @@ export async function getAthletePlan(
     .maybeSingle();
   if (error) dbError(error);
   if (!plan || plan.kind !== "plan" || plan.athlete_id !== athlete.id) throw notFound();
+  // The web never shows a plan the athlete wrote.
+  if (plan.source === "athlete" && !ctx.includeAuthored) throw notFound();
   if (plan.status !== "active" && plan.status !== "benched") throw notFound();
 
   const [movesRes, coachRes] = await Promise.all([
@@ -242,8 +326,11 @@ export async function getAthletePlan(
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
-  const isGradus = plan.source === "gradus" || !plan.coach_id;
-  const coachFirst = coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach");
+  const authored = plan.source === "athlete";
+  const isGradus = !authored && (plan.source === "gradus" || !plan.coach_id);
+  const coachFirst = authored
+    ? athlete.first_name
+    : (coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach"));
   const coachLast = coachRes.data?.last_name ?? "";
 
   return {
@@ -261,5 +348,6 @@ export async function getAthletePlan(
     totalMinutes,
     updatedAt: plan.updated_at,
     moves,
+    ...(authored ? { source: "athlete" } : {}),
   };
 }

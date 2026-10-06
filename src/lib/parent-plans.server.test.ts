@@ -35,6 +35,7 @@ function fakePlansClient(opts: {
       let mode: string | null = null;
       let lastEqVal: string | undefined;
       self.select = () => self;
+      self.neq = () => self;
       self.order = () => self;
       self.in = () => {
         if (table === "athletes") mode = "detail";

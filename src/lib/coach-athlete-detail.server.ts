@@ -28,7 +28,12 @@ import type { SessionsByState } from "@/components/plans/flow-state-bars";
 
 type Admin = typeof supabaseAdmin;
 
-export type DetailContext = { userId: string; admin: Admin };
+export type DetailContext = {
+  userId: string;
+  admin: Admin;
+  /** List the plans the athlete wrote, read-only (PRD §6.14). Off for the web sheet (§4.1); the `/api/v1` route turns it on. */
+  includeAuthored?: boolean;
+};
 
 const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
@@ -82,6 +87,9 @@ export interface AthletePlanSummaryDTO {
   isGradus: boolean;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
+  /** `"athlete"` for a plan the athlete wrote (read-only here, captioned "By <first name>"); omitted otherwise. Optional so an older server decodes. */
+  source?: string;
+  authorFirstName?: string;
 }
 
 export interface AthleteActivityCountsDTO {
@@ -315,7 +323,11 @@ export async function getCoachAthleteDetail(
     admin
       .from("plans")
       .select("id, title, status, updated_at, source")
-      .or(`coach_id.eq.${coachId},source.eq.gradus`)
+      .or(
+        ctx.includeAuthored
+          ? `coach_id.eq.${coachId},source.eq.gradus,source.eq.athlete`
+          : `coach_id.eq.${coachId},source.eq.gradus`,
+      )
       .eq("athlete_id", athleteId)
       .eq("kind", "plan")
       .in("status", ["active", "benched"])
@@ -428,6 +440,7 @@ export async function getCoachAthleteDetail(
       isGradus: p.source === "gradus",
       sessionsByState,
       sessionsTotal: planSessions.length,
+      ...(p.source === "athlete" ? { source: "athlete", authorFirstName: athlete.first_name } : {}),
     };
   });
 

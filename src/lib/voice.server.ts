@@ -58,9 +58,19 @@ export function audioFilename(audio: Blob): string {
   return AUDIO_FILENAMES[type] ?? "voice.webm";
 }
 
+export interface TranscribeOptions {
+  /**
+   * Keep the transcript's words out of the logs (length only). The athlete
+   * voice path sets it: a minor's dictation is kept on their plan and
+   * nowhere else (PRD decision #37).
+   */
+  quiet?: boolean;
+}
+
 export async function transcribeWithElevenLabs(
   audio: Blob,
   vocabularyHints?: string[],
+  opts: TranscribeOptions = {},
 ): Promise<string> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("Voice service not configured");
@@ -97,7 +107,9 @@ export async function transcribeWithElevenLabs(
   const text = (json.text ?? "").trim();
   console.info(
     "[voice] transcript",
-    JSON.stringify({ length: text.length, preview: text.slice(0, 200) }),
+    JSON.stringify(
+      opts.quiet ? { length: text.length } : { length: text.length, preview: text.slice(0, 200) },
+    ),
   );
   return text;
 }
@@ -274,6 +286,10 @@ export interface LibraryMove {
 
 export interface ParseContext {
   mode: "create" | "edit";
+  /** Who is speaking; defaults to the coach. An athlete dictates their own practice. */
+  speaker?: "coach" | "athlete";
+  /** Log counts only, never the words (see `TranscribeOptions.quiet`). */
+  quiet?: boolean;
   transcript: string;
   athletes: { id: string; name: string }[];
   library: LibraryMove[];
@@ -383,7 +399,9 @@ export async function slotTranscript(
   const model = gateway(modelId);
 
   const system = [
-    "You convert a sports coach's spoken instructions into structured slots.",
+    ctx.speaker === "athlete"
+      ? "You convert an athlete's spoken description of their own practice plan into structured slots."
+      : "You convert a sports coach's spoken instructions into structured slots.",
     "Map every meaningful piece of the transcript into exactly one slot: title, athleteName, or a move field (name/description/cue/why/target).",
     variant === "full"
       ? "For EVERY filled field, also fill its *Quote field with the verbatim transcript phrase that produced it (a clean substring of the transcript, not paraphrased)."
@@ -470,7 +488,7 @@ export async function slotTranscript(
         variant,
         transcriptLen: ctx.transcript.length,
         shapeError,
-        rawPreview: rawText.slice(0, 600),
+        ...(ctx.quiet ? {} : { rawPreview: rawText.slice(0, 600) }),
       }),
     );
     throw new Error("Couldn't structure that dictation");
@@ -482,10 +500,14 @@ export async function slotTranscript(
       mode: ctx.mode,
       variant,
       salvaged: Boolean(shapeError),
-      title: slots.title,
-      athleteName: slots.athleteName,
+      ...(ctx.quiet
+        ? {}
+        : {
+            title: slots.title,
+            athleteName: slots.athleteName,
+            moveNames: (slots.moves ?? []).map((m) => m.name),
+          }),
       moveCount: slots.moves?.length ?? 0,
-      moveNames: (slots.moves ?? []).map((m) => m.name),
       leftoverLen: (slots.leftover ?? "").length,
     }),
   );
@@ -575,7 +597,7 @@ function moveTokens(s: string): string[] {
     .map((w) => (w.endsWith("s") && w.length > 3 ? w.slice(0, -1) : w));
 }
 
-function resolveLibraryMove(
+export function resolveLibraryMove(
   spoken: string | null | undefined,
   library: LibraryMove[],
 ): LibraryMove | null {
@@ -664,7 +686,7 @@ function resolveLibraryMove(
   return null;
 }
 
-function mergeAppend(libraryValue: string, voiceValue: string): string {
+export function mergeAppend(libraryValue: string, voiceValue: string): string {
   const lib = (libraryValue ?? "").trim();
   const voice = (voiceValue ?? "").trim();
   if (!voice) return lib;
@@ -676,7 +698,7 @@ function mergeAppend(libraryValue: string, voiceValue: string): string {
 
 /* ---------------- Quote location ---------------- */
 
-function locateQuote(transcript: string, quote: string | null | undefined): FieldSource | null {
+export function locateQuote(transcript: string, quote: string | null | undefined): FieldSource | null {
   if (!quote) return null;
   const q = quote.trim();
   if (!q) return null;
@@ -701,6 +723,8 @@ async function cleanupNotes(opts: {
   existingNotes: string;
   mode: "create" | "edit";
   athleteFirstName: string | null;
+  /** Log the failure's message only: an SDK error can carry the request body, which holds the words. */
+  quiet?: boolean;
 }): Promise<string> {
   const { leftover, existingNotes, mode, athleteFirstName } = opts;
   const trimmedLeftover = leftover.trim();
@@ -738,7 +762,7 @@ async function cleanupNotes(opts: {
     const { text } = await generateText({ model, system, prompt });
     return (text ?? "").trim();
   } catch (e) {
-    console.error("notes cleanup failed", e);
+    console.error("notes cleanup failed", opts.quiet ? (e as Error)?.message : e);
     return existingNotes;
   }
 }
@@ -771,6 +795,7 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
     existingNotes: ctx.currentPlan?.notes ?? "",
     mode: ctx.mode,
     athleteFirstName,
+    quiet: ctx.quiet,
   });
 
   // Only trust an existing-move id that really is one of this plan's moves —
@@ -1132,9 +1157,13 @@ export function assertAudioSize(audio: Blob): void {
 }
 
 /** The transcription service's own failures become 503 `voice_unavailable`, message intact. */
-async function transcribeOrFail(audio: Blob, vocabularyHints?: string[]): Promise<string> {
+export async function transcribeOrFail(
+  audio: Blob,
+  vocabularyHints?: string[],
+  opts?: TranscribeOptions,
+): Promise<string> {
   try {
-    return await transcribeWithElevenLabs(audio, vocabularyHints);
+    return await transcribeWithElevenLabs(audio, vocabularyHints, opts);
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError({
@@ -1145,7 +1174,7 @@ async function transcribeOrFail(audio: Blob, vocabularyHints?: string[]): Promis
   }
 }
 
-const didntCatchThat = () =>
+export const didntCatchThat = () =>
   new ApiError({ code: "unprocessable", status: 422, message: "Didn't catch that — try again" });
 
 /** `voiceTranscribe`: speech to text only (PRD §7.4 voice notes and dictation). */

@@ -14,7 +14,13 @@ import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.ser
 
 type Client = SupabaseClient<Database>;
 
-export type ParentPlansContext = { userId: string; supabase: Client; admin: Client };
+export type ParentPlansContext = {
+  userId: string;
+  supabase: Client;
+  admin: Client;
+  /** Include the plans an athlete wrote (PRD §6.14). Off for the web pages (§4.1); the `/api/v1` routes turn it on. */
+  includeAuthored?: boolean;
+};
 
 export type ParentPlanStatus = "active" | "benched";
 export type TargetKind = "reps" | "mins";
@@ -40,6 +46,8 @@ export interface ParentPlanSummaryDTO {
   updatedAt: string;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
+  /** `"athlete"` for a plan the athlete wrote (then `coachName` is the athlete's first name); omitted otherwise. */
+  source?: string;
 }
 
 export interface ParentPlanMoveDTO {
@@ -68,6 +76,7 @@ export interface ParentPlanDetailDTO {
   totalMinutes: number;
   updatedAt: string;
   moves: ParentPlanMoveDTO[];
+  source?: string;
 }
 
 export interface ParentPlansDTO {
@@ -112,6 +121,8 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
     .select("id, first_name, last_name")
     .in("id", accessibleIds);
   if (aErr) dbError(aErr);
+  // The author's first name as stored, never a split of the full name ("Mary Ann" stays whole).
+  const firstNameById = new Map((athleteRows ?? []).map((a) => [a.id, a.first_name]));
 
   const athletes: ParentAthleteOptionDTO[] = (athleteRows ?? [])
     .map((a) => ({
@@ -127,13 +138,16 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
   const athleteIds = athletes.filter((a) => !a.locked).map((a) => a.id);
   if (!athleteIds.length) return { athletes, plans: [] };
 
-  const { data: planRows, error: pErr } = await supabase
+  let planQuery = supabase
     .from("plans")
     .select("id, title, status, athlete_id, coach_id, updated_at, source")
     .in("athlete_id", athleteIds)
     .eq("kind", "plan")
-    .in("status", ["active", "benched"])
-    .order("updated_at", { ascending: false });
+    .in("status", ["active", "benched"]);
+  if (!ctx.includeAuthored) planQuery = planQuery.neq("source", "athlete");
+  const { data: planRows, error: pErr } = await planQuery.order("updated_at", {
+    ascending: false,
+  });
   if (pErr) dbError(pErr);
 
   const plans = planRows ?? [];
@@ -189,13 +203,17 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
         athleteId: p.athlete_id as string,
         athleteName: athleteName.get(p.athlete_id as string) ?? "",
         coachId: p.coach_id ?? "",
-        coachName: (p.coach_id && coachName.get(p.coach_id)) || "Gradus",
-        isGradus: p.source === "gradus" || !p.coach_id,
+        coachName:
+          p.source === "athlete"
+            ? (firstNameById.get(p.athlete_id as string) ?? "")
+            : (p.coach_id && coachName.get(p.coach_id)) || "Gradus",
+        isGradus: p.source !== "athlete" && (p.source === "gradus" || !p.coach_id),
         moveCount: a.count,
         totalMinutes: a.minutes,
         updatedAt: p.updated_at,
         sessionsByState: sessions.sessionsByState,
         sessionsTotal: sessions.sessionsTotal,
+        ...(p.source === "athlete" ? { source: "athlete" } : {}),
       };
     });
 
@@ -221,6 +239,8 @@ export async function getParentPlan(
   if (error) dbError(error);
   if (!plan || plan.kind !== "plan" || !plan.athlete_id) throw notFound();
   if (plan.status !== "active" && plan.status !== "benched") throw notFound();
+  // The web never shows a plan the athlete wrote.
+  if (plan.source === "athlete" && !ctx.includeAuthored) throw notFound();
 
   // Explicit defense-in-depth: ensure the plan's athlete belongs to this
   // parent, independent of any RLS policy state on `plans`. Goes through the
@@ -267,8 +287,11 @@ export async function getParentPlan(
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
-  const isGradus = plan.source === "gradus" || !plan.coach_id;
-  const coachFirst = coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach");
+  const authored = plan.source === "athlete";
+  const isGradus = !authored && (plan.source === "gradus" || !plan.coach_id);
+  const coachFirst = authored
+    ? (athleteRes.data?.first_name ?? "")
+    : (coachRes.data?.first_name ?? (isGradus ? "Gradus" : "Coach"));
   const coachLast = coachRes.data?.last_name ?? "";
 
   return {
@@ -286,5 +309,6 @@ export async function getParentPlan(
     totalMinutes,
     updatedAt: plan.updated_at,
     moves,
+    ...(authored ? { source: "athlete" } : {}),
   };
 }

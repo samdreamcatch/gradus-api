@@ -63,6 +63,13 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
   maxBodyBytes?: number;
   /** When true, honors the `Idempotency-Key` header. Requires `auth: "user"`. */
   idempotent?: boolean;
+  /**
+   * Idempotent routes only: what is stored for the 24-hour replay, given the
+   * output. The caller still gets the full output on the first call; a replay
+   * returns the stored shape, so it must still satisfy `output`. Use it when
+   * the response holds words that must not be kept (a minor's transcript).
+   */
+  idempotencyStoredBody?: (output: TOutput) => TOutput;
   rateLimit?: RateLimitConfig;
   /**
    * Conditional GET (PRD Appendix A `[etag]`). Returns a validator for the
@@ -262,7 +269,14 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       if (options.idempotent) {
         if (!ctx) throw authError ?? ApiError.unauthenticated();
         const key = request.headers.get("idempotency-key");
-        result = await withIdempotency(ctx, key, idempotencyBodyHash, runHandler);
+        const redact = options.idempotencyStoredBody;
+        result = await withIdempotency(
+          ctx,
+          key,
+          idempotencyBodyHash,
+          runHandler,
+          redact ? (body) => redact(body as TOutput) : undefined,
+        );
       } else {
         result = await runHandler();
       }

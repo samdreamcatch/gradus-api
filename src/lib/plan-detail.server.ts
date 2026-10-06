@@ -10,6 +10,7 @@ import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { getAthletePlan } from "./athlete-plans.server";
+import { ATHLETE_SOURCE, getAuthoredPlanDetail } from "./athlete-authoring.server";
 import { getParentPlan } from "./parent-plans.server";
 import { getPlanSessionCounts } from "./plan-sessions.server";
 import { getPlan, type PlanKind, type PlanMoveDTO, type PlanStatus } from "./plans.server";
@@ -48,6 +49,14 @@ export interface RoleAwarePlanDetailDTO {
   voiceTranscript: string | null;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
+  /**
+   * `plans.source`, set when the plan was written by an athlete (`"athlete"`);
+   * omitted otherwise. Optional on the wire so an installed client never
+   * fails to decode a response from a server that predates it.
+   */
+  source?: string;
+  /** The athlete author's first name, with `source: "athlete"` ("By Greta"). */
+  authorFirstName?: string | null;
 }
 
 /**
@@ -89,8 +98,47 @@ export async function getPlanForViewer(
 ): Promise<RoleAwarePlanDetailDTO> {
   const role = await resolvePlanViewerRole(ctx.supabase, ctx.userId);
 
+  // A plan the caller wrote as an athlete (PRD §6.14): served to its author in
+  // any status, as theirs. Checked first for an athlete, and for a parent who
+  // also has an athlete profile of their own (`resolvePlanViewerRole` says
+  // "parent" for them), and as a fallback for a coach who also trains (a
+  // coach's own loader would say "not found").
+  if (role === "athlete" || role === "parent") {
+    const own = await getAuthoredPlanDetail(ctx, id);
+    if (own) return own;
+  }
+  // This route is `/api/v1`: the plans an athlete wrote are in scope for the other loaders too.
+  const withAuthored = { ...ctx, includeAuthored: true };
+
   if (role === "coach") {
-    const plan = await getPlan({ userId: ctx.userId, supabase: ctx.supabase }, id);
+    let plan;
+    try {
+      plan = await getPlan({ userId: ctx.userId, supabase: ctx.supabase }, id);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        const own = await getAuthoredPlanDetail(ctx, id);
+        if (own) return own;
+      }
+      throw err;
+    }
+    // A rostered coach reading a plan the athlete wrote (read-only): say so.
+    let source: string | undefined;
+    let authorFirstName: string | null | undefined;
+    if (!plan.isOwner && plan.athleteId) {
+      const authored = await ctx.admin
+        .from("plans")
+        .select("source, athletes:athlete_id(first_name)")
+        .eq("id", plan.id)
+        .maybeSingle();
+      if (authored.error) dbError(authored.error);
+      if (authored.data?.source === ATHLETE_SOURCE) {
+        source = ATHLETE_SOURCE;
+        // The stored first name, never a split of the full name ("Mary Ann" stays whole).
+        authorFirstName =
+          (authored.data as unknown as { athletes: { first_name: string } | null }).athletes
+            ?.first_name ?? null;
+      }
+    }
     return {
       id: plan.id,
       title: plan.title,
@@ -110,10 +158,14 @@ export async function getPlanForViewer(
       voiceTranscript: plan.voiceTranscript,
       sessionsByState: plan.sessionsByState,
       sessionsTotal: plan.sessionsTotal,
+      ...(source ? { source, authorFirstName } : {}),
     };
   }
 
-  const plan = role === "parent" ? await getParentPlan(ctx, id) : await getAthletePlan(ctx, id);
+  const plan =
+    role === "parent"
+      ? await getParentPlan(withAuthored, id)
+      : await getAthletePlan(withAuthored, id);
   // Parents read counts through RLS; athletes through the admin client, as their list does.
   const sessions = await getPlanSessionCounts(role === "parent" ? ctx.supabase : ctx.admin, id);
   return {
@@ -125,12 +177,16 @@ export async function getPlanForViewer(
     athleteId: plan.athleteId,
     athleteName: null,
     athleteFirstName: plan.athleteFirstName,
-    coach: {
-      id: plan.coachId,
-      name: plan.coachName,
-      firstName: plan.coachFirstName,
-      isGradus: plan.isGradus,
-    },
+    // A plan the athlete wrote has no coach: a parent sees it as "By <first name>".
+    coach:
+      plan.source === ATHLETE_SOURCE
+        ? null
+        : {
+            id: plan.coachId,
+            name: plan.coachName,
+            firstName: plan.coachFirstName,
+            isGradus: plan.isGradus,
+          },
     viewerRole: role,
     isOwner: false,
     moveCount: plan.moveCount,
@@ -140,6 +196,9 @@ export async function getPlanForViewer(
     voiceTranscript: null,
     sessionsByState: sessions.sessionsByState,
     sessionsTotal: sessions.sessionsTotal,
+    ...(plan.source === ATHLETE_SOURCE
+      ? { source: ATHLETE_SOURCE, authorFirstName: plan.athleteFirstName }
+      : {}),
   };
 }
 

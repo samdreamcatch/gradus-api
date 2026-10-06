@@ -163,6 +163,10 @@ export const athleteDetailSchema = z.object({
       isGradus: z.boolean(),
       sessionsByState: sessionsByStateSchema,
       sessionsTotal: z.number().int(),
+      // A plan the athlete wrote: `source` is a plain string (never an enum on
+      // the wire) and both fields are optional so an older server still decodes.
+      source: z.string().optional(),
+      authorFirstName: z.string().optional(),
     }),
   ),
   activity: z.object({

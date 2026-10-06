@@ -77,7 +77,9 @@ function SharedPlanPage() {
       <div className="mx-auto max-w-2xl px-4 pt-6 pb-32">
         <div className="text-center">
           <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-            Plan by Coach {[plan.coachFirstName, plan.coachLastName].filter(Boolean).join(" ")}
+            {plan.authorKind === "athlete"
+              ? `Plan by ${plan.authorFirstName ?? "an athlete"}`
+              : `Plan by Coach ${[plan.coachFirstName, plan.coachLastName].filter(Boolean).join(" ")}`}
           </p>
           <h1 className="mt-1 font-display text-3xl font-black leading-tight tracking-tight text-text-primary">
             {plan.title}
@@ -161,7 +163,8 @@ function ImportCTA({ token }: { token: string }) {
   const importFn = useServerFn(importSharedPlan);
   const [loading, setLoading] = useState(false);
   const [authState, setAuthState] = useState<"unknown" | "anon" | "user">("unknown");
-  const [isCoach, setIsCoach] = useState<boolean>(false);
+  const [role, setRole] = useState<"coach" | "athlete" | "other">("other");
+  const canSave = role !== "other";
 
   // Client-only check — this route is public/SSR, so probe the session in-browser.
   useEffect(() => {
@@ -180,9 +183,13 @@ function ImportCTA({ token }: { token: string }) {
         .select("id")
         .eq("user_id", session.user.id)
         .maybeSingle();
+      // A coach saves it to the library; an athlete adds it to their own plans.
+      const { data: athlete } = coach
+        ? { data: null }
+        : await supabase.from("athletes").select("id").eq("user_id", session.user.id).maybeSingle();
       if (cancelled) return;
       setAuthState("user");
-      setIsCoach(!!coach);
+      setRole(coach ? "coach" : athlete ? "athlete" : "other");
     })();
     return () => {
       cancelled = true;
@@ -190,12 +197,17 @@ function ImportCTA({ token }: { token: string }) {
   }, []);
 
   const onSaveClick = async () => {
-    if (!isCoach) return;
+    if (!canSave) return;
     setLoading(true);
     try {
       const { planId } = await importFn({ data: { token } });
-      toast.success("Saved to your library");
-      navigate({ to: "/coach/plans/$planId", params: { planId } });
+      if (role === "athlete") {
+        toast.success("Added to your plans");
+        navigate({ to: "/athlete/plans/$planId", params: { planId } });
+      } else {
+        toast.success("Saved to your library");
+        navigate({ to: "/coach/plans/$planId", params: { planId } });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save this plan.");
     } finally {
@@ -214,10 +226,12 @@ function ImportCTA({ token }: { token: string }) {
           </p>
           <p className="text-[13px] text-text-secondary">
             {authState === "anon"
-              ? "Coaches can save this to their library."
-              : authState === "user" && !isCoach
-                ? "Only coaches can save shared plans."
-                : "Adds any missing moves to your library."}
+              ? "Coaches can save this to their library, and athletes can add it to their plans."
+              : authState === "user" && !canSave
+                ? "Only coaches and athletes can save shared plans."
+                : role === "athlete"
+                  ? "Adds a copy to your plans, ready to practice."
+                  : "Adds any missing moves to your library."}
           </p>
         </div>
 
@@ -241,14 +255,18 @@ function ImportCTA({ token }: { token: string }) {
           <button
             type="button"
             onClick={onSaveClick}
-            disabled={loading || !isCoach}
+            disabled={loading || !canSave}
             className={cn(
               "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-card sm:w-auto",
-              !isCoach ? "bg-divider text-text-tertiary" : "bg-accent text-accent-foreground",
+              !canSave ? "bg-divider text-text-tertiary" : "bg-accent text-accent-foreground",
             )}
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-            {isCoach ? "Save to my library" : "Coaches only"}
+            {role === "athlete"
+              ? "Add to my plans"
+              : role === "coach"
+                ? "Save to my library"
+                : "Coaches and athletes only"}
           </button>
         )}
       </div>

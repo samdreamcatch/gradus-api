@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/v1/parent/plans")({
         ]),
       handler: async ({ ctx, query }) => {
         const { userId, supabase, admin } = requireContext(ctx);
-        const result = await listParentPlans({ userId, supabase, admin });
+        const result = await listParentPlans({ userId, supabase, admin, includeAuthored: true });
         const plans = result.plans.filter(
           (p) =>
             (!query.status || p.status === query.status) &&

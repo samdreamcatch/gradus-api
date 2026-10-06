@@ -8,7 +8,11 @@
  */
 import { z } from "zod";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
-import type { AthletePlanSummaryDTO, AthletePlansDTO } from "@/lib/athlete-plans.server";
+import type {
+  AthleteDraftSummaryDTO,
+  AthletePlanSummaryDTO,
+  AthletePlansDTO,
+} from "@/lib/athlete-plans.server";
 import type { MoveDTO, MoveLibraryDTO, NameConflict } from "@/lib/moves.server";
 import type { ParentPlanSummaryDTO, ParentPlansDTO } from "@/lib/parent-plans.server";
 import type { RoleAwarePlanDetailDTO } from "@/lib/plan-detail.server";
@@ -107,6 +111,11 @@ export const planDetailSchema = z.object({
   voiceTranscript: z.string().nullable(),
   sessionsByState: sessionsByStateSchema,
   sessionsTotal: z.number().int(),
+  // A plan an athlete wrote (PRD §6.14): `source` is a plain string, never an
+  // enum, and both fields are optional, so an installed client never fails to
+  // decode a server that predates them.
+  source: z.string().optional(),
+  authorFirstName: z.string().nullable().optional(),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
 export const planIdSchema = z.object({ id: z.string() });
@@ -175,6 +184,7 @@ export const parentPlanSummarySchema = z.object({
   updatedAt: z.string(),
   sessionsByState: sessionsByStateSchema,
   sessionsTotal: z.number().int(),
+  source: z.string().optional(),
 }) satisfies z.ZodType<ParentPlanSummaryDTO>;
 
 export const parentPlansSchema = z.object({
@@ -201,11 +211,25 @@ export const athletePlanSummarySchema = z.object({
   updatedAt: z.string(),
   sessionsByState: sessionsByStateSchema,
   sessionsTotal: z.number().int(),
+  /** `"athlete"` marks a plan the athlete wrote (never captioned "from Gradus"). */
+  source: z.string().optional(),
 }) satisfies z.ZodType<AthletePlanSummaryDTO>;
+
+/** An unfinished plan the athlete wrote; its own type so the closed `status` enum above never gains a value. */
+export const athleteDraftSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  status: z.literal("draft"),
+  source: z.string(),
+  moveCount: z.number().int(),
+  totalMinutes: z.number(),
+  updatedAt: z.string(),
+}) satisfies z.ZodType<AthleteDraftSummaryDTO>;
 
 export const athletePlansSchema = z.object({
   athlete: z.object({ id: z.string(), firstName: z.string() }),
   plans: z.array(athletePlanSummarySchema),
+  drafts: z.array(athleteDraftSummarySchema).optional(),
 }) satisfies z.ZodType<AthletePlansDTO>;
 
 /* ---------------- sessions ---------------- */
@@ -259,6 +283,11 @@ export const sharedPlanSchema = z.object({
       targetValue: z.number(),
     }),
   ),
+  // Who wrote it (PRD §6.14 D): "coach" or "athlete" as a plain string, and that
+  // author's first name. Optional so an older database or client still works;
+  // absent means a coach.
+  authorKind: z.string().optional(),
+  authorFirstName: z.string().optional(),
 }) satisfies z.ZodType<SharedPlanDTO>;
 
 export const shareTokenSchema = z.object({ token: z.string() });

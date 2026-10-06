@@ -84,12 +84,17 @@ function idempotencyInProgress(): ApiError {
  * the same key and a *different* body, or one that arrives while the first
  * is still running, is rejected rather than replayed or re-run. A `null` key
  * (no `Idempotency-Key` header) always runs `run()`.
+ *
+ * `storedBody` shapes what is kept for replay (the caller still gets the full
+ * body now). A route whose response carries words that must not outlive the
+ * request (a minor's transcript) uses it so the 24-hour replay row holds none.
  */
 export async function withIdempotency(
   ctx: ApiContext,
   key: string | null,
   bodyHash: string,
   run: () => Promise<IdempotentResult>,
+  storedBody?: (body: unknown) => unknown,
 ): Promise<IdempotentResult> {
   if (!key) return run();
 
@@ -128,7 +133,7 @@ export async function withIdempotency(
     _user_id: ctx.userId,
     _key: key,
     _response_status: result.status,
-    _response_body: result.body,
+    _response_body: storedBody ? storedBody(result.body) : result.body,
   });
 
   return result;

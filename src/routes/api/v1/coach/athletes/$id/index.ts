@@ -17,7 +17,10 @@ export const Route = createFileRoute("/api/v1/coach/athletes/$id/")({
       output: athleteDetailSchema,
       handler: async ({ ctx, params }) => {
         const { userId, admin } = requireContext(ctx);
-        return getCoachAthleteDetail({ userId, admin }, z.string().uuid().parse(params.id));
+        return getCoachAthleteDetail(
+          { userId, admin, includeAuthored: true },
+          z.string().uuid().parse(params.id),
+        );
       },
     }),
   },

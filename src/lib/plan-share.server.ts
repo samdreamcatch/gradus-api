@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { isAthletePaused, PAUSED_MESSAGE } from "./athlete-authoring.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -29,10 +30,15 @@ export interface SharedPlanMoveDTO {
 export interface SharedPlanDTO {
   title: string;
   notes: string;
+  /** For a plan an athlete wrote these are empty; read `authorFirstName`. */
   coachFirstName: string;
   coachLastName: string;
   sharedAt: string | null;
   moves: SharedPlanMoveDTO[];
+  /** `"coach"` or `"athlete"`; omitted by a database that predates athlete-authored plans (treat as coach). */
+  authorKind?: string;
+  /** The author's first name and nothing else about them: "Plan by Greta" / "Plan by Coach Renata". */
+  authorFirstName?: string;
 }
 
 function randomToken(bytes = 12): string {
@@ -46,6 +52,10 @@ function randomToken(bytes = 12): string {
  * A permanent share link for a plan, generated on first call. Allowed for
  * the owning coach, any coach linked to the plan's athlete, the athlete
  * themselves, and the athlete's parent. Idempotent.
+ *
+ * A plan the athlete wrote (PRD §6.14) is published under their first name,
+ * so only the athlete and their parent may mint its link: a rostered coach,
+ * who can read it, cannot publish it.
  */
 export async function getOrCreateShareToken(
   ctx: ShareContext,
@@ -56,13 +66,14 @@ export async function getOrCreateShareToken(
 
   const { data: plan, error: planErr } = await supabase
     .from("plans")
-    .select("id, share_token, coach_id, athlete_id")
+    .select("id, share_token, coach_id, athlete_id, source")
     .eq("id", planId)
     .maybeSingle();
   if (planErr) dbError(planErr);
   if (!plan) throw new ApiError({ code: "not_found", status: 404, message: "Plan not found." });
 
   let authorized = false;
+  const athleteAuthored = plan.source === "athlete";
 
   const { data: coach } = await supabase
     .from("coach_profiles")
@@ -71,8 +82,8 @@ export async function getOrCreateShareToken(
     .maybeSingle();
   if (coach && coach.id === plan.coach_id) authorized = true;
 
-  // Coaches who share the plan's athlete can also share the plan.
-  if (!authorized && coach && plan.athlete_id) {
+  // Coaches who share the plan's athlete can also share the plan (not one the athlete wrote).
+  if (!authorized && !athleteAuthored && coach && plan.athlete_id) {
     const { data: link } = await supabase
       .from("coach_athletes")
       .select("coach_id")
@@ -108,6 +119,13 @@ export async function getOrCreateShareToken(
       status: 403,
       message: "Not allowed to share this plan.",
     });
+  }
+
+  // The link below is written with the admin client, which RLS cannot stop: a
+  // paused athlete (§6.13) publishes nothing, and their existing links already
+  // resolve to nothing.
+  if (athleteAuthored && plan.athlete_id && (await isAthletePaused(admin, plan.athlete_id))) {
+    throw new ApiError({ code: "paused", status: 403, message: PAUSED_MESSAGE });
   }
 
   if (plan.share_token) return { token: plan.share_token };
