@@ -36,6 +36,13 @@
       "when": 1791238939159,
       "tag": "0004_roster_checks_on_coach_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791306308767,
+      "tag": "0005_athlete_authored_plans",
+      "breakpoints": true
     }
   ]
 }

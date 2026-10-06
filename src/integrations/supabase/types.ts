@@ -4411,10 +4411,16 @@ export type Database = {
         Returns: boolean
       }
       is_any_org_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_athlete_paused: { Args: { _athlete_id: string }; Returns: boolean }
       is_direct_room_participant: {
         Args: { _direct_room_id: string; _user_id: string }
         Returns: boolean
       }
+      is_own_athlete: {
+        Args: { _athlete_id: string; _must_be_active?: boolean }
+        Returns: boolean
+      }
+      is_own_authored_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_parent_of_athlete: { Args: { _athlete_id: string }; Returns: boolean }
       is_parent_of_plan: { Args: { _plan_id: string }; Returns: boolean }
       is_privileged_writer: { Args: never; Returns: boolean }
