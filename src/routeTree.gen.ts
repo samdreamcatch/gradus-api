@@ -143,6 +143,7 @@ import { Route as ApiV1AthleteMeRouteImport } from './routes/api/v1/athlete/me'
 import { Route as ApiV1AthleteMovesRouteImport } from './routes/api/v1/athlete/moves'
 import { Route as ApiV1AthleteSettingsRouteImport } from './routes/api/v1/athlete/settings'
 import { Route as ApiV1AuthAppleRouteImport } from './routes/api/v1/auth/apple'
+import { Route as ApiV1AuthCompanionRouteImport } from './routes/api/v1/auth/companion'
 import { Route as ApiV1AuthGoogleRouteImport } from './routes/api/v1/auth/google'
 import { Route as ApiV1AuthPasswordRouteImport } from './routes/api/v1/auth/password'
 import { Route as ApiV1AuthRecoverRouteImport } from './routes/api/v1/auth/recover'
@@ -1092,6 +1093,11 @@ const ApiV1AthleteSettingsRoute = ApiV1AthleteSettingsRouteImport.update({
 const ApiV1AuthAppleRoute = ApiV1AuthAppleRouteImport.update({
   id: '/api/v1/auth/apple',
   path: '/api/v1/auth/apple',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthCompanionRoute = ApiV1AuthCompanionRouteImport.update({
+  id: '/api/v1/auth/companion',
+  path: '/api/v1/auth/companion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1AuthGoogleRoute = ApiV1AuthGoogleRouteImport.update({
@@ -2343,6 +2349,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/athlete/moves': typeof ApiV1AthleteMovesRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/companion': typeof ApiV1AuthCompanionRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
@@ -2675,6 +2682,7 @@ export interface FileRoutesByTo {
   '/api/v1/athlete/moves': typeof ApiV1AthleteMovesRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/companion': typeof ApiV1AuthCompanionRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
@@ -3015,6 +3023,7 @@ export interface FileRoutesById {
   '/api/v1/athlete/moves': typeof ApiV1AthleteMovesRoute
   '/api/v1/athlete/settings': typeof ApiV1AthleteSettingsRoute
   '/api/v1/auth/apple': typeof ApiV1AuthAppleRoute
+  '/api/v1/auth/companion': typeof ApiV1AuthCompanionRoute
   '/api/v1/auth/google': typeof ApiV1AuthGoogleRoute
   '/api/v1/auth/password': typeof ApiV1AuthPasswordRoute
   '/api/v1/auth/recover': typeof ApiV1AuthRecoverRoute
@@ -3355,6 +3364,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/moves'
     | '/api/v1/athlete/settings'
     | '/api/v1/auth/apple'
+    | '/api/v1/auth/companion'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
@@ -3687,6 +3697,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/moves'
     | '/api/v1/athlete/settings'
     | '/api/v1/auth/apple'
+    | '/api/v1/auth/companion'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
@@ -4026,6 +4037,7 @@ export interface FileRouteTypes {
     | '/api/v1/athlete/moves'
     | '/api/v1/athlete/settings'
     | '/api/v1/auth/apple'
+    | '/api/v1/auth/companion'
     | '/api/v1/auth/google'
     | '/api/v1/auth/password'
     | '/api/v1/auth/recover'
@@ -4296,6 +4308,7 @@ export interface RootRouteChildren {
   ApiV1AthleteMovesRoute: typeof ApiV1AthleteMovesRoute
   ApiV1AthleteSettingsRoute: typeof ApiV1AthleteSettingsRoute
   ApiV1AuthAppleRoute: typeof ApiV1AuthAppleRoute
+  ApiV1AuthCompanionRoute: typeof ApiV1AuthCompanionRoute
   ApiV1AuthGoogleRoute: typeof ApiV1AuthGoogleRoute
   ApiV1AuthPasswordRoute: typeof ApiV1AuthPasswordRoute
   ApiV1AuthRecoverRoute: typeof ApiV1AuthRecoverRoute
@@ -5439,6 +5452,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/auth/apple'
       fullPath: '/api/v1/auth/apple'
       preLoaderRoute: typeof ApiV1AuthAppleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/companion': {
+      id: '/api/v1/auth/companion'
+      path: '/api/v1/auth/companion'
+      fullPath: '/api/v1/auth/companion'
+      preLoaderRoute: typeof ApiV1AuthCompanionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/auth/google': {
@@ -7192,6 +7212,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AthleteMovesRoute: ApiV1AthleteMovesRoute,
   ApiV1AthleteSettingsRoute: ApiV1AthleteSettingsRoute,
   ApiV1AuthAppleRoute: ApiV1AuthAppleRoute,
+  ApiV1AuthCompanionRoute: ApiV1AuthCompanionRoute,
   ApiV1AuthGoogleRoute: ApiV1AuthGoogleRoute,
   ApiV1AuthPasswordRoute: ApiV1AuthPasswordRoute,
   ApiV1AuthRecoverRoute: ApiV1AuthRecoverRoute,

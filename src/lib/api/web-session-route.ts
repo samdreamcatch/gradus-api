@@ -33,7 +33,7 @@ export type WebSessionDeps = {
   emailFor?: (ctx: ApiContext) => Promise<string | null>;
 };
 
-async function defaultEmailFor(ctx: ApiContext): Promise<string | null> {
+export async function defaultEmailFor(ctx: ApiContext): Promise<string | null> {
   const claim = ctx.claims?.email;
   if (typeof claim === "string" && claim) return claim;
   const { data, error } = await ctx.admin.auth.admin.getUserById(ctx.userId);
