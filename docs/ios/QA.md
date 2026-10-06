@@ -87,6 +87,22 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Discard × asks for confirmation; End → feedback sheet: the submit button says why it is disabled until a state is picked; Cancel asks before discarding.
 - [ ] Submit feedback offline → queued; reconnect → the coach's plan shows the flow state.
 
+## 5a. Athlete-authored plans (PRD §6.14, §10.10 AP4, decision #35)
+
+Run on a build that carries web AP1/AP2 (migration applied, API published) and iOS AP3. Use an adult athlete, then a 13–17 athlete, then a parent and a coach linked to each.
+
+- [ ] **Create:** Plans tab → "+" opens an empty editor with the title being edited; the Activate button is disabled and says why ("Give the plan a name…", then "Add at least one move…"). Name it, add moves from the library → Activate → back on the list, captioned **Mine**, with no coach line.
+- [ ] **Library:** the Library segment lists only the curriculum for the athlete's sport(s), grouped by category, searchable, read-only; an athlete with no sport on their goals sees the empty state that points to Goals. No way to create, edit or archive a library move.
+- [ ] **Editor:** edit title, notes, a move's target/cue/why, reorder, remove a move (no "why?" prompt), bench (no prompt, no cap: activate three plans, none is benched), delete a draft or benched plan; an active plan asks to be benched first. There is no assignment row, no template option and no "save to library".
+- [ ] **Drafts and filters:** a draft shows under Status → Drafts and opens in the editor; "Mine" filters to the athlete's own plans; the coach filter never lists the athlete as a coach.
+- [ ] **Practice:** an own active plan opens the runner (timer, feedback sheet) with an Edit button; the timer toast never says "Coach …"; there is no "Message coach".
+- [ ] **Voice (adult, then minor):** the mic on the Plans tab and in the editor builds a draft / edits the plan; the overlay says the recording isn't kept; the plan shows "What you dictated" with the same promise; a spoken athlete name is ignored. Offline: the clip waits on the device and is sent when back online, then is gone. **Server:** nothing in the logs but counts (`[voice] applied (athlete)`), no audio in storage.
+- [ ] **Share and adopt:** an active own plan → Share → a link whose public page reads "Plan by *first name*" (no last name anywhere). Open it signed in as another athlete → "Add to my plans" → the copy lands **active**, titled "… (from *first name*)". As a coach → "Save to my library" (a benched template, as before). A coach rostered to the author **cannot** mint a link for the athlete's plan.
+- [ ] **Coach and parent views:** a rostered coach sees the plan on the athlete's detail captioned "By *first name*", read-only, only while active or benched (never a draft); a parent sees it as "By *first name*" and can log practice on it. Nothing here appears on the web (PWA unchanged).
+- [ ] **Offline:** edit title, notes and moves offline → "Saved — it syncs when you're back online"; reconnect → the edits land once each. Activating offline queues the status change; creating a plan and adding moves from the library need the network and say so.
+- [ ] **Paused athlete** (sandbox `RESCIND_CONSENT`): they can still read their plans; creating, editing, activating, sharing and voice are refused with the paused message; their old share links stop resolving.
+- [ ] **Accessibility:** VoiceOver reads each control with a label and state; the blocker text is read; at the largest text size nothing is cut off (move names wrap, the action bar and the voice overlay stack, the overlay scrolls); Increase Contrast and dark appearance keep every control legible; targets are at least 44 pt; Reduce Motion shows no animation.
+
 ## 6. Parent and athlete settings (PRD §7.7–7.8)
 
 - [ ] My athletes: edit name/birthdate, invite code + claim link (minors), add/remove athlete (confirmed).
