@@ -47,11 +47,11 @@ What the code does today, and what each row of Section A relies on.
 | Usage events, 13 months | A2's pg_cron job on `analytics_events`; on account deletion the row's `user_id` is cleared (FK `ON DELETE SET NULL`, migration `20261004120000`), so a deleted adult's events survive only as de-identified counts | Live (A2); FK **built 2026-10-04** |
 | Usage events of an account that withdrew consent: deleted at once | `setAnalyticsOptOut` in `src/lib/analytics.server.ts` → `analytics_withdraw_consent` (one transaction: request row, then the delete; returns the count), from the admin user page's Usage data card; `analytics_opt_outs` makes the events endpoint discard the account's later batches | **Built 2026-10-04** (decision #46). Minor athletes' events carry no user id, so for them it stops future collection only |
 | Coach content de-identified after coach deletion | `deleteAccountForUser` | Live |
-| Email delivery records, 13 months | — | **Not enforced yet.** `email_send_log` has no sweep; add one to the same hook or publish without the row |
+| Email delivery records, 13 months | `purgeEmailSendLog` in `src/lib/retention.server.ts`, daily from `/api/public/hooks/consent-retention` (oldest first, in batches, stops at a time budget and resumes the next day) | **Built 2026-10-05.** Live once published; the first run may take several days on a large backlog |
 | Safety reports 7 years, support mail 3 years | Google Workspace mailbox retention for support@gradussports.com; reports also exist as admin emails | **Mailbox setting, not code.** Set a Vault/retention rule or an annual manual review; nothing in the database stores a report |
 | Billing records, 7 years | Stripe's own retention plus accounting records | Provider-side |
 
-Windows are constants: `DORMANT_MONTHS`, `DORMANT_NOTICE_DAYS`, `RECORD_RETENTION_YEARS` in `retention.server.ts`; `provisionalCutoff` in `guardian-verification.server.ts`. Change the constant and this document together.
+Windows are constants: `DORMANT_MONTHS`, `DORMANT_NOTICE_DAYS`, `RECORD_RETENTION_YEARS`, `EMAIL_LOG_RETENTION_MONTHS` in `retention.server.ts`; `provisionalCutoff` in `guardian-verification.server.ts`. Change the constant and this document together.
 
 ### Handling a usage-data withdrawal request (by hand)
 

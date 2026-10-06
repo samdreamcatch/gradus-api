@@ -30,6 +30,9 @@
  * Records (#43). Webhook receipts and deletion tombstones carry no personal
  * data beyond an email hash; they are the audit trail that consent was
  * obtained and deletions happened, kept `RECORD_RETENTION_YEARS`, then gone.
+ * Email delivery records (recipient address, template, status) are kept
+ * `EMAIL_LOG_RETENTION_MONTHS`: long enough to diagnose a delivery problem
+ * across a season, then gone.
  */
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
@@ -43,6 +46,8 @@ export const DORMANT_NOTICE_DAYS = 30;
 /** The email names a UTC date; deleting a day later keeps "on <date>" true west of UTC. */
 export const DORMANT_GRACE_DAYS = 1;
 export const RECORD_RETENTION_YEARS = 5;
+/** Email delivery records (`email_send_log`): recipient address, template, status (#43). */
+export const EMAIL_LOG_RETENTION_MONTHS = 13;
 export const DEFAULT_RUN_BUDGET_MS = 20_000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -55,6 +60,11 @@ export function dormantCutoff(now: Date): Date {
 /** Five years back, month-clamped the same way (Feb 29 does not roll forward). */
 export function recordCutoff(now: Date): Date {
   return provisionalCutoff(now, RECORD_RETENTION_YEARS * 12);
+}
+
+/** Thirteen months back, month-clamped the same way (never deletes early). */
+export function emailLogCutoff(now: Date): Date {
+  return provisionalCutoff(now, EMAIL_LOG_RETENTION_MONTHS);
 }
 
 /** `YYYY-MM-DD` eighteen years before `now`: a birthdate after it is under 18 today. */
@@ -449,6 +459,59 @@ async function defaultDormantDeps(): Promise<DormantSweepDeps> {
     },
     sendNotice: sendRetentionNotice,
   };
+}
+
+export interface EmailLogPurgeResult {
+  deleted: number;
+  /** False when the time budget ran out first; the rest goes tomorrow. */
+  complete: boolean;
+}
+
+export const EMAIL_LOG_BATCH_SIZE = 500;
+
+/**
+ * Email delivery records older than `EMAIL_LOG_RETENTION_MONTHS` (#43). The
+ * table is append-only and nothing reads back past a few months (the admin
+ * email-health page looks at recent ranges; each sender de-duplicates on its
+ * own job table or a message id from the same period), so deletion changes no
+ * behavior. Oldest first, in batches bounded by the oldest row of the batch
+ * rather than a long id list, so the first run on a large backlog stays under
+ * the host's limits and stops at its time budget instead of failing.
+ */
+export async function purgeEmailSendLog(
+  admin: Admin,
+  opts: { now?: Date; batchSize?: number; budgetMs?: number } = {},
+): Promise<EmailLogPurgeResult> {
+  const cutoff = emailLogCutoff(opts.now ?? new Date()).toISOString();
+  const batchSize = opts.batchSize ?? EMAIL_LOG_BATCH_SIZE;
+  const budgetMs = opts.budgetMs ?? DEFAULT_RUN_BUDGET_MS;
+  const started = Date.now();
+  let deleted = 0;
+  for (;;) {
+    const page = await admin
+      .from("email_send_log")
+      .select("created_at")
+      .lt("created_at", cutoff)
+      .order("created_at", { ascending: true })
+      .limit(batchSize);
+    if (page.error) dbError(page.error);
+    const rows = page.data ?? [];
+    if (!rows.length) return { deleted, complete: true };
+
+    // Everything up to the oldest-batch boundary, never past the cutoff.
+    const boundary = rows[rows.length - 1].created_at;
+    const gone = await admin
+      .from("email_send_log")
+      .delete()
+      .lte("created_at", boundary)
+      .lt("created_at", cutoff)
+      .select("id");
+    if (gone.error) dbError(gone.error);
+    deleted += (gone.data ?? []).length;
+
+    if (rows.length < batchSize) return { deleted, complete: true };
+    if (Date.now() - started >= budgetMs) return { deleted, complete: false };
+  }
 }
 
 export interface RecordPurgeResult {

@@ -4,6 +4,8 @@ import {
   addDays,
   dormantCutoff,
   minorBirthdateFloor,
+  emailLogCutoff,
+  purgeEmailSendLog,
   purgeExpiredRecords,
   recordCutoff,
   sweepDormantMinorAthletes,
@@ -75,6 +77,7 @@ function fakeAdmin(seed: Record<string, Row[]>, users: Record<string, FakeUser> 
         return api;
       },
       lt: (c: string, v: any) => (st.filters.push((r) => r[c] != null && r[c] < v), api),
+      lte: (c: string, v: any) => (st.filters.push((r) => r[c] != null && r[c] <= v), api),
       gt: (c: string, v: any) => (st.filters.push((r) => r[c] != null && r[c] > v), api),
       in: (c: string, vs: unknown[]) => (st.filters.push((r) => vs.includes(r[c])), api),
       order: (c: string, o?: { ascending?: boolean; nullsFirst?: boolean }) => (
@@ -471,5 +474,78 @@ describe("purgeExpiredRecords", () => {
     expect(await purgeExpiredRecords(admin, { now: NOW })).toEqual({ receipts: 1, tombstones: 1 });
     expect(admin.tables.webhook_receipts.map((r) => r.id)).toEqual(["new"]);
     expect(admin.tables.deleted_accounts.map((r) => r.id)).toEqual(["t-new"]);
+  });
+});
+
+describe("purgeEmailSendLog", () => {
+  const row = (id: string, created_at: string) => ({ id, created_at, status: "sent" });
+
+  it("cuts off thirteen months back, clamped like the other windows", () => {
+    expect(emailLogCutoff(NOW).toISOString()).toBe("2025-09-04T12:00:00.000Z");
+    // 2025-03-31 minus 13 months lands on 2024-02-29 at the latest; never rolls forward past it
+    expect(emailLogCutoff(new Date("2026-03-31T00:00:00Z")).toISOString().slice(0, 10)).toBe(
+      "2025-02-28",
+    );
+  });
+
+  it("deletes delivery records older than thirteen months and keeps the rest", async () => {
+    const admin = fakeAdmin({
+      email_send_log: [
+        row("old-1", "2024-01-01T00:00:00Z"),
+        row("old-2", "2025-09-03T23:59:59Z"),
+        row("edge", "2025-09-04T12:00:00Z"), // exactly the cutoff: kept
+        row("new", "2026-09-01T00:00:00Z"),
+      ],
+    });
+    expect(await purgeEmailSendLog(admin, { now: NOW })).toEqual({ deleted: 2, complete: true });
+    expect(admin.tables.email_send_log.map((r) => r.id)).toEqual(["edge", "new"]);
+  });
+
+  it("walks a backlog in batches, oldest first, and counts every row", async () => {
+    const old = Array.from({ length: 7 }, (_, i) => row(`o${i}`, `2024-0${i + 1}-01T00:00:00Z`));
+    const admin = fakeAdmin({
+      email_send_log: [...old, row("keep", "2026-09-01T00:00:00Z")],
+    });
+    const res = await purgeEmailSendLog(admin, { now: NOW, batchSize: 3 });
+    expect(res).toEqual({ deleted: 7, complete: true });
+    expect(admin.tables.email_send_log.map((r) => r.id)).toEqual(["keep"]);
+  });
+
+  it("stops at its time budget, reports incomplete, and finishes tomorrow", async () => {
+    const old = Array.from({ length: 9 }, (_, i) => row(`o${i}`, `2024-01-0${i + 1}T00:00:00Z`));
+    const admin = fakeAdmin({ email_send_log: old });
+    const first = await purgeEmailSendLog(admin, { now: NOW, batchSize: 3, budgetMs: 0 });
+    expect(first).toEqual({ deleted: 3, complete: false });
+    expect(admin.tables.email_send_log).toHaveLength(6);
+    const rest = await purgeEmailSendLog(admin, { now: NOW, batchSize: 3 });
+    expect(rest).toEqual({ deleted: 6, complete: true });
+  });
+
+  it("does nothing when there is nothing old, and never touches other tables", async () => {
+    const admin = fakeAdmin({
+      email_send_log: [row("new", "2026-09-01T00:00:00Z")],
+      webhook_receipts: [{ id: "r", received_at: "2020-01-01T00:00:00Z" }],
+    });
+    expect(await purgeEmailSendLog(admin, { now: NOW })).toEqual({ deleted: 0, complete: true });
+    expect(admin.tables.webhook_receipts).toHaveLength(1);
+  });
+
+  it("surfaces a database error instead of reading it as 'nothing to delete'", async () => {
+    const admin = {
+      from: () => {
+        const api: any = {};
+        for (const m of ["select", "lt", "lte", "order", "limit", "delete"]) api[m] = () => api;
+        api.then = (resolve: (v: unknown) => unknown) =>
+          resolve({ data: null, error: { message: "boom", code: "XX000" } });
+        return api;
+      },
+    } as unknown as Parameters<typeof purgeEmailSendLog>[0];
+    let thrown = false;
+    try {
+      await purgeEmailSendLog(admin, { now: NOW });
+    } catch {
+      thrown = true;
+    }
+    expect(thrown).toBe(true);
   });
 });
