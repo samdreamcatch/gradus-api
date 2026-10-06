@@ -43,6 +43,13 @@
       "when": 1791306308767,
       "tag": "0005_athlete_authored_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791306339220,
+      "tag": "0006_adult_verification_method_kws_contract",
+      "breakpoints": true
     }
   ]
 }
