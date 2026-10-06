@@ -80,6 +80,7 @@ import "../src/routes/api/v1/coach/athletes/$id/ai-summary";
 import "../src/routes/api/v1/coach/athletes/$id/briefing";
 import "../src/routes/api/v1/coach/athletes/$id/practice-target";
 import "../src/routes/api/v1/coach/wrap-ups/pending";
+import "../src/routes/api/v1/coach/up-next";
 import "../src/routes/api/v1/coach/wrap-ups/index";
 import "../src/routes/api/v1/coach/other-plans/$planId";
 import "../src/routes/api/v1/coach/plans/index";

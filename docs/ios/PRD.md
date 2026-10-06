@@ -1314,7 +1314,7 @@ Parallel to the coach routes above; the coach modules are untouched. `[idem]` an
 | `GET /athlete/moves` `[etag]` | new; read-only `seed_moves` for the athlete's sports | P0 |
 | `POST /athlete/voice/build-plan` (multipart; create and edit) | new; transcribe and discard (#37) | P0 |
 | `GET /plans/{id}` (author: `isOwner: true`, any status, `coach: null`, `source`, `authorFirstName`) · `GET /athlete/plans` (`source` on each row, plus `drafts`) · `GET /public/plans/{token}` (`authorKind`, `authorFirstName`) · `GET /coach/athletes/{id}` (plans carry `source`, `authorFirstName`) · `POST /plans/import/{token}` (athlete branch: copy, active; migration AP1) | amended | P0 |
-| `GET /coach/up-next` *(watch, §6.15)* | new; the next lesson occurrence and whether a briefing is cached | P0 |
+| `GET /coach/up-next` *(watch, §6.15)* | **built (W2)**: today's lessons that have not ended, soonest first (default 3, `?limit` to 10): athlete name, start and end minute, `minutesUntilStart` (negative once started), `inProgress`, `briefingCached` (a `pre_lesson_briefings` row exists; the briefing call may still regenerate), `activePlanId`. The client sends its local `?lessonDate&dayOfWeek&currentMinute` like `/coach/wrap-ups/pending`; recurrence and canceled/rescheduled overrides use the same helpers as the lesson reminders | P0 |
 
 ### Messaging and safety
 

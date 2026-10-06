@@ -18,6 +18,7 @@ import type {
 } from "@/lib/coach-athlete-detail.server";
 import type { PreLessonBriefing } from "@/lib/pre-lesson-briefing.server";
 import type { PendingWrapUp } from "@/lib/lesson-wrap-ups.server";
+import type { UpNextLesson } from "@/lib/coach-up-next.server";
 
 export const lessonFrequencySchema = z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]);
 
@@ -54,7 +55,9 @@ export const rosterAthleteSchema = z.object({
   // field still decodes the roster from a server that hasn't been published
   // with it yet (Xcode Cloud ships main; Lovable publishes by hand).
   // A closed set: iOS decodes it as an enum, so add a field rather than a value.
-  claimStatus: z.enum(["claimed", "waitingForParent", "waitingForAthlete", "notInvited"]).optional(),
+  claimStatus: z
+    .enum(["claimed", "waitingForParent", "waitingForAthlete", "notInvited"])
+    .optional(),
 });
 
 export const coachRosterSchema = z.object({
@@ -209,3 +212,19 @@ export const pendingWrapUpSchema = z.object({
 }) satisfies z.ZodType<PendingWrapUp>;
 
 export const pendingWrapUpsSchema = z.object({ wrapUps: z.array(pendingWrapUpSchema) });
+
+export const upNextLessonSchema = z.object({
+  slotId: z.string(),
+  athleteId: z.string(),
+  athleteName: z.string(),
+  athleteFirstName: z.string(),
+  lessonDate: z.string(),
+  startMinute: z.number().int(),
+  endMinute: z.number().int(),
+  minutesUntilStart: z.number().int(),
+  inProgress: z.boolean(),
+  briefingCached: z.boolean(),
+  activePlanId: z.string().nullable(),
+}) satisfies z.ZodType<UpNextLesson>;
+
+export const upNextSchema = z.object({ upNext: z.array(upNextLessonSchema) });

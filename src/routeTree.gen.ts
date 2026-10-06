@@ -154,6 +154,7 @@ import { Route as ApiV1CoachChecklistRouteImport } from './routes/api/v1/coach/c
 import { Route as ApiV1CoachLevelsRouteImport } from './routes/api/v1/coach/levels'
 import { Route as ApiV1CoachOrgRouteImport } from './routes/api/v1/coach/org'
 import { Route as ApiV1CoachProfileRouteImport } from './routes/api/v1/coach/profile'
+import { Route as ApiV1CoachUpNextRouteImport } from './routes/api/v1/coach/up-next'
 import { Route as ApiV1CompetitionsFinishedRouteImport } from './routes/api/v1/competitions/finished'
 import { Route as ApiV1DevicesIndexRouteImport } from './routes/api/v1/devices/index'
 import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
@@ -1148,6 +1149,11 @@ const ApiV1CoachOrgRoute = ApiV1CoachOrgRouteImport.update({
 const ApiV1CoachProfileRoute = ApiV1CoachProfileRouteImport.update({
   id: '/api/v1/coach/profile',
   path: '/api/v1/coach/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1CoachUpNextRoute = ApiV1CoachUpNextRouteImport.update({
+  id: '/api/v1/coach/up-next',
+  path: '/api/v1/coach/up-next',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1CompetitionsFinishedRoute =
@@ -2360,6 +2366,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
@@ -2693,6 +2700,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
@@ -3034,6 +3042,7 @@ export interface FileRoutesById {
   '/api/v1/coach/levels': typeof ApiV1CoachLevelsRoute
   '/api/v1/coach/org': typeof ApiV1CoachOrgRoute
   '/api/v1/coach/profile': typeof ApiV1CoachProfileRoute
+  '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
@@ -3375,6 +3384,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
@@ -3708,6 +3718,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
@@ -4048,6 +4059,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/levels'
     | '/api/v1/coach/org'
     | '/api/v1/coach/profile'
+    | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
     | '/api/v1/guardian/status'
@@ -4319,6 +4331,7 @@ export interface RootRouteChildren {
   ApiV1CoachLevelsRoute: typeof ApiV1CoachLevelsRoute
   ApiV1CoachOrgRoute: typeof ApiV1CoachOrgRoute
   ApiV1CoachProfileRoute: typeof ApiV1CoachProfileRoute
+  ApiV1CoachUpNextRoute: typeof ApiV1CoachUpNextRoute
   ApiV1CompetitionsFinishedRoute: typeof ApiV1CompetitionsFinishedRoute
   ApiV1DevicesTokenRoute: typeof ApiV1DevicesTokenRoute
   ApiV1GuardianStatusRoute: typeof ApiV1GuardianStatusRoute
@@ -5529,6 +5542,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/coach/profile'
       fullPath: '/api/v1/coach/profile'
       preLoaderRoute: typeof ApiV1CoachProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/up-next': {
+      id: '/api/v1/coach/up-next'
+      path: '/api/v1/coach/up-next'
+      fullPath: '/api/v1/coach/up-next'
+      preLoaderRoute: typeof ApiV1CoachUpNextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/competitions/finished': {
@@ -7223,6 +7243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachLevelsRoute: ApiV1CoachLevelsRoute,
   ApiV1CoachOrgRoute: ApiV1CoachOrgRoute,
   ApiV1CoachProfileRoute: ApiV1CoachProfileRoute,
+  ApiV1CoachUpNextRoute: ApiV1CoachUpNextRoute,
   ApiV1CompetitionsFinishedRoute: ApiV1CompetitionsFinishedRoute,
   ApiV1DevicesTokenRoute: ApiV1DevicesTokenRoute,
   ApiV1GuardianStatusRoute: ApiV1GuardianStatusRoute,
