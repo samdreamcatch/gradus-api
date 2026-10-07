@@ -103,6 +103,17 @@ Run on a build that carries web AP1/AP2 (migration applied, API published) and i
 - [ ] **Paused athlete** (sandbox `RESCIND_CONSENT`): they can still read their plans; creating, editing, activating, sharing and voice are refused with the paused message; their old share links stop resolving.
 - [ ] **Accessibility:** VoiceOver reads each control with a label and state; the blocker text is read; at the largest text size nothing is cut off (move names wrap, the action bar and the voice overlay stack, the overlay scrolls); Increase Contrast and dark appearance keep every control legible; targets are at least 44 pt; Reduce Motion shows no animation.
 
+## 5b. Read this plan aloud (PRD §6.15, W1 iPhone; decision #47)
+
+Any role, any plan with moves. On the device, download one Premium American English voice first (Settings → Accessibility → Spoken Content → Voices → English), then repeat the voice rows without it.
+
+- [ ] **Interrupted sample:** start a sample, then trigger Siri or a call → the button goes back to Play; a sample also stops when Gradus goes to the background.
+- [ ] **Read:** plan detail → "Read this plan aloud" → the player bar pins to the bottom; the title, then each move with its target, cue and why, in order; the move being read is highlighted and scrolled to; Previous, Pause/Resume, Next, Repeat and the three speeds work; Done closes it and VoiceOver returns to the start button.
+- [ ] **Automatic voice:** with no voice chosen, Settings → Device → Read-aloud voice shows "Automatic (*name* · *quality*)"; the most natural American English voice installed is the one that reads, a woman's when a natural (Enhanced or Premium) woman's voice is installed, even if a man's voice is Premium. With only Standard voices, the Automatic row says to download a Premium voice.
+- [ ] **Choose a voice:** pick another voice → the checkmark moves, the Device row shows its name and quality, and the next read uses it. Each row's play button speaks a short sample in that voice; tapping it again (or leaving the screen) stops it. Automatic goes back to the default.
+- [ ] **Voice removed:** delete the chosen voice in iOS Settings, return to Gradus → the Device row and the picker fall back to Automatic, and reads use the Automatic voice (not the system default).
+- [ ] **Accessibility:** VoiceOver reads each voice as its name, quality and language, with "Selected" on the chosen one, and each sample button as "Play a sample of *name*, *quality*" (two qualities of one name, such as Samantha Standard and Enhanced, are told apart); at the largest text size the rows wrap and nothing is cut off.
+
 ## 6. Parent and athlete settings (PRD §7.7–7.8)
 
 - [ ] My athletes: edit name/birthdate, invite code + claim link (minors), add/remove athlete (confirmed).
