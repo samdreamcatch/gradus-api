@@ -14,6 +14,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { resolveOccurrenceTimes } from "./coach-day-lessons.server";
 import { dbError } from "./db-error";
 import { nowInRinkTz } from "./lesson-reminders.server";
 import { expandSlotOccurrences, type LessonFrequency } from "./lesson-recurrence";
@@ -94,18 +95,12 @@ export async function computeLessonWrapUpPrompts(
   for (const o of (overridesRes.data ?? []) as unknown as OverrideRow[])
     overrideBySlot.set(o.slot_id, o);
 
+  // Prompt when the lesson actually ends: its rescheduled time if it moved,
+  // the moment the read-time card (`getCoachLessonsOn`) starts showing it.
   const justEnded = active.filter((s) => {
-    const override = overrideBySlot.get(s.id);
-    if (override?.status === "canceled") return false;
-    // The read-time card ignores overrides and shows once the *base* end time
-    // has passed, so a lesson rescheduled earlier is prompted at the later of
-    // the two; rescheduled later is prompted when it actually ends.
-    const overrideEnd =
-      override?.status === "rescheduled" && override.end_minute != null
-        ? override.end_minute
-        : null;
-    const endMinute = overrideEnd == null ? s.end_minute : Math.max(s.end_minute, overrideEnd);
-    const ago = nowMinutes - endMinute;
+    const times = resolveOccurrenceTimes(s, overrideBySlot.get(s.id));
+    if (!times) return false; // canceled
+    const ago = nowMinutes - times.endMinute;
     return ago >= 0 && ago < WINDOW_MINUTES;
   });
   if (justEnded.length === 0) return { scanned, prompted: 0, sent: 0 };

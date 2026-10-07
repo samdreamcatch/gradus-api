@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
+import { getCoachLessonsOn } from "./coach-day-lessons.server";
 import { dbError } from "./db-error";
 
 export type WrapUpClient = SupabaseClient<Database>;
@@ -45,7 +46,12 @@ export const pendingWrapUpsInput = z.object({
   currentMinute: z.coerce.number().int().min(0).max(1439),
 });
 
-/** `getPendingLessonWrapUps`: today's ended lessons not yet wrapped up, latest first. */
+/**
+ * `getPendingLessonWrapUps`: today's ended lessons not yet wrapped up, latest
+ * first. "Today's lessons" is the same day view "up next" reads: a slot off its
+ * biweekly / monthly week or canceled for today is not pending, and a
+ * rescheduled one ends at its new time.
+ */
 export async function getPendingLessonWrapUps(
   ctx: WrapUpContext,
   data: z.infer<typeof pendingWrapUpsInput>,
@@ -54,18 +60,14 @@ export async function getPendingLessonWrapUps(
   const coachId = await getCoachIdOrNull(supabase, userId);
   if (!coachId) return [];
 
-  // Today's slots that have already ended.
-  const slotsRes = await supabase
-    .from("athlete_lesson_slots")
-    .select("athlete_id, end_minute")
-    .eq("coach_id", coachId)
-    .eq("day_of_week", data.dayOfWeek)
-    .lte("end_minute", data.currentMinute);
-  if (slotsRes.error) dbError(slotsRes.error);
-  const slots = slotsRes.data ?? [];
-  if (slots.length === 0) return [];
+  // Today's lessons as they actually happen (recurrence and overrides resolved)
+  // that have already ended, by their effective end time.
+  const ended = (await getCoachLessonsOn(supabase, coachId, data)).filter(
+    (l) => l.endMinute <= data.currentMinute,
+  );
+  if (ended.length === 0) return [];
 
-  const athleteIds = Array.from(new Set(slots.map((s) => s.athlete_id as string)));
+  const athleteIds = Array.from(new Set(ended.map((l) => l.athleteId)));
 
   const [handledRes, plansRes, athletesRes] = await Promise.all([
     supabase
@@ -102,15 +104,13 @@ export async function getPendingLessonWrapUps(
     });
   }
 
-  // Keep only the latest-ending slot per athlete that isn't handled yet.
+  // Keep only the latest-ending lesson per athlete that isn't handled yet.
   const byAthlete = new Map<string, PendingWrapUp>();
-  for (const s of slots) {
-    const athleteId = s.athlete_id as string;
+  for (const { athleteId, endMinute } of ended) {
     if (handled.has(athleteId)) continue;
     const a = athleteById.get(athleteId);
     if (!a) continue;
     const existing = byAthlete.get(athleteId);
-    const endMinute = s.end_minute as number;
     if (!existing || endMinute > existing.lessonEndMinute) {
       byAthlete.set(athleteId, {
         athleteId,

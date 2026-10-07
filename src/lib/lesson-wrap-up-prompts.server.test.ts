@@ -167,7 +167,7 @@ describe("computeLessonWrapUpPrompts", () => {
     ).toEqual({ scanned: 0, prompted: 0, sent: 0 });
   });
 
-  it("honours overrides: canceled is skipped; rescheduled later prompts when it ends; rescheduled earlier waits for the base end (the card ignores overrides)", async () => {
+  it("honours overrides: canceled is skipped; rescheduled prompts when it actually ends, later or earlier", async () => {
     const { push } = pushSpy();
     const override = (start_minute: number, end_minute: number, status = "rescheduled") => ({
       lesson_slot_overrides: [
@@ -193,19 +193,19 @@ describe("computeLessonWrapUpPrompts", () => {
       ),
     ).toEqual({ scanned: 1, prompted: 1, sent: 1 });
 
-    // Moved to 07:00-08:00: the card only appears after the base 10:00 end, so no push at 08:03.
+    // Moved to 07:00-08:00: prompt at 08:03 (the card shows from 08:00), nothing at the old end.
     expect(
       await computeLessonWrapUpPrompts(
         { admin: fakeDb(baseTables(override(7 * 60, 8 * 60))).admin, push },
         rinkTime(8, 3),
       ),
-    ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
+    ).toEqual({ scanned: 1, prompted: 1, sent: 1 });
     expect(
       await computeLessonWrapUpPrompts(
         { admin: fakeDb(baseTables(override(7 * 60, 8 * 60))).admin, push },
         rinkTime(10, 3),
       ),
-    ).toEqual({ scanned: 1, prompted: 1, sent: 1 });
+    ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
   });
 
   it("skips a biweekly slot on its off week", async () => {
