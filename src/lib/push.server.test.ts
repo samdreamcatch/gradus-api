@@ -40,13 +40,17 @@ function fakeClient(error: { message: string } | null = null) {
 }
 
 describe("registerDeviceToken", () => {
-  it("upserts on the token, scoped to the caller, with the platform and a fresh last_seen_at", async () => {
-    const { supabase, calls } = fakeClient();
+  it("upserts on the token with the service role, written for the caller, with the platform and a fresh last_seen_at", async () => {
+    const { supabase: admin, calls } = fakeClient();
+    const { supabase: rls, calls: rlsCalls } = fakeClient();
     const before = Date.now();
     const result = await registerDeviceToken(
-      { userId: "u1", supabase },
+      { userId: "u1", supabase: rls, admin },
       { token: "apns-token-abc123", platform: "ios" },
     );
+    // A token still on another account is invisible to the caller's RLS
+    // client, so registering must not go through it.
+    expect(rlsCalls).toHaveLength(0);
     expect(result).toEqual({ ok: true });
     expect(calls).toHaveLength(1);
     expect(calls[0].op).toBe("upsert");
@@ -59,10 +63,11 @@ describe("registerDeviceToken", () => {
   });
 
   it("surfaces a generic message on a database error, not the raw one", async () => {
-    const { supabase } = fakeClient({ message: "duplicate key value" });
+    const { supabase: admin } = fakeClient({ message: "duplicate key value" });
+    const { supabase } = fakeClient();
     await expect(
       registerDeviceToken(
-        { userId: "u1", supabase },
+        { userId: "u1", supabase, admin },
         { token: "apns-token-abc123", platform: "ios" },
       ),
     ).rejects.toThrow("Couldn't register this device for notifications.");
