@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/v1/voice/build-plan")({
       input: voiceBuildInput,
       output: voiceApplyResultSchema,
       handler: async ({ ctx, input }) => {
-        const { userId, supabase } = requireContext(ctx);
+        const { userId, supabase, admin } = requireContext(ctx);
         if (input.mode === "edit" && !input.planId) {
           throw new ApiError({
             code: "validation_failed",
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/v1/voice/build-plan")({
             message: "Missing planId for edit",
           });
         }
-        return buildPlanFromVoice({ userId, supabase }, input);
+        return buildPlanFromVoice({ userId, supabase, admin }, input);
       },
     }),
   },

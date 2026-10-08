@@ -16,6 +16,7 @@ import {
   type ParentVerificationRow,
 } from "@/lib/guardian-verification.server";
 import { callerSports } from "@/lib/caller-sports.server";
+import { isMinorOrUnconfirmed } from "@/lib/athlete-age";
 
 const outputSchema = z.object({
   userId: z.string(),
@@ -32,6 +33,14 @@ const outputSchema = z.object({
   parentVerification: parentVerificationSchema.nullable(),
   /** Athlete only (PRD §6.13 A4): `active`, `provisional` or `paused`; `null` for other roles. */
   athleteAccountState: athleteAccountStateSchema.nullable(),
+  /**
+   * Athlete only (decision #48): whether this athlete may make plans by voice.
+   * False under 18 or with no birthdate on file (the server refuses their audio
+   * with 403 `text_only`); `null` for other roles. Always sent; optional in the
+   * contract, and an app treats a missing value as false, so a build that reads
+   * it never offers voice to a minor against an older server.
+   */
+  athleteVoiceToPlan: z.boolean().nullable().optional(),
   /**
    * Sport keys this account touches (a coach's levels; a parent's or
    * athlete's goal and coached sports), sorted. The iOS shell shows the Live
@@ -85,7 +94,11 @@ export const Route = createFileRoute("/api/v1/me/")({
               .maybeSingle(),
             // No .limit(1): the row's account_state is read, so a duplicate
             // user_id must surface (PGRST116) instead of an arbitrary row.
-            admin.from("athletes").select("id, account_state").eq("user_id", userId).maybeSingle(),
+            admin
+              .from("athletes")
+              .select("id, account_state, birthdate")
+              .eq("user_id", userId)
+              .maybeSingle(),
             admin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
             admin
               .from("terms_acceptances")
@@ -128,7 +141,10 @@ export const Route = createFileRoute("/api/v1/me/")({
           );
 
           const parentRow = parent.data as ParentVerificationRow | null;
-          const athleteRow = athlete.data as { account_state?: string | null } | null;
+          const athleteRow = athlete.data as {
+            account_state?: string | null;
+            birthdate?: string | null;
+          } | null;
 
           return {
             userId,
@@ -143,6 +159,8 @@ export const Route = createFileRoute("/api/v1/me/")({
             athleteAccountState: athleteRow
               ? ((athleteRow.account_state as AthleteAccountState | null | undefined) ?? "active")
               : null,
+            athleteVoiceToPlan:
+              role === "athlete" && athleteRow ? !isMinorOrUnconfirmed(athleteRow.birthdate) : null,
             sports,
           };
         },

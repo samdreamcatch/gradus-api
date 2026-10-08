@@ -262,6 +262,12 @@
                         "paused"
                       ]
                     },
+                    "athleteVoiceToPlan": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
                     "sports": {
                       "type": "array",
                       "items": {

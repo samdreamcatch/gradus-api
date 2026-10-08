@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import { applyAthleteDraft, buildAthletePlanFromVoice, withoutWords } from "./athlete-voice.server";
 import { recordingClient, type Call } from "./recording-client.test-util";
-import { transcribeWithElevenLabs, type LibraryMove } from "./voice.server";
+import { buildPlanFromVoice, transcribeWithElevenLabs, type LibraryMove } from "./voice.server";
 
 const SECRET = "my double axel nine times and my secret-words-xyzzy cue";
 
@@ -86,12 +86,22 @@ describe("transcribeWithElevenLabs quiet mode", () => {
 });
 
 describe("buildAthletePlanFromVoice: transcribe and discard (decision #37)", () => {
-  const athleteRow = { id: "ath-1", first_name: "Elsie", account_state: "active" };
+  // An adult: voice is off under 18 since decision #48 (see the next describe).
+  const athleteRow = {
+    id: "ath-1",
+    first_name: "Elsie",
+    account_state: "active",
+    birthdate: "1990-05-01",
+  };
+  /** The athlete row for a `maybeSingle()` read, and as a list for the per-login age check. */
+  const athletes = (row: Record<string, unknown>, kind: "one" | "many") => ({
+    data: kind === "one" ? row : [row],
+  });
 
   it("sends the audio only to the transcription service and never logs the words", async () => {
     const requests = stubTranscription(SECRET);
-    const { client, calls } = recordingClient((call) => {
-      if (call.table === "athletes") return { data: athleteRow };
+    const { client, calls } = recordingClient((call, kind) => {
+      if (call.table === "athletes") return athletes(athleteRow, kind);
       return undefined;
     });
     // Reaching the structuring step with no AI configured fails after the
@@ -122,8 +132,10 @@ describe("buildAthletePlanFromVoice: transcribe and discard (decision #37)", () 
 
   it("refuses a paused athlete before spending anything on transcription", async () => {
     const requests = stubTranscription(SECRET);
-    const { client } = recordingClient((call) =>
-      call.table === "athletes" ? { data: { ...athleteRow, account_state: "paused" } } : undefined,
+    const { client } = recordingClient((call, kind) =>
+      call.table === "athletes"
+        ? athletes({ ...athleteRow, account_state: "paused" }, kind)
+        : undefined,
     );
     let err: unknown = null;
     try {
@@ -140,8 +152,8 @@ describe("buildAthletePlanFromVoice: transcribe and discard (decision #37)", () 
 
   it("an edit of a plan that is not theirs 404s before transcription", async () => {
     const requests = stubTranscription(SECRET);
-    const { client } = recordingClient((call) =>
-      call.table === "athletes" ? { data: athleteRow } : { data: null },
+    const { client } = recordingClient((call, kind) =>
+      call.table === "athletes" ? athletes(athleteRow, kind) : { data: null },
     );
     let err: unknown = null;
     try {
@@ -153,6 +165,71 @@ describe("buildAthletePlanFromVoice: transcribe and discard (decision #37)", () 
       err = e;
     }
     expect(err instanceof ApiError && err.status === 404).toBe(true);
+    expect(requests).toHaveLength(0);
+  });
+});
+
+describe("buildAthletePlanFromVoice: off under 18 (decision #48)", () => {
+  const minorRow = {
+    id: "ath-2",
+    first_name: "Maeve",
+    account_state: "active",
+    birthdate: "2012-03-14",
+  };
+
+  async function attempt(rows: Record<string, unknown>[]) {
+    const requests = stubTranscription(SECRET);
+    const { client } = recordingClient((call, kind) =>
+      call.table === "athletes" ? { data: kind === "one" ? rows[0] : rows } : undefined,
+    );
+    let err: unknown = null;
+    try {
+      await buildAthletePlanFromVoice(
+        { userId: "user-1", supabase: client },
+        { audio: audio(), mode: "create" },
+      );
+    } catch (e) {
+      err = e;
+    }
+    return { err, requests };
+  }
+
+  it("refuses an athlete under 18 before the clip goes anywhere", async () => {
+    const { err, requests } = await attempt([minorRow]);
+    expect(err instanceof ApiError && err.code === "text_only" && err.status === 403).toBe(true);
+    expect(requests).toHaveLength(0);
+  });
+
+  it("refuses an athlete with no birthdate on file (age unconfirmed counts as under 18)", async () => {
+    const { err, requests } = await attempt([{ ...minorRow, birthdate: null }]);
+    expect(err instanceof ApiError && err.code === "text_only").toBe(true);
+    expect(requests).toHaveLength(0);
+  });
+
+  it("refuses a minor's login on the coach path too (a coach profile is easy to get)", async () => {
+    const requests = stubTranscription(SECRET);
+    const { client, calls } = recordingClient((call) =>
+      call.table === "athletes" ? { data: [minorRow] } : undefined,
+    );
+    let err: unknown = null;
+    try {
+      await buildPlanFromVoice(
+        { userId: "user-1", supabase: client },
+        { audio: audio(), mode: "create" },
+      );
+    } catch (e) {
+      err = e;
+    }
+    expect(err instanceof ApiError && err.code === "text_only").toBe(true);
+    expect(requests).toHaveLength(0);
+    // refused before anything else was read
+    expect(calls.map((c) => c.table)).toEqual(["athletes"]);
+  });
+
+  it("refuses when any athlete row on the login is a minor", async () => {
+    const adult = { ...minorRow, id: "ath-3", birthdate: "1990-05-01" };
+    const { err, requests } = await attempt([adult, minorRow]);
+    expect(err instanceof ApiError && err.code === "text_only").toBe(true);
     expect(requests).toHaveLength(0);
   });
 });

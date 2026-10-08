@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { assertVoiceAllowed } from "./minor-voice.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
 
@@ -1144,7 +1145,8 @@ export async function applyDraft(
 
 /* ---------------- Shared entry points (voice.functions.ts and /api/v1/voice) ---------------- */
 
-export type VoiceContext = { userId: string; supabase: Client };
+/** `admin` (when the caller has it) reads the age check, so RLS can't hide an athlete row. */
+export type VoiceContext = { userId: string; supabase: Client; admin?: Client };
 
 export function assertAudioSize(audio: Blob): void {
   if (audio.size > MAX_AUDIO_BYTES) {
@@ -1203,6 +1205,9 @@ export async function buildPlanFromVoice(
 ): Promise<ApplyResult> {
   assertAudioSize(data.audio);
   const supabase = ctx.supabase;
+  // A login with an athlete row under 18 can also hold a coach profile; its audio still never
+  // reaches the transcription service (decision #48).
+  await assertVoiceAllowed(ctx.admin ?? supabase, ctx.userId);
   const coachId = await getCoachId(supabase, ctx.userId);
 
   const { data: libRows } = await supabase

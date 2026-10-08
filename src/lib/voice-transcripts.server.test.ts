@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  NEVER_TRANSCRIBE,
   RETRY_AFTER_MS,
   SWEEP_BATCH,
   sweepVoiceTranscripts,
@@ -96,6 +97,63 @@ function fakeAdmin(messages: Row[], files: Record<string, Uint8Array> = {}) {
 }
 
 const NOW = Date.UTC(2026, 8, 19, 16, 0, 0);
+
+describe("transcribeVoiceNote: never a minor's audio (decision #48)", () => {
+  it("skips a note whose sender is an athlete under 18, for good, without calling the service", async () => {
+    const messages: Row[] = [
+      {
+        id: "m9",
+        kind: "voice",
+        audio_url: "r/u/old.m4a",
+        sender_user_id: "minor-user",
+        created_at: "2026-09-01",
+      },
+    ];
+    const { admin, downloads } = fakeAdmin(messages, { "r/u/old.m4a": new Uint8Array([1]) });
+    let calls = 0;
+    const deps = {
+      now: () => NOW,
+      transcribe: async () => {
+        calls += 1;
+        return "never";
+      },
+      voiceAllowed: async (id: string) => (id === "minor-user" ? false : null),
+    };
+    const text = await transcribeVoiceNote(
+      admin,
+      { messageId: "m9", audioPath: "r/u/old.m4a", mimeType: "audio/mp4" },
+      deps,
+    );
+    expect(text).toBeNull();
+    expect(calls).toBe(0);
+    expect(downloads).toEqual([]);
+    expect(messages[0].transcript_failed_at).toBe(NEVER_TRANSCRIBE);
+    // the sweep's back-off never ends for it
+    const later = await sweepVoiceTranscripts(
+      { admin },
+      { ...deps, now: () => NOW + 365 * 24 * 60 * 60 * 1000 },
+    );
+    expect(later.scanned).toBe(0);
+    expect(calls).toBe(0);
+  });
+
+  it("still transcribes an adult's or a coach's note", async () => {
+    const { admin } = fakeAdmin([
+      { id: "m8", kind: "voice", audio_url: "r/u/a.m4a", sender_user_id: "coach-user" },
+    ]);
+    const text = await transcribeVoiceNote(
+      admin,
+      {
+        messageId: "m8",
+        audioPath: "r/u/a.m4a",
+        mimeType: "audio/mp4",
+        bytes: new Uint8Array([1]),
+      },
+      { now: () => NOW, transcribe: async () => "Nice edge.", voiceAllowed: async () => null },
+    );
+    expect(text).toBe("Nice edge.");
+  });
+});
 
 describe("transcribeVoiceNote", () => {
   it("uses bytes already in hand, stores the trimmed transcript, and clears any failure stamp", async () => {

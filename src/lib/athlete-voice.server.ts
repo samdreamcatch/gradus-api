@@ -1,12 +1,13 @@
 /**
- * Voice → plan for an athlete (PRD §6.14 B and decision #37): the athlete
+ * Voice → plan for an athlete (PRD §6.14 B, decisions #37 and #48): the athlete
  * records a clip, the server transcribes it and structures it into a draft of
  * THEIR OWN plan, and the clip is gone. The audio is read once into the
  * transcription request and nowhere else: no storage write, no copy, and the
  * logs carry counts, never the words. The only thing kept is the transcript
  * text, on the plan (`plans.voice_transcript`), exactly as if the athlete had
- * typed it. That is the amended COPPA Rule's audio exception, and it is why an
- * under-18 athlete may use this route.
+ * typed it. Adults only since #48 (2026-10-07): an athlete under 18, or with no
+ * birthdate on file, is refused before anything is transcribed
+ * (`assertVoiceAllowed`), because the transcription service keeps the audio.
  *
  * Shares the transcription and structuring passes with the coach's
  * `voice.server.ts` (quiet mode on); only the lookup and the apply differ:
@@ -17,6 +18,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { ATHLETE_SOURCE, loadOwnedPlan, requireAuthor } from "./athlete-authoring.server";
+import { assertVoiceAllowed } from "./minor-voice.server";
 import {
   assertAudioSize,
   buildDraft,
@@ -33,7 +35,8 @@ import type { VoicePlanDraft, VoiceTouched } from "./voice-types";
 
 type Client = SupabaseClient<Database>;
 
-export type AthleteVoiceContext = { userId: string; supabase: Client };
+/** `admin` (when the caller has it) reads the age check, so RLS can't hide an athlete row. */
+export type AthleteVoiceContext = { userId: string; supabase: Client; admin?: Client };
 
 /**
  * What the 24-hour idempotency store keeps of a build result (decision #37:
@@ -88,6 +91,8 @@ export async function buildAthletePlanFromVoice(
   assertAudioSize(data.audio);
   const { supabase } = ctx;
   const athlete = await requireAuthor(supabase, ctx.userId);
+  // Under 18 (or no birthdate): refused before the clip goes anywhere (#48).
+  await assertVoiceAllowed(ctx.admin ?? supabase, ctx.userId);
 
   // Fail before any transcription cost when the plan to edit is not theirs.
   const owned =

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { rethrowPlain } from "./api/errors";
+import { assertVoiceAllowed } from "./minor-voice.server";
 import {
   MAX_AUDIO_BYTES,
   buildPlanFromVoice,
@@ -29,8 +30,11 @@ export const voiceTranscribe = createServerFn({ method: "POST" })
     }
     return { audio };
   })
-  .handler(async ({ data }): Promise<{ text: string }> => {
+  .handler(async ({ context, data }): Promise<{ text: string }> => {
     try {
+      // An athlete under 18 never sends audio to the transcription service (#48).
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await assertVoiceAllowed(supabaseAdmin as Client, context.userId);
       return await transcribeAudio(data.audio);
     } catch (err) {
       rethrowPlain(err);
@@ -58,8 +62,13 @@ export const voiceBuildPlan = createServerFn({ method: "POST" })
   })
   .handler(async ({ context, data }): Promise<ApplyResult> => {
     try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       return await buildPlanFromVoice(
-        { userId: context.userId, supabase: context.supabase as Client },
+        {
+          userId: context.userId,
+          supabase: context.supabase as Client,
+          admin: supabaseAdmin as Client,
+        },
         data,
       );
     } catch (err) {

@@ -110,7 +110,7 @@ The rule requires reasonable steps to ensure that anyone receiving children's in
 | Epic Games (Kids Web Services) | Parent email, verification result; card/SSN handled by its processors Stripe and Veratad | KWS General Terms (accepted 2026-09-25) |
 | Stripe | Coach billing; KWS card checks under KWS's account | Stripe Services Agreement |
 | Google LLC | Workspace mail; Gemini inference for coach-side features | Workspace terms, Cloud/AI terms |
-| ElevenLabs | Coach voice-note transcription | ElevenLabs terms |
+| ElevenLabs | Speech-to-text: coach voice notes, coach and adult-athlete plans by voice; never audio from athletes under 18 (PRD #48). ElevenLabs keeps speech-to-text audio and transcripts under its own policy unless Enterprise zero retention is on | ElevenLabs terms, privacy policy and DPA (business customers) |
 | OpenAI (through the Lovable AI gateway) | Embeddings for Ask Gradus (text only, adults) | Lovable AI gateway terms |
 | GitHub, Xcode Cloud | Source and build | Standard terms |
 

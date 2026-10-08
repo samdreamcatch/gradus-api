@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
 import { transcriptSchema, voiceTranscribeInput } from "@/lib/api/plans-schema";
+import { assertVoiceAllowed } from "@/lib/minor-voice.server";
 import { transcribeAudio } from "@/lib/voice.server";
 
 /**
@@ -9,7 +10,9 @@ import { transcribeAudio } from "@/lib/voice.server";
  * endpoint changes", §7.4): a `multipart/form-data` upload named `audio`
  * (`audio/mp4` from iOS, `audio/webm` from browsers; 18 MB cap, 413
  * `payload_too_large`) answers the transcript. The service's own failures
- * are 503 `voice_unavailable`.
+ * are 503 `voice_unavailable`. An athlete under 18 (or with no birthdate on
+ * file) is refused with 403 `text_only` before the clip is sent anywhere
+ * (decision #48).
  */
 export const Route = createFileRoute("/api/v1/voice/transcribe")({
   server: {
@@ -25,7 +28,8 @@ export const Route = createFileRoute("/api/v1/voice/transcribe")({
       input: voiceTranscribeInput,
       output: transcriptSchema,
       handler: async ({ ctx, input }) => {
-        requireContext(ctx);
+        const { admin, userId } = requireContext(ctx);
+        await assertVoiceAllowed(admin, userId);
         return transcribeAudio(input.audio);
       },
     }),

@@ -19,6 +19,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { athleteVoiceAllowed } from "./minor-voice.server";
 
 type Client = SupabaseClient<Database>;
 /** `transcript` / `transcript_failed_at` are not in the generated types until Lovable regenerates them. */
@@ -29,6 +30,8 @@ export type TranscribeFn = (audio: Blob, vocabularyHints?: string[]) => Promise<
 export type TranscriptDeps = {
   transcribe?: TranscribeFn;
   now?: () => number;
+  /** Tests: the age check on a note's sender (`athleteVoiceAllowed` by default). */
+  voiceAllowed?: (userId: string) => Promise<boolean | null>;
 };
 
 export type VoiceNoteRef = {
@@ -43,6 +46,12 @@ export type VoiceNoteRef = {
 export const SWEEP_BATCH = 3;
 /** A failed attempt is retried after this long. */
 export const RETRY_AFTER_MS = 6 * 60 * 60 * 1000;
+/**
+ * The failure stamp for a note that must never be transcribed: its sender has an athlete row
+ * under 18 or with no birthdate (decision #48; minors stopped sending voice notes on 2026-09-24,
+ * #32, but older notes may remain). Far enough ahead that the sweep's back-off never ends.
+ */
+export const NEVER_TRANSCRIBE = "9999-12-31T00:00:00.000Z";
 
 async function defaultTranscribe(audio: Blob, hints?: string[]): Promise<string> {
   const { transcribeWithElevenLabs } = await import("./voice.server");
@@ -79,6 +88,24 @@ export async function transcribeVoiceNote(
   }
   if (claimed.error || !claimed.data?.length) return null;
   try {
+    // A minor's audio never goes to the transcription service (#48).
+    const sender = await db.from("messages").select("sender_user_id").eq("id", note.messageId);
+    const senderId = (sender.data?.[0] as { sender_user_id?: string | null } | undefined)
+      ?.sender_user_id;
+    if (senderId) {
+      const voiceAllowed = deps.voiceAllowed ?? ((id: string) => athleteVoiceAllowed(admin, id));
+      if ((await voiceAllowed(senderId)) === false) {
+        await db
+          .from("messages")
+          .update({ transcript_failed_at: NEVER_TRANSCRIBE })
+          .eq("id", note.messageId)
+          .is("transcript", null);
+        console.info("[transcripts] skipped: the sender is an athlete under 18", {
+          messageId: note.messageId,
+        });
+        return null;
+      }
+    }
     let bytes = note.bytes ?? null;
     if (!bytes) {
       const { data: blob, error } = await db.storage.from("voice-notes").download(note.audioPath);

@@ -14,6 +14,7 @@ import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
 import { transcribeVoiceNote } from "./voice-transcripts.server";
+import { athleteVoiceAllowed } from "./minor-voice.server";
 import {
   athleteRoomGate,
   ROOM_RESTRICTION_MESSAGES,
@@ -1061,6 +1062,11 @@ export async function sendMessage(
   let voiceBytes: Uint8Array | null = null;
 
   if (data.kind === "voice") {
+    // No voice note from a login with an athlete row under 18 (or no birthdate), in any room
+    // and whatever role it posts as: such a login can also hold a coach profile (#32, #48).
+    if ((await athleteVoiceAllowed(supabaseAdmin, userId)) === false) {
+      return { ok: false as const, reason: "text_only" as const, message: TEXT_ONLY_MESSAGE };
+    }
     if (!!data.audioBase64 === !!data.audioPath) {
       throw new ApiError({
         code: "validation_failed",

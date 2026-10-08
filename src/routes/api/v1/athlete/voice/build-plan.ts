@@ -6,12 +6,14 @@ import { voiceApplyResultSchema, voiceBuildInput } from "@/lib/api/plans-schema"
 import { buildAthletePlanFromVoice, withoutWords } from "@/lib/athlete-voice.server";
 
 /**
- * Thin wrapper over the shared `buildAthletePlanFromVoice` (PRD §6.14 B and
- * decision #37): a `multipart/form-data` upload (`audio`, `mode` = create |
- * edit, `planId` for edit) is transcribed with the curriculum's move names as
- * hints and built into a draft of the athlete's OWN plan, or edits to one.
- * Allowed for under-18 athletes: the audio is transcribed and discarded (never
- * stored, never logged), and only the transcript text is kept, on the plan.
+ * Thin wrapper over the shared `buildAthletePlanFromVoice` (PRD §6.14 B,
+ * decisions #37 and #48): a `multipart/form-data` upload (`audio`, `mode` =
+ * create | edit, `planId` for edit) is transcribed with the curriculum's move
+ * names as hints and built into a draft of the athlete's OWN plan, or edits to
+ * one. Adult athletes only: under 18, or no birthdate on file, answers 403
+ * `text_only` before anything is transcribed (#48). The audio is transcribed and
+ * discarded (never stored, never logged), and only the transcript text is kept,
+ * on the plan.
  * There is no athlete slot, so a spoken name is ignored. `[idem]`: a retried
  * upload never creates a second plan, and the 24-hour replay row keeps the
  * result without the transcript or its quotes (`withoutWords`).
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/api/v1/athlete/voice/build-plan")({
       input: voiceBuildInput,
       output: voiceApplyResultSchema,
       handler: async ({ ctx, input }) => {
-        const { userId, supabase } = requireContext(ctx);
+        const { userId, supabase, admin } = requireContext(ctx);
         if (input.mode === "edit" && !input.planId) {
           throw new ApiError({
             code: "validation_failed",
@@ -40,7 +42,7 @@ export const Route = createFileRoute("/api/v1/athlete/voice/build-plan")({
             message: "Missing planId for edit",
           });
         }
-        return buildAthletePlanFromVoice({ userId, supabase }, input);
+        return buildAthletePlanFromVoice({ userId, supabase, admin }, input);
       },
     }),
   },
