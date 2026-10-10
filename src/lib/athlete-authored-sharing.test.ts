@@ -209,8 +209,8 @@ describe("share links for a paused athlete", () => {
   });
 });
 
-describe("plans an athlete wrote stay out of the web (zero disruption, §4.1)", () => {
-  it("the athlete list excludes them by default and lists drafts only for the API", async () => {
+describe("plans an athlete wrote on the web (decision #49; parents unchanged, §4.1)", () => {
+  it("the athlete's web list includes their active and benched plans; drafts are listed only for the API", async () => {
     const make = () =>
       recordingClient((call, kind) => {
         if (call.table === "athletes") return { data: { id: "ath-1", first_name: "Elsie" } };
@@ -226,14 +226,32 @@ describe("plans an athlete wrote stay out of the web (zero disruption, §4.1)", 
     // (the starter-program seeding needs the real admin client; the plans query is what matters)
     expect(webRes).toBeDefined();
     const webPlans = web.calls.filter((c) => c.table === "plans");
-    expect(webPlans.every((c) => c.filters.some((f) => f[0] === "neq" && f[1] === "source"))).toBe(
-      true,
-    );
     expect(webPlans.length).toBe(1); // no drafts query for the web
+    expect(webPlans[0].filters.some((f) => f[0] === "neq" && f[1] === "source")).toBe(false);
+    expect(
+      webPlans[0].filters.some(
+        (f) =>
+          f[0] === "in" && f[1] === "status" && JSON.stringify(f[2]) === '["active","benched"]',
+      ),
+    ).toBe(true);
+
+    const api = make();
+    await listAthletePlans({
+      userId: "user-1",
+      supabase: api.client,
+      admin: api.client,
+      includeAuthored: true,
+    }).catch((e) => e);
+    const apiPlans = api.calls.filter((c) => c.table === "plans");
+    expect(
+      apiPlans.some((c) =>
+        c.filters.some((f) => f[0] === "eq" && f[1] === "status" && f[2] === "draft"),
+      ),
+    ).toBe(true);
   });
 
-  it("a plan the athlete wrote is not found by the web's detail loader", async () => {
-    const db = recordingClient((call) => {
+  const authoredPlan = (status: string) =>
+    recordingClient((call) => {
       if (call.table === "athletes") return { data: { id: "ath-1", first_name: "Elsie" } };
       if (call.table === "plans") {
         return {
@@ -241,7 +259,7 @@ describe("plans an athlete wrote stay out of the web (zero disruption, §4.1)", 
             id: "plan-1",
             title: "t",
             notes: "",
-            status: "active",
+            status,
             athlete_id: "ath-1",
             coach_id: null,
             updated_at: "x",
@@ -252,6 +270,19 @@ describe("plans an athlete wrote stay out of the web (zero disruption, §4.1)", 
       }
       return undefined;
     });
+
+  it("the web's detail loader serves an active plan the athlete wrote (e.g. adopted from a share link)", async () => {
+    const db = authoredPlan("active");
+    const plan = await getAthletePlan(
+      { userId: "user-1", supabase: db.client, admin: db.client },
+      "plan-1",
+    );
+    expect(plan.id).toBe("plan-1");
+    expect(plan.source).toBe("athlete");
+  });
+
+  it("the web's detail loader still does not serve their draft", async () => {
+    const db = authoredPlan("draft");
     const err = await caught(() =>
       getAthletePlan({ userId: "user-1", supabase: db.client, admin: db.client }, "plan-1"),
     );

@@ -115,7 +115,7 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
   const { ensureStarterProgramsForAthlete } = await import("./starter-programs.server");
   await ensureStarterProgramsForAthlete(athlete.id);
 
-  let planQuery = supabase
+  const planQuery = supabase
     .from("plans")
     .select("id, title, status, coach_id, updated_at, source")
     .eq("athlete_id", athlete.id)
