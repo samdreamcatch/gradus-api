@@ -15,7 +15,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 import { getSport } from "./coach-sports";
-import { syntheticEmailForAthlete } from "./api/auth-broker";
+import { syntheticEmailForAthlete, usernameSchema } from "./api/auth-broker";
 import { deleteAccountForUser } from "./account-deletion.server";
 import { grantGuardianConsent, markParentVerifiedByAdmin } from "./guardian-verification.server";
 
@@ -61,11 +61,9 @@ function genCode(len = 8): string {
 export const demoAccountsInput = z.object({
   coachEmail: z.string().trim().email(),
   parentEmail: z.string().trim().email(),
-  athleteUsername: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^[a-z0-9_.]{3,24}$/, "3–24 letters, digits, dots or underscores"),
+  // Same rule as the login page and the iOS sign-in (no dots), so the demo
+  // athlete can actually sign in with the username created here.
+  athleteUsername: usernameSchema,
   /** One password for all three; the admin enters it in App Store Connect. */
   password: z.string().min(12, "At least 12 characters"),
   /** Delete any existing demo accounts with these emails first. */

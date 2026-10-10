@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/demo-accounts")({
 const DEFAULTS = {
   coachEmail: "demo-coach@gradussports.com",
   parentEmail: "demo-parent@gradussports.com",
-  athleteUsername: "demo.athlete",
+  athleteUsername: "demo_athlete",
 };
 
 function DemoAccountsPage() {
