@@ -3997,6 +3997,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sport_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requested_sport: string
+          resolved_at: string | null
+          role: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requested_sport: string
+          resolved_at?: string | null
+          role?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requested_sport?: string
+          resolved_at?: string | null
+          role?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -4466,6 +4496,7 @@ export type Database = {
       }
       my_coach_id: { Args: never; Returns: string }
       new_guardian_claim_code: { Args: never; Returns: string }
+      parent_account_for_email: { Args: { p_email: string }; Returns: string }
       parent_athlete_ids: { Args: never; Returns: string[] }
       parent_can_write: { Args: { _athlete_id: string }; Returns: boolean }
       parent_has_athlete_in_sport: {
