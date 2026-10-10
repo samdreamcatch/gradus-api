@@ -138,7 +138,8 @@ export async function sendApnsRequest(
   deps: Partial<ApnsDeps> = {},
 ): Promise<ApnsOutcome> {
   const d: ApnsDeps = {
-    fetch: deps.fetch ?? globalThis.fetch,
+    // Workers reject a detached global fetch ("Illegal invocation"); keep it bound.
+    fetch: deps.fetch ?? ((input, init) => globalThis.fetch(input, init)),
     now: deps.now ?? (() => Date.now()),
     timeoutMs: deps.timeoutMs ?? 4000,
   };
