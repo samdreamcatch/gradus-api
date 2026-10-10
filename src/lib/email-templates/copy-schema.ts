@@ -264,6 +264,18 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         variables: GUARDIAN_INVITE_VARS,
       },
       { key: "ctaLabel", label: "Button label", kind: "text", variables: GUARDIAN_INVITE_VARS },
+      {
+        key: "bodyExistingAccount",
+        label: "Body when the email already has a Gradus parent account",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "ctaLabelExistingAccount",
+        label: "Button label when the email already has a parent account",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
       {
@@ -294,6 +306,9 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         "{athleteName} joined Gradus, the training app their coach uses to assign plans, track practice, and message about lessons.",
       body: "You were listed as their parent or guardian. Until you claim the account, {athleteName} can see their goals and plans but can't connect a coach or message anyone. Create your free parent account to open that up and see plans, practice logs, and messages in one place — nothing to pay, and it takes about a minute.",
       ctaLabel: "See {athleteName}'s training",
+      bodyExistingAccount:
+        "You already have a Gradus parent account with this email. Sign in and confirm {athleteName} is your child to see their plans, practice logs, and messages with yours. Nothing is linked until you confirm.",
+      ctaLabelExistingAccount: "Sign in to confirm",
       fallbackHelp: "Or paste this link into your browser:",
       signOff: "— The Gradus team",
       notice: DIRECT_NOTICE_EMAIL_DEFAULT,
@@ -463,6 +478,22 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
         variables: GUARDIAN_ACTIVITY_VARS,
       },
       { key: "ctaLabel", label: "Button label", kind: "text" },
+      {
+        key: "bodyExistingAccount",
+        label: "Explainer when the email already has a Gradus parent account",
+        kind: "textarea",
+        variables: GUARDIAN_ACTIVITY_VARS,
+      },
+      {
+        key: "ctaLabelExistingAccount",
+        label: "Button label when the email already has a parent account",
+        kind: "text",
+      },
+      {
+        key: "footerExistingAccount",
+        label: "Footer when the email already has a parent account",
+        kind: "textarea",
+      },
       { key: "footer", label: "Fine-print footer", kind: "textarea" },
     ],
     defaults: {
@@ -473,6 +504,10 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       body: "You're getting this because you're listed as {athleteName}'s parent or guardian and haven't created your Gradus account yet. Create it to reply and see everything in one place.",
       ctaLabel: "Create my parent account",
       footer: "These copies stop as soon as you create your account.",
+      bodyExistingAccount:
+        "You're getting this because you're listed as {athleteName}'s parent or guardian, and this email already has a Gradus parent account. Sign in and confirm {athleteName} is your child to reply and see everything in one place.",
+      ctaLabelExistingAccount: "Sign in to confirm",
+      footerExistingAccount: "These copies stop as soon as you confirm.",
     },
   },
   "retention-notice": {
@@ -894,6 +929,28 @@ export function renderTemplateString(
     const v = values[key];
     return v == null ? match : String(v);
   });
+}
+
+/**
+ * Values for a slot that goes through html-react-parser: names and message
+ * text a coach or athlete typed are escaped so they can't carry markup (a
+ * link, say), while the admin-authored template keeps its own. Only for
+ * parsed slots; React already escapes plain text, and escaping it again
+ * would show `&amp;` in the inbox.
+ */
+export function htmlTemplateValues<T extends Record<string, string | null | undefined>>(
+  values: T,
+): T {
+  const escape = (v: string) =>
+    v
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  return Object.fromEntries(
+    Object.entries(values).map(([k, v]) => [k, typeof v === "string" ? escape(v) : v]),
+  ) as T;
 }
 
 /** Merge overrides over the schema defaults for a template. */

@@ -25,7 +25,7 @@ import {
   text,
 } from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
-import { resolveCopy, renderTemplateString } from "./copy-schema";
+import { htmlTemplateValues, resolveCopy, renderTemplateString } from "./copy-schema";
 import type { TemplateEntry } from "./registry";
 
 export interface GuardianActivityEmailProps {
@@ -36,6 +36,8 @@ export interface GuardianActivityEmailProps {
   claimUrl: string;
   siteUrl?: string;
   copyOverrides?: Record<string, string>;
+  /** The address already has a Gradus parent account: "Sign in to confirm", not "create". */
+  existingAccount?: boolean;
 }
 
 /**
@@ -90,9 +92,12 @@ export const GuardianActivityEmail = ({
   claimUrl,
   siteUrl = "https://gradus.training",
   copyOverrides,
+  existingAccount = false,
 }: GuardianActivityEmailProps) => {
   const c = resolveCopy("guardian-activity", copyOverrides);
   const vars = activityVars({ athleteName, senderName, senderRole, body, claimUrl, siteUrl });
+  // Names and the message were typed by people; parsed slots get them escaped.
+  const htmlVars = htmlTemplateValues(vars);
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -105,15 +110,27 @@ export const GuardianActivityEmail = ({
               <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
               <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
               <Text style={quote}>{body}</Text>
-              <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
+              <Text style={text}>
+                {parse(
+                  renderTemplateString(existingAccount ? c.bodyExistingAccount : c.body, htmlVars),
+                )}
+              </Text>
               <div style={buttonWrap}>
                 <Button style={button} href={claimUrl}>
-                  {renderTemplateString(c.ctaLabel, vars)}
+                  {renderTemplateString(
+                    existingAccount ? c.ctaLabelExistingAccount : c.ctaLabel,
+                    vars,
+                  )}
                 </Button>
               </div>
               <Hr style={divider} />
               <Text style={footer}>
-                {parse(renderTemplateString(c.footer, vars))}{" "}
+                {parse(
+                  renderTemplateString(
+                    existingAccount ? c.footerExistingAccount : c.footer,
+                    htmlVars,
+                  ),
+                )}{" "}
                 <Link href={siteUrl} style={link}>
                   gradus.training
                 </Link>

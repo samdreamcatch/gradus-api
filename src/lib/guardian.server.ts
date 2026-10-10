@@ -108,6 +108,26 @@ async function enqueue(opts: {
   return true;
 }
 
+/**
+ * True when the address belongs to a Gradus parent account with a confirmed
+ * email (migration 20261008130000). The guardian emails then say "Sign in to
+ * confirm" instead of "Create your account", which used to send an existing
+ * parent into a sign-up that failed (beta feedback 2026-10-07). False on any
+ * error, including before Lovable applies the migration: the old copy.
+ */
+export async function guardianHasParentAccount(email: string): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any).rpc("parent_account_for_email", {
+      p_email: email,
+    });
+    if (error) return false;
+    return typeof data === "string" && data.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** Send (or re-send) the guardian invite for an athlete. Never throws. */
 export async function sendGuardianInvite(params: {
   to: string;
@@ -121,12 +141,14 @@ export async function sendGuardianInvite(params: {
     const isAthlete = params.recipient === "athlete";
     const label = isAthlete ? "athlete-invite" : "guardian-invite";
     const copyOverrides = await fetchOverridesFor(label);
+    const existingAccount = !isAthlete && (await guardianHasParentAccount(params.to));
     const element = React.createElement(isAthlete ? AthleteInviteEmail : GuardianInviteEmail, {
       athleteName: params.athleteName,
       coachName: params.coachName ?? null,
       claimUrl: guardianClaimUrl(params.token),
       siteUrl: SITE_URL,
       copyOverrides,
+      existingAccount,
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });
@@ -164,6 +186,7 @@ export async function sendGuardianMessageCopy(params: {
       claimUrl: guardianClaimUrl(params.token),
       siteUrl: SITE_URL,
       copyOverrides,
+      existingAccount: await guardianHasParentAccount(params.to),
     });
     const html = await render(element);
     const text = await render(element, { plainText: true });

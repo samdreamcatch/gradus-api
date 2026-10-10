@@ -159,6 +159,7 @@ import { Route as ApiV1CoachUpNextRouteImport } from './routes/api/v1/coach/up-n
 import { Route as ApiV1CompetitionsFinishedRouteImport } from './routes/api/v1/competitions/finished'
 import { Route as ApiV1DevicesIndexRouteImport } from './routes/api/v1/devices/index'
 import { Route as ApiV1DevicesTokenRouteImport } from './routes/api/v1/devices/$token'
+import { Route as ApiV1GuardianPendingClaimsRouteImport } from './routes/api/v1/guardian/pending-claims'
 import { Route as ApiV1GuardianStatusRouteImport } from './routes/api/v1/guardian/status'
 import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
 import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
@@ -1178,6 +1179,12 @@ const ApiV1DevicesTokenRoute = ApiV1DevicesTokenRouteImport.update({
   path: '/api/v1/devices/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1GuardianPendingClaimsRoute =
+  ApiV1GuardianPendingClaimsRouteImport.update({
+    id: '/api/v1/guardian/pending-claims',
+    path: '/api/v1/guardian/pending-claims',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1GuardianStatusRoute = ApiV1GuardianStatusRouteImport.update({
   id: '/api/v1/guardian/status',
   path: '/api/v1/guardian/status',
@@ -2376,6 +2383,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
+  '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
@@ -2711,6 +2719,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
+  '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
@@ -3054,6 +3063,7 @@ export interface FileRoutesById {
   '/api/v1/coach/up-next': typeof ApiV1CoachUpNextRoute
   '/api/v1/competitions/finished': typeof ApiV1CompetitionsFinishedRoute
   '/api/v1/devices/$token': typeof ApiV1DevicesTokenRoute
+  '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
@@ -3397,6 +3407,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
+    | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/app-transaction'
@@ -3732,6 +3743,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
+    | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/app-transaction'
@@ -4074,6 +4086,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/up-next'
     | '/api/v1/competitions/finished'
     | '/api/v1/devices/$token'
+    | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
     | '/api/v1/me/app-transaction'
@@ -4347,6 +4360,7 @@ export interface RootRouteChildren {
   ApiV1CoachUpNextRoute: typeof ApiV1CoachUpNextRoute
   ApiV1CompetitionsFinishedRoute: typeof ApiV1CompetitionsFinishedRoute
   ApiV1DevicesTokenRoute: typeof ApiV1DevicesTokenRoute
+  ApiV1GuardianPendingClaimsRoute: typeof ApiV1GuardianPendingClaimsRoute
   ApiV1GuardianStatusRoute: typeof ApiV1GuardianStatusRoute
   ApiV1InvitesResolveRoute: typeof ApiV1InvitesResolveRoute
   ApiV1MeAppTransactionRoute: typeof ApiV1MeAppTransactionRoute
@@ -5590,6 +5604,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/devices/$token'
       fullPath: '/api/v1/devices/$token'
       preLoaderRoute: typeof ApiV1DevicesTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/guardian/pending-claims': {
+      id: '/api/v1/guardian/pending-claims'
+      path: '/api/v1/guardian/pending-claims'
+      fullPath: '/api/v1/guardian/pending-claims'
+      preLoaderRoute: typeof ApiV1GuardianPendingClaimsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/guardian/status': {
@@ -7267,6 +7288,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachUpNextRoute: ApiV1CoachUpNextRoute,
   ApiV1CompetitionsFinishedRoute: ApiV1CompetitionsFinishedRoute,
   ApiV1DevicesTokenRoute: ApiV1DevicesTokenRoute,
+  ApiV1GuardianPendingClaimsRoute: ApiV1GuardianPendingClaimsRoute,
   ApiV1GuardianStatusRoute: ApiV1GuardianStatusRoute,
   ApiV1InvitesResolveRoute: ApiV1InvitesResolveRoute,
   ApiV1MeAppTransactionRoute: ApiV1MeAppTransactionRoute,

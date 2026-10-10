@@ -22660,6 +22660,73 @@
         }
       }
     },
+    "/api/v1/guardian/pending-claims": {
+      "get": {
+        "operationId": "getMyPendingGuardianClaims",
+        "summary": "Athletes a coach listed the signed-in parent as guardian for, waiting to be confirmed",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claims": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string"
+                          },
+                          "athleteFirstName": {
+                            "type": "string"
+                          },
+                          "athleteLastName": {
+                            "type": "string"
+                          },
+                          "coachName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "athleteFirstName",
+                          "athleteLastName",
+                          "coachName"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "claims"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/guardian/verification/start": {
       "post": {
         "operationId": "startParentVerification",

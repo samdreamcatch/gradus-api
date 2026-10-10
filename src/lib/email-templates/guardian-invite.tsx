@@ -26,7 +26,7 @@ import {
   text,
 } from "./_styles";
 import { Header, PageInner, PageShell } from "./_layout";
-import { resolveCopy, renderTemplateString } from "./copy-schema";
+import { htmlTemplateValues, resolveCopy, renderTemplateString } from "./copy-schema";
 import type { TemplateEntry } from "./registry";
 
 export interface GuardianInviteEmailProps {
@@ -36,6 +36,8 @@ export interface GuardianInviteEmailProps {
   claimUrl: string;
   siteUrl?: string;
   copyOverrides?: Record<string, string>;
+  /** The address already has a Gradus parent account: "Sign in to confirm", not "create". */
+  existingAccount?: boolean;
 }
 
 export function guardianInviteSubject(
@@ -56,10 +58,13 @@ export const GuardianInviteEmail = ({
   claimUrl,
   siteUrl = "https://gradus.training",
   copyOverrides,
+  existingAccount = false,
 }: GuardianInviteEmailProps) => {
   const c = resolveCopy("guardian-invite", copyOverrides);
   const vars = { athleteName, coachName: coachName ?? "", claimUrl, siteUrl };
-  const intro = renderTemplateString(coachName ? c.introWithCoach : c.intro, vars);
+  // The coach typed the names; parsed slots get them escaped.
+  const htmlVars = htmlTemplateValues(vars);
+  const intro = renderTemplateString(coachName ? c.introWithCoach : c.intro, htmlVars);
 
   return (
     <Html lang="en" dir="ltr">
@@ -73,10 +78,17 @@ export const GuardianInviteEmail = ({
               <Text style={eyebrow}>{renderTemplateString(c.eyebrow, vars)}</Text>
               <Heading style={h1}>{renderTemplateString(c.heading, vars)}</Heading>
               <Text style={text}>{parse(intro)}</Text>
-              <Text style={text}>{parse(renderTemplateString(c.body, vars))}</Text>
+              <Text style={text}>
+                {parse(
+                  renderTemplateString(existingAccount ? c.bodyExistingAccount : c.body, htmlVars),
+                )}
+              </Text>
               <div style={buttonWrap}>
                 <Button style={button} href={claimUrl}>
-                  {renderTemplateString(c.ctaLabel, vars)}
+                  {renderTemplateString(
+                    existingAccount ? c.ctaLabelExistingAccount : c.ctaLabel,
+                    vars,
+                  )}
                 </Button>
               </div>
               <Text style={{ ...text, marginTop: "28px", fontSize: "14px" }}>
@@ -88,13 +100,13 @@ export const GuardianInviteEmail = ({
               </Text>
               <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
               <Text style={{ ...text, marginTop: "20px", fontSize: "13px" }}>
-                {parse(renderTemplateString(c.notice, vars))}
+                {parse(renderTemplateString(c.notice, htmlVars))}
                 {/* Only a 13–17 self-sign-up is swept after three months; a coach-added athlete is not. */}
                 {coachName ? null : " " + renderTemplateString(c.noticeUnclaimed, vars)}
               </Text>
               <Hr style={divider} />
               <Text style={footer}>
-                {parse(renderTemplateString(c.footer, vars))}{" "}
+                {parse(renderTemplateString(c.footer, htmlVars))}{" "}
                 <Link href={siteUrl} style={link}>
                   gradus.training
                 </Link>

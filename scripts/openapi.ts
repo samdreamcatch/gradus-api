@@ -216,6 +216,7 @@ import "../src/routes/api/v1/guardian/claim/merge";
 import "../src/routes/api/v1/guardian/claim/self";
 import "../src/routes/api/v1/guardian/invites/$id/resend";
 import "../src/routes/api/v1/guardian/status";
+import "../src/routes/api/v1/guardian/pending-claims";
 // S1 consent backbone (PRD §6.13 A1–A2): parent adult verification
 import "../src/routes/api/v1/guardian/verification/start";
 import "../src/routes/api/v1/guardian/verification/status";

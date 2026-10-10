@@ -11,6 +11,7 @@ import type {
   GuardianClaimSummaryDTO,
   GuardianMergeOptionDTO,
   GuardianMergeOptionsDTO,
+  GuardianPendingClaimsDTO,
   GuardianStatusDTO,
   ResendGuardianInviteResultDTO,
 } from "@/lib/guardian-claim.server";
@@ -30,6 +31,17 @@ export const guardianClaimContextSchema = z.object({
   hasParentProfile: z.boolean(),
   parentName: z.string().nullable(),
 }) satisfies z.ZodType<GuardianClaimContextDTO>;
+
+export const guardianPendingClaimsSchema = z.object({
+  claims: z.array(
+    z.object({
+      token: z.string(),
+      athleteFirstName: z.string(),
+      athleteLastName: z.string(),
+      coachName: z.string().nullable(),
+    }),
+  ),
+}) satisfies z.ZodType<GuardianPendingClaimsDTO>;
 
 export const guardianClaimResultSchema = z.object({
   ok: z.literal(true),

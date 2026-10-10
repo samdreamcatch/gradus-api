@@ -12,6 +12,7 @@ import {
   getGuardianClaimSummary as getGuardianClaimSummaryImpl,
   getGuardianClaimSummaryInput,
   getMyGuardianStatus as getMyGuardianStatusImpl,
+  listMyPendingGuardianClaims as listMyPendingGuardianClaimsImpl,
   mergeGuardianClaim as mergeGuardianClaimImpl,
   mergeGuardianClaimInput,
   resendGuardianInvite as resendGuardianInviteImpl,
@@ -96,6 +97,17 @@ export const getMyGuardianStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     try {
       return await getMyGuardianStatusImpl(await getAdmin(), context.userId);
+    } catch (err) {
+      rethrowPlain(err);
+    }
+  });
+
+/** Athletes a coach listed this parent as guardian for, waiting for them to confirm (beta feedback 2026-10-07). */
+export const listMyPendingGuardianClaims = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    try {
+      return await listMyPendingGuardianClaimsImpl(await getAdmin(), context.userId);
     } catch (err) {
       rethrowPlain(err);
     }

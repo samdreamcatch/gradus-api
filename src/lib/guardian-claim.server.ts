@@ -127,6 +127,18 @@ export interface GuardianClaimContextDTO {
   parentName: string | null;
 }
 
+export interface GuardianPendingClaimDTO {
+  /** The claim token the invite emailed to this same address; opens `/g/<token>`. */
+  token: string;
+  athleteFirstName: string;
+  athleteLastName: string;
+  coachName: string | null;
+}
+
+export interface GuardianPendingClaimsDTO {
+  claims: GuardianPendingClaimDTO[];
+}
+
 export type GuardianMergeRank = "exact" | "close" | "other";
 
 export interface GuardianMergeOptionDTO {
@@ -555,6 +567,97 @@ export async function getGuardianClaimContext(
   };
 }
 
+/* --------------------------------------------------------- pending claims */
+
+type AuthIdentity = { provider?: string; identity_data?: Record<string, unknown> | null };
+
+/**
+ * True when an identity provider (Sign in with Apple, Google) verified that
+ * this account owns `email`. The project auto-confirms password sign-ups, so
+ * `email_confirmed_at` proves nothing: anyone can register a guardian's
+ * address. Nor does an earlier claim, since a coach can read the claim token
+ * of an athlete on their roster.
+ */
+export function providerVerifiedEmail(
+  user: { identities?: AuthIdentity[] | null } | null | undefined,
+  email: string,
+): boolean {
+  return (user?.identities ?? []).some((identity) => {
+    if (!identity.provider || identity.provider === "email") return false;
+    const data = identity.identity_data ?? {};
+    const address = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+    return address === email && (data.email_verified === true || data.email_verified === "true");
+  });
+}
+
+/**
+ * `GET /guardian/pending-claims` (beta feedback 2026-10-07; Mariah's call:
+ * the parent confirms). A coach listed this signed-in parent's email as an
+ * athlete's guardian. The parent sees it in the app, not only in the invite,
+ * and confirms through the same `/g/<token>` claim or merge, so nothing
+ * links until they say yes.
+ *
+ * The token is a credential, so it goes only to an account an identity
+ * provider verified for this address (`providerVerifiedEmail`); everyone
+ * else confirms from the "Sign in to confirm" invite in their inbox. Only
+ * athletes nobody has claimed, that a coach still has on a roster, and that
+ * aren't a teen's own sign-up (that row carries the teen's login).
+ */
+export async function listMyPendingGuardianClaims(
+  admin: Admin,
+  userId: string,
+): Promise<GuardianPendingClaimsDTO> {
+  const parent = await admin
+    .from("parent_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (parent.error) dbError(parent.error);
+  if (!parent.data) return { claims: [] };
+
+  const { data: auth, error: authError } = await admin.auth.admin.getUserById(userId);
+  if (authError) {
+    console.error("[guardian] pending claims: user lookup failed", authError);
+    return { claims: [] };
+  }
+  const email = auth.user?.email?.trim().toLowerCase();
+  if (!email || !providerVerifiedEmail(auth.user, email)) return { claims: [] };
+
+  const rows = await admin
+    .from("athletes")
+    .select("id, first_name, last_name, guardian_claim_token, added_by_coach_id, invite_recipient")
+    .eq("guardian_email", email)
+    .is("parent_id", null)
+    .is("guardian_claimed_at", null)
+    .is("user_id", null)
+    .not("guardian_claim_token", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (rows.error) dbError(rows.error);
+
+  const claims: GuardianPendingClaimDTO[] = [];
+  for (const row of rows.data ?? []) {
+    // An 18+ athlete's own invite isn't a guardian claim.
+    if (row.invite_recipient === "athlete" || !row.guardian_claim_token) continue;
+    // A coach removed the athlete (maybe to fix a typo and add them again).
+    const onRoster = await admin
+      .from("coach_athletes")
+      .select("coach_id")
+      .eq("athlete_id", row.id)
+      .limit(1)
+      .maybeSingle();
+    if (onRoster.error) dbError(onRoster.error);
+    if (!onRoster.data) continue;
+    claims.push({
+      token: row.guardian_claim_token,
+      athleteFirstName: row.first_name ?? "",
+      athleteLastName: row.last_name ?? "",
+      coachName: await coachDisplayName(admin, row.added_by_coach_id),
+    });
+  }
+  return { claims };
+}
+
 /* --------------------------------------------------------- merge options */
 
 const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -589,11 +692,12 @@ export async function getGuardianClaimMergeOptions(
 ): Promise<GuardianMergeOptionsDTO> {
   const pending = await admin
     .from("athletes")
-    .select("id, first_name, last_name, parent_id, guardian_claimed_at")
+    .select("id, first_name, last_name, parent_id, guardian_claimed_at, user_id")
     .eq("guardian_claim_token", input.token)
     .maybeSingle();
   if (pending.error) dbError(pending.error);
-  if (!pending.data) return { options: [] };
+  // A teen's own sign-up carries their login: claim it, never merge (and delete) it.
+  if (!pending.data || pending.data.user_id) return { options: [] };
 
   const parent = await admin
     .from("parent_profiles")
@@ -666,13 +770,17 @@ export async function mergeGuardianClaim(
   }
   const pending = await admin
     .from("athletes")
-    .select("id, first_name, parent_id, guardian_claimed_at")
+    .select("id, first_name, parent_id, guardian_claimed_at, user_id")
     .eq("guardian_claim_token", input.token)
     .maybeSingle();
   if (pending.error) dbError(pending.error);
   if (!pending.data) throw notFound(INVALID_LINK);
   if (pending.data.parent_id || pending.data.guardian_claimed_at) {
     throw conflict("This invite has already been claimed.");
+  }
+  // Merging deletes the pending row; a teen's own sign-up row is their login.
+  if (pending.data.user_id) {
+    throw unprocessable("This athlete has their own login. Add them as a new athlete instead.");
   }
 
   const parent = await admin
