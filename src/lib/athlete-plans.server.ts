@@ -121,7 +121,8 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
     .eq("athlete_id", athlete.id)
     .eq("kind", "plan")
     .in("status", ["active", "benched"]);
-  if (!ctx.includeAuthored) planQuery = planQuery.neq("source", "athlete");
+  // Active/benched plans the athlete owns (incl. imported shared plans) show everywhere;
+  // only their drafts stay API-only (listed below).
   const { data: planRows, error: pErr } = await planQuery.order("updated_at", {
     ascending: false,
   });
@@ -288,8 +289,8 @@ export async function getAthletePlan(
     .maybeSingle();
   if (error) dbError(error);
   if (!plan || plan.kind !== "plan" || plan.athlete_id !== athlete.id) throw notFound();
-  // The web never shows a plan the athlete wrote.
-  if (plan.source === "athlete" && !ctx.includeAuthored) throw notFound();
+  // Drafts are excluded by the status check below; active/benched athlete-owned
+  // plans (e.g. imported from a share link) are viewable on the web too.
   if (plan.status !== "active" && plan.status !== "benched") throw notFound();
 
   const [movesRes, coachRes] = await Promise.all([
