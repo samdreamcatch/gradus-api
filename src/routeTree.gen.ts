@@ -25,6 +25,7 @@ import { Route as AuthenticatedAthleteRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedOrgAdminRouteImport } from './routes/_authenticated/org-admin'
 import { Route as AuthenticatedParentRouteImport } from './routes/_authenticated/parent'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthHandoffRouteImport } from './routes/auth.handoff'
 import { Route as BoardIndexRouteImport } from './routes/board.index'
 import { Route as BoardSlugRouteImport } from './routes/board.$slug'
@@ -430,6 +431,11 @@ const AuthenticatedParentRoute = AuthenticatedParentRouteImport.update({
   id: '/parent',
   path: '/parent',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthHandoffRoute = AuthHandoffRouteImport.update({
   id: '/auth/handoff',
@@ -2261,6 +2267,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AuthenticatedCoachRouteWithChildren
   '/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteWithChildren
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
@@ -2598,6 +2605,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/verified': typeof VerifiedRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
@@ -2941,6 +2949,7 @@ export interface FileRoutesById {
   '/_authenticated/coach': typeof AuthenticatedCoachRouteWithChildren
   '/_authenticated/org-admin': typeof AuthenticatedOrgAdminRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteWithChildren
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/handoff': typeof AuthHandoffRoute
   '/board/$slug': typeof BoardSlugRoute
   '/dev/paywall-preview': typeof DevPaywallPreviewRoute
@@ -3285,6 +3294,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/org-admin'
     | '/parent'
+    | '/auth/confirm'
     | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
@@ -3622,6 +3632,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/verified'
     | '/.well-known/apple-app-site-association'
+    | '/auth/confirm'
     | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
@@ -3964,6 +3975,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach'
     | '/_authenticated/org-admin'
     | '/_authenticated/parent'
+    | '/auth/confirm'
     | '/auth/handoff'
     | '/board/$slug'
     | '/dev/paywall-preview'
@@ -4303,6 +4315,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   VerifiedRoute: typeof VerifiedRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   AuthHandoffRoute: typeof AuthHandoffRoute
   BoardSlugRoute: typeof BoardSlugRoute
   DevPaywallPreviewRoute: typeof DevPaywallPreviewRoute
@@ -4667,6 +4680,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/parent'
       preLoaderRoute: typeof AuthenticatedParentRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/handoff': {
       id: '/auth/handoff'
@@ -7231,6 +7251,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifiedRoute: VerifiedRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   AuthHandoffRoute: AuthHandoffRoute,
   BoardSlugRoute: BoardSlugRoute,
   DevPaywallPreviewRoute: DevPaywallPreviewRoute,

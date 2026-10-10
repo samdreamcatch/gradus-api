@@ -12,6 +12,7 @@ import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
 
 import { EMAIL_COPY_SCHEMA } from "@/lib/email-templates/copy-schema";
+import { authConfirmUrl, isAuthConfirmType } from "@/lib/auth-confirm-link";
 import { fetchOverridesFor } from "@/lib/email-templates/overrides.server";
 
 const EMAIL_SUBJECTS: Record<string, string> = {
@@ -125,7 +126,12 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           siteName: SITE_NAME,
           siteUrl: `https://${ROOT_DOMAIN}`,
           recipient: payload.data.email,
-          confirmationUrl: payload.data.url,
+          // Reset and email change link to gradus.training/auth/confirm so the
+          // app opens them (auth-confirm-link.ts); everything else keeps the
+          // backend's own link.
+          confirmationUrl: isAuthConfirmType(emailType)
+            ? authConfirmUrl(payload.data.url, `https://${ROOT_DOMAIN}`)
+            : payload.data.url,
           token: payload.data.token,
           email: payload.data.email,
           oldEmail: payload.data.old_email,

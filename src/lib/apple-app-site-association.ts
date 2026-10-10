@@ -51,6 +51,8 @@ export const UNIVERSAL_LINK_PATHS = [
   "/p/*",
   "/verified",
   "/verified/*",
+  // Reset and email-change emails (auth-confirm-link.ts): the app exchanges the code.
+  "/auth/confirm",
 ] as const;
 
 export type AppleAppSiteAssociation = {
