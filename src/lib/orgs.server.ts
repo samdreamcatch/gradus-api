@@ -26,7 +26,7 @@ export const orgCodeSchema = z
   .string()
   .trim()
   .transform((s) => s.toUpperCase())
-  .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Codes are 8 characters"));
+  .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Enter the full club code"));
 
 const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });

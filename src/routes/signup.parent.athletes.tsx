@@ -122,7 +122,7 @@ function ParentAthletesPage() {
     setError(null);
 
     if (codeInvalid) {
-      setError("Coach invite code must be 8 characters, or leave it blank.");
+      setError("Enter the coach's full invite code, or leave it blank.");
       return;
     }
 
@@ -390,8 +390,8 @@ function ParentAthletesPage() {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
-                        Have a coach&apos;s 8-character code? Enter it to link your athlete now. You
-                        can skip this and add a coach later.
+                        Have a coach&apos;s invite code? Enter it to link your athlete now. You can
+                        skip this and add a coach later.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

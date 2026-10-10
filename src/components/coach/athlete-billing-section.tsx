@@ -72,7 +72,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-text-tertiary">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading billing…
+        Loading invoicing…
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
   return (
     <section className="space-y-3">
       <SectionHeader
-        title="Billing"
+        title="Invoicing"
         action={
           <Button
             type="button"
@@ -177,7 +177,6 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
         </ul>
       ) : (
         <EmptyLine>No invoices yet.</EmptyLine>
-
       )}
 
       <InvoiceGenerateSheet athleteId={generateFor} onOpenChange={setGenerateFor} />

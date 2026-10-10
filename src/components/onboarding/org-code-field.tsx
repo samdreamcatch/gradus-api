@@ -76,7 +76,7 @@ export function OrgCodeField({ orgId, orgName, value, onChange, id = "org-code" 
               false,
             )
           }
-          placeholder="8-character code"
+          placeholder="Club code"
           maxLength={8}
           autoComplete="off"
           spellCheck={false}

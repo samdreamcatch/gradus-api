@@ -1224,7 +1224,7 @@ describe("input schemas", () => {
   it("linkCoachInput normalizes the code and needs at least one sport", () => {
     expect(linkCoachInput.parse({ code: " abcdefgh ", sports: ["s"] }).code).toBe("ABCDEFGH");
     expect(issue(linkCoachInput.safeParse({ code: "ABC", sports: ["s"] }))).toBe(
-      "Invite code must be 8 characters",
+      "Enter the full invite code",
     );
     expect(issue(linkCoachInput.safeParse({ code: "ABCDEFG1", sports: ["s"] }))).toBe(
       "Invalid characters in code",

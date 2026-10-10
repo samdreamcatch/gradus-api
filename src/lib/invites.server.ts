@@ -25,7 +25,7 @@ export const inviteCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .length(8, "Invite code must be 8 characters")
+  .length(8, "Enter the full invite code")
   .regex(/^[A-Z2-9]+$/, "Invalid characters in code");
 
 // Crockford-style base32, minus I, L, O, 0, 1 to avoid lookalikes.

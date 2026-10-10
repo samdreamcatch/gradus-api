@@ -38,6 +38,18 @@ export interface GuardianActivityEmailProps {
   copyOverrides?: Record<string, string>;
 }
 
+/**
+ * "Coach Jen Park", never "Coach Coach …": some coaches type the title into
+ * their own name, and the guardian mirror used to pass a name it had already
+ * prefixed (beta feedback 2026-10-07: a message email read "Coach Coach …").
+ */
+export function coachLabel(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "Your athlete's coach";
+  // Not `\b`: in a non-Unicode regex "Coaché…" would count as the title.
+  return /^coach(?![\p{L}\p{N}])/iu.test(trimmed) ? trimmed : `Coach ${trimmed}`;
+}
+
 function activityVars(data: {
   athleteName?: string | null;
   senderName?: string | null;
@@ -51,7 +63,7 @@ function activityVars(data: {
     athleteName: data.athleteName ?? "your athlete",
     senderName,
     senderRole: data.senderRole ?? "coach",
-    senderLabel: data.senderRole === "coach" ? `Coach ${senderName}` : senderName,
+    senderLabel: data.senderRole === "coach" ? coachLabel(senderName) : senderName,
     body: data.body ?? "",
     claimUrl: data.claimUrl ?? "",
     siteUrl: data.siteUrl ?? "https://gradus.training",

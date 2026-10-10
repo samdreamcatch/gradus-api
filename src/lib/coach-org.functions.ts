@@ -23,7 +23,7 @@ const codeSchema = z
   .string()
   .trim()
   .transform((s) => s.toUpperCase())
-  .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Codes are 8 characters"));
+  .pipe(z.string().regex(/^[A-Z2-9]{8}$/, "Enter the full club code"));
 
 // Admin-authored codes are more permissive: 4–16 uppercase letters or digits.
 const customCodeSchema = z

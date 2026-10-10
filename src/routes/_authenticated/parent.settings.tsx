@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -892,6 +892,7 @@ function CoachesSection({
 }) {
   const [adding, setAdding] = useState(false);
   const [code, setCode] = useState("");
+  const codeFieldId = useId();
   const [preview, setPreview] = useState<{
     coachId: string;
     coachName: string;
@@ -1153,11 +1154,14 @@ function CoachesSection({
         <div className="space-y-2 rounded-lg border border-divider bg-elevated/30 p-3">
           {!preview ? (
             <>
-              <Label className="text-xs">Coach's invite code</Label>
+              <Label htmlFor={codeFieldId} className="text-xs">
+                Coach's invite code
+              </Label>
               <Input
+                id={codeFieldId}
                 value={code}
                 maxLength={8}
-                placeholder="8-character code"
+                placeholder="ABCD2345"
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 className="font-mono uppercase tracking-widest"
               />

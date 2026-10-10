@@ -84,7 +84,7 @@ const INVITE_STEPS: {
   {
     key: "code",
     title: "Enter their code",
-    description: "They already gave you an 8-character code",
+    description: "They already gave you a code",
     icon: KeyRound,
   },
 ];
@@ -93,7 +93,7 @@ function SegmentedToggle({ tab, onChange }: { tab: RosterTab; onChange: (t: Rost
   const tabs: { key: RosterTab; label: string }[] = [
     { key: "schedule", label: "Schedule" },
     { key: "athletes", label: "Athletes" },
-    { key: "billing", label: "Billing" },
+    { key: "billing", label: "Invoicing" },
   ];
 
   return (

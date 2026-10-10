@@ -57,7 +57,7 @@ function OrganizationsPage() {
         <h1 className="font-display text-h1 text-text-primary">Organizations</h1>
         <p className="text-sm text-text-secondary">
           Clubs, academies, and associations whose coaches skip individual payment. Each org has a
-          rotatable 8-character invite code.
+          rotatable invite code.
         </p>
       </header>
 

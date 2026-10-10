@@ -212,14 +212,16 @@ export async function mirrorGuardianActivity(params: {
 
     let senderName = athleteName || "Your athlete";
     if (params.senderRole === "coach") {
-      senderName = "Your athlete's coach";
+      // The bare name: the template's `coachLabel` adds "Coach" once, and
+      // reads "Your athlete's coach" when there's no name.
+      senderName = "";
       if (params.coachId) {
         const { data: coach } = await supabaseAdmin
           .from("coach_profiles")
           .select("first_name, last_name")
           .eq("id", params.coachId)
           .maybeSingle();
-        if (coach) senderName = `Coach ${coach.first_name} ${coach.last_name}`.trim();
+        if (coach) senderName = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim();
       }
     }
 
