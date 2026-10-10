@@ -17,7 +17,7 @@ import { PageTitle } from "@/components/page-title";
 
 import { RosterCard } from "@/components/coach/roster-card";
 import { FilterPill } from "@/components/ui/filter-pill";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { getSport, type SportKey, sportDisplayLabel } from "@/lib/coach-sports";
 import { WeekScheduleView, type WeekScheduleHandle } from "@/components/coach/week-schedule-view";
 import { AthleteDetailSheet } from "@/components/coach/athlete-detail-sheet";
 import { BillingTab } from "@/components/coach/billing-tab";
@@ -221,7 +221,7 @@ function RosterPage() {
                       { value: "__all", label: "All sports" },
                       ...sports.map((s) => ({
                         value: s,
-                        label: getSport(s as SportKey)?.label ?? s,
+                        label: sportDisplayLabel(s),
                       })),
                     ]}
                   />

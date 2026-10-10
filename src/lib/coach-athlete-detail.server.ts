@@ -16,7 +16,7 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { goalsAuthorship } from "./goals-history.server";
 import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
-import { getSportLevel, getSport, getSuggestedHours } from "./coach-sports";
+import { getSportLevel, getSport, getSuggestedHours, sportDisplayLabel } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { stateLabel } from "./session-states";
 import {
@@ -289,7 +289,7 @@ function labelLevel(sport: string, levelKey: string): string {
 }
 
 function sportLabel(sport: string): string {
-  return getSport(sport)?.label ?? sport;
+  return sportDisplayLabel(sport);
 }
 
 export async function getCoachAthleteDetail(

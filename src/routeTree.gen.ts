@@ -87,6 +87,7 @@ import { Route as ApiV1AskRouteImport } from './routes/api/v1/ask'
 import { Route as ApiV1ErrorsRouteImport } from './routes/api/v1/errors'
 import { Route as ApiV1FeedbackRouteImport } from './routes/api/v1/feedback'
 import { Route as ApiV1MessageTargetsRouteImport } from './routes/api/v1/message-targets'
+import { Route as ApiV1SportRequestsRouteImport } from './routes/api/v1/sport-requests'
 import { Route as BoardSlugWallRouteImport } from './routes/board.$slug_.wall'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as SignupAthleteAccountRouteImport } from './routes/signup.athlete.account'
@@ -774,6 +775,11 @@ const ApiV1FeedbackRoute = ApiV1FeedbackRouteImport.update({
 const ApiV1MessageTargetsRoute = ApiV1MessageTargetsRouteImport.update({
   id: '/api/v1/message-targets',
   path: '/api/v1/message-targets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SportRequestsRoute = ApiV1SportRequestsRouteImport.update({
+  id: '/api/v1/sport-requests',
+  path: '/api/v1/sport-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BoardSlugWallRoute = BoardSlugWallRouteImport.update({
@@ -2305,6 +2311,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/api/v1/sport-requests': typeof ApiV1SportRequestsRoute
   '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -2639,6 +2646,7 @@ export interface FileRoutesByTo {
   '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/api/v1/sport-requests': typeof ApiV1SportRequestsRoute
   '/board/$slug/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -2981,6 +2989,7 @@ export interface FileRoutesById {
   '/api/v1/errors': typeof ApiV1ErrorsRoute
   '/api/v1/feedback': typeof ApiV1FeedbackRoute
   '/api/v1/message-targets': typeof ApiV1MessageTargetsRoute
+  '/api/v1/sport-requests': typeof ApiV1SportRequestsRoute
   '/board/$slug_/wall': typeof BoardSlugWallRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/signup/athlete/account': typeof SignupAthleteAccountRoute
@@ -3323,6 +3332,7 @@ export interface FileRouteTypes {
     | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/api/v1/sport-requests'
     | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -3657,6 +3667,7 @@ export interface FileRouteTypes {
     | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/api/v1/sport-requests'
     | '/board/$slug/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -3998,6 +4009,7 @@ export interface FileRouteTypes {
     | '/api/v1/errors'
     | '/api/v1/feedback'
     | '/api/v1/message-targets'
+    | '/api/v1/sport-requests'
     | '/board/$slug_/wall'
     | '/lovable/email/suppression'
     | '/signup/athlete/account'
@@ -4295,6 +4307,7 @@ export interface RootRouteChildren {
   ApiV1ErrorsRoute: typeof ApiV1ErrorsRoute
   ApiV1FeedbackRoute: typeof ApiV1FeedbackRoute
   ApiV1MessageTargetsRoute: typeof ApiV1MessageTargetsRoute
+  ApiV1SportRequestsRoute: typeof ApiV1SportRequestsRoute
   BoardSlugWallRoute: typeof BoardSlugWallRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBoardRefreshRoute: typeof ApiPublicBoardRefreshRoute
@@ -5073,6 +5086,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/message-targets'
       fullPath: '/api/v1/message-targets'
       preLoaderRoute: typeof ApiV1MessageTargetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/sport-requests': {
+      id: '/api/v1/sport-requests'
+      path: '/api/v1/sport-requests'
+      fullPath: '/api/v1/sport-requests'
+      preLoaderRoute: typeof ApiV1SportRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/board/$slug_/wall': {
@@ -7207,6 +7227,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1ErrorsRoute: ApiV1ErrorsRoute,
   ApiV1FeedbackRoute: ApiV1FeedbackRoute,
   ApiV1MessageTargetsRoute: ApiV1MessageTargetsRoute,
+  ApiV1SportRequestsRoute: ApiV1SportRequestsRoute,
   BoardSlugWallRoute: BoardSlugWallRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBoardRefreshRoute: ApiPublicBoardRefreshRoute,

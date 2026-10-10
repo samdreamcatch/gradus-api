@@ -21,7 +21,7 @@
  */
 import { createHash } from "crypto";
 import { sanitizeUserContent } from "./ai-prompt-safety";
-import { getSport, getSportLevel } from "./coach-sports";
+import { getSport, getSportLevel, sportDisplayLabel } from "./coach-sports";
 import { STATE_LABELS } from "./session-states";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -242,7 +242,7 @@ function sportProfile(sport: string, inputs: ProfileInputs): SportProfile {
 
   return {
     sport,
-    sportLabel: getSport(sport)?.label ?? oneLine(sport, 40),
+    sportLabel: oneLine(sportDisplayLabel(sport), 40),
     levelChanges,
     pace,
     inProgress,

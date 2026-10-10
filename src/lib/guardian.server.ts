@@ -35,6 +35,17 @@ export function newGuardianToken(): string {
     .join("");
 }
 
+/** The same queue for other app emails (the team's "Request a sport" notice). */
+export async function enqueueAppEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  label: string;
+}): Promise<boolean> {
+  return enqueue(opts);
+}
+
 /** True when the message reached the queue; false is logged, never thrown, for the invite paths. */
 async function enqueue(opts: {
   to: string;

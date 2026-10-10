@@ -21,7 +21,7 @@ import { AnswerMarkdown } from "@/components/parent/answer-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { getSport, type SportKey, sportDisplayLabel } from "@/lib/coach-sports";
 import { getResourceSignedUrl, type ResourceDTO } from "@/lib/parent-resources.functions";
 import { askGradus } from "@/lib/ask-gradus.functions";
 import {
@@ -34,7 +34,7 @@ import {
 export type { ResourceDTO };
 
 export function sportLabel(sport: string): string {
-  return getSport(sport as SportKey)?.label ?? sport;
+  return sportDisplayLabel(sport);
 }
 
 export function KindIcon({ kind }: { kind: ResourceDTO["kind"] }) {

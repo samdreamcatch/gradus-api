@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Send, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +22,16 @@ const DEFAULT_ALWAYS_ALLOWED_SECONDARY = ["strength_conditioning"];
 
 interface Props {
   selected: SelectedSport[];
+  /** Custom sports a coach saved before requests replaced them; still selectable. */
   customSports: SelectedSport[];
   onToggle: (sport: SelectedSport) => void;
-  onAddCustom: (label: string) => { status: "added" | "selected-existing"; label: string };
-  onRemoveCustom: (key: string) => void;
-  allowCustom?: boolean;
+  onRemoveCustom?: (key: string) => void;
+  /**
+   * "Don't see your sport? Request it" (beta feedback 2026-10-07, Mariah's
+   * call): coaches can no longer invent a sport; they ask Gradus to add one
+   * and pick a listed sport meanwhile. Omit to hide the section.
+   */
+  onRequestSport?: (label: string) => Promise<void>;
   /**
    * Cap on primary sports the coach can pick. `strength_conditioning` (and any
    * key in `alwaysAllowedSecondary`) is exempt. When the cap is reached,
@@ -40,15 +45,15 @@ export function SportMultiselect({
   selected,
   customSports,
   onToggle,
-  onAddCustom,
   onRemoveCustom,
-  allowCustom = true,
+  onRequestSport,
   maxPrimarySports,
   alwaysAllowedSecondary = DEFAULT_ALWAYS_ALLOWED_SECONDARY,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [customInput, setCustomInput] = useState("");
+  const [requestInput, setRequestInput] = useState("");
   const [hint, setHint] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
 
   const isSelected = (key: string) => selected.some((s) => s.key === key);
   const isSecondaryOnly = (key: string) => alwaysAllowedSecondary.includes(key);
@@ -57,8 +62,6 @@ export function SportMultiselect({
   // Locked = would exceed the primary cap if added. Already-selected sports
   // stay clickable so they can be removed.
   const isLocked = (key: string) => atCap && !isSelected(key) && !isSecondaryOnly(key);
-  // Custom sports always count as primary; hide the input entirely when capped.
-  const showCustom = allowCustom && !atCap;
   const availableSports = [...SPORTS]
     .sort((a, b) => {
       if (a.key === "strength_conditioning") return -1;
@@ -67,15 +70,37 @@ export function SportMultiselect({
     })
     .filter((s) => !isLocked(s.key));
 
-  const handleAdd = () => {
-    const label = customInput.trim();
-    if (!label) return;
-    const result = onAddCustom(label);
-    setCustomInput("");
-    if (result.status === "selected-existing") {
-      setHint(`'${result.label}' already exists — selected for you.`);
-    } else {
-      setHint(null);
+  const handleRequest = async () => {
+    const label = requestInput.trim();
+    // Enter isn't disabled while a request is in flight, so guard here too.
+    if (!label || !onRequestSport || requesting) return;
+    // A listed sport by another name is picked, not requested.
+    const listed = SPORTS.find(
+      (s) => s.key === slugifySport(label) || slugifySport(s.label) === slugifySport(label),
+    );
+    if (listed) {
+      setRequestInput("");
+      if (isSelected(listed.key)) {
+        setHint(`${listed.label} is already listed.`);
+      } else if (isLocked(listed.key)) {
+        setHint(
+          `${listed.label} is already listed, but your plan's sport limit is reached. Remove a sport or choose Coach Pro.`,
+        );
+      } else {
+        onToggle({ key: listed.key, label: listed.label, custom: false });
+        setHint(`${listed.label} is already listed — selected for you.`);
+      }
+      return;
+    }
+    setRequesting(true);
+    try {
+      await onRequestSport(label);
+      setRequestInput("");
+      setHint(`Thanks — we'll look at adding ${label}. Pick the closest listed sport for now.`);
+    } catch (err) {
+      setHint(err instanceof Error ? err.message : "Couldn't send that. Try again.");
+    } finally {
+      setRequesting(false);
     }
   };
 
@@ -143,14 +168,16 @@ export function SportMultiselect({
                       <span className="flex-1">{s.label}</span>
                       {sel && <Check className="h-4 w-4 text-accent-ink" />}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveCustom(s.key)}
-                      className="press-soft rounded p-1 text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
-                      aria-label={`Remove ${s.label}`}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    {onRemoveCustom && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveCustom(s.key)}
+                        className="press-soft rounded p-1 text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
+                        aria-label={`Remove ${s.label}`}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -172,40 +199,46 @@ export function SportMultiselect({
                 </div>
               </>
             )}
-            {showCustom && (
+            {onRequestSport && (
               <>
                 <div className="my-1 border-t border-divider" />
                 <div className="p-2">
                   <p className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                    Custom
+                    Don't see your sport?
                   </p>
                   <div className="flex gap-2">
                     <Input
-                      value={customInput}
+                      value={requestInput}
                       onChange={(e) => {
-                        setCustomInput(e.target.value);
+                        setRequestInput(e.target.value);
                         if (hint) setHint(null);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          handleAdd();
+                          void handleRequest();
                         }
                       }}
-                      placeholder="Name your sport"
+                      placeholder="Which sport?"
+                      aria-label="Which sport should Gradus add?"
+                      maxLength={80}
                       className="h-9 text-sm"
                     />
                     <Button
                       type="button"
                       size="sm"
-                      onClick={handleAdd}
-                      disabled={!customInput.trim()}
+                      onClick={() => void handleRequest()}
+                      disabled={!requestInput.trim() || requesting}
                     >
-                      <Plus className="h-4 w-4" />
-                      Add
+                      <Send className="h-4 w-4" />
+                      {requesting ? "Sending…" : "Request"}
                     </Button>
                   </div>
-                  {hint && <p className="mt-2 px-1 text-xs text-text-secondary">{hint}</p>}
+                  {hint && (
+                    <p className="mt-2 px-1 text-xs text-text-secondary" role="status">
+                      {hint}
+                    </p>
+                  )}
                 </div>
               </>
             )}

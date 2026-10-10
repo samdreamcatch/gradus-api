@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSport, SPORTS } from "@/lib/coach-sports";
+import { getSport, SPORTS, sportDisplayLabel } from "@/lib/coach-sports";
 
 export type GoalsState = {
   sport: string;
@@ -49,7 +49,7 @@ export function AthleteGoalsForm({
             <SelectContent>
               {availableSports.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {getSport(s)?.label ?? s}
+                  {sportDisplayLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>

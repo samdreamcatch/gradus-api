@@ -20,6 +20,7 @@ import {
   type CoachLevelDTO,
   type CoachProfileDTO,
 } from "./coach-profile-types";
+import { getSport } from "./coach-sports";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -317,6 +318,17 @@ export const coachLevelsSchema = z.object({
     .max(200),
 });
 
+/**
+ * Sport keys in `requested` that are neither in the catalog nor already one
+ * of the coach's own (`held`). Custom sports were replaced by "Request a
+ * sport" (beta feedback 2026-10-07): existing ones keep working, but no
+ * client, including a TestFlight build from before the change, may add one.
+ */
+export function newCustomSportKeys(requested: string[], held: Iterable<string>): string[] {
+  const own = new Set(held);
+  return [...new Set(requested.filter((key) => !getSport(key) && !own.has(key)))];
+}
+
 /** `saveCoachLevels`: replace strategy, then seed starter moves for new sports. */
 export async function saveCoachLevels(
   ctx: CoachContext,
@@ -324,6 +336,24 @@ export async function saveCoachLevels(
 ): Promise<{ ok: true }> {
   const { supabase } = ctx;
   const profile = await ensureCoachProfile(ctx);
+
+  const uncatalogued = data.entries.map((e) => e.sport).filter((key) => !getSport(key));
+  if (uncatalogued.length > 0) {
+    const held = await supabase.from("coach_levels").select("sport").eq("coach_id", profile.id);
+    if (held.error) dbError(held.error);
+    const fresh = newCustomSportKeys(
+      uncatalogued,
+      ((held.data ?? []) as Array<{ sport: string }>).map((r) => r.sport),
+    );
+    if (fresh.length > 0) {
+      throw new ApiError({
+        code: "validation_failed",
+        status: 400,
+        message: "Pick a listed sport. To add a new one, use Request a sport.",
+        details: { sports: fresh },
+      });
+    }
+  }
 
   // Replace strategy: delete all then insert. RLS scopes both to this coach.
   const del = await supabase.from("coach_levels").delete().eq("coach_id", profile.id);

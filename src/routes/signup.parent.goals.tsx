@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getSport, SPORTS } from "@/lib/coach-sports";
+import { getSport, SPORTS, sportDisplayLabel } from "@/lib/coach-sports";
 import { listAthletesForCode, saveAthleteGoals } from "@/lib/parent-signup.functions";
 
 const searchSchema = z.object({
@@ -153,7 +153,7 @@ function ParentGoalsPage() {
                     <SelectContent>
                       {sports.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {getSport(s)?.label ?? s}
+                          {sportDisplayLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -31,7 +31,7 @@ import { listMoves, type MoveDTO } from "@/lib/moves.functions";
 import { MoveSheet } from "@/components/coach/move-sheet";
 import { PlanCard } from "@/components/plans/plan-card";
 import { FilterPill } from "@/components/ui/filter-pill";
-import { getSport } from "@/lib/coach-sports";
+import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
 import { PlanHelpBubble } from "@/components/coach/plan-help-bubble";
@@ -219,7 +219,7 @@ function PlansFilterStrip({
         placeholder="All sports"
         options={[
           { value: "__all", label: "All sports" },
-          ...sports.map((s) => ({ value: s, label: getSport(s)?.label ?? s })),
+          ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
         ]}
       />
     </div>

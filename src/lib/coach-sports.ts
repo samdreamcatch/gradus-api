@@ -236,6 +236,23 @@ export function getSport(key: string): Sport | undefined {
   return SPORTS.find((s) => s.key === key);
 }
 
+/**
+ * A sport key as people read it. Custom keys are `custom_<slug>_<suffix>`,
+ * and the five-character suffix only keeps keys unique, so it never shows
+ * (beta feedback 2026-10-07: "custom_new_sport_c715f" on the roster filter).
+ */
+export function sportDisplayLabel(key: string): string {
+  const builtIn = getSport(key);
+  if (builtIn) return builtIn.label;
+  if (!key.startsWith("custom_")) return key;
+  const slug = key.slice("custom_".length).replace(/_[a-z0-9]{5}$/, "");
+  const label = slug
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+  return label || key;
+}
+
 export function getSportLevel(sportKey: string, levelKey: string): SportLevel | undefined {
   return getSport(sportKey)?.levels.find((l) => l.key === levelKey);
 }

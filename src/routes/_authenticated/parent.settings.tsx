@@ -104,7 +104,7 @@ import {
 } from "@/lib/parent-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe-env";
 import { cn } from "@/lib/utils";
-import { getSport } from "@/lib/coach-sports";
+import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 
 import { z } from "zod";
 import { openExternal } from "@/lib/native";
@@ -596,7 +596,7 @@ function TeamPeopleGroup({ athletes }: { athletes: AthleteData[] }) {
                     <ul className="mt-1.5 space-y-2">
                       {a.coaches.map((c) => {
                         const key = `${c.coachId}:${a.id}`;
-                        const sportLabels = c.sports.map((s) => getSport(s)?.label ?? s).join(", ");
+                        const sportLabels = c.sports.map((s) => sportDisplayLabel(s)).join(", ");
                         const vis = visibilityFor(a.id, c.coachId);
                         return (
                           <li key={key} className="flex items-center justify-between gap-2">
@@ -779,7 +779,7 @@ function AthleteDisclosure({
 }) {
   const summary =
     athlete.sports.length > 0
-      ? athlete.sports.map((s) => getSport(s.sport)?.label ?? s.sport).join(", ")
+      ? athlete.sports.map((s) => sportDisplayLabel(s.sport)).join(", ")
       : athlete.coaches.length === 0
         ? "No coach linked"
         : athlete.birthdate
@@ -1059,7 +1059,7 @@ function CoachesSection({
                     <div className="truncate text-xs text-text-tertiary">
                       {c.sports.length === 0
                         ? "No sports set"
-                        : c.sports.map((s) => getSport(s)?.label ?? s).join(", ")}
+                        : c.sports.map((s) => sportDisplayLabel(s)).join(", ")}
                       {c.messagingPaused ? " · Messaging paused" : ""}
                     </div>
                   </div>
@@ -1117,7 +1117,7 @@ function CoachesSection({
                             selected={selected}
                             onClick={() => toggleSport(s, editSports, setEditSports)}
                           >
-                            {getSport(s)?.label ?? s}
+                            {sportDisplayLabel(s)}
                           </Chip>
                         );
                       })}
@@ -1204,7 +1204,7 @@ function CoachesSection({
                           selected={selected}
                           onClick={() => toggleSport(s, selectedSports, setSelectedSports)}
                         >
-                          {getSport(s)?.label ?? s}
+                          {sportDisplayLabel(s)}
                         </Chip>
                       );
                     })}
@@ -1262,7 +1262,7 @@ function PrimaryCoachPerSport({ athlete }: { athlete: AthleteData }) {
       </p>
       <div className="space-y-2">
         {athlete.sports.map((s) => {
-          const label = getSport(s.sport)?.label ?? s.sport;
+          const label = sportDisplayLabel(s.sport);
           if (s.eligibleCoaches.length > 1) {
             return (
               <div key={s.sport} className="flex flex-wrap items-center justify-between gap-2">

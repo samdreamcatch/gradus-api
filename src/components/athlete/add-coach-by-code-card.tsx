@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SportChip } from "@/components/onboarding/sport-chip";
-import { getSport } from "@/lib/coach-sports";
+import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   linkAdultAthleteToCoach,
   previewCoachForAdultAthlete,
@@ -130,7 +130,7 @@ export function AddCoachByCodeAdultCard({
         <div className="mt-2 flex flex-wrap gap-2">
           {preview.sports.map((s) => (
             <SportChip key={s} selected={selectedSports.includes(s)} onClick={() => toggle(s)}>
-              {getSport(s)?.label ?? s}
+              {sportDisplayLabel(s)}
             </SportChip>
           ))}
         </div>

@@ -27,7 +27,7 @@ import { generateText } from "ai";
 import { ApiError } from "./api/errors";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD } from "./ai-prompt-safety";
-import { getSport } from "./coach-sports";
+import { getSport, sportDisplayLabel } from "./coach-sports";
 import type { KnowledgeHit, Citation } from "./knowledge-retrieval.server";
 import { formatKnowledgeForPrompt } from "./knowledge-retrieval.server";
 
@@ -184,7 +184,7 @@ export async function askGradus(
     throw unavailable();
   }
 
-  const sportLabel = getSport(data.sport)?.label ?? data.sport;
+  const sportLabel = sportDisplayLabel(data.sport);
   const gateway = createLovableAiGatewayProvider(key);
   const model = gateway("google/gemini-3-flash-preview");
   const system = personaSystem(data.audience, sportLabel);

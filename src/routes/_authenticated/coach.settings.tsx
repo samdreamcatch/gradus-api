@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SportMultiselect, type SelectedSport } from "@/components/onboarding/sport-multiselect";
-import { SPORTS, getSport, type SportKey } from "@/lib/coach-sports";
+import { SPORTS, getSport, type SportKey, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useSaveCoachLevels,
@@ -50,6 +50,7 @@ import { PageTitle } from "@/components/page-title";
 import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
+import { requestSport } from "@/lib/sport-requests.functions";
 import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
@@ -70,7 +71,7 @@ function SettingsPage() {
   const { data } = useSuspenseQuery(coachProfileQueryOptions);
   const email = useCurrentUserEmail();
   const sportsSummary =
-    Array.from(new Set(data.levels.map((l) => getSport(l.sport)?.label ?? l.sport))).join(", ") ||
+    Array.from(new Set(data.levels.map((l) => sportDisplayLabel(l.sport)))).join(", ") ||
     "None yet";
 
   return (
@@ -204,6 +205,7 @@ function SportsDisclosure({
   const [sports, setSports] = useState<SportKey[]>(initialSports);
   const [entries, setEntries] = useState<LevelEntry[]>(levels);
   const save = useSaveCoachLevels();
+  const sendSportRequest = useServerFn(requestSport);
   const distinctPrimarySportCount = useMemo(
     () => new Set(levels.map((l) => l.sport).filter((s) => s !== "strength_conditioning")).size,
     [levels],
@@ -268,18 +270,18 @@ function SportsDisclosure({
         <div>
           <Label className="mb-2 block text-xs">Sports you coach</Label>
           <SportMultiselect
-            allowCustom={false}
             customSports={[]}
             selected={sports.map(
               (k): SelectedSport => ({
                 key: k,
-                label: getSport(k)?.label ?? k,
+                label: sportDisplayLabel(k),
                 custom: false,
               }),
             )}
             onToggle={(s) => toggleSport(s.key as SportKey)}
-            onAddCustom={() => ({ status: "added", label: "" })}
-            onRemoveCustom={() => {}}
+            onRequestSport={async (label) => {
+              await sendSportRequest({ data: { sport: label, source: "coach_settings" } });
+            }}
             maxPrimarySports={maxPrimarySports}
           />
         </div>

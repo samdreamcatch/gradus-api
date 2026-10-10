@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { captureNativePhoto, isNativeApp } from "@/lib/native";
 import { cn } from "@/lib/utils";
-import { getSport, getSportLevel, type SportKey } from "@/lib/coach-sports";
+import { getSport, getSportLevel, type SportKey, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   blankRow,
   CSV_TEMPLATE,
@@ -696,10 +696,7 @@ function LessonLine({
   onToggle: () => void;
   onRemove: () => void;
 }) {
-  const sportLabel =
-    coachSports.length > 1 && row.sport
-      ? (getSport(row.sport as SportKey)?.label ?? row.sport)
-      : "";
+  const sportLabel = coachSports.length > 1 && row.sport ? sportDisplayLabel(row.sport) : "";
   const dayLabel = IMPORT_DAYS.find((d) => d.value === row.dayOfWeek)?.short ?? "—";
   const timeLabel =
     row.startMinute == null
@@ -940,7 +937,7 @@ function RowEditor({
                 <SelectItem value="__none">No sport</SelectItem>
                 {coachSports.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {getSport(s as SportKey)?.label ?? s}
+                    {sportDisplayLabel(s)}
                   </SelectItem>
                 ))}
               </SelectContent>

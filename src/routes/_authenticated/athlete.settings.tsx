@@ -34,7 +34,7 @@ import {
   unlinkAdultAthleteFromCoach,
   updateAdultAthleteCoachSports,
 } from "@/lib/adult-athlete-signup.functions";
-import { getSport } from "@/lib/coach-sports";
+import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   getAdultAthleteSchedules,
   saveAdultAthleteScheduleForCoach,
@@ -330,7 +330,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                     <div className="truncate text-xs text-text-tertiary">
                       {c.sports.length === 0
                         ? "No sports set"
-                        : c.sports.map((s) => getSport(s)?.label ?? s).join(", ")}
+                        : c.sports.map((s) => sportDisplayLabel(s)).join(", ")}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap justify-end gap-1">
@@ -384,7 +384,7 @@ function AdultCoachesSection({ coaches }: { coaches: AdultCoach[] }) {
                             selected={checked}
                             onClick={() => toggle(s, editSports, setEditSports)}
                           >
-                            {getSport(s)?.label ?? s}
+                            {sportDisplayLabel(s)}
                           </SportChip>
                         );
                       })}

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Chip } from "@/components/ui/chip";
 
 import { linkAthleteToCoach, previewCoachByInviteCode } from "@/lib/parent-settings.functions";
-import { getSport } from "@/lib/coach-sports";
+import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 
 type Athlete = {
   id: string;
@@ -214,7 +214,7 @@ export function AddCoachByCodeCard({
                       selected={selected}
                       onClick={() => toggleSport(s)}
                     >
-                      {getSport(s)?.label ?? s}
+                      {sportDisplayLabel(s)}
                     </Chip>
                   );
                 })}

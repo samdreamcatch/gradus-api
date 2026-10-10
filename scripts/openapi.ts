@@ -160,6 +160,7 @@ import "../src/routes/api/v1/athlete/goals/long-term";
 import "../src/routes/api/v1/athlete/goals/motivation";
 import "../src/routes/api/v1/me/deletion-impact";
 import "../src/routes/api/v1/feedback";
+import "../src/routes/api/v1/sport-requests";
 import "../src/routes/api/v1/errors";
 import "../src/routes/api/v1/coach/billing";
 import "../src/routes/api/v1/devices/index";

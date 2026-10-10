@@ -11,7 +11,13 @@ import {
   slugifySport,
   type SelectedSport,
 } from "@/components/onboarding/sport-multiselect";
-import { SPORTS, getSport, getSuggestedHours, DEFAULT_SUGGESTED_HOURS } from "@/lib/coach-sports";
+import {
+  SPORTS,
+  getSport,
+  getSuggestedHours,
+  sportDisplayLabel,
+  DEFAULT_SUGGESTED_HOURS,
+} from "@/lib/coach-sports";
 import {
   coachProfileQueryOptions,
   useCoachProfile,
@@ -21,6 +27,7 @@ import {
 } from "@/hooks/use-coach-profile";
 
 import { claimParentInvite } from "@/lib/parent-signup.functions";
+import { requestSport } from "@/lib/sport-requests.functions";
 
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { isCoachPaywallEnabled, maxPrimarySportsForCoach } from "@/lib/paywall-flag";
@@ -44,17 +51,6 @@ export const Route = createFileRoute("/_authenticated/coach/onboarding")({
 });
 
 type LevelEntry = { sport: string; levelKey: string; hoursPerWeek: number };
-
-function randSuffix() {
-  return Math.random().toString(36).slice(2, 7);
-}
-
-function prettify(s: string) {
-  return s
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
-}
 
 /**
  * Coaches no longer pick levels or practice hours during signup — a coach's
@@ -144,7 +140,7 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     return uniqueSportKeys.map((key) => {
       const builtIn = getSport(key);
       if (builtIn) return { key: builtIn.key, label: builtIn.label, custom: false };
-      return { key, label: prettify(key.replace(/^custom_/, "")), custom: true };
+      return { key, label: sportDisplayLabel(key), custom: true };
     });
   }, [data.levels]);
 
@@ -165,31 +161,11 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
     });
   };
 
-  const addCustomSport = (rawLabel: string) => {
-    const label = rawLabel.trim();
-    const slug = slugifySport(label);
-
-    // Check built-ins by key or label slug.
-    const builtInMatch = SPORTS.find((s) => s.key === slug || slugifySport(s.label) === slug);
-    if (builtInMatch) {
-      const existing: SelectedSport = {
-        key: builtInMatch.key,
-        label: builtInMatch.label,
-        custom: false,
-      };
-      setSports((prev) => (prev.some((s) => s.key === existing.key) ? prev : [...prev, existing]));
-      return { status: "selected-existing" as const, label: builtInMatch.label };
-    }
-
-    // Check existing custom sports by label slug.
-    const customMatch = sports.find((s) => s.custom && slugifySport(s.label) === slug);
-    if (customMatch) {
-      return { status: "selected-existing" as const, label: customMatch.label };
-    }
-
-    const key = `custom_${slug}_${randSuffix()}`;
-    setSports((prev) => [...prev, { key, label, custom: true }]);
-    return { status: "added" as const, label };
+  // Coaches ask Gradus for a missing sport instead of inventing one (beta
+  // feedback 2026-10-07); saved custom sports stay selectable.
+  const sendSportRequest = useServerFn(requestSport);
+  const onRequestSport = async (label: string) => {
+    await sendSportRequest({ data: { sport: label, source: "coach_onboarding" } });
   };
 
   const removeCustomSport = (key: string) => {
@@ -276,8 +252,8 @@ function OnboardingForm({ data }: { data: OnboardingData }) {
                   selected={sports}
                   customSports={customSports}
                   onToggle={toggleSport}
-                  onAddCustom={addCustomSport}
                   onRemoveCustom={removeCustomSport}
+                  onRequestSport={onRequestSport}
                   maxPrimarySports={primarySportCap}
                 />
               </div>

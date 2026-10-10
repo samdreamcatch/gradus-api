@@ -25,7 +25,7 @@ import {
 } from "@/lib/pending-athlete-dob";
 
 import { SportChip } from "@/components/onboarding/sport-chip";
-import { getSport, SPORTS } from "@/lib/coach-sports";
+import { getSport, SPORTS, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   createSelfManagedAthlete,
   getAdultOnboardingStatus,
@@ -524,7 +524,7 @@ function CoachStep({ onDone }: { onDone: (sports: string[]) => void }) {
                       )
                     }
                   >
-                    {getSport(s)?.label ?? s}
+                    {sportDisplayLabel(s)}
                   </SportChip>
                 );
               })}

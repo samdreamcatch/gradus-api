@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { supabase } from "@/integrations/supabase/client";
-import { getSport, type SportKey } from "@/lib/coach-sports";
+import { getSport, type SportKey, sportDisplayLabel } from "@/lib/coach-sports";
 import {
   createCoachResource,
   createCoachResourceUploadUrl,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/coach-resources.functions";
 
 function sportLabel(s: string) {
-  return getSport(s as SportKey)?.label ?? s;
+  return sportDisplayLabel(s);
 }
 
 /** Only PDFs upload; images and videos are links to a public web address. */
