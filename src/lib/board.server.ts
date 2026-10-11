@@ -11,7 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { BoardPayload, BoardResponse } from "./board-types";
-import { DEMO_LIST_ENTRY, DEMO_SLUG, buildDemoBoard } from "./board-demo";
+import { DEMO_SLUG, buildDemoBoard } from "./board-demo";
 import {
   competitionWindow,
   dayKeyIn,
@@ -186,7 +186,6 @@ export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> 
   }
 
   return [
-    DEMO_LIST_ENTRY,
     ...rows.map((c) => ({
       slug: c.slug as string,
       name: c.name as string,

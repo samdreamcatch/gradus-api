@@ -64,6 +64,20 @@
       "when": 1791640834963,
       "tag": "0008_parent_account_for_email",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791677306097,
+      "tag": "0009_hide_organization_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791677312508,
+      "tag": "0010_hide_guardian_claim_tokens",
+      "breakpoints": true
     }
   ]
 }
