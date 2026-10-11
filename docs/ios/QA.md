@@ -150,7 +150,7 @@ Any role, any plan with moves. On the device, download one Premium American Engl
 - [ ] Error boundaries: pull the network mid-load on each tab → "Try again" recovers.
 - [ ] **Error reporting:** trigger a caught error on a non-test account (e.g. open a plan link with a bad token) → it appears in the admin errors dashboard tagged `platform=ios` with version and build; after a forced crash (debug menu), the MetricKit diagnostic arrives on the next launch.
 - [ ] Haptics on primary actions and outcomes; none on scroll.
-- [ ] Landscape on every tab and in the Live cover; iPad: Live is a tab, split-screen reflows.
+- [ ] Landscape on every tab and in the Live cover. iPad (1.0 is iPhone only, decision #50): the app opens in an iPhone-sized window and works; Live as a tab and split-screen come back with iPad.
 
 ## 9. Offline scenarios (airplane mode)
 

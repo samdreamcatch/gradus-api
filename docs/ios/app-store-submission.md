@@ -191,7 +191,7 @@ Note 1 deliberately doesn't call Gradus a multiplatform service. Guideline 3.1.3
 ## 8. Screenshots
 
 - **iPhone 6.9" (required):** 1320 × 2868 portrait. The automated simulator (iPhone 17 Pro Max) captures exactly this size. 3–10 per locale; Apple scales these for smaller iPhones.
-- **iPad 13" (required):** 2064 × 2752. iPad ships in 1.0 with adaptive one-column layouts (decision #21), so App Store Connect requires iPad screenshots.
+- **iPad 13": not for 1.0.** 1.0 is iPhone only (decision #50, 2026-10-11), so App Store Connect doesn't ask for iPad screenshots; leave that section empty. When iPad ships: 2064 × 2752, same set (the harness still captures it).
 - **The set (both sizes, in order):** 01 coach week (roster schedule) · 02 athlete detail · 03 plan editor · 04 messages thread · 05 practice session running · 06 goals · 07 Live Board. The harness README in gradus-ios `Tools/AppStoreScreenshots` lists the same shots; Ask Gradus is hidden in 1.0 and never shown.
 - **Data:** capture from the `-GradusMock` data with the harness in gradus-ios `Tools/AppStoreScreenshots` (`run.sh` writes both sizes, clean status bar). *2026-10-04:* every person in mock data is invented; the founders' and their families' real names were removed from the mocks (decision: real people never appear in mock, demo, test or screenshot data). gradus-ios PR #31's demo mode, which used real names, is closed.
 - App Preview video: optional; skip for 1.0.
