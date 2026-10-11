@@ -81,7 +81,32 @@ const coach = { coach_profiles: { id: "coach-1" } };
 const roster = { coach_athletes: { athlete_id: "a1" } };
 
 describe("setPlanStatus", () => {
-  it("activating past the per-athlete cap without a choice is 409 with the active plans", async () => {
+  // No cap on active plans per athlete (PRD decision #52).
+  it("activating never reads the athlete's other plans and benches nothing", async () => {
+    const writes: string[] = [];
+    const payloads: unknown[] = [];
+    const supabase = fakeClient(
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
+      {},
+      { writes, payloads },
+    );
+    const seen: CoachReasonInput[] = [];
+    await setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" }, async (input) => {
+      seen.push(input);
+    });
+    // Only this plan is written; nothing else is benched and no "why" is recorded.
+    expect(writes).toEqual(["plans.update"]);
+    expect(payloads).toEqual([{ status: "active" }]);
+    expect(seen).toHaveLength(0);
+  });
+
+  it("a replaceId (older iOS builds) benches that plan, then activates this one", async () => {
+    const payloads: unknown[] = [];
+    const filters: string[] = [];
     const supabase = fakeClient(
       {
         ...coach,
@@ -90,35 +115,80 @@ describe("setPlanStatus", () => {
       },
       {
         plans: [
-          { id: "p2", title: "Edges" },
-          { id: "p3", title: "Spins" },
+          { id: "p2", title: "Edges", athlete_id: "a1" },
+          { id: "p3", title: "Spins", athlete_id: "a1" },
         ],
       },
+      { payloads, filters },
     );
-    const err = await caught(() =>
-      setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" }),
-    );
-    expect(err?.status).toBe(409);
-    expect(err?.code).toBe("bench_choice_required");
-    expect(
-      (err?.details as { activePlans: { id: string }[] }).activePlans.map((p) => p.id),
-    ).toEqual(["p2", "p3"]);
+    await setPlanStatus({ userId: "u", supabase }, "p1", { status: "active", replaceId: "p3" });
+    expect(payloads).toEqual([{ status: "benched" }, { status: "active" }]);
+    // The bench only matches another of this athlete's active plans from this coach.
+    for (const f of [
+      "plans.id=p3",
+      "plans.coach_id=coach-1",
+      "plans.athlete_id=a1",
+      "plans.kind=plan",
+      "plans.status=active",
+    ]) {
+      expect(filters).toContain(f);
+    }
   });
 
-  it("a replaceId that is not one of the active plans is refused", async () => {
+  it("a stale replaceId (already benched, or another athlete's) benches nothing and still activates", async () => {
+    // The conditional bench matches no row; the activation is not refused, so an
+    // outbox replay after a lost response is not parked as a conflict.
+    const payloads: unknown[] = [];
+    const seen: CoachReasonInput[] = [];
     const supabase = fakeClient(
       {
         ...coach,
         ...roster,
         plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
       },
+      { plans: [] },
+      { payloads },
+    );
+    await setPlanStatus(
+      { userId: "u", supabase },
+      "p1",
+      { status: "active", replaceId: "p9", reason: "landed_it" },
+      async (input) => void seen.push(input),
+    );
+    expect(payloads).toEqual([{ status: "benched" }, { status: "active" }]);
+    expect(seen).toHaveLength(0);
+  });
+
+  it("a replaceId naming this plan is ignored", async () => {
+    const payloads: unknown[] = [];
+    const supabase = fakeClient(
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "benched" },
+      },
+      {},
+      { payloads },
+    );
+    await setPlanStatus({ userId: "u", supabase }, "p1", { status: "active", replaceId: "p1" });
+    expect(payloads).toEqual([{ status: "active" }]);
+  });
+
+  it("replaying an activation that already landed rewrites only this plan", async () => {
+    const writes: string[] = [];
+    const payloads: unknown[] = [];
+    const supabase = fakeClient(
+      {
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "New", status: "active" },
+      },
       { plans: [{ id: "p2", title: "Edges" }] },
+      { writes, payloads },
     );
-    const err = await caught(() =>
-      setPlanStatus({ userId: "u", supabase }, "p1", { status: "active", replaceId: "p9" }),
-    );
-    expect(err?.status).toBe(422);
-    expect(err?.message).toBe("Selected plan is not active.");
+    await setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" });
+    expect(writes).toEqual(["plans.update"]);
+    expect(payloads).toEqual([{ status: "active" }]);
   });
 
   it("a parent account is refused before any plan is read", async () => {
@@ -153,8 +223,8 @@ describe('coach "why" answers (L1)', () => {
   });
 
   it("making room on activate records the reason against the plan it benches", async () => {
-    // `lists.plans` answers both the active-others select and the
-    // conditional bench update, so the benched row carries the athlete.
+    // `lists.plans` answers the conditional bench update, so the benched row
+    // carries the athlete.
     const supabase = fakeClient(
       {
         ...coach,
@@ -181,7 +251,7 @@ describe('coach "why" answers (L1)', () => {
     ]);
   });
 
-  it("making room without a reason, or when the other plan was already benched, records nothing", async () => {
+  it("making room without a reason records nothing", async () => {
     const r = recorder();
     const skipped = fakeClient(
       {

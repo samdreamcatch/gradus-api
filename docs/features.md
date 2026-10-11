@@ -20,7 +20,7 @@
 
 - Filters: Active / Drafts / Benched / Templates × athlete × sport
 - Plan editor sheet: title, athlete assign, coach notes, moves from library (search), reorder, inline edit (name/description/cue/why/target reps or mins), save-to-library, remove
-- Status: Activate / Bench / Delete (swipe), max-active conflict detection
+- Status: Activate / Bench / Delete (swipe); no cap on active plans per athlete (PRD #52)
 - Templates (no athlete) → clone into real plans
 - **Flow-state bars** for the plan (Frustrated / Pushing / Steady / Locked In / Flowing)
 - **AI session summary** narrative

@@ -1,6 +1,6 @@
 /**
  * Coach plans (PRD §7.3): list with filters, detail, whole-plan save,
- * per-field updates, moves inside a plan, status with the max-active rule,
+ * per-field updates, moves inside a plan, status (with an optional bench),
  * delete, create/clone, and an athlete's active plans. Single source of
  * truth for plans.functions.ts and the `/api/v1/coach/plans` and
  * `/api/v1/plans/{id}` routes. Reads and writes go through the caller's RLS
@@ -23,8 +23,6 @@ export type TargetKind = "reps" | "mins";
 type Client = SupabaseClient<Database>;
 
 export type PlansContext = { userId: string; supabase: Client };
-
-export const MAX_ACTIVE_PLANS_PER_ATHLETE = 2;
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
@@ -155,11 +153,6 @@ export interface PlanDetailDTO extends PlanSummaryDTO {
 export interface AthleteOptionDTO {
   id: string;
   name: string;
-}
-
-export interface ActivationConflict {
-  kind: "needs_confirm" | "needs_bench_choice";
-  activePlans: { id: string; title: string }[];
 }
 
 /* ---------------- roster helpers ---------------- */
@@ -540,16 +533,27 @@ export async function getAthleteActivePlans(
 
 export const setPlanStatusInput = z.object({
   status: z.enum(["active", "benched", "draft"]),
-  replaceId: z.string().uuid().optional(),
+  /**
+   * Optional on an activate: bench this other active plan of the athlete in
+   * the same step. Older iOS builds send it after their "replace" prompt;
+   * there is no cap on active plans (PRD decision #52), so nothing requires it.
+   */
+  replaceId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "Optional, activate only: bench this plan (another of the athlete's active plans from this coach) in the same step. If it is not one of them (already benched, this plan, another athlete's), nothing is benched and the activation still goes through. There is no cap on active plans per athlete, so activation never requires it.",
+    ),
   /**
    * The coach's answer to the "why" prompt (PRD §7.3, decision #17). On a
    * bench it covers this plan; on an activate with `replaceId` it covers the
-   * plan being benched to make room. Ignored otherwise.
+   * plan benched in the same step. Ignored otherwise.
    */
   reason: skillReasonSchema
     .optional()
     .describe(
-      'The coach\'s "why" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched to make room. Ignored otherwise.',
+      'The coach\'s "why" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched in the same step. Ignored otherwise.',
     ),
 });
 
@@ -619,10 +623,12 @@ export const recordCoachReason: RecordCoachReason = async (input) => {
 };
 
 /**
- * Activation enforces at most `MAX_ACTIVE_PLANS_PER_ATHLETE` active plans per
- * athlete: when the cap is reached and no valid `replaceId` is given, the
- * result is 409 `bench_choice_required` with the active plans in `details`
- * (the web reads it as `BENCH_CHOICE_REQUIRED`).
+ * There is no cap on active plans per athlete (PRD decision #52): activation
+ * always goes through. An optional `replaceId` benches one of the athlete's
+ * other active plans in the same step, which older iOS builds still send
+ * after their "replace" prompt; when it names anything else (a plan already
+ * benched, this plan, another athlete's), nothing is benched and the
+ * activation still goes through.
  */
 export async function setPlanStatus(
   ctx: PlansContext,
@@ -650,43 +656,25 @@ export async function setPlanStatus(
       // Going live reaches the athlete's household (email and push below), so a
       // plan whose athlete is not on the roster is refused up front.
       await assertAthleteOnRoster(supabase, coachId, owned.athlete_id);
-      const { data: others, error: othersErr } = await supabase
-        .from("plans")
-        .select("id, title")
-        .eq("coach_id", coachId)
-        .eq("athlete_id", owned.athlete_id)
-        .eq("kind", "plan")
-        .eq("status", "active")
-        .neq("id", id);
-      if (othersErr) dbError(othersErr);
-      const activeOthers = (others ?? []) as { id: string; title: string }[];
 
-      if (activeOthers.length >= MAX_ACTIVE_PLANS_PER_ATHLETE) {
-        if (!data.replaceId || !activeOthers.some((p) => p.id === data.replaceId)) {
-          throw new ApiError({
-            code: "bench_choice_required",
-            status: 409,
-            message:
-              "This athlete already has the maximum number of active plans. Choose one to bench.",
-            details: { activePlans: activeOthers },
-          });
-        }
-      }
-
-      if (data.replaceId) {
-        if (!activeOthers.some((p) => p.id === data.replaceId)) {
-          throw unprocessable("Selected plan is not active.");
-        }
-        // Making room benches the other plan, so the coach's "why" answer
-        // belongs to it, not to the plan being activated. The conditional
-        // update keeps the answer atomic with the transition (same rule as
-        // a plain bench below): a replay changes no row and records nothing.
+      if (data.replaceId && data.replaceId !== id) {
+        // The replaced plan is benched, so the coach's "why" answer belongs
+        // to it, not to the plan being activated. The conditional update
+        // only touches another of this athlete's active plans from this
+        // coach, and keeps the answer atomic with the transition (same rule
+        // as a plain bench below). A replay, or a plan benched since the
+        // prompt opened, changes no row and records nothing, and the
+        // activation still goes through: with no cap there is nothing to
+        // refuse, and an outbox replay after a lost response must not park a
+        // finished activation as a conflict.
         const { data: benched, error: bErr } = await supabase
           .from("plans")
           .update({ status: "benched" })
           .eq("id", data.replaceId)
           .eq("coach_id", coachId)
-          .neq("status", "benched")
+          .eq("athlete_id", owned.athlete_id)
+          .eq("kind", "plan")
+          .eq("status", "active")
           .select("id, athlete_id");
         if (bErr) planWriteError(bErr);
         const replaced = (benched ?? [])[0] as
@@ -727,9 +715,9 @@ export async function setPlanStatus(
       }
 
       // Push the athlete and their guardians (PRD §6.6 "Plan activated or assigned").
-      // Dynamic imports: this module is re-exported into the client bundle
-      // (MAX_ACTIVE_PLANS_PER_ATHLETE), so the push stack must not join its
-      // static import graph — same reason `guardian.server` is imported lazily above.
+      // Dynamic imports: this module reaches the client bundle (plans.functions.ts
+      // imports its input schemas), so the push stack must not join its static
+      // import graph — same reason `guardian.server` is imported lazily above.
       const athleteId = owned.athlete_id;
       const planTitle = owned.title ?? "Untitled plan";
       const wasDraft = owned.status === "draft";

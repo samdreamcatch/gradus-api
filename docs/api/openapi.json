@@ -8141,7 +8141,8 @@
                   },
                   "replaceId": {
                     "type": "string",
-                    "format": "uuid"
+                    "format": "uuid",
+                    "description": "Optional, activate only: bench this plan (another of the athlete's active plans from this coach) in the same step. If it is not one of them (already benched, this plan, another athlete's), nothing is benched and the activation still goes through. There is no cap on active plans per athlete, so activation never requires it."
                   },
                   "reason": {
                     "type": "string",
@@ -8150,7 +8151,7 @@
                       "parking_it",
                       "changed_direction"
                     ],
-                    "description": "The coach's \"why\" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched to make room. Ignored otherwise."
+                    "description": "The coach's \"why\" answer. On a bench it covers this plan; on an activate with replaceId it covers the plan benched in the same step. Ignored otherwise."
                   }
                 },
                 "required": [

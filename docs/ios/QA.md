@@ -61,7 +61,7 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Pre-lesson briefing loads, caches, refreshes.
 - [ ] Lesson wrap-up prompt after a slot ends (push while backgrounded, card on foreground): Edit plan / Re-deploy / Dismiss, once per athlete per day.
 - [ ] Schedule import: photograph a printed schedule → review screen announces the athlete count → commit adds slots.
-- [ ] Plans list filters (Active / Drafts / Benched / Templates × athlete × sport); swipe to delete a draft (confirmed); Bench asks for confirmation; two-active-plans cap gives the friendly message.
+- [ ] Plans list filters (Active / Drafts / Benched / Templates × athlete × sport); swipe to delete a draft (confirmed); Bench asks for confirmation; Activate goes straight through when the athlete already has two or more active plans from you (no cap, no bench or replace prompt; PRD #52).
 - [ ] Plan editor: add moves from the library, reorder, inline edits, save to library, remove; template → clone.
 - [ ] Voice FAB: hold to record ≤ 90 s, cancel by slide, transcript → new plan with AI-touched fields highlighted; edit mode on an open plan.
 - [ ] Starter program adopt; share plan → `/p/<token>`.

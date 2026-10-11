@@ -47,8 +47,6 @@ import {
   createPlan,
   listCoachAthletes,
   listCoachSports,
-  getAthleteActivePlans,
-  MAX_ACTIVE_PLANS_PER_ATHLETE,
   type TargetKind,
   type PlanMoveDTO,
 } from "@/lib/plans.functions";
@@ -150,7 +148,6 @@ function PlanEditorBody({
   const statusFn = useServerFn(setPlanStatus);
   const deleteFn = useServerFn(deletePlan);
   const createPlanFn = useServerFn(createPlan);
-  const getActivesFn = useServerFn(getAthleteActivePlans);
   const shareTokenFn = useServerFn(getOrCreateShareToken);
 
   const { data, isLoading } = useQuery({
@@ -172,10 +169,6 @@ function PlanEditorBody({
   const [pendingAssignment, setPendingAssignment] = useState<
     null | "public" | "template" | "athlete"
   >(null);
-  const [activeConflicts, setActiveConflicts] = useState<{ id: string; title: string }[] | null>(
-    null,
-  );
-  const [chosenReplaceId, setChosenReplaceId] = useState<string | null>(null);
 
   const [touched, setTouched] = useState<VoiceTouchedSnapshot>(
     () => consumeVoiceTouched(planId) ?? { plan: {}, moves: {}, newMoveIds: [] },
@@ -368,45 +361,6 @@ function PlanEditorBody({
     await fn().catch(() => {});
   };
 
-  const performActivate = (replaceId?: string) => {
-    statusMutation.mutate(
-      { data: { id: plan.id, status: "active", ...(replaceId ? { replaceId } : {}) } },
-      {
-        onSuccess: () => {
-          toast.success(replaceId ? "Plan activated · previous plan benched" : "Plan activated");
-          setActiveConflicts(null);
-          setChosenReplaceId(null);
-          onClose();
-        },
-        onError: (e: Error) => {
-          if (e.message === "BENCH_CHOICE_REQUIRED") {
-            // Refetch and surface the choice dialog.
-            void openConflictDialog();
-          } else {
-            toast.error(e.message);
-          }
-        },
-      },
-    );
-  };
-
-  const openConflictDialog = async () => {
-    if (!plan.athleteId) return;
-    try {
-      const { plans } = await getActivesFn({
-        data: { athleteId: plan.athleteId, excludePlanId: plan.id },
-      });
-      if (plans.length === 0) {
-        performActivate();
-        return;
-      }
-      setActiveConflicts(plans);
-      setChosenReplaceId(plans.length === 1 ? plans[0].id : null);
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
-
   const activate = () => {
     if (!plan.athleteId) {
       toast.error("Assign an athlete first.");
@@ -416,7 +370,17 @@ function PlanEditorBody({
       toast.error("Give the plan a title.");
       return;
     }
-    void openConflictDialog();
+    // No cap on active plans per athlete (PRD decision #52): activation never
+    // asks to bench or replace. The coach benches any plan from its own screen.
+    statusMutation.mutate(
+      { data: { id: plan.id, status: "active" } },
+      {
+        onSuccess: () => {
+          toast.success("Plan activated");
+          onClose();
+        },
+      },
+    );
   };
 
   const saveTemplate = () => {
@@ -1132,116 +1096,6 @@ function PlanEditorBody({
             >
               Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={!!activeConflicts}
-        onOpenChange={(v) => {
-          if (!v) {
-            setActiveConflicts(null);
-            setChosenReplaceId(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
-              <>
-                <AlertDialogTitle>Athlete already has two active plans</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Athlete already has two active plans to work on before they next see you. Choose a
-                  plan to bench.
-                </AlertDialogDescription>
-              </>
-            ) : (
-              <>
-                <AlertDialogTitle>Replace existing active plan?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Athlete already has an active plan from you. Do you want to replace it with this
-                  one?
-                </AlertDialogDescription>
-              </>
-            )}
-          </AlertDialogHeader>
-          {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
-            <div className="space-y-2 py-1">
-              {activeConflicts.map((p) => (
-                <label
-                  key={p.id}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-md border border-divider px-3 py-2 text-sm",
-                    chosenReplaceId === p.id && "border-accent bg-accent/10",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="bench-choice"
-                    checked={chosenReplaceId === p.id}
-                    onChange={() => setChosenReplaceId(p.id)}
-                  />
-                  <span className="text-text-primary">{p.title || "Untitled plan"}</span>
-                </label>
-              ))}
-            </div>
-          ) : activeConflicts && activeConflicts.length === 1 ? (
-            <p className="text-sm text-text-secondary">
-              Replacing will bench "{activeConflicts[0].title || "Untitled plan"}". Or keep both
-              active.
-            </p>
-          ) : null}
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
-            {activeConflicts && activeConflicts.length >= MAX_ACTIVE_PLANS_PER_ATHLETE ? (
-              <>
-                <AlertDialogAction
-                  disabled={!chosenReplaceId}
-                  onClick={() => {
-                    if (!chosenReplaceId) return;
-                    performActivate(chosenReplaceId);
-                  }}
-                >
-                  Bench & activate
-                </AlertDialogAction>
-                <AlertDialogAction
-                  className="bg-card text-text-primary border border-divider hover:bg-elevated"
-                  onClick={() => {
-                    statusMutation.mutate(
-                      { data: { id: plan.id, status: "draft" } },
-                      {
-                        onSuccess: () => {
-                          toast.success("Saved as draft");
-                          setActiveConflicts(null);
-                          setChosenReplaceId(null);
-                          onClose();
-                        },
-                        onError: (e: Error) => toast.error(e.message),
-                      },
-                    );
-                  }}
-                >
-                  Save as draft
-                </AlertDialogAction>
-              </>
-            ) : (
-              <>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (activeConflicts && activeConflicts[0]) {
-                      performActivate(activeConflicts[0].id);
-                    }
-                  }}
-                >
-                  Replace & activate
-                </AlertDialogAction>
-                <AlertDialogAction
-                  className="bg-card text-text-primary border border-divider hover:bg-elevated"
-                  onClick={() => performActivate()}
-                >
-                  Keep both active
-                </AlertDialogAction>
-              </>
-            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

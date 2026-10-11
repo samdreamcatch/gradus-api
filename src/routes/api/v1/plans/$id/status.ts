@@ -8,9 +8,9 @@ import { setPlanStatus, setPlanStatusInput } from "@/lib/plans.server";
 
 /**
  * Thin wrapper over the shared `setPlanStatus` (PRD §7.3 "Status"):
- * activate, bench, or draft. Activating past the per-athlete cap without a
- * `replaceId` answers 409 `bench_choice_required` with the active plans in
- * `details.activePlans`, the same rule the web maps to its friendly copy.
+ * activate, bench, or draft. There is no cap on active plans per athlete
+ * (PRD decision #52), so activation never answers 409 `bench_choice_required`
+ * any more; an optional `replaceId` benches that plan in the same step.
  */
 export const Route = createFileRoute("/api/v1/plans/$id/status")({
   server: {

@@ -7,8 +7,8 @@ import { setAthletePlanStatus, setAthletePlanStatusInput } from "@/lib/athlete-a
 
 /**
  * Thin wrapper over the shared `setAthletePlanStatus` (PRD §6.14 B): activate,
- * bench, or draft a plan the athlete wrote. No cap and no conflict (§12 #33):
- * those are coach-pairing rules.
+ * bench, or draft a plan the athlete wrote. No cap and no conflict (§12 #33;
+ * since decision #52 coaches have no cap either).
  */
 export const Route = createFileRoute("/api/v1/athlete/plans/$id/status")({
   server: {

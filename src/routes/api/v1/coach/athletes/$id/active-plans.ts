@@ -6,7 +6,11 @@ import { activePlansSchema } from "@/lib/api/plans-schema";
 import { requirePlansCoach } from "@/lib/plan-detail.server";
 import { getAthleteActivePlans } from "@/lib/plans.server";
 
-/** Thin wrapper over the shared `getAthleteActivePlans`: what the bench-choice sheet lists when activation hits the cap. */
+/**
+ * Thin wrapper over the shared `getAthleteActivePlans`. Activation no longer
+ * needs it (no cap, PRD decision #52); older iOS builds still read it for
+ * their pre-activation "replace" prompt, so it stays.
+ */
 export const Route = createFileRoute("/api/v1/coach/athletes/$id/active-plans")({
   server: {
     handlers: defineApiRoute({
