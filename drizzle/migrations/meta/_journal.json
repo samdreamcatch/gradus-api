@@ -85,6 +85,13 @@
       "when": 1791677889509,
       "tag": "0011_athletes_update_policies_no_recursion",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791678739644,
+      "tag": "0012_athletes_insert_server_only",
+      "breakpoints": true
     }
   ]
 }
