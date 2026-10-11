@@ -1,6 +1,6 @@
 /**
  * Zod schemas for the plans, move library, sessions, sharing, and voice
- * DTOs, mirroring `plans.server.ts`, `moves.server.ts`,
+ * DTOs, mirroring `plans.server.ts`, `moves.server.ts`, `move-draft.server.ts`,
  * `plan-sessions.server.ts`, `parent-plans.server.ts`,
  * `athlete-plans.server.ts`, `plan-share.server.ts`, `plan-detail.server.ts`,
  * and `voice.server.ts` field for field (`satisfies` keeps them honest), so
@@ -13,6 +13,7 @@ import type {
   AthletePlanSummaryDTO,
   AthletePlansDTO,
 } from "@/lib/athlete-plans.server";
+import type { MoveDraftDTO } from "@/lib/move-draft.server";
 import type { MoveDTO, MoveLibraryDTO, NameConflict } from "@/lib/moves.server";
 import type { ParentPlanSummaryDTO, ParentPlansDTO } from "@/lib/parent-plans.server";
 import type { RoleAwarePlanDetailDTO } from "@/lib/plan-detail.server";
@@ -167,6 +168,23 @@ export const libraryLinkResultSchema = z.object({
 });
 
 export const moveIdSchema = z.object({ moveId: z.string() });
+
+/**
+ * AI suggestions for a new move (decision #53); `category` only when the
+ * request had none. "unsure" and "unknown" answer with empty description,
+ * cue and why. `source`, `sourceName` and `understoodAs` are for logs and
+ * evals; the apps don't show them.
+ */
+export const moveDraftSchema = z.object({
+  description: z.string(),
+  cue: z.string(),
+  why: z.string(),
+  category: z.string().optional(),
+  source: z.enum(["gradus_library", "exercise_list", "ai"]).optional(),
+  sourceName: z.string().optional(),
+  recognition: z.enum(["known", "unsure", "unknown"]).optional(),
+  understoodAs: z.string().optional(),
+}) satisfies z.ZodType<MoveDraftDTO>;
 
 /* ---------------- parent and athlete plans ---------------- */
 

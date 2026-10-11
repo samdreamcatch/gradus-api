@@ -9291,6 +9291,128 @@
         }
       }
     },
+    "/api/v1/coach/moves/draft": {
+      "post": {
+        "operationId": "draftMove",
+        "summary": "AI draft of a new move's description, cue and why",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "sport": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "category": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "hint": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "existing": {
+                    "type": "object",
+                    "properties": {
+                      "description": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "cue": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "why": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "sport"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "cue": {
+                      "type": "string"
+                    },
+                    "why": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "gradus_library",
+                        "exercise_list",
+                        "ai"
+                      ]
+                    },
+                    "sourceName": {
+                      "type": "string"
+                    },
+                    "recognition": {
+                      "type": "string",
+                      "enum": [
+                        "known",
+                        "unsure",
+                        "unknown"
+                      ]
+                    },
+                    "understoodAs": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "description",
+                    "cue",
+                    "why"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parent/plans": {
       "get": {
         "operationId": "listParentPlans",

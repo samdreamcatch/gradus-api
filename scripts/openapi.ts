@@ -96,6 +96,7 @@ import "../src/routes/api/v1/coach/moves/$id/archive";
 import "../src/routes/api/v1/coach/moves/$id/update-from-plan-move";
 import "../src/routes/api/v1/coach/moves/from-plan-move";
 import "../src/routes/api/v1/coach/moves/fork-from-plan-move";
+import "../src/routes/api/v1/coach/moves/draft";
 import "../src/routes/api/v1/parent/plans";
 import "../src/routes/api/v1/athlete/plans/index";
 import "../src/routes/api/v1/athlete/plans/$id/index";

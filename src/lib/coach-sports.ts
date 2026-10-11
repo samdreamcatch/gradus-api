@@ -253,6 +253,14 @@ export function sportDisplayLabel(key: string): string {
   return label || key;
 }
 
+/**
+ * A built-in sport key, or a custom one as onboarding made them before
+ * #206: `custom_` and the slug's lower-case letters, digits and underscores.
+ */
+export function isSportKey(key: string): boolean {
+  return getSport(key) !== undefined || /^custom_[a-z0-9_]+$/.test(key);
+}
+
 export function getSportLevel(sportKey: string, levelKey: string): SportLevel | undefined {
   return getSport(sportKey)?.levels.find((l) => l.key === levelKey);
 }

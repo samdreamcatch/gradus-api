@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Trash2, Loader2, Plus } from "lucide-react";
@@ -28,6 +28,23 @@ import { listPlans, addMoveToPlan } from "@/lib/plans.functions";
 import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { MoveField } from "./move-field";
 import { NameConflictDialog } from "./name-conflict-dialog";
+import { AiDraftedNote, DraftWithAiButton, UnrecognisedMove } from "./move-draft";
+import { useMoveDraft } from "@/hooks/use-move-draft";
+import { sportDisplayLabel } from "@/lib/coach-sports";
+import {
+  DRAFT_STALE_NOTE,
+  draftFills,
+  isUnrecognised,
+  marksAsAi,
+  sameDraftTarget,
+  unrecognisedMessage,
+  type DraftableMoveField,
+} from "@/lib/move-draft";
+
+// The sheet saves a move with no category under this name, so a draft may replace it.
+const PLACEHOLDER_CATEGORY = "Uncategorized";
+// The sheet saves as you go, so the note can't say "before saving".
+const AI_NOTE = "Drafted by AI — check it";
 
 type Mode = "new" | string; // moveId or "new"
 
@@ -121,6 +138,22 @@ function MoveSheetBody({
     defaultTargetValue: 10,
   });
   const [savingField, setSavingField] = useState<string | null>(null);
+  // Fields the AI filled this session and the coach hasn't edited since (decision #53).
+  const [aiFilled, setAiFilled] = useState<Set<DraftableMoveField>>(new Set());
+  const draftAi = useMoveDraft();
+  // The name Gradus didn't recognise, until the name or sport changes or a draft lands.
+  const [unrecognised, setUnrecognised] = useState<string | null>(null);
+  const [hint, setHint] = useState("");
+  // Counts the coach's name and sport changes, ahead of their saves: a draft
+  // asked for before one of them is dropped.
+  const targetEdits = useRef(0);
+  // The coach's latest field save, so a landing draft reads the row after it.
+  const lastSave = useRef<Promise<unknown>>(Promise.resolve());
+  // The unsaved new move as it is now, for a draft that lands after more typing.
+  const draftNow = useRef(draft);
+  useEffect(() => {
+    draftNow.current = draft;
+  });
 
   type UpsertPayload = {
     id?: string;
@@ -178,12 +211,22 @@ function MoveSheetBody({
 
   async function commitField<K extends keyof MoveDTO>(field: K, next: MoveDTO[K]) {
     setSavingField(field as string);
+    if (field === "name" || field === "sport") {
+      setUnrecognised(null);
+      if (next !== move[field]) targetEdits.current += 1;
+    }
+    setAiFilled((prev) => {
+      if (!prev.has(field as DraftableMoveField)) return prev;
+      const rest = new Set(prev);
+      rest.delete(field as DraftableMoveField);
+      return rest;
+    });
     if (isNew) {
       const merged = { ...draft, [field]: next };
       setDraft(merged);
       // Only create the row once we have a non-empty name
       if (field === "name" && typeof next === "string" && next.trim()) {
-        await upsertMutation.mutateAsync({
+        const save = upsertMutation.mutateAsync({
           data: {
             sport: merged.sport || "general",
             category: merged.category || "Uncategorized",
@@ -195,6 +238,8 @@ function MoveSheetBody({
             defaultTargetValue: Number(merged.defaultTargetValue ?? 10),
           },
         });
+        lastSave.current = save;
+        await save;
       } else {
         setSavingField(null);
       }
@@ -215,9 +260,11 @@ function MoveSheetBody({
       defaultTargetKind: existing.defaultTargetKind,
       defaultTargetValue: existing.defaultTargetValue,
     };
-    await upsertMutation.mutateAsync({
+    const save = upsertMutation.mutateAsync({
       data: { ...base, [field]: next },
     });
+    lastSave.current = save;
+    await save;
   }
 
   const duplicate = async () => {
@@ -243,6 +290,96 @@ function MoveSheetBody({
     } finally {
       setSavingField(null);
     }
+  };
+
+  // Fills only the fields still empty, then saves them like any other edit.
+  // An unrecognised move fills nothing and asks for a hint instead. A draft
+  // for a name or sport the coach has since changed fills and saves nothing.
+  const draftWithAi = (withHint?: string) => {
+    const name = (move.name ?? "").trim();
+    const sport = (move.sport ?? "").trim();
+    if (!name || !sport) return;
+    const asked = { name, sport };
+    const editsAtAsk = targetEdits.current;
+    const category = (move.category ?? "").trim();
+    draftAi.mutate(
+      {
+        name,
+        sport,
+        category: category && category !== PLACEHOLDER_CATEGORY ? category : undefined,
+        hint: withHint?.trim() || undefined,
+        existing: { description: move.description, cue: move.cue, why: move.why },
+      },
+      {
+        onSuccess: async (res) => {
+          if (targetEdits.current !== editsAtAsk) {
+            toast(DRAFT_STALE_NOTE);
+            return;
+          }
+          if (isUnrecognised(res)) {
+            setUnrecognised(name);
+            return;
+          }
+          // Read the row fresh, after any save still running: the coach may
+          // have saved a field while the draft ran, and the cache can lag.
+          let latest: MoveDTO | undefined;
+          if (existing) {
+            try {
+              await lastSave.current.catch(() => undefined);
+              const fresh = await qc.fetchQuery({
+                queryKey: ["moves"],
+                queryFn: () => fetchMoves(),
+                staleTime: 0,
+              });
+              latest = fresh.moves.find((m) => m.id === existing.id);
+            } catch {
+              toast.error("Couldn't save the draft. Try again.");
+              return;
+            }
+            // Archived while the draft ran.
+            if (!latest) return;
+          }
+          const current = latest ?? draftNow.current;
+          if (targetEdits.current !== editsAtAsk || !sameDraftTarget(asked, current)) {
+            toast(DRAFT_STALE_NOTE);
+            return;
+          }
+          setUnrecognised(null);
+          setHint("");
+          // Library text is Gradus's own: it fills, but carries no AI mark.
+          const mark = marksAsAi(res);
+          const fills = draftFills(current, res, [PLACEHOLDER_CATEGORY]);
+          const filled = Object.keys(fills) as DraftableMoveField[];
+          if (filled.length === 0) {
+            toast("Every field already has your words, so nothing changed.");
+            return;
+          }
+          if (!latest) {
+            setDraft((d) => ({ ...d, ...fills }));
+            if (mark) setAiFilled((prev) => new Set([...prev, ...filled]));
+            return;
+          }
+          setSavingField("__draft");
+          const save = upsertMutation.mutateAsync({
+            data: {
+              id: latest.id,
+              sport: latest.sport,
+              category: latest.category,
+              name: latest.name,
+              description: latest.description,
+              cue: latest.cue,
+              why: latest.why,
+              defaultTargetKind: latest.defaultTargetKind,
+              defaultTargetValue: latest.defaultTargetValue,
+              ...fills,
+            },
+          });
+          lastSave.current = save;
+          const saved = await save;
+          if (saved.ok && mark) setAiFilled((prev) => new Set([...prev, ...filled]));
+        },
+      },
+    );
   };
 
   const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
@@ -284,28 +421,50 @@ function MoveSheetBody({
               <span className="pen-highlight inline-block h-1 w-12" aria-hidden />
             </div>
           ) : null}
+          {move.name ? (
+            <div className="mt-2">
+              <DraftWithAiButton
+                disabled={!move.sport || savingField !== null}
+                pending={draftAi.isPending || savingField === "__draft"}
+                onClick={() => draftWithAi()}
+              />
+              {unrecognised && move.sport ? (
+                <UnrecognisedMove
+                  message={unrecognisedMessage(unrecognised, sportDisplayLabel(move.sport))}
+                  hint={hint}
+                  pending={draftAi.isPending || savingField === "__draft"}
+                  onHintChange={setHint}
+                  onDraftAgain={() => draftWithAi(hint)}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {/* Sport / Category */}
-        <div className="grid grid-cols-2 gap-3">
-          <MoveField
-            kind="select"
-            label="Sport"
-            value={move.sport ?? ""}
-            options={sportOptions}
-            placeholder="Sport"
-            saving={savingField === "sport"}
-            onCommit={(v) => commitField("sport", v)}
-          />
-          <MoveField
-            kind="select"
-            label="Category"
-            value={move.category ?? ""}
-            options={categoryOptions}
-            placeholder="Category"
-            saving={savingField === "category"}
-            onCommit={(v) => commitField("category", v)}
-          />
+        <div>
+          <div className="grid grid-cols-2 gap-3">
+            <MoveField
+              kind="select"
+              label="Sport"
+              value={move.sport ?? ""}
+              options={sportOptions}
+              placeholder="Sport"
+              saving={savingField === "sport"}
+              onCommit={(v) => commitField("sport", v)}
+            />
+            <MoveField
+              kind="select"
+              label="Category"
+              value={move.category ?? ""}
+              options={categoryOptions}
+              placeholder="Category"
+              saving={savingField === "category"}
+              highlighted={aiFilled.has("category")}
+              onCommit={(v) => commitField("category", v)}
+            />
+          </div>
+          {aiFilled.has("category") ? <AiDraftedNote text={`Category: ${AI_NOTE}`} /> : null}
         </div>
 
         {/* Target */}
@@ -319,37 +478,49 @@ function MoveSheetBody({
           }}
         />
 
-        <MoveField
-          kind="textarea"
-          label="Cue"
-          value={move.cue ?? ""}
-          placeholder="One line the athlete can repeat to themselves"
-          rows={2}
-          saving={savingField === "cue"}
-          onCommit={(v) => commitField("cue", v)}
-        />
+        <div>
+          <MoveField
+            kind="textarea"
+            label="Cue"
+            value={move.cue ?? ""}
+            placeholder="One line the athlete can repeat to themselves"
+            rows={2}
+            saving={savingField === "cue"}
+            highlighted={aiFilled.has("cue")}
+            onCommit={(v) => commitField("cue", v)}
+          />
+          {aiFilled.has("cue") ? <AiDraftedNote text={AI_NOTE} /> : null}
+        </div>
 
         {/* Why */}
-        <MoveField
-          kind="textarea"
-          label="Why this matters"
-          value={move.why ?? ""}
-          placeholder="What this move develops, in plain language"
-          rows={3}
-          saving={savingField === "why"}
-          onCommit={(v) => commitField("why", v)}
-        />
+        <div>
+          <MoveField
+            kind="textarea"
+            label="Why this matters"
+            value={move.why ?? ""}
+            placeholder="What this move develops, in plain language"
+            rows={3}
+            saving={savingField === "why"}
+            highlighted={aiFilled.has("why")}
+            onCommit={(v) => commitField("why", v)}
+          />
+          {aiFilled.has("why") ? <AiDraftedNote text={AI_NOTE} /> : null}
+        </div>
 
         {/* Description */}
-        <MoveField
-          kind="textarea"
-          label="Description"
-          value={move.description ?? ""}
-          placeholder="How to perform the move, step by step"
-          rows={4}
-          saving={savingField === "description"}
-          onCommit={(v) => commitField("description", v)}
-        />
+        <div>
+          <MoveField
+            kind="textarea"
+            label="Description"
+            value={move.description ?? ""}
+            placeholder="How to perform the move, step by step"
+            rows={4}
+            saving={savingField === "description"}
+            highlighted={aiFilled.has("description")}
+            onCommit={(v) => commitField("description", v)}
+          />
+          {aiFilled.has("description") ? <AiDraftedNote text={AI_NOTE} /> : null}
+        </div>
 
         {!isNew && existing ? (
           <div className="flex items-center justify-between gap-2 border-t border-divider pt-4">

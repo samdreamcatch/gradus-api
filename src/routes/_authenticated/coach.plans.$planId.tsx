@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -64,6 +65,18 @@ import {
 
 import { MoveField } from "@/components/coach/move-field";
 import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
+import { AiDraftedNote, DraftWithAiButton, UnrecognisedMove } from "@/components/coach/move-draft";
+import { useMoveDraft } from "@/hooks/use-move-draft";
+import { sportDisplayLabel } from "@/lib/coach-sports";
+import {
+  DRAFT_STALE_NOTE,
+  draftFills,
+  isUnrecognised,
+  marksAsAi,
+  sameDraftTarget,
+  unrecognisedMessage,
+  type DraftableMoveField,
+} from "@/lib/move-draft";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
@@ -1411,9 +1424,24 @@ function NewMoveForm({
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [cue, setCue] = useState("");
+  const [why, setWhy] = useState("");
+  const [description, setDescription] = useState("");
   const [targetKind, setTargetKind] = useState<"reps" | "mins">("reps");
   const [targetValue, setTargetValue] = useState<number>(10);
   const [ignoreDupes, setIgnoreDupes] = useState(false);
+  // Fields the AI filled and the coach hasn't touched since (decision #53).
+  const [aiFilled, setAiFilled] = useState<Set<DraftableMoveField>>(new Set());
+  const touched = (field: DraftableMoveField) =>
+    setAiFilled((prev) => {
+      if (!prev.has(field)) return prev;
+      const next = new Set(prev);
+      next.delete(field);
+      return next;
+    });
+  const draft = useMoveDraft();
+  // The name Gradus didn't recognise, until the name or sport changes or a draft lands.
+  const [unrecognised, setUnrecognised] = useState<string | null>(null);
+  const [hint, setHint] = useState("");
 
   useEffect(() => {
     if (sportOptions.length > 0 && !sport) setSport(sportOptions[0]);
@@ -1422,6 +1450,8 @@ function NewMoveForm({
   useEffect(() => {
     setCategory("");
     setCustomCategory("");
+    touched("category");
+    setUnrecognised(null);
   }, [sport]);
 
   const categoryOptions = useMemo(() => {
@@ -1448,6 +1478,64 @@ function NewMoveForm({
   }, [existingMoves, name]);
 
   const finalCategory = category === "__other__" ? customCategory.trim() : category;
+
+  // The draft can land after the coach typed more, so it fills against what's there then.
+  const fieldsNow = useRef({ name, sport, description, cue, why, category: finalCategory });
+  useEffect(() => {
+    fieldsNow.current = { name, sport, description, cue, why, category: finalCategory };
+  });
+
+  // Fills only the fields still empty; a suggested category that isn't in
+  // the list goes in as a custom one. An unrecognised move fills nothing
+  // and asks for a hint instead, and a draft for a name or sport the coach
+  // has since changed is dropped.
+  const draftWithAi = (withHint?: string) => {
+    const drafted = name.trim();
+    const asked = { name: drafted, sport };
+    draft.mutate(
+      {
+        name: drafted,
+        sport,
+        category: finalCategory || undefined,
+        hint: withHint?.trim() || undefined,
+        existing: { description, cue, why },
+      },
+      {
+        onSuccess: (res) => {
+          if (!sameDraftTarget(asked, fieldsNow.current)) {
+            toast(DRAFT_STALE_NOTE);
+            return;
+          }
+          if (isUnrecognised(res)) {
+            setUnrecognised(drafted);
+            return;
+          }
+          setUnrecognised(null);
+          setHint("");
+          const fills = draftFills(fieldsNow.current, res);
+          if (fills.description) setDescription(fills.description);
+          if (fills.cue) setCue(fills.cue);
+          if (fills.why) setWhy(fills.why);
+          if (fills.category) {
+            const known = categoryOptions.find(
+              (c) => c.toLowerCase() === fills.category!.toLowerCase(),
+            );
+            if (known) {
+              setCategory(known);
+            } else {
+              setCategory("__other__");
+              setCustomCategory(fills.category);
+            }
+          }
+          const filled = Object.keys(fills) as DraftableMoveField[];
+          // Library text is Gradus's own: it fills, but carries no AI mark.
+          if (marksAsAi(res)) setAiFilled((prev) => new Set([...prev, ...filled]));
+          if (filled.length === 0) toast("Every field already has your words, so nothing changed.");
+        },
+      },
+    );
+  };
+
   const canCreate =
     name.trim().length > 0 &&
     cue.trim().length > 0 &&
@@ -1468,10 +1556,27 @@ function NewMoveForm({
             onChange={(e) => {
               setName(e.target.value);
               setIgnoreDupes(false);
+              setUnrecognised(null);
             }}
             placeholder="Name the move"
             autoFocus
           />
+          <div className="mt-2">
+            <DraftWithAiButton
+              disabled={!name.trim() || !sport}
+              pending={draft.isPending}
+              onClick={() => draftWithAi()}
+            />
+            {unrecognised && sport ? (
+              <UnrecognisedMove
+                message={unrecognisedMessage(unrecognised, sportDisplayLabel(sport))}
+                hint={hint}
+                pending={draft.isPending}
+                onHintChange={setHint}
+                onDraftAgain={() => draftWithAi(hint)}
+              />
+            ) : null}
+          </div>
         </div>
 
         {dupes.length > 0 ? (
@@ -1540,7 +1645,10 @@ function NewMoveForm({
             </Eyebrow>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                touched("category");
+              }}
               disabled={!sport || movesQuery.isLoading}
               className="block w-full rounded-md border border-divider bg-card px-2 py-2 text-sm text-text-primary focus:border-accent focus:outline-none"
             >
@@ -1555,11 +1663,15 @@ function NewMoveForm({
             {category === "__other__" ? (
               <Input
                 value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
+                onChange={(e) => {
+                  setCustomCategory(e.target.value);
+                  touched("category");
+                }}
                 placeholder="e.g. Forehand, Footwork, Strength"
                 className="mt-2"
               />
             ) : null}
+            {aiFilled.has("category") ? <AiDraftedNote /> : null}
           </div>
         </div>
 
@@ -1602,9 +1714,45 @@ function NewMoveForm({
           </Eyebrow>
           <Input
             value={cue}
-            onChange={(e) => setCue(e.target.value)}
+            onChange={(e) => {
+              setCue(e.target.value);
+              touched("cue");
+            }}
             placeholder="One line to help the athlete in the moment"
           />
+          {aiFilled.has("cue") ? <AiDraftedNote /> : null}
+        </div>
+
+        <div>
+          <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
+            Why this matters (optional)
+          </Eyebrow>
+          <Textarea
+            value={why}
+            onChange={(e) => {
+              setWhy(e.target.value);
+              touched("why");
+            }}
+            placeholder="What this move develops, in plain language"
+            rows={2}
+          />
+          {aiFilled.has("why") ? <AiDraftedNote /> : null}
+        </div>
+
+        <div>
+          <Eyebrow as="label" size="caption" tone="tertiary" weight="black" className="mb-1 block">
+            Description (optional)
+          </Eyebrow>
+          <Textarea
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              touched("description");
+            }}
+            placeholder="How to perform the move, step by step"
+            rows={4}
+          />
+          {aiFilled.has("description") ? <AiDraftedNote /> : null}
         </div>
       </div>
 
@@ -1635,9 +1783,9 @@ function NewMoveForm({
               category: finalCategory,
 
               name: name.trim(),
-              description: "",
+              description: description.trim(),
               cue,
-              why: "",
+              why: why.trim(),
               defaultTargetKind: targetKind,
               defaultTargetValue: targetValue,
             })

@@ -6,6 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { rethrowPlain } from "./api/errors";
 import * as shared from "./moves.server";
 import { addPlanMoveToLibraryInput, forkPlanMoveToLibraryInput, moveInput } from "./moves.server";
+import { draftMove as draftShared, moveDraftInput } from "./move-draft.server";
 
 /*
  * Thin wrappers over src/lib/moves.server.ts, shared with the
@@ -13,6 +14,7 @@ import { addPlanMoveToLibraryInput, forkPlanMoveToLibraryInput, moveInput } from
  */
 
 export type { MoveDTO, NameConflict, TargetKind } from "./moves.server";
+export type { MoveDraftDTO } from "./move-draft.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -87,6 +89,21 @@ export const forkPlanMoveToLibrary = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     try {
       return await shared.forkPlanMoveToLibrary(ctxOf(context), data);
+    } catch (err) {
+      rethrowPlain(err);
+    }
+  });
+
+/* ---------------- AI draft for a new move (decision #53) ---------------- */
+
+export const draftMove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => moveDraftInput.parse(input))
+  .handler(async ({ context, data }) => {
+    // `draftMove` counts the draft against the coach's limit, shared with the API.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    try {
+      return await draftShared({ ...ctxOf(context), admin: supabaseAdmin }, data);
     } catch (err) {
       rethrowPlain(err);
     }

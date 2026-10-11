@@ -230,6 +230,7 @@ import { Route as ApiV1CoachInvoicesIndexRouteImport } from './routes/api/v1/coa
 import { Route as ApiV1CoachInvoicesPreviewRouteImport } from './routes/api/v1/coach/invoices/preview'
 import { Route as ApiV1CoachLessonSlotsIndexRouteImport } from './routes/api/v1/coach/lesson-slots/index'
 import { Route as ApiV1CoachMovesIndexRouteImport } from './routes/api/v1/coach/moves/index'
+import { Route as ApiV1CoachMovesDraftRouteImport } from './routes/api/v1/coach/moves/draft'
 import { Route as ApiV1CoachMovesForkFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/fork-from-plan-move'
 import { Route as ApiV1CoachMovesFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/from-plan-move'
 import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v1/coach/onboarding/complete'
@@ -1556,6 +1557,11 @@ const ApiV1CoachMovesIndexRoute = ApiV1CoachMovesIndexRouteImport.update({
   path: '/api/v1/coach/moves/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1CoachMovesDraftRoute = ApiV1CoachMovesDraftRouteImport.update({
+  id: '/api/v1/coach/moves/draft',
+  path: '/api/v1/coach/moves/draft',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1CoachMovesForkFromPlanMoveRoute =
   ApiV1CoachMovesForkFromPlanMoveRouteImport.update({
     id: '/api/v1/coach/moves/fork-from-plan-move',
@@ -2464,6 +2470,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
@@ -2801,6 +2808,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
@@ -3146,6 +3154,7 @@ export interface FileRoutesById {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
@@ -3491,6 +3500,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
     | '/api/v1/coach/onboarding/complete'
@@ -3828,6 +3838,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
     | '/api/v1/coach/onboarding/complete'
@@ -4172,6 +4183,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
     | '/api/v1/coach/onboarding/complete'
@@ -4436,6 +4448,7 @@ export interface RootRouteChildren {
   ApiV1CoachFoundingRestoreRoute: typeof ApiV1CoachFoundingRestoreRoute
   ApiV1CoachInviteCodeRotateRoute: typeof ApiV1CoachInviteCodeRotateRoute
   ApiV1CoachInvoicesPreviewRoute: typeof ApiV1CoachInvoicesPreviewRoute
+  ApiV1CoachMovesDraftRoute: typeof ApiV1CoachMovesDraftRoute
   ApiV1CoachMovesForkFromPlanMoveRoute: typeof ApiV1CoachMovesForkFromPlanMoveRoute
   ApiV1CoachMovesFromPlanMoveRoute: typeof ApiV1CoachMovesFromPlanMoveRoute
   ApiV1CoachOnboardingCompleteRoute: typeof ApiV1CoachOnboardingCompleteRoute
@@ -6116,6 +6129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachMovesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/moves/draft': {
+      id: '/api/v1/coach/moves/draft'
+      path: '/api/v1/coach/moves/draft'
+      fullPath: '/api/v1/coach/moves/draft'
+      preLoaderRoute: typeof ApiV1CoachMovesDraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/moves/fork-from-plan-move': {
       id: '/api/v1/coach/moves/fork-from-plan-move'
       path: '/api/v1/coach/moves/fork-from-plan-move'
@@ -7374,6 +7394,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachFoundingRestoreRoute: ApiV1CoachFoundingRestoreRoute,
   ApiV1CoachInviteCodeRotateRoute: ApiV1CoachInviteCodeRotateRoute,
   ApiV1CoachInvoicesPreviewRoute: ApiV1CoachInvoicesPreviewRoute,
+  ApiV1CoachMovesDraftRoute: ApiV1CoachMovesDraftRoute,
   ApiV1CoachMovesForkFromPlanMoveRoute: ApiV1CoachMovesForkFromPlanMoveRoute,
   ApiV1CoachMovesFromPlanMoveRoute: ApiV1CoachMovesFromPlanMoveRoute,
   ApiV1CoachOnboardingCompleteRoute: ApiV1CoachOnboardingCompleteRoute,
