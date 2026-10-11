@@ -154,7 +154,7 @@ export async function fetchBoard(admin: AdminDb, slug: string): Promise<BoardRes
   };
 }
 
-/** Competitions with a board, newest first, always led by the sample board. */
+/** Competitions with a board, newest first. The sample board is reachable by link only. */
 export async function fetchBoardList(admin: AdminDb): Promise<BoardListEntry[]> {
   let rows: any[] = [];
   try {
