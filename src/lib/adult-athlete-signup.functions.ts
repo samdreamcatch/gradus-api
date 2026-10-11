@@ -27,8 +27,8 @@ type Client = SupabaseClient<Database>;
 /*
  * Thin wrappers over src/lib/adult-athlete.server.ts, shared with the
  * /api/v1/signup/adult-athlete and /api/v1/adult-athlete/* routes
- * (PRD §6.2). Behavior is unchanged: reads and writes still go through the
- * caller's RLS client.
+ * (PRD §6.2). Reads and writes go through the caller's RLS client, except
+ * creating the athlete row, which uses the admin client.
  */
 
 async function adultContext(context: { userId: string; supabase: unknown }) {
@@ -45,10 +45,7 @@ export const createSelfManagedAthlete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => createSelfManagedAthleteInput.parse(input))
   .handler(async ({ data, context }) =>
-    createSelfManagedAthleteShared(
-      { userId: context.userId, supabase: context.supabase as Client },
-      data,
-    ),
+    createSelfManagedAthleteShared(await adultContext(context), data),
   );
 
 /** Preview a coach by invite code from the adult-athlete onboarding screen. */

@@ -23,8 +23,8 @@ export const Route = createFileRoute("/api/v1/signup/adult-athlete")({
       input: createSelfManagedAthleteInput,
       output: athleteIdResultSchema,
       handler: async ({ ctx, input }) => {
-        const { userId, supabase } = requireContext(ctx);
-        return createSelfManagedAthlete({ userId, supabase }, input);
+        const { userId, admin } = requireContext(ctx);
+        return createSelfManagedAthlete({ userId, admin }, input);
       },
     }),
   },

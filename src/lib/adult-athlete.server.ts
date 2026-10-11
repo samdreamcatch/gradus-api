@@ -7,7 +7,10 @@
  * Appendix A). Extracted without behavior changes; messages verbatim.
  *
  * Reads and writes go through the caller's RLS client, as on the web: the
- * self-managed policies and triggers are the real gate.
+ * self-managed policies and triggers are the real gate. The exception is
+ * creating the athlete row: only the server inserts athletes
+ * (20261010140000), so `createSelfManagedAthlete` uses the admin client and
+ * sets every field itself.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -71,10 +74,10 @@ export const createSelfManagedAthleteInput = z
  * email; the guardian is emailed a claim link.
  */
 export async function createSelfManagedAthlete(
-  ctx: Pick<AdultContext, "userId" | "supabase">,
+  ctx: Pick<AdultContext, "userId" | "admin">,
   data: z.infer<typeof createSelfManagedAthleteInput>,
 ): Promise<{ athleteId: string }> {
-  const { supabase, userId } = ctx;
+  const { admin, userId } = ctx;
   const isMinor = ageInYears(data.birthdate) < 18;
 
   // Decision #30 (PRD §6.13 A4): no under-13 athlete ever creates their own
@@ -90,7 +93,7 @@ export async function createSelfManagedAthlete(
 
   // Idempotent: don't error if the user already has a row (e.g. the signup
   // form was submitted twice, or they returned to onboarding).
-  const existing = await supabase
+  const existing = await admin
     .from("athletes")
     .select("id, self_managed")
     .eq("user_id", userId)
@@ -107,7 +110,9 @@ export async function createSelfManagedAthlete(
   const guardianEmail = isMinor ? (data.guardianEmail ?? null) : null;
   const guardianToken = guardianEmail ? newGuardianToken() : null;
 
-  const insert = await supabase
+  // Admin client: signed-in clients can't insert athletes, so the account
+  // state, guardian token and the rest come only from here.
+  const insert = await admin
     .from("athletes")
     .insert({
       first_name: data.firstName,
