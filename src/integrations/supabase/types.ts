@@ -3832,10 +3832,6 @@ export type Database = {
           kind: string
           organization_id: string | null
           published: boolean
-          review_reason: string | null
-          review_state: string
-          reviewed_at: string | null
-          reviewed_by: string | null
           rights: string
           sport: string
           storage_path: string | null
@@ -3854,10 +3850,6 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
-          review_reason?: string | null
-          review_state?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
           rights?: string
           sport: string
           storage_path?: string | null
@@ -3876,10 +3868,6 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
-          review_reason?: string | null
-          review_state?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
           rights?: string
           sport?: string
           storage_path?: string | null
@@ -4508,12 +4496,6 @@ export type Database = {
       }
       my_coach_id: { Args: never; Returns: string }
       new_guardian_claim_code: { Args: never; Returns: string }
-      orphan_coach_upload_paths: {
-        Args: { p_limit: number; p_older_than: unknown }
-        Returns: {
-          name: string
-        }[]
-      }
       parent_account_for_email: { Args: { p_email: string }; Returns: string }
       parent_athlete_ids: { Args: never; Returns: string[] }
       parent_can_write: { Args: { _athlete_id: string }; Returns: boolean }
