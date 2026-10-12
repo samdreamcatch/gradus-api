@@ -88,7 +88,10 @@ const GROUPS: Group[] = [
   },
   {
     label: "Trust & safety",
-    items: [{ to: "/admin/reports", label: "Reports", icon: ShieldAlert }],
+    items: [
+      { to: "/admin/reports", label: "Reports", icon: ShieldAlert },
+      { to: "/admin/uploads-review", label: "Uploads to review", icon: ShieldAlert },
+    ],
   },
   {
     label: "Support",

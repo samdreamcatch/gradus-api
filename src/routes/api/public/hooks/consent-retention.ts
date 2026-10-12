@@ -1,12 +1,15 @@
 // Retention sweeps — called by pg_cron daily (PRD §6.13 A9). Provisional
 // accounts nobody claimed in three months (§12 #25); minor accounts dormant
 // for three years, after a 30-day notice; audit records past five years and
-// email delivery records past thirteen months (decisions #41–#43). Same auth as
-// the other hooks: the service role key.
+// email delivery records past thirteen months (decisions #41–#43); coach
+// uploads still waiting for their picture check, and stored coach files no
+// resource points at (migration 20261011150000). Same auth as the other hooks:
+// the service role key.
 
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { inBackground } from "@/lib/background";
+import { sweepCoachUploads } from "@/lib/coach-upload-review.server";
 import { cronKeyMatches } from "@/lib/cron-auth";
 import { sweepProvisionalAthletes } from "@/lib/guardian-verification.server";
 import {
@@ -50,6 +53,8 @@ export const Route = createFileRoute("/api/public/hooks/consent-retention")({
           console.log("[api] consent-retention email-log", JSON.stringify(emailLog));
           const provisional = await sweepProvisionalAthletes(admin as never);
           console.log("[api] consent-retention provisional", JSON.stringify(provisional));
+          const uploads = await sweepCoachUploads(admin as never, { budgetMs: 8_000 });
+          console.log("[api] consent-retention coach-uploads", JSON.stringify(uploads));
           const dormant = await sweepDormantMinorAthletes(admin as never, {
             budgetMs: Math.max(2_000, RUN_BUDGET_MS - (Date.now() - started)),
           });

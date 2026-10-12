@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
-import { resourceIdResultSchema } from "@/lib/api/resources-schema";
+import { createdResourceSchema } from "@/lib/api/resources-schema";
 import { createCoachResource, createCoachResourceInput } from "@/lib/coach-resources.server";
 
 /**
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/v1/coach/resources/")({
       idempotent: true,
       summary: "Upload or link a resource for the coach's own athletes",
       input: createCoachResourceInput,
-      output: resourceIdResultSchema,
+      output: createdResourceSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase } = requireContext(ctx);
         return createCoachResource({ userId, supabase }, input);

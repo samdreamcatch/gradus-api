@@ -28,6 +28,7 @@ export const coachResourceSchema = z.object({
   externalUrl: z.string().nullable(),
   storagePath: z.string().nullable(),
   createdAt: z.string(),
+  reviewState: z.enum(["released", "pending_check", "held"]).optional(),
 }) satisfies z.ZodType<CoachResourceDTO>;
 
 export const libraryResourceSchema = z.object({
@@ -79,6 +80,12 @@ export const roleAwareResourcesSchema = z.object({
 }) satisfies z.ZodType<RoleAwareResourcesDTO>;
 
 export const resourceIdResultSchema = z.object({ id: z.string() });
+
+/** `POST /coach/resources`: a PDF with pictures comes back "held" until Gradus reviews it. */
+export const createdResourceSchema = z.object({
+  id: z.string(),
+  reviewState: z.enum(["released", "pending_check", "held"]).optional(),
+});
 
 export const signedUrlSchema = z.object({ url: z.string() });
 

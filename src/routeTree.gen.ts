@@ -63,6 +63,7 @@ import { Route as AuthenticatedAdminReportingRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminSessionsRouteImport } from './routes/_authenticated/admin.sessions'
 import { Route as AuthenticatedAdminSocialPlansRouteImport } from './routes/_authenticated/admin.social-plans'
+import { Route as AuthenticatedAdminUploadsReviewRouteImport } from './routes/_authenticated/admin.uploads-review'
 import { Route as AuthenticatedAdminUsageRouteImport } from './routes/_authenticated/admin.usage'
 import { Route as AuthenticatedAthleteIndexRouteImport } from './routes/_authenticated/athlete.index'
 import { Route as AuthenticatedAthleteOnboardingRouteImport } from './routes/_authenticated/athlete.onboarding'
@@ -641,6 +642,12 @@ const AuthenticatedAdminSocialPlansRoute =
   AuthenticatedAdminSocialPlansRouteImport.update({
     id: '/social-plans',
     path: '/social-plans',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUploadsReviewRoute =
+  AuthenticatedAdminUploadsReviewRouteImport.update({
+    id: '/uploads-review',
+    path: '/uploads-review',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminUsageRoute = AuthenticatedAdminUsageRouteImport.update({
@@ -2310,6 +2317,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/admin/uploads-review': typeof AuthenticatedAdminUploadsReviewRoute
   '/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -2649,6 +2657,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/admin/uploads-review': typeof AuthenticatedAdminUploadsReviewRoute
   '/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -2994,6 +3003,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/sessions': typeof AuthenticatedAdminSessionsRoute
   '/_authenticated/admin/social-plans': typeof AuthenticatedAdminSocialPlansRoute
+  '/_authenticated/admin/uploads-review': typeof AuthenticatedAdminUploadsReviewRoute
   '/_authenticated/admin/usage': typeof AuthenticatedAdminUsageRoute
   '/_authenticated/athlete/onboarding': typeof AuthenticatedAthleteOnboardingRoute
   '/_authenticated/athlete/settings': typeof AuthenticatedAthleteSettingsRoute
@@ -3340,6 +3350,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sessions'
     | '/admin/social-plans'
+    | '/admin/uploads-review'
     | '/admin/usage'
     | '/athlete/onboarding'
     | '/athlete/settings'
@@ -3679,6 +3690,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sessions'
     | '/admin/social-plans'
+    | '/admin/uploads-review'
     | '/admin/usage'
     | '/athlete/onboarding'
     | '/athlete/settings'
@@ -4023,6 +4035,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/sessions'
     | '/_authenticated/admin/social-plans'
+    | '/_authenticated/admin/uploads-review'
     | '/_authenticated/admin/usage'
     | '/_authenticated/athlete/onboarding'
     | '/_authenticated/athlete/settings'
@@ -4958,6 +4971,13 @@ declare module '@tanstack/react-router' {
       path: '/social-plans'
       fullPath: '/admin/social-plans'
       preLoaderRoute: typeof AuthenticatedAdminSocialPlansRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/uploads-review': {
+      id: '/_authenticated/admin/uploads-review'
+      path: '/uploads-review'
+      fullPath: '/admin/uploads-review'
+      preLoaderRoute: typeof AuthenticatedAdminUploadsReviewRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/usage': {
@@ -7024,6 +7044,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
   AuthenticatedAdminSocialPlansRoute: typeof AuthenticatedAdminSocialPlansRoute
+  AuthenticatedAdminUploadsReviewRoute: typeof AuthenticatedAdminUploadsReviewRoute
   AuthenticatedAdminUsageRoute: typeof AuthenticatedAdminUsageRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
@@ -7058,6 +7079,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
   AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
   AuthenticatedAdminSocialPlansRoute: AuthenticatedAdminSocialPlansRoute,
+  AuthenticatedAdminUploadsReviewRoute: AuthenticatedAdminUploadsReviewRoute,
   AuthenticatedAdminUsageRoute: AuthenticatedAdminUsageRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,

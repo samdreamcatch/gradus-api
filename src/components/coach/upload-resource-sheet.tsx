@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Loader2, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,10 @@ function sportLabel(s: string) {
 
 /** Only PDFs upload; images and videos are links to a public web address. */
 const PDF = "application/pdf";
+
+/** After a PDF with pictures (or one the server couldn't check) is uploaded. */
+const HELD_MESSAGE =
+  "Uploaded. Gradus reviews this PDF before your athletes and parents see it, because it has pictures or couldn't be checked automatically. We'll email you if it can't be shared.";
 
 export function UploadResourceSheet({
   open,
@@ -83,7 +88,7 @@ export function UploadResourceSheet({
           contentType: PDF,
         });
       if (upErr) throw upErr;
-      await createFn({
+      const created = await createFn({
         data: {
           title: title.trim(),
           description: description.trim(),
@@ -92,6 +97,9 @@ export function UploadResourceSheet({
           storagePath: signed.path,
         },
       });
+      if (created.reviewState === "held") {
+        toast(HELD_MESSAGE, { duration: 10_000 });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["coach-resources"] });

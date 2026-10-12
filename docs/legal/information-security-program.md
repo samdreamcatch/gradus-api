@@ -72,7 +72,7 @@ Performed at adoption and every November 1, or after a material change (new vend
 
 ### 5.4 Abuse resistance
 - Cloudflare Turnstile on sign-in and registration; per-route rate limits (for example the account-recovery endpoint: 10 then 429); App Attest on iOS API calls; KWS's own send-email limit (10 per hour per parent).
-- Upload rules: PDFs only for coach resources, images and video by public link; minors cannot upload audio.
+- Upload rules: PDFs only for coach resources, images and video by public link; minors cannot upload audio. Since 2026-10-11 every coach PDF is checked on the server before athletes or parents see it (`resource-file-check.server.ts`, no AI or outside service): a PDF with any embedded picture, or one that can't be read with confidence (secured, damaged, too large), is held until a person releases it in Admin → Uploads to review (support@gradussports.com is emailed); a file that isn't a PDF is deleted. Uploads go only through server-signed links, and stored files no resource points at are swept daily (migration 20261011150000).
 
 ### 5.5 Transmission and storage
 - TLS everywhere (Cloudflare at the edge; HTTPS-only universal links). No certificate pinning in the iOS app by decision (Cloudflare rotates certificates); a CAA record restricts issuance instead.

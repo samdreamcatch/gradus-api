@@ -57,6 +57,16 @@ function CoachResourcesPage() {
 
   const sports = data?.sports ?? [];
   const canUpload = data?.canUpload ?? false;
+  // Own uploads that athletes and parents can't see yet (migration 20261011150000).
+  const reviewStatus = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of data?.resources ?? []) {
+      if (r.reviewState === "held") m.set(r.id, "In review: your athletes can't see it yet");
+      else if (r.reviewState === "pending_check")
+        m.set(r.id, "Checking: your athletes can't see it yet");
+    }
+    return m;
+  }, [data]);
 
   const resources: ResourceDTO[] = useMemo(() => {
     const own: ResourceDTO[] = (data?.resources ?? []).map((r) => ({
@@ -192,6 +202,7 @@ function CoachResourcesPage() {
                         rows={coachItems}
                         onOpen={setOpenResource}
                         onDelete={(r) => remove.mutate(r.id)}
+                        statusOf={(r) => reviewStatus.get(r.id) ?? null}
                       />
                     </div>
                   ) : null}

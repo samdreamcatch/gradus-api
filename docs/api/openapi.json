@@ -18326,6 +18326,14 @@
                               },
                               "createdAt": {
                                 "type": "string"
+                              },
+                              "reviewState": {
+                                "type": "string",
+                                "enum": [
+                                  "released",
+                                  "pending_check",
+                                  "held"
+                                ]
                               }
                             },
                             "required": [
@@ -18725,6 +18733,14 @@
                   "properties": {
                     "id": {
                       "type": "string"
+                    },
+                    "reviewState": {
+                      "type": "string",
+                      "enum": [
+                        "released",
+                        "pending_check",
+                        "held"
+                      ]
                     }
                   },
                   "required": [

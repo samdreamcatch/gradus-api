@@ -342,7 +342,7 @@ describe("createCoachResource", () => {
         externalUrl: "https://example.com",
       }),
     );
-    expect(result).toEqual({ id: "r1" });
+    expect(result).toEqual({ id: "r1", reviewState: "released" });
     expect(supabase.insertedPayloads.resources).toEqual([
       {
         coach_id: "c1",
@@ -379,7 +379,7 @@ describe("createCoachResource", () => {
         externalUrl: "https://example.com",
       }),
     );
-    expect(result).toEqual({ id: "c1res" });
+    expect(result).toEqual({ id: "c1res", reviewState: "released" });
   });
 
   it("rolls back the inserted resource row when tagging it with resource_sports fails", async () => {
@@ -676,7 +676,7 @@ describe("createCoachResource — images come only from a public URL", () => {
         externalUrl: "https://cdn.example/a.webp",
       }),
     );
-    expect(result).toEqual({ id: "r1" });
+    expect(result).toEqual({ id: "r1", reviewState: "released" });
     const [row] = supabase.insertedPayloads.resources as Array<Record<string, unknown>>;
     expect(row.kind).toBe("image");
     expect(row.external_url).toBe("https://cdn.example/a.webp");

@@ -17,6 +17,12 @@ import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { STORE_SAFE_RIGHTS, type ResourceFeedOptions } from "./parent-resources.server";
+import {
+  applyUploadOutcome,
+  checkStoredUpload,
+  type ReviewState,
+} from "./coach-upload-review.server";
+import type { PdfCheck } from "./resource-file-check.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -25,6 +31,12 @@ export type CoachResourcesContext = {
   supabase: Client;
   /** Checks an image link is public before it is saved; tests pass a fake. */
   fetchImpl?: typeof fetch;
+  /** The service-role client and PDF check used to review an uploaded file; tests pass fakes. */
+  uploadReview?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    admin: any;
+    check?: (bytes: Uint8Array) => Promise<PdfCheck>;
+  };
 };
 
 export type CoachResourceKind = "pdf" | "image" | "link";
@@ -38,6 +50,8 @@ export interface CoachResourceDTO {
   externalUrl: string | null;
   storagePath: string | null;
   createdAt: string;
+  /** "released" (athletes and parents see it), "pending_check" or "held" (a person at Gradus reviews it first). */
+  reviewState?: ReviewState;
 }
 
 export interface LibraryResourceDTO {
@@ -111,7 +125,7 @@ export async function listCoachResources(
   const { data: rows, error: rErr } = await supabase
     .from("resources")
     .select(
-      "id, title, description, kind, external_url, storage_path, created_at, resource_sports(sport)",
+      "id, title, description, kind, external_url, storage_path, created_at, review_state, resource_sports(sport)",
     )
     .eq("coach_id", coach.id)
     .order("created_at", { ascending: false });
@@ -126,6 +140,7 @@ export async function listCoachResources(
     externalUrl: r.external_url,
     storagePath: r.storage_path,
     createdAt: r.created_at,
+    reviewState: ((r as { review_state?: string }).review_state as ReviewState) ?? "released",
   }));
 
   let libraryResources: LibraryResourceDTO[] = [];
@@ -288,10 +303,12 @@ export async function assertPublicImageUrl(
   if (!res.ok || !PUBLIC_IMAGE_TYPES.has(type)) throw unprocessable(NOT_A_PUBLIC_IMAGE);
 }
 
+export const NOT_A_PDF = "That file isn't a PDF. Choose a PDF file.";
+
 export async function createCoachResource(
   ctx: CoachResourcesContext,
   data: z.infer<typeof createCoachResourceInput>,
-): Promise<{ id: string }> {
+): Promise<{ id: string; reviewState: ReviewState }> {
   const { supabase, userId } = ctx;
   const coach = await getCallerCoach(supabase, userId);
   if (!coach) throw wrongRole("Coach profile not found");
@@ -323,6 +340,24 @@ export async function createCoachResource(
       data.storagePath.includes(".."))
   ) {
     throw unprocessable(PDF_ONLY);
+  }
+
+  // Every coach PDF is checked before athletes or parents can see it (migration
+  // 20261011150000): no pictures → released; pictures, or anything the check
+  // can't vouch for → held for review; not a PDF at all → deleted, refused.
+  let review: { admin: unknown; outcome: Awaited<ReturnType<typeof checkStoredUpload>> } | null =
+    null;
+  if (data.kind === "pdf" && data.storagePath) {
+    const admin =
+      ctx.uploadReview?.admin ??
+      (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+    const outcome = await checkStoredUpload(admin, data.storagePath, ctx.uploadReview?.check);
+    if (outcome.outcome === "not_pdf") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).storage.from("resource-pdfs").remove([data.storagePath]);
+      throw unprocessable(NOT_A_PDF);
+    }
+    review = { admin, outcome };
   }
 
   const { data: inserted, error: iErr } = await supabase
@@ -357,7 +392,9 @@ export async function createCoachResource(
   // Best-effort: the upload never fails because the corpus did.
   if (data.kind === "pdf" && data.storagePath) {
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const supabaseAdmin =
+        ctx.uploadReview?.admin ??
+        (await import("@/integrations/supabase/client.server")).supabaseAdmin;
       const { registerKnowledgeSource } = await import("./knowledge-ingest.server");
       await registerKnowledgeSource(
         supabaseAdmin as unknown as Parameters<typeof registerKnowledgeSource>[0],
@@ -380,7 +417,19 @@ export async function createCoachResource(
     }
   }
 
-  return { id: inserted.id };
+  // The row went in as pending_check (the trigger's rule for a coach's stored
+  // file); the service role now records the check's result.
+  let reviewState: ReviewState = "released";
+  if (review && data.storagePath) {
+    const applied = await applyUploadOutcome(
+      review.admin,
+      { id: inserted.id, title: data.title, coachId: coach.id, storagePath: data.storagePath },
+      review.outcome,
+    );
+    if (applied !== "deleted") reviewState = applied;
+  }
+
+  return { id: inserted.id, reviewState };
 }
 
 export async function deleteCoachResource(

@@ -48,11 +48,14 @@ export function ResourceList({
   onOpen,
   showCoach = false,
   onDelete,
+  statusOf,
 }: {
   rows: ResourceDTO[];
   onOpen: (r: ResourceDTO) => void;
   showCoach?: boolean;
   onDelete?: (r: ResourceDTO) => void;
+  /** A short status line under the title (the coach's own uploads waiting for review). */
+  statusOf?: (r: ResourceDTO) => string | null;
 }) {
   return (
     <ul className="divide-y divide-divider rounded-2xl border border-divider bg-card">
@@ -74,6 +77,9 @@ export function ResourceList({
                 <p className="mt-0.5 truncate text-xs text-text-secondary">
                   Shared by Coach {r.coachName}
                 </p>
+              ) : null}
+              {statusOf?.(r) ? (
+                <p className="mt-0.5 text-xs font-medium text-accent-ink">{statusOf(r)}</p>
               ) : null}
             </div>
           </button>
