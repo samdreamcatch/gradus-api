@@ -3832,6 +3832,10 @@ export type Database = {
           kind: string
           organization_id: string | null
           published: boolean
+          review_reason: string | null
+          review_state: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           rights: string
           sport: string
           storage_path: string | null
@@ -3850,6 +3854,10 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
+          review_reason?: string | null
+          review_state?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           rights?: string
           sport: string
           storage_path?: string | null
@@ -3868,6 +3876,10 @@ export type Database = {
           kind?: string
           organization_id?: string | null
           published?: boolean
+          review_reason?: string | null
+          review_state?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           rights?: string
           sport?: string
           storage_path?: string | null
