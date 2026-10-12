@@ -12,7 +12,13 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
-import { athleteHouseholdUserIds, notifyUsers, withoutBlocked } from "./push-notify.server";
+import {
+  athleteHouseholdUserIds,
+  notifyUsers,
+  roomMessagePush,
+  withoutBlocked,
+  type PushMessage,
+} from "./push-notify.server";
 import { transcribeVoiceNote } from "./voice-transcripts.server";
 import { athleteVoiceAllowed } from "./minor-voice.server";
 import {
@@ -992,6 +998,30 @@ export async function getRoomPage(
 }
 
 /** `sendMessage`. */
+/**
+ * The push for a new message in a room (PRD §6.6 "New message in a room"):
+ * titled "Coach <first name>" from a coach and the sender's name otherwise; a
+ * voice note says so instead of a body. Built with `roomMessagePush`, so it
+ * carries the Reply category (decision #54).
+ */
+export function newMessagePush(
+  roomId: string,
+  role: RoleInRoom,
+  sender: Pick<RoomParticipant, "firstName" | "lastName"> | undefined,
+  message: { kind: "text"; body: string } | { kind: "voice" },
+): PushMessage {
+  const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "";
+  const title =
+    role === "coach" && sender?.firstName
+      ? `Coach ${sender.firstName}`
+      : senderName || "New message";
+  return roomMessagePush(
+    roomId,
+    title,
+    message.kind === "text" ? message.body : "Sent a voice note",
+  );
+}
+
 export async function sendMessage(
   ctx: MessagesContext,
   data: z.infer<typeof sendMessageInputWithRole>,
@@ -1164,18 +1194,11 @@ export async function sendMessage(
     const recipients = await withoutBlocked(supabaseAdmin, userId, Array.from(ids));
     if (recipients.length === 0) return;
     const sender = participants.find((p) => p.userId === userId);
-    const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "";
-    const title =
-      role === "coach" && sender?.firstName
-        ? `Coach ${sender.firstName}`
-        : senderName || "New message";
-    await notifyUsers(supabaseAdmin, recipients, {
-      type: "message",
-      route: `rooms/${room.id}`,
-      title,
-      body: data.kind === "text" ? data.body : "Sent a voice note",
-      threadId: `room:${room.id}`,
-    });
+    await notifyUsers(
+      supabaseAdmin,
+      recipients,
+      newMessagePush(room.id, role, sender, data.kind === "text" ? data : { kind: "voice" }),
+    );
 
     // Bump the container's updated_at so list ordering reflects activity.
     if (room.kind === "athlete") {

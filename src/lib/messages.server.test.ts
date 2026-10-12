@@ -3,6 +3,7 @@ import { ApiError } from "./api/errors";
 import {
   decodeCursor,
   encodeCursor,
+  newMessagePush,
   partitionByKind,
   roomsDigest,
   toMessageDTO,
@@ -188,5 +189,30 @@ describe("partitionByKind", () => {
       athleteRoomIds: ["a"],
       directRoomIds: ["b", "c"],
     });
+  });
+});
+
+describe("newMessagePush (sendMessage's push, decision #54)", () => {
+  const sender = { firstName: "Linnea", lastName: "Corwin" };
+
+  it("carries the Reply category and opens the room", () => {
+    expect(newMessagePush("r1", "coach", sender, { kind: "text", body: "Nice loop" })).toEqual({
+      type: "message",
+      route: "rooms/r1",
+      title: "Coach Linnea",
+      body: "Nice loop",
+      threadId: "room:r1",
+      category: "GRADUS_MESSAGE",
+    });
+  });
+
+  it("titles a parent or athlete by name and says a voice note is one", () => {
+    const push = newMessagePush("r2", "parent", sender, { kind: "voice" });
+    expect(push.title).toBe("Linnea Corwin");
+    expect(push.body).toBe("Sent a voice note");
+    expect(push.category).toBe("GRADUS_MESSAGE");
+    expect(newMessagePush("r2", "athlete", undefined, { kind: "text", body: "Hi" }).title).toBe(
+      "New message",
+    );
   });
 });

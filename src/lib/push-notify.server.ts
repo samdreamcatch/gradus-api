@@ -2,8 +2,8 @@
  * Push notifications to users (PRD §6.6 "Triggers" and "Payload shape").
  *
  * `notifyUsers` resolves each user's iOS device tokens, builds the APNs
- * payload, sends every token in parallel, and deletes tokens APNs reports as
- * dead. It never throws and never blocks the calling action beyond the
+ * payload for each recipient (it names them in `gradus.uid`), sends every
+ * token in parallel, and deletes tokens APNs reports as dead. It never throws and never blocks the calling action beyond the
  * `inBackground` contract in `background.ts` — a push failure never fails a
  * message send, a plan activation, or a webhook (PRD §4.1 rule 7).
  *
@@ -34,6 +34,12 @@ export type PushMessage = {
   body?: string;
   /** Groups notifications in Notification Center (e.g. `room:<id>`). */
   threadId?: string;
+  /**
+   * `aps.category`: the notification category the apps register, which adds
+   * its actions (PRD §6.6). `GRADUS_MESSAGE` carries a text Reply on iPhone
+   * and Apple Watch (decision #54). Builds that don't know a category ignore it.
+   */
+  category?: string;
   /** Newer pushes with the same id replace older undelivered ones. */
   collapseId?: string;
   /** Background push: no alert, `content-available: 1`, low priority. The app refreshes silently. */
@@ -41,6 +47,26 @@ export type PushMessage = {
   /** How long APNs keeps trying while the phone is offline. Alerts default to a day; silent pushes to "once". */
   expiresInSeconds?: number;
 };
+
+/** Category for a message in a room: the apps add a text Reply action (decision #54). */
+export const MESSAGE_CATEGORY = "GRADUS_MESSAGE";
+
+/**
+ * A message posted in a room (PRD §6.6 "New message in a room"): opens the
+ * room, groups by room in Notification Center, and carries the Reply
+ * category. Every trigger that posts a real message into a room builds its
+ * push here, so none can leave the category out.
+ */
+export function roomMessagePush(roomId: string, title: string, body: string): PushMessage {
+  return {
+    type: "message",
+    route: `rooms/${roomId}`,
+    title,
+    body,
+    threadId: `room:${roomId}`,
+    category: MESSAGE_CATEGORY,
+  };
+}
 
 /** Rink phones are offline for hours at a time; an alert is still worth delivering the same day. */
 export const DEFAULT_ALERT_EXPIRY_SECONDS = 24 * 60 * 60;
@@ -68,13 +94,26 @@ export function truncateBody(text: string): string {
   return oneLine.length > BODY_LIMIT ? `${oneLine.slice(0, BODY_LIMIT - 1)}…` : oneLine;
 }
 
-/** The exact APNs JSON for a message (PRD §6.6 "Payload shape"). */
-export function pushPayload(message: PushMessage): {
+/**
+ * The exact APNs JSON for a message (PRD §6.6 "Payload shape"), addressed to
+ * `recipientUserId` when given. `gradus.uid` lets the apps refuse a Reply or a
+ * tap on a notification left over from another account on the same phone
+ * (household members share rooms, so the server alone can't tell).
+ */
+export function pushPayload(
+  message: PushMessage,
+  recipientUserId?: string,
+): {
   payload: Record<string, unknown>;
   pushType: ApnsPushType;
   priority: 5 | 10;
 } {
-  const gradus = { type: message.type, route: message.route, v: 1 };
+  const gradus = {
+    type: message.type,
+    route: message.route,
+    v: 1,
+    ...(recipientUserId ? { uid: recipientUserId } : {}),
+  };
   if (message.silent) {
     return {
       payload: { aps: { "content-available": 1 }, gradus },
@@ -90,6 +129,7 @@ export function pushPayload(message: PushMessage): {
     sound: "default",
   };
   if (message.threadId) aps["thread-id"] = message.threadId;
+  if (message.category) aps.category = message.category;
   return { payload: { aps, gradus }, pushType: "alert", priority: 10 };
 }
 
@@ -148,12 +188,22 @@ async function notifyUsersUnguarded(
   report.tokens = tokens.length;
   if (tokens.length === 0) return { ...report, skipped: "no_tokens" };
 
-  const { payload, pushType, priority } = pushPayload(message);
+  // One payload per recipient: each names its own user in `gradus.uid`.
+  const built = new Map<string, ReturnType<typeof pushPayload>>();
+  const payloadFor = (userId: string) => {
+    let entry = built.get(userId);
+    if (!entry) {
+      entry = pushPayload(message, userId);
+      built.set(userId, entry);
+    }
+    return entry;
+  };
   const send = deps.send ?? sendApnsRequest;
   const ttl = message.expiresInSeconds ?? (message.silent ? 0 : DEFAULT_ALERT_EXPIRY_SECONDS);
   const expiration = ttl > 0 ? Math.floor(Date.now() / 1000) + ttl : 0;
   const outcomes = await Promise.all(
     tokens.map(async (row) => {
+      const { payload, pushType, priority } = payloadFor(row.user_id);
       const req: ApnsRequest = {
         token: row.token,
         payload,

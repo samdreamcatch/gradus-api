@@ -137,6 +137,7 @@ describe("computeCompetitionRecapPrompts", () => {
       type: "competition_recap",
       route: "recaps/comp-1",
       v: 1,
+      uid: "u1",
     });
     expect((sent[0].payload.aps as { alert: { body: string } }).alert.body).toContain(
       "Winter Classic",

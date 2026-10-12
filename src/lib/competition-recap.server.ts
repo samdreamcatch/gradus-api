@@ -14,7 +14,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
 import { dbError } from "./db-error";
-import { coachUserId, notifyUsers, withoutBlocked } from "./push-notify.server";
+import { coachUserId, notifyUsers, roomMessagePush, withoutBlocked } from "./push-notify.server";
 import {
   athletesInBoardSport as athletesInBoardSportFor,
   loadBoardViewer,
@@ -313,13 +313,8 @@ async function messageCoaches(
       if (!coachUser) return;
       const recipients = await withoutBlocked(typed, senderUserId, [coachUser]);
       if (recipients.length === 0) return;
-      await notifyUsers(typed, recipients, {
-        type: "message",
-        route: `rooms/${pushRoomId}`,
-        title: "Competition recap",
-        body,
-        threadId: `room:${pushRoomId}`,
-      });
+      // A real message in the coach's room with the athlete, so the coach can reply from it.
+      await notifyUsers(typed, recipients, roomMessagePush(pushRoomId, "Competition recap", body));
     });
   }
 }

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "bun:test";
+import { exportPKCS8, generateKeyPair } from "jose";
+import { resetApnsTokenCache } from "./apns.server";
 import {
   dismissCompetitionRecap,
   getAthleteCompetitionRecaps,
@@ -314,6 +316,67 @@ describe("submitCompetitionRecap", () => {
     });
     expect(tables.message_rooms).toHaveLength(1);
     expect(tables.message_rooms![0]!.coach_id).toBe(COACH.id);
+  });
+});
+
+describe("submitCompetitionRecap push (decision #54)", () => {
+  it("pushes the coach a message they can reply to, addressed to their own account", async () => {
+    const { privateKey } = await generateKeyPair("ES256", { extractable: true });
+    const env = {
+      APPLE_TEAM_ID: "TEAMID1234",
+      APNS_KEY_ID: "KEYID12345",
+      APNS_KEY_P8: await exportPKCS8(privateKey),
+    };
+    const saved = Object.fromEntries(Object.keys(env).map((k) => [k, process.env[k]]));
+    const realFetch = globalThis.fetch;
+    const bodies: Record<string, unknown>[] = [];
+    Object.assign(process.env, env);
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response(null, { status: 200, headers: { "apns-id": "x" } });
+    }) as unknown as typeof fetch;
+    resetApnsTokenCache();
+    try {
+      const { admin, tables } = fakeAdmin({
+        parent_profiles: [PARENT],
+        athletes: [ATHLETE],
+        athlete_guardians: [],
+        coach_profiles: [COACH],
+        coach_athlete_sports: [{ athlete_id: ATHLETE.id, sport: "figure_skating" }],
+        coach_athletes: [{ coach_id: COACH.id, athlete_id: ATHLETE.id }],
+        competitions: [{ id: "c1", name: "Regionals" }],
+        competition_attendance: [{ user_id: PARENT.user_id, competition_id: "c1" }],
+        message_rooms: [],
+        messages: [],
+        competition_recaps: [],
+        device_tokens: [{ user_id: COACH.user_id, token: "tok-coach", platform: "ios" }],
+      });
+      await submitCompetitionRecap(admin, PARENT.user_id, {
+        competitionId: "c1",
+        athleteId: ATHLETE.id,
+        body: "Clean program!",
+      });
+      const roomId = tables.message_rooms![0]!.id as string;
+      expect(bodies).toHaveLength(1);
+      expect(bodies[0]!.aps).toMatchObject({
+        alert: { title: "Competition recap" },
+        "thread-id": `room:${roomId}`,
+        category: "GRADUS_MESSAGE",
+      });
+      expect(bodies[0]!.gradus).toEqual({
+        type: "message",
+        route: `rooms/${roomId}`,
+        v: 1,
+        uid: COACH.user_id,
+      });
+    } finally {
+      globalThis.fetch = realFetch;
+      for (const [k, v] of Object.entries(saved)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+      resetApnsTokenCache();
+    }
   });
 });
 

@@ -107,6 +107,7 @@ describe("computeLessonWrapUpPrompts", () => {
       type: "lesson_wrap_up",
       route: "coach/wrap-ups",
       v: 1,
+      uid: "coach-user-1",
     });
     expect((sent[0].payload.aps as { alert: { body: string } }).alert.body).toContain(
       "Greta Halvorsen",

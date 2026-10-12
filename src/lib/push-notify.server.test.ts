@@ -2,8 +2,10 @@ import { describe, expect, it } from "bun:test";
 import type { ApnsConfig, ApnsOutcome, ApnsRequest } from "./apns.server";
 import {
   athleteHouseholdUserIds,
+  MESSAGE_CATEGORY,
   notifyUsers,
   pushPayload,
+  roomMessagePush,
   truncateBody,
   withoutBlocked,
 } from "./push-notify.server";
@@ -84,6 +86,63 @@ describe("pushPayload", () => {
     });
   });
 
+  it("adds aps.category when the message names one (decision #54)", () => {
+    const { payload } = pushPayload({
+      type: "message",
+      route: "rooms/r1",
+      title: "Coach Linnea",
+      body: "Nice loop",
+      threadId: "room:r1",
+      category: MESSAGE_CATEGORY,
+    });
+    expect(payload.aps).toEqual({
+      alert: { title: "Coach Linnea", body: "Nice loop" },
+      sound: "default",
+      "thread-id": "room:r1",
+      category: "GRADUS_MESSAGE",
+    });
+  });
+
+  it("leaves aps.category out when none is given", () => {
+    const { payload } = pushPayload({ type: "plan_assigned", route: "plans/p1", body: "New plan" });
+    expect("category" in (payload.aps as Record<string, unknown>)).toBe(false);
+  });
+
+  it("never puts a category on a silent push", () => {
+    const { payload } = pushPayload({
+      type: "entitlement",
+      route: "settings/plan",
+      silent: true,
+      category: MESSAGE_CATEGORY,
+    });
+    expect(payload.aps).toEqual({ "content-available": 1 });
+  });
+
+  it("names the recipient in gradus.uid, so the apps can refuse another account's notification", () => {
+    const message = { type: "message", route: "rooms/r1", body: "Nice loop" };
+    expect(pushPayload(message, "user-renata").payload.gradus).toEqual({
+      type: "message",
+      route: "rooms/r1",
+      v: 1,
+      uid: "user-renata",
+    });
+    expect(pushPayload({ ...message, silent: true }, "user-renata").payload.gradus).toMatchObject({
+      uid: "user-renata",
+    });
+    expect("uid" in (pushPayload(message).payload.gradus as Record<string, unknown>)).toBe(false);
+  });
+
+  it("builds every room message push with the Reply category", () => {
+    expect(roomMessagePush("r1", "Coach Linnea", "Nice loop")).toEqual({
+      type: "message",
+      route: "rooms/r1",
+      title: "Coach Linnea",
+      body: "Nice loop",
+      threadId: "room:r1",
+      category: MESSAGE_CATEGORY,
+    });
+  });
+
   it("builds a silent background push with no alert", () => {
     expect(pushPayload({ type: "entitlement", route: "settings/plan", silent: true })).toEqual({
       payload: {
@@ -124,10 +183,16 @@ describe("notifyUsers", () => {
     expect(report).toEqual({ recipients: 2, tokens: 3, sent: 3, failed: 0, pruned: 0 });
     expect(sent.map((r) => r.token).sort()).toEqual(["tok-u1-a", "tok-u1-b", "tok-u2"]);
     expect(sent[0].pushType).toBe("alert");
-    expect(sent[0].payload).toEqual({
+    const first = sent.find((r) => r.token === "tok-u1-a")!;
+    expect(first.payload).toEqual({
       aps: { alert: { body: "hi" }, sound: "default" },
-      gradus: { type: "message", route: "rooms/r1", v: 1 },
+      gradus: { type: "message", route: "rooms/r1", v: 1, uid: "u1" },
     });
+    // Each device hears about its own account, never another recipient's.
+    for (const req of sent) {
+      const owner = tokens.find((t) => t.token === req.token)!.user_id;
+      expect((req.payload.gradus as Record<string, unknown>).uid).toBe(owner);
+    }
   });
 
   it("deletes tokens APNs reports as dead and keeps the rest", async () => {
