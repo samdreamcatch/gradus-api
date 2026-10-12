@@ -7,6 +7,8 @@
 
 import {
   DIRECT_NOTICE_EMAIL_DEFAULT,
+  DIRECT_NOTICE_EMAIL_SAFETY_BODY_DEFAULT,
+  DIRECT_NOTICE_EMAIL_SAFETY_HEADING_DEFAULT,
   DIRECT_NOTICE_EMAIL_UNCLAIMED_DEFAULT,
 } from "@/lib/consent/direct-notice";
 
@@ -279,17 +281,31 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       { key: "fallbackHelp", label: "Button-not-working help", kind: "text" },
       { key: "signOff", label: "Handwritten sign-off", kind: "text" },
       {
+        key: "safetyHeading",
+        label: "Safety callout — headline (no photos or video of athletes)",
+        kind: "text",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
+        key: "safetyBody",
+        label: "Safety callout — supporting line",
+        kind: "textarea",
+        variables: GUARDIAN_INVITE_VARS,
+      },
+      {
         key: "notice",
         label:
           "Direct notice (COPPA: what we collect, why, who processes it, retention, and the deletion windows)",
         kind: "textarea",
+        help: "Each line becomes one item. <strong> is supported.",
         variables: GUARDIAN_INVITE_VARS,
       },
       {
         key: "noticeUnclaimed",
         label:
-          "Direct notice, extra line only when the athlete signed up themselves (the three-month deletion)",
+          "Direct notice, extra item only when the athlete signed up themselves (the three-month deletion)",
         kind: "textarea",
+        help: "<strong> is supported.",
         variables: GUARDIAN_INVITE_VARS,
       },
       { key: "footer", label: "Fine-print footer", kind: "textarea" },
@@ -311,6 +327,8 @@ export const EMAIL_COPY_SCHEMA: Record<string, TemplateCopy> = {
       ctaLabelExistingAccount: "Sign in to confirm",
       fallbackHelp: "Or paste this link into your browser:",
       signOff: "— The Gradus team",
+      safetyHeading: DIRECT_NOTICE_EMAIL_SAFETY_HEADING_DEFAULT,
+      safetyBody: DIRECT_NOTICE_EMAIL_SAFETY_BODY_DEFAULT,
       notice: DIRECT_NOTICE_EMAIL_DEFAULT,
       noticeUnclaimed: DIRECT_NOTICE_EMAIL_UNCLAIMED_DEFAULT,
       footer:

@@ -15,9 +15,13 @@ import parse from "html-react-parser";
 import {
   button,
   buttonWrap,
+  callout,
+  calloutText,
+  colors,
   container,
   divider,
   eyebrow,
+  fonts,
   footer,
   h1,
   link,
@@ -52,6 +56,23 @@ export function guardianInviteSubject(
   return renderTemplateString(data.coachName ? c.subjectWithCoach : c.subject, vars);
 }
 
+const safetyHeading: React.CSSProperties = {
+  fontFamily: fonts.display,
+  fontSize: "24px",
+  fontWeight: 700,
+  lineHeight: 1.2,
+  color: colors.charcoalInk,
+  margin: "0 0 10px",
+};
+
+const noticeItem: React.CSSProperties = {
+  fontFamily: fonts.body,
+  fontSize: "14px",
+  lineHeight: 1.55,
+  color: colors.ink,
+  margin: "0 0 10px",
+};
+
 export const GuardianInviteEmail = ({
   athleteName,
   coachName,
@@ -65,6 +86,12 @@ export const GuardianInviteEmail = ({
   // The coach typed the names; parsed slots get them escaped.
   const htmlVars = htmlTemplateValues(vars);
   const intro = renderTemplateString(coachName ? c.introWithCoach : c.intro, htmlVars);
+  // The COPPA direct notice, one item per line. Only a 13–17 self-sign-up is
+  // swept after three months, so a coach-added athlete's guardian never reads that item.
+  const noticeItems = (coachName ? c.notice : `${c.notice}\n${c.noticeUnclaimed}`)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   return (
     <Html lang="en" dir="ltr">
@@ -83,6 +110,12 @@ export const GuardianInviteEmail = ({
                   renderTemplateString(existingAccount ? c.bodyExistingAccount : c.body, htmlVars),
                 )}
               </Text>
+              <div style={callout}>
+                <Text style={safetyHeading}>{renderTemplateString(c.safetyHeading, vars)}</Text>
+                <Text style={{ ...calloutText, margin: 0 }}>
+                  {parse(renderTemplateString(c.safetyBody, htmlVars))}
+                </Text>
+              </div>
               <div style={buttonWrap}>
                 <Button style={button} href={claimUrl}>
                   {renderTemplateString(
@@ -99,11 +132,13 @@ export const GuardianInviteEmail = ({
                 </Link>
               </Text>
               <Text style={sign}>{renderTemplateString(c.signOff, vars)}</Text>
-              <Text style={{ ...text, marginTop: "20px", fontSize: "13px" }}>
-                {parse(renderTemplateString(c.notice, htmlVars))}
-                {/* Only a 13–17 self-sign-up is swept after three months; a coach-added athlete is not. */}
-                {coachName ? null : " " + renderTemplateString(c.noticeUnclaimed, vars)}
-              </Text>
+              <div style={{ marginTop: "24px" }}>
+                {noticeItems.map((line, i) => (
+                  <Text key={i} style={noticeItem}>
+                    {parse(renderTemplateString(line, htmlVars))}
+                  </Text>
+                ))}
+              </div>
               <Hr style={divider} />
               <Text style={footer}>
                 {parse(renderTemplateString(c.footer, htmlVars))}{" "}
