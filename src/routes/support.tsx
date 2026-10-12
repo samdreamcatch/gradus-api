@@ -1,4 +1,5 @@
-import { Link, createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/lib/legal-urls";
 import { GRADUS_SUPPORT_EMAIL, REPORT_TO_GRADUS } from "@/lib/safe-sport-content";
 
 /**
@@ -127,13 +128,13 @@ function SupportPage() {
 
         <footer className="border-t border-divider pt-6 text-sm text-text-secondary">
           Gradus Sports, Inc. ·{" "}
-          <Link to="/privacy" className="underline underline-offset-2">
+          <a href={PRIVACY_POLICY_URL} className="underline underline-offset-2">
             Privacy Policy
-          </Link>{" "}
+          </a>{" "}
           ·{" "}
-          <Link to="/terms" className="underline underline-offset-2">
+          <a href={TERMS_OF_SERVICE_URL} className="underline underline-offset-2">
             Terms of Service
-          </Link>
+          </a>
         </footer>
       </article>
     </div>

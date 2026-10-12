@@ -112,6 +112,7 @@ The rule requires reasonable steps to ensure that anyone receiving children's in
 | Google LLC | Workspace mail; Gemini inference for coach-side features | Workspace terms, Cloud/AI terms |
 | ElevenLabs | Speech-to-text: coach voice notes, coach and adult-athlete plans by voice; never audio from athletes under 18 (PRD #48). ElevenLabs keeps speech-to-text audio and transcripts under its own policy unless Enterprise zero retention is on | ElevenLabs terms, privacy policy and DPA (business customers) |
 | OpenAI (through the Lovable AI gateway) | Embeddings for Ask Gradus (text only, adults) | Lovable AI gateway terms |
+| Anthropic, PBC (Claude API, direct) | Coach move drafts (web #224, PRD #53): only what the coach types about the move (name, sport, hint, partly written fields) and Gradus library examples; no account identifiers or athlete data; Claude may run web searches for the move name | Anthropic Commercial Terms of Service and DPA |
 | GitHub, Xcode Cloud | Source and build | Standard terms |
 
 ## 8. Testing and monitoring
@@ -129,3 +130,4 @@ Folder: Google Drive → Gradus → Legal → Security program (create at first 
 | Date | Change | By |
 |---|---|---|
 | 2026-10-03 | First draft from the codebase and vendor set | Mariah, with Claude |
+| 2026-10-11 | Anthropic added as a vendor (coach move drafts) | Mariah, with Claude |
