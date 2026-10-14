@@ -221,6 +221,136 @@ export async function upsertMove(
   return { ok: true, move: toDTO(inserted) };
 }
 
+/* ---------------- bulk import (.csv on iOS) ---------------- */
+
+export const MAX_IMPORT_MOVES = 500;
+
+/**
+ * One row of a library import. A name matching a live move (same rule as
+ * `findNameConflict`: trimmed, case-insensitive) is skipped unless the coach
+ * chose `overwrite` for that row in review.
+ */
+export const importMoveRowInput = moveInput
+  .omit({ id: true, overwriteMoveId: true })
+  .extend({ onConflict: z.enum(["skip", "overwrite"]).default("skip") });
+
+export const importMovesInput = z.object({
+  moves: z.array(importMoveRowInput).min(1).max(MAX_IMPORT_MOVES),
+});
+
+export type ImportMoveOutcome = {
+  /** Position in the request's `moves`, so the client can line results up with its rows. */
+  index: number;
+  name: string;
+  status: "created" | "updated" | "skipped";
+  reason?: "name_exists" | "duplicate_in_file";
+  moveId?: string;
+};
+
+export type ImportMovesResult = {
+  results: ImportMoveOutcome[];
+  created: number;
+  updated: number;
+  skipped: number;
+};
+
+/**
+ * Creates many library moves at once. New moves go in one insert; chosen
+ * overwrites update the existing row in place (plan links to it survive).
+ * A name repeated inside the same file keeps its first row only.
+ */
+export async function importMoves(
+  ctx: MovesContext,
+  input: z.infer<typeof importMovesInput>,
+): Promise<ImportMovesResult> {
+  const supabase = ctx.supabase;
+  const coachId = await requireCoachId(supabase, ctx.userId);
+
+  const { data: live, error: liveErr } = await supabase
+    .from("moves")
+    .select("id, name")
+    .eq("coach_id", coachId)
+    .is("archived_at", null);
+  if (liveErr) dbError(liveErr);
+  const existing = new Map<string, string>();
+  for (const r of live ?? []) {
+    const key = normalizeName(r.name as string);
+    if (!existing.has(key)) existing.set(key, r.id as string);
+  }
+
+  const results: ImportMoveOutcome[] = [];
+  const seen = new Set<string>();
+  const inserts: { index: number; row: Record<string, unknown> }[] = [];
+  const updates: { index: number; id: string; row: Record<string, unknown> }[] = [];
+
+  input.moves.forEach((m, index) => {
+    const name = m.name.trim();
+    const key = normalizeName(name);
+    if (seen.has(key)) {
+      results.push({ index, name, status: "skipped", reason: "duplicate_in_file" });
+      return;
+    }
+    seen.add(key);
+    const row = {
+      sport: m.sport,
+      category: m.category.trim(),
+      name,
+      description: m.description,
+      cue: m.cue,
+      why: m.why,
+      default_target_kind: m.defaultTargetKind,
+      default_target_value: m.defaultTargetValue,
+    };
+    const existingId = existing.get(key);
+    if (existingId) {
+      if (m.onConflict === "overwrite") updates.push({ index, id: existingId, row });
+      else
+        results.push({ index, name, status: "skipped", reason: "name_exists", moveId: existingId });
+      return;
+    }
+    inserts.push({ index, row: { ...row, coach_id: coachId } });
+  });
+
+  if (inserts.length > 0) {
+    const { data, error } = await supabase
+      .from("moves")
+      .insert(inserts.map((i) => i.row) as never)
+      .select("id, name");
+    if (error) dbError(error);
+    const idByName = new Map(
+      (data ?? []).map((r) => [normalizeName(r.name as string), r.id as string]),
+    );
+    for (const i of inserts) {
+      const name = i.row.name as string;
+      results.push({
+        index: i.index,
+        name,
+        status: "created",
+        moveId: idByName.get(normalizeName(name)),
+      });
+    }
+  }
+
+  for (const u of updates) {
+    const { error } = await supabase
+      .from("moves")
+      .update(u.row as never)
+      .eq("id", u.id)
+      .eq("coach_id", coachId);
+    if (error) dbError(error);
+    results.push({ index: u.index, name: u.row.name as string, status: "updated", moveId: u.id });
+  }
+
+  results.sort((a, b) => a.index - b.index);
+  const count = (s: ImportMoveOutcome["status"]) => results.filter((r) => r.status === s).length;
+  return {
+    results,
+    created: count("created"),
+    updated: count("updated"),
+    skipped: count("skipped"),
+  };
+}
+
 export async function archiveMove(
   ctx: MovesContext,
   id: string,

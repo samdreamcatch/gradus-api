@@ -14,7 +14,7 @@ import type {
   AthletePlansDTO,
 } from "@/lib/athlete-plans.server";
 import type { MoveDraftDTO } from "@/lib/move-draft.server";
-import type { MoveDTO, MoveLibraryDTO, NameConflict } from "@/lib/moves.server";
+import type { ImportMovesResult, MoveDTO, MoveLibraryDTO, NameConflict } from "@/lib/moves.server";
 import type { ParentPlanSummaryDTO, ParentPlansDTO } from "@/lib/parent-plans.server";
 import type { RoleAwarePlanDetailDTO } from "@/lib/plan-detail.server";
 import type {
@@ -160,6 +160,21 @@ export const upsertMoveResultSchema = z.object({
   move: moveSchema.optional(),
   conflict: nameConflictSchema.optional(),
 });
+
+export const importMovesResultSchema = z.object({
+  results: z.array(
+    z.object({
+      index: z.number().int(),
+      name: z.string(),
+      status: z.enum(["created", "updated", "skipped"]),
+      reason: z.enum(["name_exists", "duplicate_in_file"]).optional(),
+      moveId: z.string().optional(),
+    }),
+  ),
+  created: z.number().int(),
+  updated: z.number().int(),
+  skipped: z.number().int(),
+}) satisfies z.ZodType<ImportMovesResult>;
 
 export const libraryLinkResultSchema = z.object({
   ok: z.boolean(),

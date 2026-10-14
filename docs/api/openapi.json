@@ -9569,6 +9569,174 @@
         }
       }
     },
+    "/api/v1/coach/moves/import": {
+      "post": {
+        "operationId": "importMoves",
+        "summary": "Add many moves to the library at once",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moves": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sport": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "category": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 2000,
+                          "default": ""
+                        },
+                        "cue": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "default": ""
+                        },
+                        "why": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "default": ""
+                        },
+                        "defaultTargetKind": {
+                          "type": "string",
+                          "enum": [
+                            "reps",
+                            "mins"
+                          ]
+                        },
+                        "defaultTargetValue": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "onConflict": {
+                          "type": "string",
+                          "enum": [
+                            "skip",
+                            "overwrite"
+                          ],
+                          "default": "skip"
+                        }
+                      },
+                      "required": [
+                        "sport",
+                        "category",
+                        "name",
+                        "defaultTargetKind",
+                        "defaultTargetValue"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "moves"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "created",
+                              "updated",
+                              "skipped"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "name_exists",
+                              "duplicate_in_file"
+                            ]
+                          },
+                          "moveId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "index",
+                          "name",
+                          "status"
+                        ]
+                      }
+                    },
+                    "created": {
+                      "type": "integer"
+                    },
+                    "updated": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "results",
+                    "created",
+                    "updated",
+                    "skipped"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/parent/plans": {
       "get": {
         "operationId": "listParentPlans",
