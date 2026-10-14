@@ -20,6 +20,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { athleteVoiceAllowed } from "./minor-voice.server";
+import { voiceTranscriptAllowed } from "./ai-consent.server";
 
 type Client = SupabaseClient<Database>;
 /** `transcript` / `transcript_failed_at` are not in the generated types until Lovable regenerates them. */
@@ -32,6 +33,8 @@ export type TranscriptDeps = {
   now?: () => number;
   /** Tests: the age check on a note's sender (`athleteVoiceAllowed` by default). */
   voiceAllowed?: (userId: string) => Promise<boolean | null>;
+  /** Tests: the sender's AI permission (`voiceTranscriptAllowed` by default). */
+  aiAllowed?: (userId: string) => Promise<boolean>;
 };
 
 export type VoiceNoteRef = {
@@ -94,13 +97,14 @@ export async function transcribeVoiceNote(
       ?.sender_user_id;
     if (senderId) {
       const voiceAllowed = deps.voiceAllowed ?? ((id: string) => athleteVoiceAllowed(admin, id));
-      if ((await voiceAllowed(senderId)) === false) {
+      const aiAllowed = deps.aiAllowed ?? ((id: string) => voiceTranscriptAllowed(admin, id));
+      if ((await voiceAllowed(senderId)) === false || !(await aiAllowed(senderId))) {
         await db
           .from("messages")
           .update({ transcript_failed_at: NEVER_TRANSCRIBE })
           .eq("id", note.messageId)
           .is("transcript", null);
-        console.info("[transcripts] skipped: the sender is an athlete under 18", {
+        console.info("[transcripts] skipped: an athlete under 18, or no AI permission", {
           messageId: note.messageId,
         });
         return null;

@@ -14,6 +14,8 @@ import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { ApiError } from "./api/errors";
 import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
+import { NAME_PLACEHOLDER_NOTE } from "./ai-names";
+import { loadAthleteNameMask } from "./ai-names.server";
 import { dbError } from "./db-error";
 
 type Admin = typeof supabaseAdmin;
@@ -24,6 +26,8 @@ export type BriefingContext = { userId: string; admin: Admin };
 export interface BriefingDeps {
   generate?: (args: { system: string; prompt: string; apiKey: string }) => Promise<string>;
   loadProfile?: LoadCoachAthleteProfile;
+  /** Tests: the names kept out of the prompt (`loadAthleteNameMask` by default). */
+  loadMask?: typeof loadAthleteNameMask;
 }
 
 const defaultGenerate: NonNullable<BriefingDeps["generate"]> = async ({
@@ -159,6 +163,8 @@ export async function getPreLessonBriefing(
     .neq("coach_id", coachId);
   const otherCoachIds = (otherLinks.data ?? []).map((r) => r.coach_id as string);
 
+  const otherCoachNames: { firstName: string | null; lastName: string | null; display: string }[] =
+    [];
   let otherPlans: Array<{
     title: string;
     status: string;
@@ -179,6 +185,11 @@ export async function getPreLessonBriefing(
       .in("id", otherCoachIds);
     const nameById = new Map<string, string>();
     for (const c of otherCoaches.data ?? []) {
+      otherCoachNames.push({
+        firstName: (c.first_name as string | null) ?? null,
+        lastName: (c.last_name as string | null) ?? null,
+        display: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "another coach",
+      });
       nameById.set(
         c.id as string,
         `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "another coach",
@@ -351,9 +362,29 @@ Rules:
 
 ${context_lines.filter(Boolean).join("\n")}`;
 
+  // No names reach the model: the athlete's, their parents', this coach's and
+  // the other coaches' (src/lib/ai-names.ts).
+  const names = await (deps.loadMask ?? loadAthleteNameMask)(admin, input.athleteId, {
+    coaches: [
+      {
+        firstName: (coachRes.data.first_name as string | null) ?? null,
+        lastName: (coachRes.data.last_name as string | null) ?? null,
+      },
+      ...otherCoachNames,
+    ],
+  });
+
   let narrative = "";
   try {
-    narrative = (await generate({ system: PRE_LESSON_BRIEFING_SYSTEM, prompt, apiKey })).trim();
+    narrative = names
+      .unmask(
+        await generate({
+          system: PRE_LESSON_BRIEFING_SYSTEM,
+          prompt: `${names.mask(prompt)}\n\n${NAME_PLACEHOLDER_NOTE} [COACH] is the coach you are writing to.`,
+          apiKey,
+        }),
+      )
+      .trim();
   } catch (err) {
     console.error("[pre-lesson-briefing] AI error", err);
     throw aiUnavailable("Couldn't generate the briefing right now. Please try again.");

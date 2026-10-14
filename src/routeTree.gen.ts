@@ -165,6 +165,7 @@ import { Route as ApiV1GuardianPendingClaimsRouteImport } from './routes/api/v1/
 import { Route as ApiV1GuardianStatusRouteImport } from './routes/api/v1/guardian/status'
 import { Route as ApiV1InvitesResolveRouteImport } from './routes/api/v1/invites/resolve'
 import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
+import { Route as ApiV1MeAiConsentRouteImport } from './routes/api/v1/me/ai-consent'
 import { Route as ApiV1MeAppTransactionRouteImport } from './routes/api/v1/me/app-transaction'
 import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
@@ -1212,6 +1213,11 @@ const ApiV1InvitesResolveRoute = ApiV1InvitesResolveRouteImport.update({
 const ApiV1MeIndexRoute = ApiV1MeIndexRouteImport.update({
   id: '/api/v1/me/',
   path: '/api/v1/me/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MeAiConsentRoute = ApiV1MeAiConsentRouteImport.update({
+  id: '/api/v1/me/ai-consent',
+  path: '/api/v1/me/ai-consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MeAppTransactionRoute = ApiV1MeAppTransactionRouteImport.update({
@@ -2407,6 +2413,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -2746,6 +2753,7 @@ export interface FileRoutesByTo {
   '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -3093,6 +3101,7 @@ export interface FileRoutesById {
   '/api/v1/guardian/pending-claims': typeof ApiV1GuardianPendingClaimsRoute
   '/api/v1/guardian/status': typeof ApiV1GuardianStatusRoute
   '/api/v1/invites/resolve': typeof ApiV1InvitesResolveRoute
+  '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
@@ -3440,6 +3449,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -3779,6 +3789,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -4125,6 +4136,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/pending-claims'
     | '/api/v1/guardian/status'
     | '/api/v1/invites/resolve'
+    | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
     | '/api/v1/me/presence'
@@ -4401,6 +4413,7 @@ export interface RootRouteChildren {
   ApiV1GuardianPendingClaimsRoute: typeof ApiV1GuardianPendingClaimsRoute
   ApiV1GuardianStatusRoute: typeof ApiV1GuardianStatusRoute
   ApiV1InvitesResolveRoute: typeof ApiV1InvitesResolveRoute
+  ApiV1MeAiConsentRoute: typeof ApiV1MeAiConsentRoute
   ApiV1MeAppTransactionRoute: typeof ApiV1MeAppTransactionRoute
   ApiV1MeDeletionImpactRoute: typeof ApiV1MeDeletionImpactRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
@@ -5685,6 +5698,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/me'
       fullPath: '/api/v1/me/'
       preLoaderRoute: typeof ApiV1MeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/ai-consent': {
+      id: '/api/v1/me/ai-consent'
+      path: '/api/v1/me/ai-consent'
+      fullPath: '/api/v1/me/ai-consent'
+      preLoaderRoute: typeof ApiV1MeAiConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me/app-transaction': {
@@ -7354,6 +7374,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1GuardianPendingClaimsRoute: ApiV1GuardianPendingClaimsRoute,
   ApiV1GuardianStatusRoute: ApiV1GuardianStatusRoute,
   ApiV1InvitesResolveRoute: ApiV1InvitesResolveRoute,
+  ApiV1MeAiConsentRoute: ApiV1MeAiConsentRoute,
   ApiV1MeAppTransactionRoute: ApiV1MeAppTransactionRoute,
   ApiV1MeDeletionImpactRoute: ApiV1MeDeletionImpactRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,

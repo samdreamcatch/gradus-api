@@ -19,7 +19,7 @@ import {
   withoutBlocked,
   type PushMessage,
 } from "./push-notify.server";
-import { transcribeVoiceNote } from "./voice-transcripts.server";
+import { NEVER_TRANSCRIBE, transcribeVoiceNote } from "./voice-transcripts.server";
 import { athleteVoiceAllowed } from "./minor-voice.server";
 import {
   athleteRoomGate,
@@ -1025,6 +1025,12 @@ export function newMessagePush(
 export async function sendMessage(
   ctx: MessagesContext,
   data: z.infer<typeof sendMessageInputWithRole>,
+  /**
+   * `transcribe: false` when the sender hasn't allowed AI features in the app
+   * (App Review 5.1.2(i)): the voice note is stamped never-transcribe and
+   * arrives without a transcript. The web passes nothing and is unchanged.
+   */
+  opts: { transcribe?: boolean } = {},
 ): Promise<SendMessageResult> {
   const { userId } = ctx;
 
@@ -1159,6 +1165,11 @@ export async function sendMessage(
     plan_id: planId,
     room_id: room.kind === "athlete" ? room.id : null,
     direct_room_id: room.kind === "athlete" ? null : room.id,
+    // No AI permission: never transcribed, set in the same insert so the
+    // transcript sweep can't claim the note first.
+    ...(data.kind === "voice" && opts.transcribe === false
+      ? { transcript_failed_at: NEVER_TRANSCRIBE }
+      : {}),
   };
 
   const { data: inserted, error } = await supabaseAdmin
@@ -1170,8 +1181,9 @@ export async function sendMessage(
 
   // Voice notes get a server-side transcript (PRD §6.7 item 3). Started now so
   // the guardian mirror below can reuse it; deferred past the response otherwise.
+  const skipTranscript = data.kind === "voice" && opts.transcribe === false;
   const transcription: Promise<string | null> | null =
-    data.kind === "voice" && inserted?.id && audioPath
+    data.kind === "voice" && inserted?.id && audioPath && !skipTranscript
       ? transcribeVoiceNote(supabaseAdmin, {
           messageId: inserted.id,
           audioPath,

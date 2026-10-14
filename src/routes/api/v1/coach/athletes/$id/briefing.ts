@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { briefingSchema } from "@/lib/api/roster-schema";
 import { briefingInput, getPreLessonBriefing } from "@/lib/pre-lesson-briefing.server";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/api/v1/coach/athletes/$id/briefing")({
       output: briefingSchema,
       handler: async ({ ctx, params, query }) => {
         const { userId, admin } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         return getPreLessonBriefing({ userId, admin }, z.string().uuid().parse(params.id), query);
       },
     }),

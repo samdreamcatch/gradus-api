@@ -26,6 +26,8 @@ import type { SkaterProtocol } from "./board-types";
 import { deleteProtocolEvents, replaceProtocolEvents } from "./skill-events.server";
 import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
 import { getSport } from "./coach-sports";
+import { NAME_PLACEHOLDER_NOTE, unmaskStrings } from "./ai-names";
+import { loadAthleteNameMask } from "./ai-names.server";
 import type { AdminDb } from "./competitions.server";
 
 /** One event a named skater appeared in, as published. */
@@ -712,6 +714,8 @@ const draftPlanSchema = z.object({
 export interface PlanFromResultsDeps {
   generate?: (args: { prompt: string; apiKey: string }) => Promise<DraftPlan>;
   loadProfile?: LoadCoachAthleteProfile;
+  /** The names kept out of the prompt (`loadAthleteNameMask` by default). */
+  loadMask?: typeof loadAthleteNameMask;
 }
 
 const defaultDraftGenerate: NonNullable<PlanFromResultsDeps["generate"]> = async ({
@@ -820,9 +824,17 @@ Write 3 to 6 practice moves that target exactly what the protocol shows lost val
 
 Return an object with exactly these keys: "title" (the plan title, max 8 words, no emoji), "notes" (1-2 sentence summary of the competition takeaway), and "moves" (the array of practice moves).`;
 
+  // No names reach the model, including the skater's name on the protocol
+  // (src/lib/ai-names.ts).
+  const names = await (deps.loadMask ?? loadAthleteNameMask)(admin, input.athleteId);
+
   let object: DraftPlan;
   try {
-    object = await (deps.generate ?? defaultDraftGenerate)({ prompt, apiKey });
+    const masked = await (deps.generate ?? defaultDraftGenerate)({
+      prompt: `${names.mask(prompt)}\n\n${NAME_PLACEHOLDER_NOTE}`,
+      apiKey,
+    });
+    object = unmaskStrings(masked, names.unmask);
   } catch (err) {
     console.error("[competition plan draft]", err);
     throw aiUnavailable("Could not draft the plan. Please try again.");

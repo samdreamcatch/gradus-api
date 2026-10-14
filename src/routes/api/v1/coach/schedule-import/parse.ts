@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import {
   parseScheduleImageInput,
   parseScheduleResultSchema,
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/api/v1/coach/schedule-import/parse")({
       output: parseScheduleResultSchema,
       handler: async ({ ctx, input }) => {
         const { admin, userId } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         return parseScheduleImageUpload({ admin, userId }, input);
       },
     }),

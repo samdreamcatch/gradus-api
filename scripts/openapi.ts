@@ -16,6 +16,7 @@ import "../src/routes/api/v1/me/index";
 import "../src/routes/api/v1/me/presence";
 import "../src/routes/api/v1/me/terms";
 import "../src/routes/api/v1/me/terms_.accept";
+import "../src/routes/api/v1/me/ai-consent";
 import "../src/routes/api/v1/coach/profile";
 import "../src/routes/api/v1/coach/levels";
 import "../src/routes/api/v1/coach/onboarding/complete";

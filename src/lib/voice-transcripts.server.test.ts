@@ -149,9 +149,37 @@ describe("transcribeVoiceNote: never a minor's audio (decision #48)", () => {
         mimeType: "audio/mp4",
         bytes: new Uint8Array([1]),
       },
-      { now: () => NOW, transcribe: async () => "Nice edge.", voiceAllowed: async () => null },
+      {
+        now: () => NOW,
+        transcribe: async () => "Nice edge.",
+        voiceAllowed: async () => null,
+        aiAllowed: async () => true,
+      },
     );
     expect(text).toBe("Nice edge.");
+  });
+
+  it("never transcribes a note from someone who chose Not now for AI features (App Review 5.1.2(i))", async () => {
+    const { admin, updates } = fakeAdmin([
+      { id: "m9", kind: "voice", audio_url: "r/u/a.m4a", sender_user_id: "coach-user" },
+    ]);
+    let called = false;
+    const text = await transcribeVoiceNote(
+      admin,
+      { messageId: "m9", audioPath: "r/u/a.m4a", mimeType: "audio/mp4", bytes: new Uint8Array([1]) },
+      {
+        now: () => NOW,
+        transcribe: async () => {
+          called = true;
+          return "x";
+        },
+        voiceAllowed: async () => null,
+        aiAllowed: async () => false,
+      },
+    );
+    expect(text).toBeNull();
+    expect(called).toBe(false);
+    expect(JSON.stringify(updates)).toContain(NEVER_TRANSCRIBE);
   });
 });
 

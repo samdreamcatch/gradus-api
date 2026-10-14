@@ -1,5 +1,5 @@
 // Bump this when terms change to require re-acceptance.
-export const CURRENT_TERMS_VERSION = "2026-10-11";
+export const CURRENT_TERMS_VERSION = "2026-10-13";
 
 // localStorage key set on the signup form when the user checks the terms box,
 // then consumed by the authed layout after the session lands. Wrapped in a

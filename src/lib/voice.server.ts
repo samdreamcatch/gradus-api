@@ -7,6 +7,7 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { assertVoiceAllowed } from "./minor-voice.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createNameMask, unmaskStrings } from "./ai-names";
 import type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
 
 export const MAX_AUDIO_BYTES = 18 * 1024 * 1024; // 18 MB hard cap (~180s)
@@ -410,6 +411,7 @@ export async function slotTranscript(
     "RULES:",
     "- Do NOT invent drills, names, or numbers the coach did not say.",
     "- athleteName is the RAW name spoken (e.g. 'Sarah'). Do NOT try to resolve IDs.",
+    "- Known names in the transcript are replaced with placeholders such as [ATHLETE] or [ATHLETE 2]. Copy a placeholder exactly as written (brackets included) wherever the name belongs, including athleteName.",
     "- Cue = a SINGLE short repeatable phrase. Why = ONE sentence. Description = brief, what the athlete does.",
     "- targetKind: 'reps' for counted reps ('20 reps', 'ten swings'); 'mins' for time ('5 minutes').",
     "- Move target defaults: if unclear, 10 reps.",
@@ -699,7 +701,10 @@ export function mergeAppend(libraryValue: string, voiceValue: string): string {
 
 /* ---------------- Quote location ---------------- */
 
-export function locateQuote(transcript: string, quote: string | null | undefined): FieldSource | null {
+export function locateQuote(
+  transcript: string,
+  quote: string | null | undefined,
+): FieldSource | null {
   if (!quote) return null;
   const q = quote.trim();
   if (!q) return null;
@@ -744,6 +749,7 @@ async function cleanupNotes(opts: {
     "- NO prefix or label. Do NOT write 'Notes:', 'AI noted:', 'Summary:', or quote marks.",
     "- Strip filler: 'um', 'uh', 'like', 'you know', 'okay so', 'I mean', false starts, self-corrections.",
     "- Convert first-person coach speech to neutral instruction. 'I want her to focus on X' → 'Focus on X.'",
+    "- Names appear as placeholders such as [ATHLETE]; keep any you use exactly as written.",
     athleteFirstName
       ? `- The athlete is ${athleteFirstName}. Use their name only if it adds clarity; otherwise speak directly to them.`
       : "- Speak directly to the athlete (second person).",
@@ -770,12 +776,61 @@ async function cleanupNotes(opts: {
 
 /* ---------------- Orchestrator: build draft ---------------- */
 
-export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
+/**
+ * Builds the draft with no roster names in front of the model (src/lib/ai-names.ts):
+ * names in the transcript and the plan being edited become placeholders, the
+ * spoken athlete is matched to a placeholder here on the server, and every
+ * string in the draft is put back as it was said.
+ */
+export interface BuildDraftDeps {
+  /** Tests: one slotting attempt (the gateway by default). */
+  attempt?: Parameters<typeof slotWithRetries>[1]["attempt"];
+  /** Tests: the notes rewrite (the gateway by default). */
+  cleanup?: (opts: Parameters<typeof cleanupNotes>[0]) => Promise<string>;
+}
+
+export async function buildDraft(
+  ctx: ParseContext,
+  deps: BuildDraftDeps = {},
+): Promise<VoicePlanDraft> {
+  const names = createNameMask(
+    ctx.athletes.map((a) => {
+      const [first = "", ...rest] = a.name.split(" ");
+      return { role: "ATHLETE" as const, firstName: first, lastName: rest.join(" ") };
+    }),
+    { fuzzy: true },
+  );
+  const masked: ParseContext = {
+    ...ctx,
+    transcript: names.mask(ctx.transcript),
+    athletes: ctx.athletes.map((a, i) => ({ id: a.id, name: names.personTokens[i] || a.name })),
+    currentPlan: ctx.currentPlan
+      ? {
+          ...ctx.currentPlan,
+          title: names.mask(ctx.currentPlan.title ?? ""),
+          notes: names.mask(ctx.currentPlan.notes ?? ""),
+        }
+      : undefined,
+  };
+  const draft = await buildDraftFromMasked(masked, deps);
+  const restored = unmaskStrings(draft, names.unmask);
+  // "Notes unchanged" is decided against the masked notes; compare the real ones.
+  if (restored.notes !== undefined && restored.notes === (ctx.currentPlan?.notes ?? "")) {
+    restored.notes = undefined;
+    if (restored.sources) restored.sources.notes = undefined;
+  }
+  return restored;
+}
+
+async function buildDraftFromMasked(
+  ctx: ParseContext,
+  deps: BuildDraftDeps,
+): Promise<VoicePlanDraft> {
   // Schema/parse failures are common on long dictations: `SLOT_ATTEMPTS`
   // (full shape, reduced shape after a pause, reduced shape on a second
   // model) before giving up, and never a silent empty draft.
   const outcome = await slotWithRetries(ctx, {
-    attempt: (c, a) => slotTranscript(c, a.variant, a.model),
+    attempt: deps.attempt ?? ((c, a) => slotTranscript(c, a.variant, a.model)),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });
   if (!outcome) {
@@ -789,9 +844,14 @@ export async function buildDraft(ctx: ParseContext): Promise<VoicePlanDraft> {
 
   const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
   const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;
-  const athleteFirstName = resolvedAthlete ? (resolvedAthlete.name.split(" ")[0] ?? null) : null;
+  // A masked roster name is a placeholder ("[ATHLETE 2]"): keep it whole.
+  const athleteFirstName = resolvedAthlete
+    ? resolvedAthlete.name.startsWith("[")
+      ? resolvedAthlete.name
+      : (resolvedAthlete.name.split(" ")[0] ?? null)
+    : null;
 
-  const cleanedNotes = await cleanupNotes({
+  const cleanedNotes = await (deps.cleanup ?? cleanupNotes)({
     leftover: slotted.leftover ?? "",
     existingNotes: ctx.currentPlan?.notes ?? "",
     mode: ctx.mode,

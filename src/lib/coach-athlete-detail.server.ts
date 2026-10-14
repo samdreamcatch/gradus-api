@@ -18,6 +18,8 @@ import { goalsAuthorship } from "./goals-history.server";
 import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
 import { getSportLevel, getSport, getSuggestedHours, sportDisplayLabel } from "./coach-sports";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
+import { NAME_PLACEHOLDER_NOTE } from "./ai-names";
+import { loadAthleteNameMask } from "./ai-names.server";
 import { stateLabel } from "./session-states";
 import {
   canReadOtherCoachPlans,
@@ -753,6 +755,8 @@ export interface SummaryDeps {
     apiKey: string;
   }) => Promise<{ summary: string; verdict: "increase" | "hold" | "reduce"; rationale: string }>;
   loadProfile?: LoadCoachAthleteProfile;
+  /** Tests: the names kept out of the prompt (`loadAthleteNameMask` by default). */
+  loadMask?: typeof loadAthleteNameMask;
 }
 
 const summarySchema = z.object({
@@ -992,16 +996,19 @@ Provide a single-sentence rationale that cites a specific data point (a session 
   if (!apiKey)
     throw new ApiError({ code: "internal", status: 500, message: "Missing LOVABLE_API_KEY" });
 
+  // No names reach the model: the athlete's, their parents' (src/lib/ai-names.ts).
+  const names = await (deps.loadMask ?? loadAthleteNameMask)(admin, athleteId);
+
   try {
     const object = await (deps.generate ?? defaultSummaryGenerate)({
       system: ATHLETE_SUMMARY_SYSTEM,
-      prompt,
+      prompt: `${names.mask(prompt)}\n\n${NAME_PLACEHOLDER_NOTE}`,
       apiKey,
     });
     return {
-      summary: object.summary,
+      summary: names.unmask(object.summary),
       verdict: object.verdict,
-      rationale: object.rationale,
+      rationale: names.unmask(object.rationale),
       generatedAt: now.toISOString(),
       empty: false,
     };

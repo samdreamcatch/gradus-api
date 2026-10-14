@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { transcriptSchema, voiceTranscribeInput } from "@/lib/api/plans-schema";
 import { assertVoiceAllowed } from "@/lib/minor-voice.server";
 import { transcribeAudio } from "@/lib/voice.server";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/api/v1/voice/transcribe")({
       output: transcriptSchema,
       handler: async ({ ctx, input }) => {
         const { admin, userId } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         await assertVoiceAllowed(admin, userId);
         return transcribeAudio(input.audio);
       },

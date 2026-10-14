@@ -13,6 +13,8 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
+import { NAME_PLACEHOLDER_NOTE, type NameMask } from "./ai-names";
+import { loadAthleteNameMask } from "./ai-names.server";
 import { STATE_LABELS } from "./session-states";
 
 type Client = SupabaseClient<Database>;
@@ -309,6 +311,11 @@ export async function getPlanSessionsSummary(
   planId: string,
   env: SummaryEnv = process.env,
   now: Date = new Date(),
+  /** Tests: the names kept out of the prompt (read with the service-role client by default). */
+  loadMask: (athleteId: string) => Promise<NameMask> = async (athleteId) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return loadAthleteNameMask(supabaseAdmin, athleteId);
+  },
 ): Promise<PlanSessionsSummaryDTO> {
   const supabase = ctx.supabase;
 
@@ -383,14 +390,17 @@ Write a concise 2-3 sentence summary that captures how it's been going on this p
     summary: z.string().min(1).max(600),
   });
 
+  // No names reach the model: the athlete's, their parents' (src/lib/ai-names.ts).
+  const names = await loadMask(plan.athlete_id!);
+
   try {
     const { object } = await generateObject({
       model: gateway("google/gemini-2.5-flash"),
       schema,
-      prompt,
+      prompt: `${names.mask(prompt)}\n\n${NAME_PLACEHOLDER_NOTE}`,
     });
     return {
-      summary: object.summary,
+      summary: names.unmask(object.summary),
       generatedAt: new Date().toISOString(),
       empty: false,
       sessionsTotal: sessions.length,

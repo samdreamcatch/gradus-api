@@ -17,6 +17,7 @@ import {
 } from "@/lib/guardian-verification.server";
 import { callerSports } from "@/lib/caller-sports.server";
 import { isMinorOrUnconfirmed } from "@/lib/athlete-age";
+import { getAiConsent } from "@/lib/ai-consent.server";
 
 const outputSchema = z.object({
   userId: z.string(),
@@ -49,6 +50,19 @@ const outputSchema = z.object({
    * contract so an app build that reads it still decodes an older server.
    */
   sports: z.array(z.string()).optional(),
+  /**
+   * The caller's answer to the AI permission screen (App Review 5.1.2(i);
+   * `GET`/`PUT /me/ai-consent`). The app shows the screen while it is
+   * `unasked`, to everyone but athletes under 18. Always sent; optional in
+   * the contract so an app build that reads it still decodes an older server.
+   */
+  aiConsent: z
+    .object({
+      state: z.enum(["granted", "declined", "unasked"]),
+      version: z.string(),
+      decidedAt: z.string().nullable(),
+    })
+    .optional(),
 });
 
 /**
@@ -81,7 +95,7 @@ export const Route = createFileRoute("/api/v1/me/")({
         output: outputSchema,
         handler: async ({ ctx }) => {
           const { admin, userId } = requireContext(ctx);
-          const [coach, parent, athlete, orgAdmin, terms] = await Promise.all([
+          const [coach, parent, athlete, orgAdmin, terms, aiConsent] = await Promise.all([
             admin
               .from("coach_profiles")
               .select("id, onboarded_at")
@@ -106,6 +120,11 @@ export const Route = createFileRoute("/api/v1/me/")({
               .eq("user_id", userId)
               .eq("terms_version", CURRENT_TERMS_VERSION)
               .maybeSingle(),
+            // Never fails `/me`: the AI routes check permission on their own.
+            getAiConsent(admin, userId).catch((err) => {
+              console.error("[api] me ai-consent", err);
+              return undefined;
+            }),
           ]);
           const failed = [coach, parent, athlete, orgAdmin, terms].find((r) => r.error);
           if (failed?.error) {
@@ -162,6 +181,7 @@ export const Route = createFileRoute("/api/v1/me/")({
             athleteVoiceToPlan:
               role === "athlete" && athleteRow ? !isMinorOrUnconfirmed(athleteRow.birthdate) : null,
             sports,
+            aiConsent,
           };
         },
       }),

@@ -45,6 +45,15 @@ export const DIRECT_NOTICE = {
     label: "Who handles it:",
     text: `our hosting, database, email, push-notification and AI-drafting providers store and deliver it, and Kids Web Services verifies parents. The full list is in ${DIRECT_NOTICE_POLICY_LINK_TEXT}.`,
   },
+  /**
+   * App Review 2026-10-12 (5.1.2(i)), Mariah's wording: the coach's AI summaries
+   * of a minor's practice go to Google Gemini with names replaced
+   * (src/lib/ai-names.ts).
+   */
+  ai: {
+    label: "AI summaries:",
+    text: "Your athlete's coach can get AI summaries of practice, made by Google Gemini. Gradus anonymizes your athlete's name before anything is sent to Google.",
+  },
   /** The retention rule itself (decisions #41–#42), so the notice does not lean on the policy page for it. */
   kept: {
     label: "How long we keep it:",
@@ -68,6 +77,7 @@ export const DIRECT_NOTICE_ITEMS: readonly DirectNoticeItem[] = [
   DIRECT_NOTICE.keeps,
   DIRECT_NOTICE.use,
   DIRECT_NOTICE.providers,
+  DIRECT_NOTICE.ai,
   DIRECT_NOTICE.kept,
   DIRECT_NOTICE.control,
 ];

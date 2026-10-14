@@ -31,6 +31,12 @@ export type CoachResourcesContext = {
   supabase: Client;
   /** Checks an image link is public before it is saved; tests pass a fake. */
   fetchImpl?: typeof fetch;
+  /**
+   * The app (`/api/v1`) sets this: a coach PDF joins the knowledge corpus (OpenAI
+   * embeddings) only with AI permission (App Review 5.1.2(i)). Without it, only a
+   * coach who chose "Not now" is skipped.
+   */
+  requireAiConsent?: boolean;
   /** The service-role client and PDF check used to review an uploaded file; tests pass fakes. */
   uploadReview?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -395,6 +401,11 @@ export async function createCoachResource(
       const supabaseAdmin =
         ctx.uploadReview?.admin ??
         (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+      const { getAiConsent } = await import("./ai-consent.server");
+      const consent = (await getAiConsent(supabaseAdmin, userId)).state;
+      if (consent === "declined" || (ctx.requireAiConsent && consent !== "granted")) {
+        throw new Error("skipped: no AI permission");
+      }
       const { registerKnowledgeSource } = await import("./knowledge-ingest.server");
       await registerKnowledgeSource(
         supabaseAdmin as unknown as Parameters<typeof registerKnowledgeSource>[0],

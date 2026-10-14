@@ -4,6 +4,7 @@ import {
   salvageSlots,
   SLOT_ATTEMPTS,
   slotWithRetries,
+  buildDraft,
   VOICE_MODELS,
   VoiceAiError,
   type ParseContext,
@@ -211,5 +212,69 @@ describe("slotWithRetries", () => {
       },
     });
     expect(levels).toEqual(["error:slot failed", "info:slot recovered"]);
+  });
+});
+
+describe("buildDraft — no roster names reach the model (App Review 5.1.2(i))", () => {
+  it("masks roster names in the transcript and plan, matches the athlete here, and restores names", async () => {
+    let seenByModel = "";
+    let notesPrompt = "";
+    const draft = await buildDraft(
+      {
+        mode: "edit",
+        transcript: "For Tobias Fairbank: Tobias needs double toes. Linnea is out.",
+        athletes: [
+          { id: "a-linnea", name: "Linnea Corwin" },
+          { id: "a-tobias", name: "Tobias Fairbank" },
+        ],
+        library: [],
+        currentPlan: {
+          title: "Tobias jumps",
+          athleteId: "a-tobias",
+          notes: "Old notes for Tobias.",
+          moves: [],
+        },
+      },
+      {
+        attempt: async (c) => {
+          seenByModel = JSON.stringify(c);
+          return {
+            title: "[ATHLETE 2] jump block",
+            titleQuote: null,
+            athleteName: "[ATHLETE 2]",
+            athleteQuote: "[ATHLETE 2]",
+            moves: [
+              {
+                name: "Double toe loop",
+                nameQuote: null,
+                description: "[ATHLETE 2] lands five.",
+                descriptionQuote: null,
+                cue: null,
+                cueQuote: null,
+                why: null,
+                whyQuote: null,
+                targetKind: "reps",
+                targetValue: 5,
+                targetQuote: null,
+                matchExistingMoveId: null,
+              },
+            ],
+            leftover: "[ATHLETE] is out.",
+          } as unknown as Slots;
+        },
+        cleanup: async (o) => {
+          notesPrompt = JSON.stringify(o);
+          return "[ATHLETE] is out; [ATHLETE 2] keeps going.";
+        },
+      },
+    );
+    for (const name of ["Tobias", "Fairbank", "Linnea", "Corwin"]) {
+      expect(seenByModel).not.toContain(name);
+      expect(notesPrompt).not.toContain(name);
+    }
+    expect(draft.athleteId).toBe("a-tobias");
+    expect(draft.title).toBe("Tobias jump block");
+    expect(draft.moves[0]?.description).toBe("Tobias lands five.");
+    expect(draft.notes).toBe("Linnea is out; Tobias keeps going.");
   });
 });

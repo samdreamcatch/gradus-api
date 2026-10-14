@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { askGradusOutputSchema } from "@/lib/api/resources-schema";
 import { askGradus, askGradusInput } from "@/lib/ask-gradus.server";
 import { askerCoachIds, resolveAskGradusAudience } from "@/lib/ask-gradus-audience.server";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/api/v1/ask")({
       output: askGradusOutputSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase, admin } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         const audience = await resolveAskGradusAudience(
           { userId, supabase, admin },
           input.audience,

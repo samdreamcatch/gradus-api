@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/v1/coach/resources/")({
       output: createdResourceSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase } = requireContext(ctx);
-        return createCoachResource({ userId, supabase }, input);
+        return createCoachResource({ userId, supabase, requireAiConsent: true }, input);
       },
     }),
   },

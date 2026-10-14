@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { getAiConsent } from "@/lib/ai-consent.server";
 import { sendMessage, sendMessageBody, type sendMessageInputWithRole } from "@/lib/messages.server";
 
 const outputSchema = z.discriminatedUnion("ok", [
@@ -43,7 +44,11 @@ export const Route = createFileRoute("/api/v1/rooms/$id/messages")({
       handler: async ({ ctx, input, params }) => {
         const roomId = z.string().uuid().parse(params.id);
         const data = { ...input, roomId } as z.infer<typeof sendMessageInputWithRole>;
-        return sendMessage({ userId: requireContext(ctx).userId }, data);
+        const { admin, userId } = requireContext(ctx);
+        // No transcript without the sender's AI permission (App Review 5.1.2(i)).
+        const transcribe =
+          data.kind === "voice" ? (await getAiConsent(admin, userId)).state === "granted" : true;
+        return sendMessage({ userId }, data, { transcribe });
       },
     }),
   },

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { planSessionsSummarySchema } from "@/lib/api/plans-schema";
 import { getPlanSessionsSummary } from "@/lib/plan-sessions.server";
 
@@ -17,7 +18,8 @@ export const Route = createFileRoute("/api/v1/plans/$id/sessions/summary")({
       summary: "An AI summary of the sessions logged on a plan",
       output: planSessionsSummarySchema,
       handler: async ({ ctx, params }) => {
-        const { supabase } = requireContext(ctx);
+        const { supabase, admin, userId } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         return getPlanSessionsSummary({ supabase }, z.string().uuid().parse(params.id));
       },
     }),

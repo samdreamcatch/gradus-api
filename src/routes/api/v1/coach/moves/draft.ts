@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { moveDraftSchema } from "@/lib/api/plans-schema";
 import { draftMove, moveDraftInput } from "@/lib/move-draft.server";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/api/v1/coach/moves/draft")({
       output: moveDraftSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase, admin } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         return draftMove({ userId, supabase, admin }, input);
       },
     }),

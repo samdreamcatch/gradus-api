@@ -1,0 +1,454 @@
+/**
+ * Names out of AI prompts (App Review 2026-10-12; the parent consent line
+ * "Gradus anonymizes your athlete's name before anything is sent to Google").
+ *
+ * `createNameMask` swaps every known name in a prompt for a placeholder such
+ * as `[ATHLETE]`, and `unmask` puts the display name back into the model's
+ * reply. Callers load the names (src/lib/ai-names.server.ts), mask the whole
+ * prompt (the name fields Gradus adds AND the notes, messages and recaps
+ * people typed), and unmask every string they keep.
+ *
+ * Matching:
+ * - a full name ("Sarah Kim") matches in any case;
+ * - a first name matches in any case, unless it is also an everyday word
+ *   ("Will", "Grace"): then only the capitalized or all-caps form, so
+ *   "you will" stays readable;
+ * - a last name matches in any case too, unless it is an everyday word: then
+ *   only capitalized or all caps ("Hill", not "hill sprints"). It gets its own
+ *   `[SURNAME n]` placeholder so a family name shared by athlete and parent
+ *   restores correctly;
+ * - accents, apostrophes and hyphens don't matter ("jose" for José, O’Brien
+ *   for O'Brien, "Anne Marie" for Anne-Marie);
+ * - possessives keep their "'s" ("[ATHLETE]'s");
+ * - `unmask` writes back the shortest form the text used ("Sarah" over
+ *   "Sarah Kim"), or the person's display name when the prompt never named them.
+ *
+ * Nicknames and misspellings the account doesn't hold are not caught.
+ */
+
+export type NameRole = "ATHLETE" | "PARENT" | "COACH";
+
+export interface MaskPerson {
+  role: NameRole;
+  firstName: string | null | undefined;
+  lastName: string | null | undefined;
+  /** What `unmask` writes back for this person (default: the first name). */
+  display?: string;
+}
+
+export interface NameMask {
+  mask(text: string): string;
+  /** Each input person's placeholder, in input order ("" when the person had no usable name). */
+  personTokens: string[];
+  unmask(text: string): string;
+  /** The placeholder used for the first person of `role` (e.g. "[ATHLETE]"). */
+  token(role: NameRole): string;
+}
+
+/** First names that are also everyday English words: matched only when capitalized. */
+const EVERYDAY_WORD_NAMES = new Set([
+  "will",
+  "grace",
+  "hope",
+  "faith",
+  "joy",
+  "summer",
+  "may",
+  "june",
+  "april",
+  "august",
+  "autumn",
+  "winter",
+  "rose",
+  "lily",
+  "ivy",
+  "dawn",
+  "eve",
+  "mark",
+  "bill",
+  "pat",
+  "sue",
+  "ray",
+  "art",
+  "rich",
+  "rob",
+  "nick",
+  "jack",
+  "frank",
+  "chase",
+  "hunter",
+  "mason",
+  "piper",
+  "river",
+  "sky",
+  "skye",
+  "sage",
+  "wren",
+  "honey",
+  "sunny",
+  "star",
+  "page",
+  "drew",
+  "gene",
+  "guy",
+  "destiny",
+  "harmony",
+  "melody",
+  "liberty",
+  "journey",
+  "haven",
+  "brook",
+  "cash",
+  "king",
+  "major",
+  "royal",
+  "bishop",
+  "rocky",
+  "rusty",
+  "dusty",
+  "buddy",
+  "sandy",
+  "holly",
+  "heather",
+  "jade",
+  "ruby",
+  "pearl",
+  "amber",
+  "crystal",
+  "iris",
+  "daisy",
+  "violet",
+  "olive",
+  "hazel",
+  "ginger",
+  "penny",
+  "angel",
+  "gale",
+  "miles",
+  "max",
+  "rex",
+  "lane",
+  "reed",
+  "cole",
+  "dean",
+  "earl",
+  "glen",
+  "grant",
+  "heath",
+  "jay",
+  "lance",
+  "neil",
+  "park",
+  "pierce",
+  "price",
+  "ward",
+  "wade",
+  "young",
+  "sterling",
+  "blaze",
+  "storm",
+  "rain",
+  "ocean",
+  "lake",
+  "forest",
+]);
+
+/** Surnames that are also everyday words: matched only when capitalized ("Hill", not "hill sprints"). */
+const EVERYDAY_WORD_SURNAMES = new Set([
+  ...EVERYDAY_WORD_NAMES,
+  "hill",
+  "brown",
+  "white",
+  "green",
+  "black",
+  "gray",
+  "grey",
+  "wood",
+  "woods",
+  "stone",
+  "field",
+  "fields",
+  "long",
+  "short",
+  "little",
+  "small",
+  "rich",
+  "bell",
+  "bush",
+  "cook",
+  "baker",
+  "miller",
+  "smith",
+  "hunt",
+  "fox",
+  "wolf",
+  "bird",
+  "swan",
+  "crane",
+  "parks",
+  "rivers",
+  "banks",
+  "brooks",
+  "lee",
+  "best",
+  "good",
+  "love",
+  "sharp",
+  "strong",
+  "may",
+  "day",
+  "knight",
+  "rice",
+  "page",
+  "booth",
+  "hall",
+  "house",
+  "street",
+  "west",
+  "north",
+  "south",
+  "east",
+  "moon",
+  "frost",
+  "snow",
+  "summers",
+  "winters",
+  "spring",
+  "march",
+  "cross",
+  "church",
+  "chapel",
+  "mills",
+  "power",
+  "glass",
+  "gold",
+  "silver",
+  "steel",
+  "iron",
+  "case",
+  "beck",
+  "ford",
+  "nash",
+  "lord",
+  "pope",
+  "dove",
+]);
+
+const LETTER = "[\\p{L}\\p{N}]";
+
+/** Accented forms of each base letter, so "jose" matches "José" and "Jose" matches "Jóse". */
+const ACCENTS: Record<string, string> = {
+  a: "aàáâãäåāăą",
+  c: "cçćč",
+  e: "eèéêëēėęě",
+  i: "iìíîïīį",
+  n: "nñńň",
+  o: "oòóôõöøō",
+  u: "uùúûüūůű",
+  y: "yýÿ",
+  s: "sśšş",
+  z: "zźżž",
+  g: "gğ",
+  l: "lł",
+  r: "rř",
+  d: "dď",
+  t: "tť",
+};
+
+/** One name character as a regex piece: accent-insensitive letters, any apostrophe, space or hyphen. */
+function charPattern(c: string, caseInsensitive: boolean): string {
+  if (/['’ʼ`]/.test(c)) return "['’ʼ`]";
+  if (/[\s-]/.test(c)) return "[\\s-]+";
+  const base = c.normalize("NFD").replace(/\p{M}/gu, "");
+  const variants = ACCENTS[base.toLowerCase()];
+  if (!variants) return escapeRegExp(c);
+  const upper = !caseInsensitive && c !== c.toLowerCase();
+  return `[${upper ? variants.toUpperCase() : variants}]`;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function clean(name: string | null | undefined): string {
+  return (name ?? "").trim().replace(/\s+/g, " ");
+}
+
+function capitalizedForms(name: string): string[] {
+  const cap = name.charAt(0).toLocaleUpperCase() + name.slice(1);
+  return [...new Set([name, cap, name.toLocaleUpperCase()])];
+}
+
+interface Rule {
+  re: RegExp;
+  token: string;
+  length: number;
+}
+
+function rule(name: string, token: string, caseInsensitive: boolean): Rule {
+  const body = [...name].map((c) => charPattern(c, caseInsensitive)).join("");
+  return {
+    re: new RegExp(`(?<!${LETTER})${body}(?!${LETTER})`, caseInsensitive ? "giu" : "gu"),
+    token,
+    length: name.length,
+  };
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 0; i < a.length; i++) {
+    const cur = [i + 1];
+    for (let j = 0; j < b.length; j++) {
+      cur[j + 1] = Math.min(cur[j] + 1, prev[j + 1] + 1, prev[j] + (a[i] === b[j] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+export interface NameMaskOptions {
+  /**
+   * Also mask capitalized words one edit away from a first name (two for
+   * names of seven letters or more): speech-to-text spells "Sara" for "Sarah".
+   */
+  fuzzy?: boolean;
+}
+
+export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {}): NameMask {
+  const personTokens: string[] = [];
+  const fuzzyFirsts: { name: string; token: string }[] = [];
+  /** The text each placeholder first replaced, so `unmask` restores it as written. */
+  const seen = new Map<string, string>();
+  const rules: Rule[] = [];
+  const displays = new Map<string, string>();
+  const firstToken = new Map<NameRole, string>();
+  const counts = new Map<NameRole, number>();
+  const surnameTokens = new Map<string, string>();
+
+  for (const p of people) {
+    const first = clean(p.firstName);
+    const last = clean(p.lastName);
+    if (first.length < 2 && last.length < 2) {
+      personTokens.push("");
+      continue;
+    }
+    const n = (counts.get(p.role) ?? 0) + 1;
+    counts.set(p.role, n);
+    const token = n === 1 ? `[${p.role}]` : `[${p.role} ${n}]`;
+    if (n === 1) firstToken.set(p.role, token);
+    displays.set(token, p.display ?? (first || last));
+    personTokens.push(token);
+    if (first.length >= 4) fuzzyFirsts.push({ name: first.toLocaleLowerCase(), token });
+
+    if (first.length >= 2 && last.length >= 2) rules.push(rule(`${first} ${last}`, token, true));
+    if (first.length >= 2) {
+      if (EVERYDAY_WORD_NAMES.has(first.toLocaleLowerCase())) {
+        for (const form of capitalizedForms(first)) rules.push(rule(form, token, false));
+      } else {
+        rules.push(rule(first, token, true));
+      }
+    }
+    if (last.length >= 2) {
+      const key = last.toLocaleLowerCase();
+      let surname = surnameTokens.get(key);
+      if (!surname) {
+        surname = `[SURNAME ${surnameTokens.size + 1}]`;
+        surnameTokens.set(key, surname);
+        displays.set(surname, last);
+      }
+      if (EVERYDAY_WORD_SURNAMES.has(key)) {
+        for (const form of capitalizedForms(last)) rules.push(rule(form, surname, false));
+      } else {
+        rules.push(rule(last, surname, true));
+      }
+    }
+  }
+  // Longest first, so "Sarah Kim" wins over "Sarah".
+  rules.sort((a, b) => b.length - a.length);
+
+  const tokenList = [...displays.keys()].sort((a, b) => b.length - a.length);
+  const unmaskRes = tokenList.map((t) => ({
+    token: t,
+    re: new RegExp(escapeRegExp(t).replace(/^\\\[/, "\\[\\s*").replace(/\\\]$/, "\\s*\\]"), "gi"),
+  }));
+  // Restore the shortest form written ("Sarah" over "Sarah Kim"); a fuzzy
+  // match ("Sara") only when the name never appeared spelled right.
+  const fuzzySeen = new Map<string, string>();
+  const fold = (t: string) =>
+    t
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .replace(/['’ʼ`]/g, "'")
+      .replace(/[\s-]+/g, " ")
+      .toLowerCase();
+  const remember = (token: string, original: string, fuzzy = false) => {
+    // The stored spelling wins over a variant of it ("José", not "jose").
+    const display = displays.get(token);
+    const form = display && fold(display) === fold(original) ? display : original;
+    const store = fuzzy ? fuzzySeen : seen;
+    const prior = store.get(token);
+    if (
+      prior === undefined ||
+      form.length < prior.length ||
+      (form === display && form.length === prior.length)
+    ) {
+      store.set(token, form);
+    }
+    return token;
+  };
+
+  return {
+    personTokens,
+    mask(text) {
+      let out = text;
+      for (const r of rules) out = out.replace(r.re, (m) => remember(r.token, m));
+      if (opts.fuzzy && fuzzyFirsts.length) {
+        out = out.replace(/(?<![\p{L}\p{N}[])\p{Lu}[\p{L}]{2,}(?![\p{L}\p{N}])/gu, (word) => {
+          const w = word.toLocaleLowerCase();
+          if (EVERYDAY_WORD_NAMES.has(w)) return word;
+          for (const f of fuzzyFirsts) {
+            const limit = f.name.length >= 7 ? 2 : 1;
+            if (Math.abs(f.name.length - w.length) <= limit && levenshtein(f.name, w) <= limit) {
+              return remember(f.token, word, true);
+            }
+          }
+          return word;
+        });
+      }
+      return out;
+    },
+    unmask(text) {
+      let out = text;
+      for (const u of unmaskRes) {
+        out = out.replace(
+          u.re,
+          seen.get(u.token) ?? fuzzySeen.get(u.token) ?? displays.get(u.token)!,
+        );
+      }
+      return out;
+    },
+    token(role) {
+      return firstToken.get(role) ?? `[${role}]`;
+    },
+  };
+}
+
+/** Appended to a masked prompt so the model keeps the placeholders as written. */
+export const NAME_PLACEHOLDER_NOTE =
+  "Names are replaced with placeholders in square brackets, such as [ATHLETE], [PARENT] or [COACH]. Refer to people only by these placeholders, exactly as written, and never guess a real name.";
+
+/** Unmasks every string inside a model's structured reply (objects and arrays, any depth). */
+export function unmaskStrings<T>(value: T, unmask: (s: string) => string): T {
+  if (typeof value === "string") return unmask(value) as T;
+  if (Array.isArray(value)) return value.map((v) => unmaskStrings(v, unmask)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+        k,
+        unmaskStrings(v, unmask),
+      ]),
+    ) as T;
+  }
+  return value;
+}

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
+import { assertAiConsent } from "@/lib/ai-consent.server";
 import { ApiError } from "@/lib/api/errors";
 import { voiceApplyResultSchema, voiceBuildInput } from "@/lib/api/plans-schema";
 import { buildAthletePlanFromVoice, withoutWords } from "@/lib/athlete-voice.server";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/api/v1/athlete/voice/build-plan")({
       output: voiceApplyResultSchema,
       handler: async ({ ctx, input }) => {
         const { userId, supabase, admin } = requireContext(ctx);
+        await assertAiConsent(admin, userId);
         if (input.mode === "edit" && !input.planId) {
           throw new ApiError({
             code: "validation_failed",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import {
+  getCoachAthleteAiSummary,
   getCoachAthleteDetail,
   getOtherCoachPlanForMessage,
   summarySessionLine,
@@ -80,6 +81,7 @@ function fakeAdmin(seed: Record<string, Row[]>, tierByCoach: Record<string, stri
           }),
         ),
       order: () => api,
+      limit: () => api,
       maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
       single: async () => ({ data: rows()[0] ?? null, error: null }),
       then: (resolve: (v: unknown) => unknown, reject?: unknown) =>
@@ -343,5 +345,63 @@ describe("getOtherCoachPlanForMessage — same gate from a message thread", () =
       tiers: { [LINKED.id]: "coach_pro" },
     });
     expect(res.coach.coachId).toBe(LINKED.id);
+  });
+});
+
+describe("getCoachAthleteAiSummary — no names reach the model (App Review 5.1.2(i))", () => {
+  it("masks the athlete's and parents' names in fields and typed text, and restores them in the reply", async () => {
+    const admin = fakeAdmin(
+      {
+        coach_profiles: [VIEWER],
+        coach_athletes: [{ coach_id: VIEWER.id, athlete_id: ATHLETE_ID }],
+        coach_athlete_sports: [],
+        athletes: [
+          { id: ATHLETE_ID, first_name: "Maeve", last_name: "Abbott", parent_id: PARENT_ID },
+        ],
+        athlete_guardians: [{ athlete_id: ATHLETE_ID, parent_id: "par-2" }],
+        parent_profiles: [
+          { id: PARENT_ID, first_name: "Corin", last_name: "Abbott" },
+          { id: "par-2", first_name: "Dov", last_name: "Lindqvist" },
+        ],
+        plans: [],
+        plan_sessions: [
+          {
+            athlete_id: ATHLETE_ID,
+            plan_id: "p1",
+            state_index: 2,
+            duration_seconds: 1200,
+            note: "maeve landed it! Corin and Dov Lindqvist watched. Ms. Abbott says MAEVE's spins improved",
+            logged_at: "2026-09-25T10:00:00.000Z",
+            parent_id: null,
+          },
+        ],
+        message_rooms: [],
+      },
+      {},
+    );
+    let sent = "";
+    const out = await getCoachAthleteAiSummary(
+      { userId: VIEWER.user_id, admin },
+      ATHLETE_ID,
+      { LOVABLE_API_KEY: "k" } as NodeJS.ProcessEnv,
+      NOW,
+      {
+        loadProfile: (async () => ({ text: "" })) as never,
+        generate: async ({ prompt, system }) => {
+          sent = `${system}\n${prompt}`;
+          return {
+            summary: "[ATHLETE] had a strong week; [PARENT 2] watched.",
+            verdict: "hold",
+            rationale: "[ATHLETE]'s note says the spins improved.",
+          };
+        },
+      },
+    );
+    for (const name of ["Maeve", "maeve", "MAEVE", "Abbott", "Corin", "Dov", "Lindqvist"]) {
+      expect(sent).not.toContain(name);
+    }
+    expect(sent).toContain("[ATHLETE]");
+    expect(out.summary).toBe("Maeve had a strong week; Dov Lindqvist watched.");
+    expect(out.rationale).toBe("Maeve's note says the spins improved.");
   });
 });
