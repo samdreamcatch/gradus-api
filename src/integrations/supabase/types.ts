@@ -68,6 +68,27 @@ export type Database = {
           },
         ]
       }
+      ai_consents: {
+        Row: {
+          decided_at: string
+          granted: boolean
+          user_id: string
+          version: string
+        }
+        Insert: {
+          decided_at?: string
+          granted: boolean
+          user_id: string
+          version: string
+        }
+        Update: {
+          decided_at?: string
+          granted?: boolean
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           age_band: string | null
