@@ -1,6 +1,6 @@
 /**
  * Names out of AI prompts (App Review 2026-10-12; the parent consent line
- * "Gradus anonymizes your athlete's name before anything is sent to Google").
+ * "Gradus anonymizes your athlete's name before a summary is sent to Google").
  *
  * `createNameMask` swaps every known name in a prompt for a placeholder such
  * as `[ATHLETE]`, and `unmask` puts the display name back into the model's

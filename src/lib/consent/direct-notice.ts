@@ -52,7 +52,7 @@ export const DIRECT_NOTICE = {
    */
   ai: {
     label: "AI summaries:",
-    text: "Your athlete's coach can get AI summaries of practice, made by Google Gemini. Gradus anonymizes your athlete's name before anything is sent to Google.",
+    text: "Your athlete's coach can get AI summaries of practice, made by Google Gemini. Gradus anonymizes your athlete's name before a summary is sent to Google.",
   },
   /** The retention rule itself (decisions #41–#42), so the notice does not lean on the policy page for it. */
   kept: {
