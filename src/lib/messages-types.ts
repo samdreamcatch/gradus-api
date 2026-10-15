@@ -51,6 +51,32 @@ export type MessageDTO = {
   createdAt: string;
   readBy: { userId: string; readAt: string }[];
   plan: { id: string; title: string; coachId: string | null } | null;
+  /**
+   * The earlier message this one answers; null when it isn't a reply or the quoted message is gone.
+   * Optional in the contract: Xcode Cloud can ship an app that expects it
+   * before this server is published.
+   */
+  replyTo?: ReplyPreview | null;
+  /** One per person, oldest first; a cleared reaction is left out. */
+  reactions?: MessageReaction[];
+};
+
+/** Fixed set, in picker order (one per person per message, swappable). */
+export const MESSAGE_REACTIONS = ["👍", "❤️", "😂", "🔥", "👏"] as const;
+export type ReactionEmoji = (typeof MESSAGE_REACTIONS)[number];
+
+export type MessageReaction = { userId: string; emoji: ReactionEmoji };
+
+/** Enough of the quoted message to draw the line above a reply. */
+export type ReplyPreview = {
+  id: string;
+  senderRole: RoleInRoom;
+  senderFirstName: string;
+  /** Set when the quoted sender deleted their account; `excerpt` is then empty. */
+  senderDeletedAt: string | null;
+  kind: "text" | "voice";
+  /** Up to 140 characters of the quoted text; empty for a voice note. */
+  excerpt: string;
 };
 
 export type RoomDetail = {

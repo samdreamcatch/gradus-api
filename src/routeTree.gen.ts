@@ -269,6 +269,7 @@ import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api
 import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
 import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
+import { Route as ApiV1MessagesIdReactionRouteImport } from './routes/api/v1/messages/$id/reaction'
 import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
 import { Route as ApiV1ParentTeamIndexRouteImport } from './routes/api/v1/parent/team/index'
 import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id/index'
@@ -1782,6 +1783,11 @@ const ApiV1MeTermsAcceptRoute = ApiV1MeTermsAcceptRouteImport.update({
   path: '/api/v1/me/terms/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MessagesIdReactionRoute = ApiV1MessagesIdReactionRouteImport.update({
+  id: '/api/v1/messages/$id/reaction',
+  path: '/api/v1/messages/$id/reaction',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ParentAthletesIndexRoute =
   ApiV1ParentAthletesIndexRouteImport.update({
     id: '/api/v1/parent/athletes/',
@@ -2520,6 +2526,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
+  '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -2861,6 +2868,7 @@ export interface FileRoutesByTo {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
+  '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -3210,6 +3218,7 @@ export interface FileRoutesById {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
+  '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -3559,6 +3568,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
+    | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -3900,6 +3910,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
+    | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -4248,6 +4259,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms_/accept'
+    | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -4515,6 +4527,7 @@ export interface RootRouteChildren {
   ApiV1InvitesParentPreviewRoute: typeof ApiV1InvitesParentPreviewRoute
   ApiV1LiveActivitiesTokensTokenRoute: typeof ApiV1LiveActivitiesTokensTokenRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
+  ApiV1MessagesIdReactionRoute: typeof ApiV1MessagesIdReactionRoute
   ApiV1PlansIdShareTokenRoute: typeof ApiV1PlansIdShareTokenRoute
   ApiV1PlansIdStatusRoute: typeof ApiV1PlansIdStatusRoute
   ApiV1PlansImportTokenRoute: typeof ApiV1PlansImportTokenRoute
@@ -6441,6 +6454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeTermsAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/messages/$id/reaction': {
+      id: '/api/v1/messages/$id/reaction'
+      path: '/api/v1/messages/$id/reaction'
+      fullPath: '/api/v1/messages/$id/reaction'
+      preLoaderRoute: typeof ApiV1MessagesIdReactionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/parent/athletes/': {
       id: '/api/v1/parent/athletes/'
       path: '/api/v1/parent/athletes'
@@ -7488,6 +7508,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1InvitesParentPreviewRoute: ApiV1InvitesParentPreviewRoute,
   ApiV1LiveActivitiesTokensTokenRoute: ApiV1LiveActivitiesTokensTokenRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
+  ApiV1MessagesIdReactionRoute: ApiV1MessagesIdReactionRoute,
   ApiV1PlansIdShareTokenRoute: ApiV1PlansIdShareTokenRoute,
   ApiV1PlansIdStatusRoute: ApiV1PlansIdStatusRoute,
   ApiV1PlansImportTokenRoute: ApiV1PlansImportTokenRoute,

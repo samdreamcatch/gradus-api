@@ -6,7 +6,15 @@
  * shapes of the messaging screens instead of `any`.
  */
 import { z } from "zod";
-import type { MessageDTO, RoomDetail, RoomParticipant, RoomSummary } from "@/lib/messages-types";
+import {
+  MESSAGE_REACTIONS,
+  type MessageDTO,
+  type MessageReaction,
+  type ReplyPreview,
+  type RoomDetail,
+  type RoomParticipant,
+  type RoomSummary,
+} from "@/lib/messages-types";
 import type { MessageTargetDTO } from "@/lib/messages.server";
 import type { BlockedUser } from "@/lib/safety.server";
 import { REPORT_REASONS } from "@/lib/safety-types";
@@ -44,6 +52,22 @@ export const roomSummarySchema = z.object({
   updatedAt: z.string(),
 }) satisfies z.ZodType<RoomSummary>;
 
+export const reactionEmojiSchema = z.enum(MESSAGE_REACTIONS);
+
+export const messageReactionSchema = z.object({
+  userId: z.string(),
+  emoji: reactionEmojiSchema,
+}) satisfies z.ZodType<MessageReaction>;
+
+export const replyPreviewSchema = z.object({
+  id: z.string(),
+  senderRole: roleInRoomSchema,
+  senderFirstName: z.string(),
+  senderDeletedAt: z.string().nullable(),
+  kind: z.enum(["text", "voice"]),
+  excerpt: z.string(),
+}) satisfies z.ZodType<ReplyPreview>;
+
 export const messageSchema = z.object({
   id: z.string(),
   roomId: z.string(),
@@ -60,6 +84,8 @@ export const messageSchema = z.object({
   createdAt: z.string(),
   readBy: z.array(z.object({ userId: z.string(), readAt: z.string() })),
   plan: z.object({ id: z.string(), title: z.string(), coachId: z.string().nullable() }).nullable(),
+  replyTo: replyPreviewSchema.nullable().optional(),
+  reactions: z.array(messageReactionSchema).optional(),
 }) satisfies z.ZodType<MessageDTO>;
 
 export const roomDetailRoomSchema = z.object({

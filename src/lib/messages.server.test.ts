@@ -3,10 +3,15 @@ import { ApiError } from "./api/errors";
 import {
   decodeCursor,
   encodeCursor,
+  isReactionEmoji,
+  missingLateColumn,
   newMessagePush,
   partitionByKind,
   roomsDigest,
+  REPLY_EXCERPT_MAX,
+  setReactionBody,
   toMessageDTO,
+  toReplyPreview,
   type InternalRoomRow,
 } from "./messages.server";
 import type { RoomParticipant, RoomSummary } from "./messages-types";
@@ -214,5 +219,80 @@ describe("newMessagePush (sendMessage's push, decision #54)", () => {
     expect(newMessagePush("r2", "athlete", undefined, { kind: "text", body: "Hi" }).title).toBe(
       "New message",
     );
+  });
+});
+
+describe("replies and reactions", () => {
+  const participants: RoomParticipant[] = [
+    { userId: "coach-u", role: "coach", firstName: "Linnea", lastName: "C" },
+    { userId: "ath-u", role: "athlete", firstName: "Maeve", lastName: "A" },
+  ];
+  const row = {
+    id: "m0",
+    room_id: "r1",
+    direct_room_id: null,
+    sender_user_id: "ath-u",
+    sender_deleted_at: null,
+    sender_role: "athlete",
+    kind: "text",
+    body: "Can we move\nThursday to 4?",
+    audio_url: null,
+    duration_seconds: null,
+    created_at: "2026-10-14T10:00:00Z",
+    plan_id: null,
+  };
+
+  it("quotes the sender's first name and a one-line excerpt", () => {
+    expect(toReplyPreview(row, participants)).toEqual({
+      id: "m0",
+      senderRole: "athlete",
+      senderFirstName: "Maeve",
+      senderDeletedAt: null,
+      kind: "text",
+      excerpt: "Can we move Thursday to 4?",
+    });
+  });
+
+  it("trims long quotes, and quotes voice notes and deleted senders without text", () => {
+    const long = toReplyPreview({ ...row, body: "x".repeat(500) }, participants).excerpt;
+    expect(long.length).toBe(REPLY_EXCERPT_MAX);
+    expect(long.endsWith("…")).toBe(true);
+    expect(toReplyPreview({ ...row, kind: "voice", body: "" }, participants).excerpt).toBe("");
+    const gone = toReplyPreview({ ...row, sender_user_id: null }, participants);
+    expect(gone.excerpt).toBe("");
+    expect(gone.senderFirstName).toBe("");
+    expect(gone.senderDeletedAt).toBe("2026-10-14T10:00:00Z");
+  });
+
+  it("defaults a message to no quote and no reactions", () => {
+    const dto = toMessageDTO(row, "r1", participants, [], null, null);
+    expect(dto.replyTo).toBeNull();
+    expect(dto.reactions).toEqual([]);
+    const withExtras = toMessageDTO(row, "r1", participants, [], null, null, {
+      replyTo: toReplyPreview(row, participants),
+      reactions: [{ userId: "coach-u", emoji: "👍" }],
+    });
+    expect(withExtras.replyTo?.id).toBe("m0");
+    expect(withExtras.reactions).toEqual([{ userId: "coach-u", emoji: "👍" }]);
+  });
+
+  it("accepts only the five reactions, or null to clear", () => {
+    for (const e of ["👍", "❤️", "😂", "🔥", "👏"]) expect(isReactionEmoji(e)).toBe(true);
+    expect(isReactionEmoji("🙂")).toBe(false);
+    expect(setReactionBody.safeParse({ emoji: null }).success).toBe(true);
+    expect(setReactionBody.safeParse({ emoji: "🙂" }).success).toBe(false);
+  });
+
+  it("names the late column a missing-column error is about", () => {
+    const err = (column: string) => ({
+      code: "42703",
+      message: `column messages.${column} does not exist`,
+    });
+    expect(missingLateColumn(err("reply_to_id"))).toBe("reply_to_id");
+    expect(missingLateColumn(err("transcript"))).toBe("transcript");
+    expect(missingLateColumn(err("transcript"), new Set(["transcript"]))).toBeNull();
+    expect(missingLateColumn(err("body"))).toBeNull();
+    expect(missingLateColumn({ code: "42501", message: "permission denied" })).toBeNull();
+    expect(missingLateColumn(null)).toBeNull();
   });
 });

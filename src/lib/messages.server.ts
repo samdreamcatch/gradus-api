@@ -29,13 +29,17 @@ import {
   verificationRequired,
 } from "./guardian-verification.server";
 import { dbError } from "./db-error";
-import type {
-  MessageDTO,
-  RoleInRoom,
-  RoomDetail,
-  RoomKind,
-  RoomParticipant,
-  RoomSummary,
+import {
+  MESSAGE_REACTIONS,
+  type MessageDTO,
+  type MessageReaction,
+  type ReactionEmoji,
+  type ReplyPreview,
+  type RoleInRoom,
+  type RoomDetail,
+  type RoomKind,
+  type RoomParticipant,
+  type RoomSummary,
 } from "./messages-types";
 
 export type ContextEnvelope = { supabase: unknown; userId: string };
@@ -415,6 +419,8 @@ export const sendMessageInput = z.discriminatedUnion("kind", [
     kind: z.literal("text"),
     body: z.string().min(1).max(4000),
     planId: z.string().uuid().nullish(),
+    /** The earlier message in this conversation that this one answers. */
+    replyToId: z.string().uuid().nullish(),
   }),
   z.object({
     roomId: z.string().uuid(),
@@ -424,6 +430,8 @@ export const sendMessageInput = z.discriminatedUnion("kind", [
     mimeType: z.string().min(1).max(100),
     durationSeconds: z.number().int().min(1).max(180),
     planId: z.string().uuid().nullish(),
+    /** The earlier message in this conversation that this one answers. */
+    replyToId: z.string().uuid().nullish(),
   }),
 ]);
 
@@ -437,6 +445,8 @@ export const sendMessageBody = z.discriminatedUnion("kind", [
     kind: z.literal("text"),
     body: z.string().min(1).max(4000),
     planId: z.string().uuid().nullish(),
+    /** The earlier message in this conversation that this one answers. */
+    replyToId: z.string().uuid().nullish(),
     viewerRole: viewerRoleSchema.optional(),
   }),
   z.object({
@@ -446,6 +456,8 @@ export const sendMessageBody = z.discriminatedUnion("kind", [
     mimeType: z.string().min(1).max(100),
     durationSeconds: z.number().int().min(1).max(180),
     planId: z.string().uuid().nullish(),
+    /** The earlier message in this conversation that this one answers. */
+    replyToId: z.string().uuid().nullish(),
     viewerRole: viewerRoleSchema.optional(),
   }),
 ]);
@@ -587,7 +599,29 @@ type MsgRow = {
   transcript?: string | null;
   created_at: string;
   plan_id: string | null;
+  reply_to_id?: string | null;
 };
+
+/** Longest quote shown above a reply. */
+export const REPLY_EXCERPT_MAX = 140;
+
+/** The quoted line above a reply, from the quoted message's row. */
+export function toReplyPreview(m: MsgRow, participants: RoomParticipant[]): ReplyPreview {
+  const senderGone = !m.sender_user_id;
+  const sender = senderGone
+    ? null
+    : (participants.find((p) => p.userId === m.sender_user_id) ??
+      participants.find((p) => p.role === (m.sender_role as RoleInRoom)));
+  const body = senderGone || m.kind !== "text" ? "" : (m.body ?? "").replace(/\s+/g, " ").trim();
+  return {
+    id: m.id,
+    senderRole: m.sender_role as RoleInRoom,
+    senderFirstName: sender?.firstName ?? "",
+    senderDeletedAt: m.sender_deleted_at ?? (senderGone ? m.created_at : null),
+    kind: m.kind as "text" | "voice",
+    excerpt: body.length > REPLY_EXCERPT_MAX ? `${body.slice(0, REPLY_EXCERPT_MAX - 1)}…` : body,
+  };
+}
 
 /** One `MessageDTO` from a row plus the lookups `hydrateMessages` did. */
 export function toMessageDTO(
@@ -597,6 +631,7 @@ export function toMessageDTO(
   readBy: { userId: string; readAt: string }[],
   plan: { id: string; title: string; coachId: string | null } | null,
   audioUrl: string | null,
+  extras: { replyTo?: ReplyPreview | null; reactions?: MessageReaction[] } = {},
 ): MessageDTO {
   const senderGone = !m.sender_user_id;
   const sender = senderGone
@@ -619,6 +654,8 @@ export function toMessageDTO(
     createdAt: m.created_at,
     readBy,
     plan,
+    replyTo: extras.replyTo ?? null,
+    reactions: extras.reactions ?? [],
   };
 }
 
@@ -662,33 +699,47 @@ async function fetchMessagesForRooms(
 }
 
 const MESSAGE_COLS =
-  "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, transcript, created_at, plan_id";
+  "id, room_id, direct_room_id, sender_user_id, sender_deleted_at, sender_role, kind, body, audio_url, duration_seconds, transcript, created_at, plan_id, reply_to_id";
 
 /**
- * `messages.transcript` arrives with migration 20260919200000. Lovable does
- * not apply migrations on publish (PRD §4.1 rule 11), so until Mariah applies
- * it the thread reads must keep working: on the first "column does not exist"
- * the column is dropped from the select for the rest of this isolate's life.
+ * Columns that arrive with a later migration: `transcript` (20260919200000)
+ * and `reply_to_id` (20261014200000). Lovable does not apply migrations on
+ * publish (PRD §4.1 rule 11), so until Mariah applies them the thread reads
+ * must keep working: on the first "column does not exist" naming one of
+ * them, it is dropped from the select for the rest of this isolate's life.
  */
-let transcriptColumnAvailable = true;
+const LATE_COLUMNS = { transcript: "20260919200000", reply_to_id: "20261014200000" } as const;
+type LateColumn = keyof typeof LATE_COLUMNS;
+const missingColumns = new Set<LateColumn>();
 function messageColumns(): string {
-  return transcriptColumnAvailable ? MESSAGE_COLS : MESSAGE_COLS.replace(", transcript", "");
+  let cols = MESSAGE_COLS;
+  for (const c of missingColumns) cols = cols.replace(`, ${c}`, "");
+  return cols;
 }
 type DbResult = { data: unknown; error: { code?: string; message?: string } | null };
-function isMissingTranscriptColumn(error: DbResult["error"]): boolean {
-  return (
-    transcriptColumnAvailable &&
-    !!error &&
-    (error.code === "42703" || /transcript/.test(error.message ?? "")) &&
-    /transcript/.test(error.message ?? "")
-  );
+/** The late column a "column does not exist" error names, if any. */
+export function missingLateColumn(
+  error: DbResult["error"],
+  alreadyMissing: ReadonlySet<string> = new Set(),
+): LateColumn | null {
+  if (!error) return null;
+  const message = error.message ?? "";
+  if (error.code !== "42703" && !/does not exist/.test(message)) return null;
+  for (const c of Object.keys(LATE_COLUMNS) as LateColumn[]) {
+    if (!alreadyMissing.has(c) && new RegExp(`\\b${c}\\b`).test(message)) return c;
+  }
+  return null;
 }
 async function selectMessages(build: (cols: string) => Promise<DbResult>): Promise<DbResult> {
   let res = await build(messageColumns());
-  if (res.error && isMissingTranscriptColumn(res.error)) {
-    transcriptColumnAvailable = false;
+  for (
+    let c = missingLateColumn(res.error, missingColumns);
+    c;
+    c = missingLateColumn(res.error, missingColumns)
+  ) {
+    missingColumns.add(c);
     console.error(
-      "[messages] messages.transcript is missing; reading without it until migration 20260919200000 is applied",
+      `[messages] messages.${c} is missing; reading without it until migration ${LATE_COLUMNS[c]} is applied`,
     );
     res = await build(messageColumns());
   }
@@ -743,18 +794,74 @@ async function hydrateMessages(
     }
   }
 
+  const [reactionsByMessage, quoted] = await Promise.all([
+    loadReactions(messageIds),
+    loadQuotedMessages(rows),
+  ]);
+
   return Promise.all(
-    rows.map(async (m) =>
-      toMessageDTO(
+    rows.map(async (m) => {
+      const target = m.reply_to_id ? quoted.get(m.reply_to_id) : undefined;
+      return toMessageDTO(
         m,
         room.id,
         participants,
         readsByMessage.get(m.id) ?? [],
         m.plan_id ? (plansById.get(m.plan_id) ?? null) : null,
         m.audio_url ? await signAudio(m.audio_url) : null,
-      ),
-    ),
+        {
+          replyTo: target ? toReplyPreview(target, participants) : null,
+          reactions: reactionsByMessage.get(m.id) ?? [],
+        },
+      );
+    }),
   );
+}
+
+/**
+ * Live reactions per message, oldest first. An empty map while the
+ * `message_reactions` migration (20261014200000) isn't applied yet.
+ */
+async function loadReactions(messageIds: string[]): Promise<Map<string, MessageReaction[]>> {
+  const byMessage = new Map<string, MessageReaction[]>();
+  if (messageIds.length === 0) return byMessage;
+  const { data, error } = await supabaseAdmin
+    .from("message_reactions")
+    .select("message_id, user_id, emoji, updated_at")
+    .in("message_id", messageIds)
+    .not("emoji", "is", null)
+    .order("updated_at", { ascending: true });
+  if (error) {
+    console.error("[messages] couldn't load reactions", error.message);
+    return byMessage;
+  }
+  for (const r of (data ?? []) as { message_id: string; user_id: string; emoji: string }[]) {
+    if (!isReactionEmoji(r.emoji)) continue;
+    const arr = byMessage.get(r.message_id) ?? [];
+    arr.push({ userId: r.user_id, emoji: r.emoji });
+    byMessage.set(r.message_id, arr);
+  }
+  return byMessage;
+}
+
+/** The messages that `rows` reply to, by id (one query, any page). */
+async function loadQuotedMessages(rows: MsgRow[]): Promise<Map<string, MsgRow>> {
+  const ids = Array.from(new Set(rows.map((m) => m.reply_to_id).filter(Boolean) as string[]));
+  const byId = new Map<string, MsgRow>();
+  if (ids.length === 0) return byId;
+  const { data, error } = await selectMessages(
+    async (cols) => await supabaseAdmin.from("messages").select(cols).in("id", ids),
+  );
+  if (error) {
+    console.error("[messages] couldn't load quoted messages", error.message);
+    return byId;
+  }
+  for (const m of (data ?? []) as unknown as MsgRow[]) byId.set(m.id, m);
+  return byId;
+}
+
+export function isReactionEmoji(value: string): value is ReactionEmoji {
+  return (MESSAGE_REACTIONS as readonly string[]).includes(value);
 }
 
 async function roomHeader(
@@ -1022,6 +1129,81 @@ export function newMessagePush(
   );
 }
 
+/** 422 unless `messageId` is a message in `room`. */
+async function requireMessageInRoom(messageId: string, room: InternalRoomRow, message: string) {
+  const { data: target, error } = await supabaseAdmin
+    .from("messages")
+    .select("id")
+    .eq("id", messageId)
+    .eq(room.kind === "athlete" ? "room_id" : "direct_room_id", room.id)
+    .maybeSingle();
+  if (error) dbError(error, "Couldn't find that message");
+  if (!target) throw unprocessable(message);
+}
+
+type RoomRefusal = Extract<SendMessageResult, { ok: false }>;
+
+/**
+ * Whether the viewer may add anything to this room right now (a message or a
+ * reaction): not while either side has blocked the other, after the coach and
+ * athlete are unlinked, or while the room rule holds it (PRD §6.13 A6, C).
+ * Athlete rooms hand back the gate so the caller can apply the minor rules.
+ */
+async function roomContactGate(
+  userId: string,
+  room: InternalRoomRow,
+): Promise<
+  | { ok: true; gate: Awaited<ReturnType<typeof athleteRoomGate>> | null }
+  | { ok: false; refusal: RoomRefusal }
+> {
+  const { blockedUserIds } = await import("./safety.server");
+  const blocked = await blockedUserIds(supabaseAdmin, userId);
+  if (blocked.size > 0) {
+    const parts = (await loadParticipants([room])).get(room.id) ?? [];
+    if (parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId))) {
+      return {
+        ok: false,
+        refusal: {
+          ok: false,
+          reason: "blocked",
+          message: "You can't message this person because one of you has blocked the other.",
+        },
+      };
+    }
+  }
+  if (room.kind !== "athlete") return { ok: true, gate: null };
+
+  const { data: link, error: linkErr } = await supabaseAdmin
+    .from("coach_athletes")
+    .select("coach_id")
+    .eq("coach_id", room.coachId!)
+    .eq("athlete_id", room.athleteId!)
+    .maybeSingle();
+  if (linkErr) dbError(linkErr, "Couldn't send message");
+  if (!link) {
+    return {
+      ok: false,
+      refusal: {
+        ok: false,
+        reason: "coach_unlinked",
+        message: "This coach is no longer connected to this athlete. New messages can't be sent.",
+      },
+    };
+  }
+  const gate = await athleteRoomGate(supabaseAdmin, room.athleteId!, room.coachId!);
+  if (gate.restriction) {
+    return {
+      ok: false,
+      refusal: {
+        ok: false,
+        reason: gate.restriction,
+        message: ROOM_RESTRICTION_MESSAGES[gate.restriction],
+      },
+    };
+  }
+  return { ok: true, gate };
+}
+
 export async function sendMessage(
   ctx: MessagesContext,
   data: z.infer<typeof sendMessageInputWithRole>,
@@ -1042,52 +1224,23 @@ export async function sendMessage(
   );
   const role = myRoleByRoom.get(room.id)!;
 
-  // Blocking is a full disconnect: no new messages in either direction.
-  {
-    const { blockedUserIds } = await import("./safety.server");
-    const blocked = await blockedUserIds(supabaseAdmin, userId);
-    if (blocked.size > 0) {
-      const parts = (await loadParticipants([room])).get(room.id) ?? [];
-      if (parts.some((p) => p.userId && p.userId !== userId && blocked.has(p.userId))) {
-        return {
-          ok: false as const,
-          reason: "blocked" as const,
-          message: "You can't message this person because one of you has blocked the other.",
-        };
-      }
-    }
+  // Blocking, an unlinked coach, and the room rule (PRD §6.13 A6, C).
+  const contact = await roomContactGate(userId, room);
+  if (!contact.ok) return contact.refusal;
+
+  // Text-only minors (A7).
+  if (role === "athlete" && contact.gate?.minor && data.kind === "voice") {
+    return { ok: false as const, reason: "text_only" as const, message: TEXT_ONLY_MESSAGE };
   }
 
-  // Athlete-scoped rooms: block sends when the coach↔athlete link is gone.
-  if (room.kind === "athlete") {
-    const { data: link, error: linkErr } = await supabaseAdmin
-      .from("coach_athletes")
-      .select("coach_id")
-      .eq("coach_id", room.coachId!)
-      .eq("athlete_id", room.athleteId!)
-      .maybeSingle();
-    if (linkErr) dbError(linkErr, "Couldn't send message");
-    if (!link) {
-      return {
-        ok: false as const,
-        reason: "coach_unlinked" as const,
-        message: "This coach is no longer connected to this athlete. New messages can't be sent.",
-      };
-    }
-
-    // The room rule (PRD §6.13 A6, C) and text-only minors (A7).
-    const gate = await athleteRoomGate(supabaseAdmin, room.athleteId!, room.coachId!);
-    if (gate.restriction) {
-      return {
-        ok: false as const,
-        reason: gate.restriction,
-        message: ROOM_RESTRICTION_MESSAGES[gate.restriction],
-      };
-    }
-    if (role === "athlete" && gate.minor && data.kind === "voice") {
-      return { ok: false as const, reason: "text_only" as const, message: TEXT_ONLY_MESSAGE };
-    }
-  }
+  // A reply quotes a message from this same conversation.
+  const replyToId = data.replyToId ?? null;
+  if (replyToId)
+    await requireMessageInRoom(
+      replyToId,
+      room,
+      "The message you're replying to isn't in this conversation.",
+    );
 
   // Plan tagging works in athlete-scoped rooms and coach↔coach direct rooms.
   const planId =
@@ -1163,6 +1316,8 @@ export async function sendMessage(
     audio_url: audioPath,
     duration_seconds: duration,
     plan_id: planId,
+    // Only written when set, so plain sends keep working before migration 20261014200000.
+    ...(replyToId ? { reply_to_id: replyToId } : {}),
     room_id: room.kind === "athlete" ? room.id : null,
     direct_room_id: room.kind === "athlete" ? null : room.id,
     // No AI permission: never transcribed, set in the same insert so the
@@ -1260,6 +1415,55 @@ export async function sendMessage(
   });
 
   return { ok: true as const, id: inserted!.id };
+}
+
+export const setReactionBody = z.object({
+  /** One of the five; null clears yours. */
+  emoji: z.enum(MESSAGE_REACTIONS).nullable(),
+  viewerRole: viewerRoleSchema.optional(),
+});
+
+export type SetReactionResult = { ok: true; reactions: MessageReaction[] } | RoomRefusal;
+
+/**
+ * Sets, swaps, or clears the viewer's one reaction on a message (2026-10-14:
+ * one per person, swappable, no push, no unread). Refused like a send while
+ * the room is blocked, unlinked, or held by the room rule. Clearing keeps the
+ * row with a null emoji so realtime sees an UPDATE (see the migration).
+ */
+export async function setReaction(
+  ctx: MessagesContext,
+  messageId: string,
+  input: z.infer<typeof setReactionBody>,
+): Promise<SetReactionResult> {
+  const { userId } = ctx;
+  const { data: msg, error: msgErr } = await supabaseAdmin
+    .from("messages")
+    .select("id, room_id, direct_room_id")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (msgErr) dbError(msgErr, "Couldn't find that message");
+  const roomId = msg?.room_id ?? msg?.direct_room_id;
+  if (!roomId) throw notFound("Message not found");
+  const { room } = await findMyRoom(userId, roomId, input.viewerRole, "Message not found");
+
+  const contact = await roomContactGate(userId, room);
+  if (!contact.ok) return contact.refusal;
+
+  const { error } = await supabaseAdmin.from("message_reactions").upsert(
+    {
+      message_id: messageId,
+      user_id: userId,
+      emoji: input.emoji,
+      // Set by trigger too; written here so the CHECK holds on insert.
+      room_id: msg!.room_id,
+      direct_room_id: msg!.direct_room_id,
+    },
+    { onConflict: "message_id,user_id" },
+  );
+  if (error) dbError(error, "Couldn't save your reaction");
+
+  return { ok: true, reactions: (await loadReactions([messageId])).get(messageId) ?? [] };
 }
 
 /** `markRoomRead`. */

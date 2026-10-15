@@ -15149,6 +15149,77 @@
                               "title",
                               "coachId"
                             ]
+                          },
+                          "replyTo": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "senderRole": {
+                                "type": "string",
+                                "enum": [
+                                  "coach",
+                                  "athlete",
+                                  "parent"
+                                ]
+                              },
+                              "senderFirstName": {
+                                "type": "string"
+                              },
+                              "senderDeletedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "voice"
+                                ]
+                              },
+                              "excerpt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "senderRole",
+                              "senderFirstName",
+                              "senderDeletedAt",
+                              "kind",
+                              "excerpt"
+                            ]
+                          },
+                          "reactions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "userId": {
+                                  "type": "string"
+                                },
+                                "emoji": {
+                                  "type": "string",
+                                  "enum": [
+                                    "👍",
+                                    "❤️",
+                                    "😂",
+                                    "🔥",
+                                    "👏"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "userId",
+                                "emoji"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -15244,6 +15315,13 @@
                         ],
                         "format": "uuid"
                       },
+                      "replyToId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
                       "viewerRole": {
                         "type": "string",
                         "enum": [
@@ -15287,6 +15365,13 @@
                         "maximum": 180
                       },
                       "planId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "replyToId": {
                         "type": [
                           "string",
                           "null"
