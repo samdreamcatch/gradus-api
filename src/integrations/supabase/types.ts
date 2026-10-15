@@ -3618,11 +3618,67 @@ export type Database = {
           },
         ]
       }
+      plan_session_move_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          move_id: string | null
+          move_name: string
+          plan_move_id: string | null
+          position: number
+          session_id: string
+          state_index: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          move_id?: string | null
+          move_name: string
+          plan_move_id?: string | null
+          position: number
+          session_id: string
+          state_index: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          move_id?: string | null
+          move_name?: string
+          plan_move_id?: string | null
+          position?: number
+          session_id?: string
+          state_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_session_move_ratings_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_session_move_ratings_plan_move_id_fkey"
+            columns: ["plan_move_id"]
+            isOneToOne: false
+            referencedRelation: "plan_moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_session_move_ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "plan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_sessions: {
         Row: {
           athlete_id: string
           created_at: string
           duration_seconds: number
+          feedback_scope: string
           id: string
           logged_at: string
           note: string
@@ -3634,6 +3690,7 @@ export type Database = {
           athlete_id: string
           created_at?: string
           duration_seconds?: number
+          feedback_scope?: string
           id?: string
           logged_at?: string
           note?: string
@@ -3645,6 +3702,7 @@ export type Database = {
           athlete_id?: string
           created_at?: string
           duration_seconds?: number
+          feedback_scope?: string
           id?: string
           logged_at?: string
           note?: string
@@ -3659,6 +3717,7 @@ export type Database = {
           athlete_id: string | null
           coach_id: string | null
           created_at: string
+          feedback_scope: string
           id: string
           is_org_template: boolean
           kind: string
@@ -3677,6 +3736,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          feedback_scope?: string
           id?: string
           is_org_template?: boolean
           kind: string
@@ -3695,6 +3755,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          feedback_scope?: string
           id?: string
           is_org_template?: boolean
           kind?: string
@@ -4555,6 +4616,18 @@ export type Database = {
         Returns: boolean
       }
       is_service_caller: { Args: never; Returns: boolean }
+      log_plan_session: {
+        Args: {
+          _athlete_id: string
+          _duration_seconds: number
+          _move_ratings: Json
+          _note: string
+          _parent_id: string
+          _plan_id: string
+          _state_index: number
+        }
+        Returns: string
+      }
       match_knowledge_chunks: {
         Args: {
           p_coach_ids: string[]
