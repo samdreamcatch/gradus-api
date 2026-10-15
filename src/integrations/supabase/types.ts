@@ -2906,55 +2906,6 @@ export type Database = {
         }
         Relationships: []
       }
-      message_reactions: {
-        Row: {
-          direct_room_id: string | null
-          emoji: string | null
-          message_id: string
-          room_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          direct_room_id?: string | null
-          emoji?: string | null
-          message_id: string
-          room_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          direct_room_id?: string | null
-          emoji?: string | null
-          message_id?: string
-          room_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_reactions_direct_room_id_fkey"
-            columns: ["direct_room_id"]
-            isOneToOne: false
-            referencedRelation: "direct_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_reactions_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "message_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       message_reads: {
         Row: {
           message_id: string
@@ -3015,7 +2966,6 @@ export type Database = {
           id: string
           kind: string
           plan_id: string | null
-          reply_to_id: string | null
           room_id: string | null
           sender_deleted_at: string | null
           sender_role: string
@@ -3032,7 +2982,6 @@ export type Database = {
           id?: string
           kind: string
           plan_id?: string | null
-          reply_to_id?: string | null
           room_id?: string | null
           sender_deleted_at?: string | null
           sender_role: string
@@ -3049,7 +2998,6 @@ export type Database = {
           id?: string
           kind?: string
           plan_id?: string | null
-          reply_to_id?: string | null
           room_id?: string | null
           sender_deleted_at?: string | null
           sender_role?: string
@@ -3063,13 +3011,6 @@ export type Database = {
             columns: ["direct_room_id"]
             isOneToOne: false
             referencedRelation: "direct_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
