@@ -3675,10 +3675,10 @@ export type Database = {
       }
       plan_sessions: {
         Row: {
-          feedback_scope: string
           athlete_id: string
           created_at: string
           duration_seconds: number
+          feedback_scope: string
           id: string
           logged_at: string
           note: string
@@ -3687,10 +3687,10 @@ export type Database = {
           state_index: number
         }
         Insert: {
-          feedback_scope?: string
           athlete_id: string
           created_at?: string
           duration_seconds?: number
+          feedback_scope?: string
           id?: string
           logged_at?: string
           note?: string
@@ -3699,10 +3699,10 @@ export type Database = {
           state_index: number
         }
         Update: {
-          feedback_scope?: string
           athlete_id?: string
           created_at?: string
           duration_seconds?: number
+          feedback_scope?: string
           id?: string
           logged_at?: string
           note?: string
@@ -3714,10 +3714,10 @@ export type Database = {
       }
       plans: {
         Row: {
-          feedback_scope: string
           athlete_id: string | null
           coach_id: string | null
           created_at: string
+          feedback_scope: string
           id: string
           is_org_template: boolean
           kind: string
@@ -3733,10 +3733,10 @@ export type Database = {
           voice_transcript: string | null
         }
         Insert: {
-          feedback_scope?: string
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          feedback_scope?: string
           id?: string
           is_org_template?: boolean
           kind: string
@@ -3752,10 +3752,10 @@ export type Database = {
           voice_transcript?: string | null
         }
         Update: {
-          feedback_scope?: string
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          feedback_scope?: string
           id?: string
           is_org_template?: boolean
           kind?: string
@@ -4622,9 +4622,9 @@ export type Database = {
           _duration_seconds: number
           _move_ratings: Json
           _note: string
-          _parent_id: string | null
+          _parent_id: string
           _plan_id: string
-          _state_index: number | null
+          _state_index: number
         }
         Returns: string
       }
