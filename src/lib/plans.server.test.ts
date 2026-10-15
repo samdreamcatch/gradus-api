@@ -2,7 +2,11 @@ import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import { addPlanMoveToLibrary, updateLibraryMoveFromPlanMove } from "./moves.server";
 import { resolvePlanViewerRole } from "./plan-detail.server";
-import { listPlanSessionsQuery, submitSessionInput } from "./plan-sessions.server";
+import {
+  listPlanSessionsQuery,
+  submitPlanSession,
+  submitSessionInput,
+} from "./plan-sessions.server";
 import {
   createPlan,
   deletePlan,
@@ -817,5 +821,149 @@ describe("voice uploads", () => {
     })();
     expect(err?.status).toBe(413);
     expect(err?.code).toBe("payload_too_large");
+  });
+});
+
+describe("feedback on each move or the whole plan", () => {
+  const owned = {
+    coach_id: "coach-1",
+    kind: "plan",
+    status: "draft",
+    athlete_id: "a1",
+    title: "T",
+    notes: "",
+    feedback_scope: "plan",
+  };
+  const m1 = "11111111-1111-4111-8111-111111111111";
+  const m2 = "22222222-2222-4222-8222-222222222222";
+
+  it("a check-in rates the session, or at least one move, never the same move twice", () => {
+    expect(submitSessionInput.safeParse({}).success).toBe(false);
+    expect(submitSessionInput.safeParse({ moveRatings: [] }).success).toBe(false);
+    expect(
+      submitSessionInput.safeParse({ moveRatings: [{ planMoveId: m1, stateIndex: 2 }] }).success,
+    ).toBe(true);
+    expect(
+      submitSessionInput.safeParse({
+        moveRatings: [
+          { planMoveId: m1, stateIndex: 2 },
+          { planMoveId: m1, stateIndex: 3 },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      submitSessionInput.safeParse({ moveRatings: [{ planMoveId: m1, stateIndex: 5 }] }).success,
+    ).toBe(false);
+    expect(
+      submitSessionInput.safeParse({ moveRatings: [{ planMoveId: "nope", stateIndex: 1 }] })
+        .success,
+    ).toBe(false);
+  });
+
+  it("the coach's choice is saved with the plan", async () => {
+    const payloads: unknown[] = [];
+    const supabase = fakeClient({ ...coach, ...roster, plans: owned }, {}, { payloads });
+    await expect(
+      updatePlan({ userId: "u", supabase }, "p1", { feedbackScope: "moves" }),
+    ).resolves.toEqual({ ok: true });
+    expect(payloads[0]).toMatchObject({ feedback_scope: "moves" });
+  });
+
+  it("a plan forked to another athlete keeps its feedback choice", async () => {
+    const inserts: unknown[] = [];
+    const supabase = fakeClient({
+      ...coach,
+      ...roster,
+      plans: { ...owned, status: "active", athlete_id: "a2", feedback_scope: "moves", id: "p2" },
+    });
+    const from = supabase.from;
+    supabase.from = (table: string) => {
+      const q = from(table);
+      const insert = q.insert;
+      q.insert = (payload: unknown) => {
+        if (table === "plans") inserts.push(payload);
+        return insert(payload);
+      };
+      return q;
+    };
+    const res = await updatePlan({ userId: "u", supabase }, "p1", { athleteId: "a1" });
+    expect(res.forkedId).toBeDefined();
+    expect(inserts[0]).toMatchObject({ feedback_scope: "moves" });
+  });
+
+  /** Just enough of a client for submitPlanSession: profile lookups and the rpc. */
+  function submitClient(opts: { parent?: boolean; rpcError?: { code: string; message: string } }) {
+    const calls: { fn: string; args: Record<string, unknown> }[] = [];
+    const rows: Record<string, unknown> = {
+      parent_profiles: opts.parent ? { id: "pp1" } : null,
+      athletes: { id: "a1" },
+      plans: { id: "p1", athlete_id: "a1" },
+    };
+    const chain = (table: string) => {
+      const self: Record<string, unknown> = {};
+      self.select = () => self;
+      self.eq = () => self;
+      self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
+      return self;
+    };
+    const client = {
+      from: chain,
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        calls.push({ fn, args });
+        return { data: "s1", error: opts.rpcError ?? null };
+      },
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { client: client as any, calls };
+  }
+
+  it("an each-move check-in sends the ratings and lets the server work out the session's rating", async () => {
+    const { client, calls } = submitClient({});
+    const input = submitSessionInput.parse({
+      stateIndex: 4,
+      moveRatings: [
+        { planMoveId: m1, stateIndex: 1 },
+        { planMoveId: m2, stateIndex: 3 },
+      ],
+    });
+    await expect(
+      submitPlanSession({ userId: "u", supabase: client }, "p1", input),
+    ).resolves.toEqual({
+      ok: true,
+      loggedAs: "athlete",
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].fn).toBe("log_plan_session");
+    expect(calls[0].args).toMatchObject({
+      _plan_id: "p1",
+      _athlete_id: "a1",
+      _parent_id: null,
+      _state_index: null,
+    });
+    expect(calls[0].args._move_ratings).toEqual(input.moveRatings);
+  });
+
+  it("a whole-plan check-in from a parent sends its one rating", async () => {
+    const { client, calls } = submitClient({ parent: true });
+    await submitPlanSession(
+      { userId: "u", supabase: client },
+      "p1",
+      submitSessionInput.parse({ stateIndex: 2 }),
+    );
+    expect(calls[0].args).toMatchObject({ _parent_id: "pp1", _state_index: 2, _move_ratings: [] });
+  });
+
+  it("a rated move that isn't on the plan is a 422", async () => {
+    const { client } = submitClient({
+      rpcError: { code: "22023", message: "A rated move is not on this plan" },
+    });
+    const err = await caught(() =>
+      submitPlanSession(
+        { userId: "u", supabase: client },
+        "p1",
+        submitSessionInput.parse({ moveRatings: [{ planMoveId: m1, stateIndex: 1 }] }),
+      ),
+    );
+    expect(err?.status).toBe(422);
   });
 });

@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { rethrowPlain } from "./api/errors";
 import * as shared from "./plan-sessions.server";
-import { submitSessionInput } from "./plan-sessions.server";
+import { submitSessionFields, withSessionChecks } from "./plan-sessions.server";
 
 /*
  * Thin wrappers over src/lib/plan-sessions.server.ts, shared with the
@@ -60,7 +60,9 @@ export const listPlanSessions = createServerFn({ method: "POST" })
   });
 
 const submitInput = (input: unknown) =>
-  z.object({ planId: z.string().uuid() }).merge(submitSessionInput).parse(input);
+  withSessionChecks(z.object({ planId: z.string().uuid() }).merge(submitSessionFields)).parse(
+    input,
+  );
 
 /** Parent-only: submit a session from the feedback modal. */
 export const submitPlanSession = createServerFn({ method: "POST" })

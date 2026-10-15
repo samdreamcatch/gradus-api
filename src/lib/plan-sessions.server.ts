@@ -102,6 +102,18 @@ export interface PlanSessionEntry {
   /** Who logged it. */
   loggedByKind: "parent" | "athlete";
   loggedByFirstName: string;
+  /** "moves" when each move was rated; `stateIndex` is then their average. */
+  feedbackScope?: string;
+  /** The rated moves, in plan order (each-move check-ins only). */
+  moveRatings?: SessionMoveRating[];
+}
+
+export interface SessionMoveRating {
+  /** Null once the move has been removed from the plan. */
+  planMoveId: string | null;
+  /** The move's name when the session was logged. */
+  moveName: string;
+  stateIndex: number;
 }
 
 export interface PlanSessionLogDTO {
@@ -154,7 +166,9 @@ export async function listPlanSessions(
 
   let q = supabase
     .from("plan_sessions")
-    .select("id, logged_at, duration_seconds, state_index, note, parent_id")
+    .select(
+      "id, logged_at, duration_seconds, state_index, note, parent_id, feedback_scope, plan_session_move_ratings(plan_move_id, move_name, position, state_index)",
+    )
     .eq("plan_id", planId)
     .eq("athlete_id", plan.athlete_id)
     .order("logged_at", { ascending: false })
@@ -189,6 +203,18 @@ export async function listPlanSessions(
     note: r.note ?? "",
     loggedByKind: r.parent_id ? "parent" : "athlete",
     loggedByFirstName: r.parent_id ? (parentNames.get(r.parent_id) ?? "Parent") : athleteFirstName,
+    ...(r.feedback_scope === "moves"
+      ? {
+          feedbackScope: "moves" as const,
+          moveRatings: [...(r.plan_session_move_ratings ?? [])]
+            .sort((a, b) => a.position - b.position)
+            .map((m) => ({
+              planMoveId: m.plan_move_id,
+              moveName: m.move_name,
+              stateIndex: m.state_index,
+            })),
+        }
+      : { feedbackScope: "plan" as const }),
   }));
 
   const loggedByParent = sessions.filter((s) => s.loggedByKind === "parent").length;
@@ -203,11 +229,70 @@ export async function listPlanSessions(
 
 /* ---------------- submit ---------------- */
 
-export const submitSessionInput = z.object({
+export const moveRatingInput = z.object({
+  planMoveId: z.string().uuid(),
   stateIndex: z.number().int().min(0).max(4),
+});
+
+/**
+ * A whole-plan check-in sends `stateIndex`. An each-move check-in sends
+ * `moveRatings` (the moves that were rated; a move left blank is omitted) and
+ * no `stateIndex`: the server sets the session's rating to their average.
+ * Older clients only send `stateIndex`, which is always accepted.
+ */
+export const submitSessionFields = z.object({
+  stateIndex: z.number().int().min(0).max(4).optional(),
+  moveRatings: z.array(moveRatingInput).max(200).optional(),
   note: z.string().max(2000).default(""),
   durationSeconds: z.number().int().min(0).max(86_400).default(0),
 });
+
+/** The rating rules, applied to any schema that carries the session fields. */
+export function withSessionChecks<O extends z.infer<typeof submitSessionFields>>(
+  schema: z.ZodType<O, z.ZodTypeDef, unknown>,
+) {
+  return schema
+    .refine((d) => (d.moveRatings?.length ?? 0) > 0 || d.stateIndex !== undefined, {
+      message: "Rate the session, or at least one move",
+      path: ["stateIndex"],
+    })
+    .refine(
+      (d) =>
+        new Set((d.moveRatings ?? []).map((r) => r.planMoveId)).size ===
+        (d.moveRatings?.length ?? 0),
+      { message: "Each move can be rated once", path: ["moveRatings"] },
+    );
+}
+
+export const submitSessionInput = withSessionChecks(submitSessionFields);
+
+/**
+ * Write the session (and its move ratings) in one transaction through
+ * `log_plan_session`, which runs under the caller's RLS.
+ */
+async function logSession(
+  supabase: Client,
+  row: { planId: string; athleteId: string; parentId: string | null },
+  data: z.infer<typeof submitSessionInput>,
+): Promise<void> {
+  const ratings = data.moveRatings ?? [];
+  const { error } = await supabase.rpc("log_plan_session", {
+    _plan_id: row.planId,
+    _athlete_id: row.athleteId,
+    _parent_id: row.parentId,
+    _state_index: ratings.length > 0 ? null : (data.stateIndex ?? null),
+    _note: data.note,
+    _duration_seconds: data.durationSeconds,
+    _move_ratings: ratings,
+  });
+  if (error) {
+    // Raised by the function: a rated move that isn't on this plan.
+    if (error.code === "22023") {
+      throw new ApiError({ code: "unprocessable", status: 422, message: error.message });
+    }
+    dbError(error);
+  }
+}
 
 /** Parent: log a session for the plan's athlete from the feedback modal. */
 export async function submitPlanSessionAsParent(
@@ -229,15 +314,7 @@ export async function submitPlanSessionAsParent(
     throw new ApiError({ code: "wrong_role", status: 403, message: "Parent profile not found" });
   }
 
-  const { error } = await supabase.from("plan_sessions").insert({
-    plan_id: planId,
-    athlete_id: plan.athlete_id,
-    parent_id: parent.id,
-    state_index: data.stateIndex,
-    note: data.note,
-    duration_seconds: data.durationSeconds,
-  });
-  if (error) dbError(error);
+  await logSession(supabase, { planId, athleteId: plan.athlete_id, parentId: parent.id }, data);
   return { ok: true };
 }
 
@@ -260,15 +337,7 @@ export async function submitPlanSessionAsAthlete(
   }
   if (!plan || plan.athlete_id !== athlete.id) throw notFound("Plan not found");
 
-  const { error } = await supabase.from("plan_sessions").insert({
-    plan_id: planId,
-    athlete_id: athlete.id,
-    parent_id: null,
-    state_index: data.stateIndex,
-    note: data.note,
-    duration_seconds: data.durationSeconds,
-  });
-  if (error) dbError(error);
+  await logSession(supabase, { planId, athleteId: athlete.id, parentId: null }, data);
   return { ok: true };
 }
 

@@ -19,6 +19,8 @@ import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-ev
 export type PlanKind = "plan" | "template";
 export type PlanStatus = "active" | "benched" | "draft";
 export type TargetKind = "reps" | "mins";
+/** What the athlete rates after practice: the whole plan, or each move (never both). */
+export type FeedbackScope = "plan" | "moves";
 
 type Client = SupabaseClient<Database>;
 
@@ -146,6 +148,8 @@ export interface PlanDetailDTO extends PlanSummaryDTO {
   notes: string;
   moves: PlanMoveDTO[];
   voiceTranscript: string | null;
+  /** What the athlete rates after practice: "plan" (one rating) or "moves" (each move). */
+  feedbackScope: FeedbackScope;
   /** False when another coach who shares the athlete is reading it. */
   isOwner: boolean;
 }
@@ -320,7 +324,9 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
 
   const { data: plan, error } = await supabase
     .from("plans")
-    .select("id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id")
+    .select(
+      "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) dbError(error);
@@ -416,6 +422,7 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
     updatedAt: plan.updated_at,
     moves: planMoves,
     voiceTranscript: (plan as { voice_transcript?: string | null }).voice_transcript ?? null,
+    feedbackScope: plan.feedback_scope === "moves" ? "moves" : "plan",
     sessionsByState: sessions.sessionsByState,
     sessionsTotal: sessions.sessionsTotal,
     isOwner,
@@ -853,6 +860,7 @@ export async function createPlan(
   const sourceId = data.fromPlanId ?? data.fromTemplateId;
   let title = data.title ?? "Untitled plan";
   let notes = "";
+  let feedbackScope: FeedbackScope = "plan";
   let sourceMoves: Array<{
     position: number;
     move_id: string | null;
@@ -867,7 +875,7 @@ export async function createPlan(
   if (sourceId) {
     const { data: src, error } = await supabase
       .from("plans")
-      .select("title, notes")
+      .select("title, notes, feedback_scope")
       .eq("id", sourceId)
       .eq("coach_id", coachId)
       .maybeSingle();
@@ -875,6 +883,8 @@ export async function createPlan(
     if (!src) throw notFound("Plan not found");
     title = data.title ?? (src.title ? `${src.title} (copy)` : title);
     notes = src.notes;
+    // A copy asks for the same feedback as the plan or template it came from.
+    if (src.feedback_scope === "moves") feedbackScope = "moves";
     const { data: srcMoves, error: mErr } = await supabase
       .from("plan_moves")
       .select("position, move_id, name, description, cue, why, target_kind, target_value")
@@ -893,6 +903,7 @@ export async function createPlan(
       kind: data.kind,
       athlete_id: data.kind === "template" ? null : (data.athleteId ?? null),
       status: data.kind === "template" ? "benched" : "draft",
+      feedback_scope: feedbackScope,
     })
     .select("id")
     .single();
@@ -978,6 +989,7 @@ export const updatePlanPatch = z.object({
   notes: z.string().max(4000).optional(),
   kind: z.enum(["plan", "template"]).optional(),
   athleteId: z.string().uuid().nullable().optional(),
+  feedbackScope: z.enum(["plan", "moves"]).optional(),
 });
 
 /**
@@ -999,7 +1011,7 @@ export async function updatePlan(
   // valid per the plans_kind_athlete_chk constraint.
   const { data: current, error: loadErr } = await supabase
     .from("plans")
-    .select("kind,status,athlete_id,title,notes")
+    .select("kind,status,athlete_id,title,notes,feedback_scope")
     .eq("id", id)
     .eq("coach_id", coachId)
     .single();
@@ -1028,6 +1040,7 @@ export async function updatePlan(
         kind: "plan",
         athlete_id: data.athleteId ?? null,
         status: "draft",
+        feedback_scope: data.feedbackScope ?? current.feedback_scope,
       })
       .select("id")
       .single();
@@ -1065,8 +1078,10 @@ export async function updatePlan(
     kind?: string;
     status?: string;
     athlete_id?: string | null;
+    feedback_scope?: FeedbackScope;
   } = { updated_at: now.toISOString() };
   if (data.title !== undefined) patch.title = data.title;
+  if (data.feedbackScope !== undefined) patch.feedback_scope = data.feedbackScope;
   if (data.notes !== undefined) patch.notes = data.notes;
   if (data.kind !== undefined) {
     patch.kind = data.kind;

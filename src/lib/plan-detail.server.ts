@@ -57,6 +57,8 @@ export interface RoleAwarePlanDetailDTO {
   source?: string;
   /** The athlete author's first name, with `source: "athlete"` ("By Greta"). */
   authorFirstName?: string | null;
+  /** "plan" or "moves": what the athlete rates after practice. Optional on the wire. */
+  feedbackScope?: string;
 }
 
 /**
@@ -158,6 +160,7 @@ export async function getPlanForViewer(
       voiceTranscript: plan.voiceTranscript,
       sessionsByState: plan.sessionsByState,
       sessionsTotal: plan.sessionsTotal,
+      feedbackScope: plan.feedbackScope,
       ...(source ? { source, authorFirstName } : {}),
     };
   }
@@ -196,6 +199,7 @@ export async function getPlanForViewer(
     voiceTranscript: null,
     sessionsByState: sessions.sessionsByState,
     sessionsTotal: sessions.sessionsTotal,
+    feedbackScope: plan.feedbackScope ?? "plan",
     ...(plan.source === ATHLETE_SOURCE
       ? { source: ATHLETE_SOURCE, authorFirstName: plan.athleteFirstName }
       : {}),

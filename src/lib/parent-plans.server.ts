@@ -77,6 +77,8 @@ export interface ParentPlanDetailDTO {
   updatedAt: string;
   moves: ParentPlanMoveDTO[];
   source?: string;
+  /** "plan" or "moves": what the check-in rates after practice. */
+  feedbackScope?: "plan" | "moves";
 }
 
 export interface ParentPlansDTO {
@@ -233,7 +235,9 @@ export async function getParentPlan(
 
   const { data: plan, error } = await supabase
     .from("plans")
-    .select("id, title, notes, status, athlete_id, coach_id, updated_at, kind, source")
+    .select(
+      "id, title, notes, status, athlete_id, coach_id, updated_at, kind, source, feedback_scope",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) dbError(error);
@@ -309,6 +313,7 @@ export async function getParentPlan(
     totalMinutes,
     updatedAt: plan.updated_at,
     moves,
+    feedbackScope: plan.feedback_scope === "moves" ? "moves" : "plan",
     ...(authored ? { source: "athlete" } : {}),
   };
 }

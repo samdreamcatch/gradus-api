@@ -117,6 +117,9 @@ export const planDetailSchema = z.object({
   // decode a server that predates them.
   source: z.string().optional(),
   authorFirstName: z.string().nullable().optional(),
+  // "plan" (one rating for the session) or "moves" (a rating per move; the
+  // session's rating is their average). Optional for older clients and servers.
+  feedbackScope: z.string().optional(),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
 export const planIdSchema = z.object({ id: z.string() });
@@ -275,6 +278,18 @@ export const planSessionEntrySchema = z.object({
   note: z.string(),
   loggedByKind: z.enum(["parent", "athlete"]),
   loggedByFirstName: z.string(),
+  // Feedback on each move (2026-10-14). Optional, and `feedbackScope` a plain
+  // string, so an installed client never fails to decode a newer server.
+  feedbackScope: z.string().optional(),
+  moveRatings: z
+    .array(
+      z.object({
+        planMoveId: z.string().nullable(),
+        moveName: z.string(),
+        stateIndex: z.number().int(),
+      }),
+    )
+    .optional(),
 });
 
 export const planSessionLogSchema = z.object({

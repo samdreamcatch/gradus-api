@@ -15,7 +15,7 @@ import {
   type ActiveSessionRole,
 } from "@/lib/active-session-store";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { SessionFeedbackModal } from "@/components/plans/session-feedback-modal";
+import { SessionFeedbackModal, type FeedbackMove } from "@/components/plans/session-feedback-modal";
 
 export function PlanSessionTimer({
   role,
@@ -23,12 +23,15 @@ export function PlanSessionTimer({
   coachFirstName,
   athleteFirstName,
   planTitle,
+  feedbackMoves,
 }: {
   role: ActiveSessionRole;
   planId: string;
   coachFirstName: string;
   athleteFirstName: string;
   planTitle: string;
+  /** The plan's moves when the coach asked for feedback on each move. */
+  feedbackMoves?: FeedbackMove[];
 }) {
   const { session, start, pause, resume, clear } = useActiveSession();
   const elapsedMs = useLiveElapsedMs(250);
@@ -92,7 +95,6 @@ export function PlanSessionTimer({
     start({ role, planId, planTitle, coachFirstName, athleteFirstName });
   };
 
-
   const handleTogglePause = () => {
     if (!ownsActive) return;
     if (running) pause();
@@ -141,12 +143,15 @@ export function PlanSessionTimer({
         coachFirstName={coachFirstName}
         athleteFirstName={athleteFirstName}
         viewerIsAthlete={role !== "parent"}
+        moves={feedbackMoves}
         onSubmit={async (payload) => {
           try {
             await submitMutation.mutateAsync({
               data: {
                 planId,
-                stateIndex: payload.stateIndex,
+                ...(payload.moveRatings
+                  ? { moveRatings: payload.moveRatings }
+                  : { stateIndex: payload.stateIndex ?? undefined }),
                 note: payload.note,
                 durationSeconds: totalSec,
               },

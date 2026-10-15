@@ -7941,6 +7941,9 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "feedbackScope": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -8166,6 +8169,13 @@
                       "null"
                     ],
                     "format": "uuid"
+                  },
+                  "feedbackScope": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "moves"
+                    ]
                   }
                 }
               }
@@ -11269,6 +11279,34 @@
                           },
                           "loggedByFirstName": {
                             "type": "string"
+                          },
+                          "feedbackScope": {
+                            "type": "string"
+                          },
+                          "moveRatings": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "planMoveId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "moveName": {
+                                  "type": "string"
+                                },
+                                "stateIndex": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "planMoveId",
+                                "moveName",
+                                "stateIndex"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -11347,6 +11385,28 @@
                     "minimum": 0,
                     "maximum": 4
                   },
+                  "moveRatings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "planMoveId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "stateIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4
+                        }
+                      },
+                      "required": [
+                        "planMoveId",
+                        "stateIndex"
+                      ]
+                    },
+                    "maxItems": 200
+                  },
                   "note": {
                     "type": "string",
                     "maxLength": 2000,
@@ -11358,10 +11418,7 @@
                     "maximum": 86400,
                     "default": 0
                   }
-                },
-                "required": [
-                  "stateIndex"
-                ]
+                }
               }
             }
           }

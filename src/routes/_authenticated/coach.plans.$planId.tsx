@@ -64,6 +64,7 @@ import {
 } from "@/lib/moves.functions";
 
 import { MoveField } from "@/components/coach/move-field";
+import { Chip } from "@/components/ui/chip";
 import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
 import { AiDraftedNote, DraftWithAiButton, UnrecognisedMove } from "@/components/coach/move-draft";
 import { useMoveDraft } from "@/hooks/use-move-draft";
@@ -961,6 +962,46 @@ function PlanEditorBody({
           <Plus className="h-4 w-4" />
           Add moves from move library
         </Button>
+
+        {/* What the athlete rates after practice: each move, or the whole plan (never both). */}
+        <div className="space-y-2 rounded-lg border border-divider bg-card p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+              Feedback on
+            </span>
+            {savingField === "feedbackScope" ? (
+              <span className="text-[10px] font-medium text-text-tertiary">Saving…</span>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Feedback on">
+            {(
+              [
+                ["moves", "Each move"],
+                ["plan", "Whole plan"],
+              ] as const
+            ).map(([scope, label]) => (
+              <Chip
+                key={scope}
+                caseSensitive
+                selected={plan.feedbackScope === scope}
+                aria-pressed={plan.feedbackScope === scope}
+                title={
+                  scope === "moves"
+                    ? "Each move gets its own rating; the plan's rating is their average."
+                    : undefined
+                }
+                onClick={() => {
+                  if (plan.feedbackScope === scope) return;
+                  void commit("feedbackScope", () =>
+                    planUpdate.mutateAsync({ data: { id: plan.id, feedbackScope: scope } }),
+                  );
+                }}
+              >
+                {label}
+              </Chip>
+            ))}
+          </div>
+        </div>
 
         <div className="rounded-lg border border-divider bg-card p-4">
           <MoveField

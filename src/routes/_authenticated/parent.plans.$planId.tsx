@@ -100,6 +100,11 @@ function ParentPlanDetail() {
         coachFirstName={plan.coachFirstName}
         athleteFirstName={plan.athleteFirstName}
         planTitle={plan.title}
+        feedbackMoves={
+          plan.feedbackScope === "moves"
+            ? plan.moves.map((m) => ({ id: m.id, name: m.name }))
+            : undefined
+        }
       />
 
       <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-text-secondary">
