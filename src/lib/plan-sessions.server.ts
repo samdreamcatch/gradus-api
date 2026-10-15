@@ -279,8 +279,9 @@ async function logSession(
   const { error } = await supabase.rpc("log_plan_session", {
     _plan_id: row.planId,
     _athlete_id: row.athleteId,
-    _parent_id: row.parentId,
-    _state_index: ratings.length > 0 ? null : (data.stateIndex ?? null),
+    // The function accepts NULL for both; generated arg types can't express it.
+    _parent_id: row.parentId as string,
+    _state_index: (ratings.length > 0 ? null : (data.stateIndex ?? null)) as number,
     _note: data.note,
     _duration_seconds: data.durationSeconds,
     _move_ratings: ratings,
