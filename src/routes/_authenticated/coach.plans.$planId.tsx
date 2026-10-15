@@ -81,6 +81,7 @@ import {
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
+import { SessionMoveRatings } from "@/components/plans/session-move-ratings";
 import {
   getPlanSessions,
   getPlanSessionsSummary,
@@ -731,9 +732,13 @@ function PlanEditorBody({
                             sessionLogQuery.data!.athleteFirstName,
                           )}
                           description={
-                            s.note
-                              ? `${stateLabel(s.stateIndex)} · ${s.note}`
-                              : stateLabel(s.stateIndex)
+                            s.moveRatings?.length ? (
+                              <SessionMoveRatings ratings={s.moveRatings} note={s.note} />
+                            ) : s.note ? (
+                              `${stateLabel(s.stateIndex)} · ${s.note}`
+                            ) : (
+                              stateLabel(s.stateIndex)
+                            )
                           }
                           value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
                         />
