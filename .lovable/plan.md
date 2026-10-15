@@ -19,6 +19,12 @@ Build the Organization Admin pages in stages, so each one can be tested in the p
 - Add one resource: upload a PDF or paste a link.
 - Bulk upload: pick several PDFs, choose a sport for each, and add them all at once.
 - Club uploads go through the same picture check coaches' uploads do.
+- **Require acknowledgement** (for policies): on any club resource, turn on "Require acknowledgement" and pick who must acknowledge it. That can be coaches, parents, athletes, or any mix.
+  - The people chosen get a push notification, plus an in-app banner if they have no app, with an "I acknowledge" button on the document.
+  - Each acknowledgement is stored with the person's name, role, the date and time, and the version of the document they saw.
+  - The admin sees a sign-off list for each document: who acknowledged it, who is still outstanding, and a CSV export. A "Remind outstanding" button sends the notification again.
+  - Replacing the file makes a new version. Earlier sign-offs are kept in the history, and you can choose to ask everyone to acknowledge again.
+  - Under-18 athletes: their parent or guardian acknowledges for them, unless you'd like athletes to acknowledge it themselves too.
 
 **Move library** (`/org-admin/moves`)
 - Gradus default moves for each club sport, in a table grouped by category, with search.
@@ -41,6 +47,11 @@ Only existing parts: PageTitle, Card, Table, Sheet for editing, AlertDialog for 
   - `organization_sports(org_id, sport)`: Gradus admins write it, org admins read it.
   - `org_resource_overrides` and `org_move_overrides`: (org_id, base id, archived_at, edited fields) for the club's versions of Gradus items. Club-made items reuse the existing `organization_id` and `is_org_template` columns on resources and moves.
   - `org_levels(org_id, sport, level_key, label, sort, practice_hours_per_week, archived_at)`
+  - `resource_ack_requirements(resource_id, org_id, audiences text[], version, required_at)` and `resource_acknowledgements(resource_id, version, user_id, role, acted_for_athlete_id, acknowledged_at)`:
+    - Rows can only be added; nobody can edit or delete them.
+    - A person can insert only their own acknowledgement, and only when they are in the required audience for that club.
+    - Org admins read their club's rows.
+    - Push goes through the existing `push-notify.server.ts`.
   - Each table gets GRANTs and RLS using `has_org_admin(auth.uid(), org_id)` for writes and club-member reads.
 - **Server functions:** a new file, `src/lib/org-content.functions.ts`, holds the list, upsert, archive and bulk functions. Each checks `has_org_admin` through `context.supabase` before any privileged write, and bumps `organizations.content_version`.
 - **Coaches' reads:** `coach-resources.server.ts`, `moves.server.ts` and the coach level lookup merge club content in this order: club override, then club item, then Gradus default.
