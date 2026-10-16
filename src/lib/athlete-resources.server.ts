@@ -36,6 +36,25 @@ export interface AthleteResourcesDTO {
   canAskGradus: boolean;
 }
 
+/** Club overrides and club items for the caller's clubs; the feed still loads if this fails. */
+async function withClubLibrary<T extends import("./org-content.server").MergeableResource>(
+  userId: string,
+  orgIds: string[] | null,
+  sports: string[],
+  library: T[],
+  make: (r: import("./org-content.server").MergeableResource) => T,
+): Promise<T[]> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { mergeClubLibrary, resolveMembership } = await import("./org-content.server");
+    const ids = orgIds ?? (await resolveMembership(supabaseAdmin, userId))?.orgIds ?? [];
+    return await mergeClubLibrary(supabaseAdmin, ids, sports, library, make);
+  } catch (err) {
+    console.error("[resources] club merge failed", err);
+    return library;
+  }
+}
+
 export async function getAthleteResources(
   ctx: AthleteResourcesContext,
   options: ResourceFeedOptions = {},
@@ -123,5 +142,11 @@ export async function getAthleteResources(
     };
   });
 
-  return { sports, resources: [...coach, ...library], canAskGradus: eligibleForAskGradus };
+  const merged = await withClubLibrary(userId, null, sports, library, (r) => ({
+    ...r,
+    sports: [r.sport],
+    source: "library" as const,
+    coachName: null,
+  }));
+  return { sports, resources: [...coach, ...merged], canAskGradus: eligibleForAskGradus };
 }

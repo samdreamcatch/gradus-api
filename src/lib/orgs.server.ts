@@ -201,7 +201,8 @@ async function stampClubMembership(admin: Admin, coachId: string, orgId: string)
     .update({
       organization_id: orgId,
       entitlement: "club_covered",
-      last_synced_content_version: version,
+      // -1: the next library read syncs the club's existing content in full.
+      last_synced_content_version: version > 0 ? -1 : version,
     })
     .eq("id", coachId);
   if (update.error) dbError(update.error);

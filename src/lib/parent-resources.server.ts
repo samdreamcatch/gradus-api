@@ -67,6 +67,25 @@ export type ResourceFeedOptions = { storeSafeOnly?: boolean };
 
 export const STORE_SAFE_RIGHTS = ["gradus", "licensed"] as const;
 
+/** Club overrides and club items for the caller's clubs; the feed still loads if this fails. */
+async function withClubLibrary<T extends import("./org-content.server").MergeableResource>(
+  userId: string,
+  orgIds: string[] | null,
+  sports: string[],
+  library: T[],
+  make: (r: import("./org-content.server").MergeableResource) => T,
+): Promise<T[]> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { mergeClubLibrary, resolveMembership } = await import("./org-content.server");
+    const ids = orgIds ?? (await resolveMembership(supabaseAdmin, userId))?.orgIds ?? [];
+    return await mergeClubLibrary(supabaseAdmin, ids, sports, library, make);
+  } catch (err) {
+    console.error("[resources] club merge failed", err);
+    return library;
+  }
+}
+
 export async function getParentResources(
   ctx: ParentResourcesContext & { admin: Admin },
   options: ResourceFeedOptions = {},
@@ -163,7 +182,13 @@ export async function getParentResources(
     };
   });
 
-  return { sports, resources: [...coach, ...library], canAskGradus: true };
+  const merged = await withClubLibrary(userId, null, sports, library, (r) => ({
+    ...r,
+    sports: [r.sport],
+    source: "library" as const,
+    coachName: null,
+  }));
+  return { sports, resources: [...coach, ...merged], canAskGradus: true };
 }
 
 export async function getResourceSignedUrl(
@@ -178,21 +203,40 @@ export async function getResourceSignedUrl(
     .eq("id", resourceId)
     .maybeSingle();
   if (error) dbError(error);
-  if (!row) throw notFound("Resource not found");
+  let found = row;
+  if (!found) {
+    // Club documents reach members through the server, not row rules.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { callerCanOpenClubResource } = await import("./org-content.server");
+      if (await callerCanOpenClubResource(supabaseAdmin, ctx.userId, resourceId)) {
+        const club = await supabaseAdmin
+          .from("resources")
+          .select("storage_path, external_url, kind")
+          .eq("id", resourceId)
+          .maybeSingle();
+        found = club.data;
+      }
+    } catch (err) {
+      console.error("[resources] club lookup failed", err);
+    }
+  }
+  if (!found) throw notFound("Resource not found");
+  const row2 = found;
 
-  if (row.kind === "link") {
-    if (!row.external_url) throw unprocessable("Missing link URL");
-    return { url: row.external_url };
+  if (row2.kind === "link") {
+    if (!row2.external_url) throw unprocessable("Missing link URL");
+    return { url: row2.external_url };
   }
   // A coach's image is a public web address; older ones are stored files.
-  if (row.kind === "image" && row.external_url) return { url: row.external_url };
+  if (row2.kind === "image" && row2.external_url) return { url: row2.external_url };
 
-  if (!row.storage_path) throw unprocessable("Missing storage path");
+  if (!row2.storage_path) throw unprocessable("Missing storage path");
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: signed, error: sErr } = await supabaseAdmin.storage
     .from("resource-pdfs")
-    .createSignedUrl(row.storage_path, 60 * 5);
+    .createSignedUrl(row2.storage_path, 60 * 5);
   if (sErr || !signed) throw unprocessable(sErr?.message ?? "Could not sign URL");
   return { url: signed.signedUrl };
 }
