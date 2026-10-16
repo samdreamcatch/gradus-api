@@ -7,7 +7,7 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { assertVoiceAllowed } from "./minor-voice.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { createNameMask, unmaskStrings } from "./ai-names";
+import { createNameMask, nameSpellingKey, unmaskStrings } from "./ai-names";
 import type { FieldSource, VoicePlanDraft, VoiceSources, VoiceTouched } from "./voice-types";
 
 export const MAX_AUDIO_BYTES = 18 * 1024 * 1024; // 18 MB hard cap (~180s)
@@ -578,6 +578,30 @@ function resolveAthlete(
   return { id: null, unresolved: spoken.trim() };
 }
 
+/**
+ * A spoken name the mask missed ("lynnea" in lower case), matched to the real
+ * roster by spelling key only (`nameSpellingKey`): never by substring or edit
+ * distance, so "her" stays off a Heather and "Sam" off a Pam. Two athletes
+ * with the same first-name key need the last name to tell them apart.
+ */
+function resolveMissedName(
+  spoken: string | null | undefined,
+  roster: { id: string; name: string }[],
+): string | null {
+  const [first, ...rest] = normalize(spoken ?? "").split(" ");
+  if (!first) return null;
+  const key = nameSpellingKey(first);
+  let hits = roster.filter((a) => {
+    const rosterFirst = normalize(a.name).split(" ")[0];
+    return rosterFirst && nameSpellingKey(rosterFirst) === key;
+  });
+  if (hits.length > 1 && rest.length) {
+    const last = rest.join(" ");
+    hits = hits.filter((a) => normalize(a.name).split(" ").slice(1).join(" ") === last);
+  }
+  return hits.length === 1 ? hits[0].id : null;
+}
+
 const MOVE_STOPWORDS = new Set([
   "the",
   "a",
@@ -779,7 +803,8 @@ async function cleanupNotes(opts: {
 /**
  * Builds the draft with no roster names in front of the model (src/lib/ai-names.ts):
  * names in the transcript and the plan being edited become placeholders, the
- * spoken athlete is matched to a placeholder here on the server, and every
+ * spoken athlete is matched to a placeholder here on the server (or, when the
+ * mask missed the name, to the real roster, by spelling key only), and every
  * string in the draft is put back as it was said.
  */
 export interface BuildDraftDeps {
@@ -812,7 +837,7 @@ export async function buildDraft(
         }
       : undefined,
   };
-  const draft = await buildDraftFromMasked(masked, deps);
+  const draft = await buildDraftFromMasked(masked, deps, ctx.athletes);
   const restored = unmaskStrings(draft, names.unmask);
   // "Notes unchanged" is decided against the masked notes; compare the real ones.
   if (restored.notes !== undefined && restored.notes === (ctx.currentPlan?.notes ?? "")) {
@@ -825,6 +850,8 @@ export async function buildDraft(
 async function buildDraftFromMasked(
   ctx: ParseContext,
   deps: BuildDraftDeps,
+  /** The real roster, for a spoken name the mask missed (matched here, never sent). */
+  roster: ParseContext["athletes"],
 ): Promise<VoicePlanDraft> {
   // Schema/parse failures are common on long dictations: `SLOT_ATTEMPTS`
   // (full shape, reduced shape after a pause, reduced shape on a second
@@ -842,7 +869,11 @@ async function buildDraftFromMasked(
   }
   const slotted = outcome.slots;
 
-  const { id: athleteId, unresolved } = resolveAthlete(slotted.athleteName, ctx.athletes);
+  const fromPlaceholders = resolveAthlete(slotted.athleteName, ctx.athletes);
+  const missedId = fromPlaceholders.id ? null : resolveMissedName(slotted.athleteName, roster);
+  const { id: athleteId, unresolved } = missedId
+    ? { id: missedId, unresolved: null }
+    : fromPlaceholders;
   const resolvedAthlete = athleteId ? (ctx.athletes.find((a) => a.id === athleteId) ?? null) : null;
   // A masked roster name is a placeholder ("[ATHLETE 2]"): keep it whole.
   const athleteFirstName = resolvedAthlete

@@ -23,7 +23,8 @@
  * - `unmask` writes back the shortest form the text used ("Sarah" over
  *   "Sarah Kim"), or the person's display name when the prompt never named them.
  *
- * Nicknames and misspellings the account doesn't hold are not caught.
+ * With `fuzzy`, a capitalized word spelled like a first name is masked too
+ * ("Lynnea" for "Linnea", "Sara" for "Sarah"); nicknames are not caught.
  */
 
 export type NameRole = "ATHLETE" | "PARENT" | "COACH";
@@ -234,6 +235,124 @@ const EVERYDAY_WORD_SURNAMES = new Set([
   "dove",
 ]);
 
+/**
+ * Capitalized words a dictated plan is full of: the fuzzy pass never takes
+ * them for a misspelled name ("The" or "Then" with a Theo on the roster,
+ * "Start" with a Stuart, "Flip" with a Filip, "May" with a Mai). A roster name
+ * spelled exactly is still masked.
+ */
+const DICTATION_WORDS = new Set([
+  "okay",
+  "alright",
+  "yeah",
+  "the",
+  "then",
+  "they",
+  "them",
+  "there",
+  "these",
+  "those",
+  "after",
+  "also",
+  "again",
+  "every",
+  "even",
+  "like",
+  "back",
+  "next",
+  "first",
+  "last",
+  "start",
+  "finish",
+  "plan",
+  "core",
+  "need",
+  "been",
+  "nine",
+  "very",
+  "never",
+  "open",
+  "try",
+  "want",
+  "set",
+  "sets",
+  "land",
+  "less",
+  "fine",
+  "find",
+  "line",
+  "call",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+  "test",
+  "tests",
+  "axel",
+  "axels",
+  "lutz",
+  "flip",
+  "flips",
+  "loop",
+  "loops",
+  "salchow",
+  "waltz",
+  "walley",
+  "toe",
+  "spin",
+  "spins",
+  "spiral",
+  "spirals",
+  "mohawk",
+  "mohawks",
+  "choctaw",
+  "choctaws",
+  "harness",
+  "pole",
+  "camel",
+  "layback",
+  "twizzle",
+  "twizzles",
+  "ski",
+]);
+
+/**
+ * A first name's spelling key, equal for the ways speech-to-text spells one
+ * name: accents and case folded, ph→f, ck→k, y→i, a silent h after a vowel
+ * dropped ("Sarah", "John"), doubled consonants collapsed, and an -ie or -ey
+ * ending read as -y. "Linnea", "Lynnea", "Linea" and "Linnéa" share a key,
+ * as do "Katie", "Katey" and "Katy". Doubled vowels are kept, so "Been" is
+ * not "Ben".
+ */
+export function nameSpellingKey(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^\p{L}]/gu, "")
+    .replace(/ph/g, "f")
+    .replace(/ck/g, "k")
+    .replace(/y/g, "i")
+    .replace(/([aeiou])h(?![aeiou])/g, "$1")
+    .replace(/([^aeiou])\1+/g, "$1")
+    .replace(/(?:ie|ei)$/, "i");
+}
+
 const LETTER = "[\\p{L}\\p{N}]";
 
 /** Accented forms of each base letter, so "jose" matches "José" and "Jose" matches "Jóse". */
@@ -309,15 +428,20 @@ function levenshtein(a: string, b: string): number {
 
 export interface NameMaskOptions {
   /**
-   * Also mask capitalized words one edit away from a first name (two for
-   * names of seven letters or more): speech-to-text spells "Sara" for "Sarah".
+   * Also mask capitalized words speech-to-text could have written for a first
+   * name: the same spelling key ("Lynnea" for "Linnea", `nameSpellingKey`),
+   * or one edit away for a name of four letters or more (two from seven
+   * letters: "Sara" for "Sarah"). A three-letter name ending in "e" also
+   * takes -y and -ie ("Zoey" for "Zoe"). An everyday word matches by its key
+   * only ("Lily" for a Lilly, never "Will" for a Willa), and common dictation
+   * words are left alone.
    */
   fuzzy?: boolean;
 }
 
 export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {}): NameMask {
   const personTokens: string[] = [];
-  const fuzzyFirsts: { name: string; token: string }[] = [];
+  const fuzzyFirsts: { name: string; key: string; variants: string[]; token: string }[] = [];
   /** The text each placeholder first replaced, so `unmask` restores it as written. */
   const seen = new Map<string, string>();
   const rules: Rule[] = [];
@@ -339,7 +463,14 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
     if (n === 1) firstToken.set(p.role, token);
     displays.set(token, p.display ?? (first || last));
     personTokens.push(token);
-    if (first.length >= 4) fuzzyFirsts.push({ name: first.toLocaleLowerCase(), token });
+    if (first.length >= 3) {
+      const name = first.toLocaleLowerCase();
+      const plain = name.normalize("NFD").replace(/\p{M}/gu, "");
+      // "Zoey" and "Zoie" for a Zoe: spelled out, since the key would also take "Joy" for a Joe.
+      const variants =
+        plain.length === 3 && plain.endsWith("e") ? [`${plain}y`, `${plain.slice(0, 2)}ie`] : [];
+      fuzzyFirsts.push({ name, key: nameSpellingKey(first), variants, token });
+    }
 
     if (first.length >= 2 && last.length >= 2) rules.push(rule(`${first} ${last}`, token, true));
     if (first.length >= 2) {
@@ -406,14 +537,23 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
       if (opts.fuzzy && fuzzyFirsts.length) {
         out = out.replace(/(?<![\p{L}\p{N}[])\p{Lu}[\p{L}]{2,}(?![\p{L}\p{N}])/gu, (word) => {
           const w = word.toLocaleLowerCase();
-          if (EVERYDAY_WORD_NAMES.has(w)) return word;
-          for (const f of fuzzyFirsts) {
-            const limit = f.name.length >= 7 ? 2 : 1;
-            if (Math.abs(f.name.length - w.length) <= limit && levenshtein(f.name, w) <= limit) {
-              return remember(f.token, word, true);
-            }
+          if (DICTATION_WORDS.has(w)) return word;
+          // Same spelling key first, so "John" goes to a Jon before a Joan.
+          // An everyday word stops there: "Lily" is a Lilly, "Will" is no Willa.
+          const key = nameSpellingKey(w);
+          let match = fuzzyFirsts.find((f) => f.key === key || f.variants.includes(w));
+          if (!match && !EVERYDAY_WORD_NAMES.has(w)) {
+            match = fuzzyFirsts.find((f) => {
+              // Three-letter names match on the key only.
+              const limit = f.name.length >= 7 ? 2 : f.name.length >= 4 ? 1 : 0;
+              return (
+                limit > 0 &&
+                Math.abs(f.name.length - w.length) <= limit &&
+                levenshtein(f.name, w) <= limit
+              );
+            });
           }
-          return word;
+          return match ? remember(match.token, word, true) : word;
         });
       }
       return out;
