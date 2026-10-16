@@ -6387,7 +6387,7 @@ Feature code reads Gradus tokens from `GradusTheme.colors` (a `CompositionLocal`
 | `accent` | `#C0DD27` | `#67DEF2` | Primary actions, FAB, selected chips, HelpBubble; **changes hue between modes** |
 | `accent-foreground` | `#333E00` | `#001843` | Text and icons on accent fills |
 | `accent-ink` | `#333E00` | `#67DEF2` | Accent used as text/stroke on paper: tab selection, links, focus ring, tint of system controls |
-| `attention` / `-foreground` / `-ink` / `-wash` | `#FF9845` / `#2F1100` / `#803300` / `#FFF0E2` | `#FFB35B` / `#001843` / `#FFB35B` / `#531800` | HelpBubble badge, "End" slide pill, warnings |
+| `attention` / `-foreground` / `-ink` / `-wash` | `#FF9845` / `#2F1100` / `#803300` / `#FFF0E2` | `#FFB35B` / `#001843` / `#FFB35B` / `#412714` | HelpBubble badge, "End" slide pill, warnings |
 | `destructive` | `#A20519` | `#FF7E76` | Destructive fill |
 | `destructive-foreground` | `#F8F8F8` | `#011016` | Text on destructive fill |
 | `destructive-ink` | `#A20519` | `#FFAEA5` | Destructive text, ErrorLine, "Sign out" |
@@ -6395,7 +6395,7 @@ Feature code reads Gradus tokens from `GradusTheme.colors` (a `CompositionLocal`
 | `page-title-stripe`, `logo-stripe-color` | `#C0DD27` | `#67DEF2` | Highlighter stripe under `PageTitle`; logo stripe |
 | `pen-tennis` / `-ink` / `-wash` | `#C0DD27` / `#333E00` / `#F7FCE6` | `#ADC535` / `#B9D245` / `#293300` | Sport and flow coding, tags, Live Board lanes, success toast icon (ink) |
 | `pen-pool` / `-ink` / `-wash` | `#2EB1EF` / `#00496F` / `#E2F7FF` | `#67DEF2` / `#67DEF2` / `#003341` | Info toast icon (ink), paper wash |
-| `pen-orange` / `-ink` / `-wash` | `#FF9845` / `#803300` / `#FFF0E2` | `#FFB35B` / `#FFB35B` / `#531800` | Tags, lanes |
+| `pen-orange` / `-ink` / `-wash` | `#FF9845` / `#803300` / `#FFF0E2` | `#FFB35B` / `#FFB35B` / `#412714` | Tags, lanes |
 | `pen-iris` / `-ink` / `-wash` | `#C07AF1` / `#52226F` / `#F8EDFF` | `#F4AEFF` / `#F4AEFF` / `#341C44` | Tags, lanes |
 | `pen-pink` / `-ink` / `-wash` | `#FF8BA5` / `#811839` / `#FFEBEE` | `#FFA1BD` / `#FFA8C3` / `#481421` | Tags; FlowBars per-session dot for state 0 (Frustrated) |
 | `secondary-accent` / `-ink` / `-wash` | `#2EB1EF` / `#00496F` / `#E2F7FF` | `#67DEF2` / `#67DEF2` / `#003341` | Secondary highlights |

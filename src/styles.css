@@ -218,7 +218,8 @@
 
   /* Orange pen — attention/live token (dark) */
   --pen-orange: oklch(0.87 0.17 55);
-  --pen-orange-wash: oklch(0.3 0.105 55);
+  /* Low chroma so the wash reads as a warm tint, not burnt red (2026-10-15). */
+  --pen-orange-wash: oklch(0.3 0.05 55);
   --pen-orange-ink: oklch(0.87 0.17 55);
 
   --attention: var(--pen-orange);
