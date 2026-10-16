@@ -206,16 +206,19 @@ export async function getResourceSignedUrl(
   let found = row;
   if (!found) {
     // Club documents reach members through the server, not row rules.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { callerCanOpenClubResource } = await import("./org-content.server");
-    if (await callerCanOpenClubResource(supabaseAdmin, ctx.userId, resourceId)) {
-      const club = await supabaseAdmin
-        .from("resources")
-        .select("storage_path, external_url, kind")
-        .eq("id", resourceId)
-        .maybeSingle();
-      if (club.error) dbError(club.error);
-      found = club.data;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { callerCanOpenClubResource } = await import("./org-content.server");
+      if (await callerCanOpenClubResource(supabaseAdmin, ctx.userId, resourceId)) {
+        const club = await supabaseAdmin
+          .from("resources")
+          .select("storage_path, external_url, kind")
+          .eq("id", resourceId)
+          .maybeSingle();
+        found = club.data;
+      }
+    } catch (err) {
+      console.error("[resources] club lookup failed", err);
     }
   }
   if (!found) throw notFound("Resource not found");
