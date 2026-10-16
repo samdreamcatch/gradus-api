@@ -103,6 +103,25 @@ function computeTier(coach: {
   return "coach";
 }
 
+/** Club overrides and club items for the caller's clubs; the feed still loads if this fails. */
+async function withClubLibrary<T extends import("./org-content.server").MergeableResource>(
+  userId: string,
+  orgIds: string[] | null,
+  sports: string[],
+  library: T[],
+  make: (r: import("./org-content.server").MergeableResource) => T,
+): Promise<T[]> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { mergeClubLibrary, resolveMembership } = await import("./org-content.server");
+    const ids = orgIds ?? (await resolveMembership(supabaseAdmin, userId))?.orgIds ?? [];
+    return await mergeClubLibrary(supabaseAdmin, ids, sports, library, make);
+  } catch (err) {
+    console.error("[resources] club merge failed", err);
+    return library;
+  }
+}
+
 export async function listCoachResources(
   ctx: CoachResourcesContext,
   options: ResourceFeedOptions = {},
@@ -171,6 +190,15 @@ export async function listCoachResources(
       kind: (r.kind as CoachResourceKind) ?? "pdf",
       externalUrl: r.external_url,
     }));
+  }
+  if (coach.organization_id) {
+    libraryResources = await withClubLibrary(
+      userId,
+      [coach.organization_id],
+      sports,
+      libraryResources,
+      (r) => r,
+    );
   }
 
   return {

@@ -116,6 +116,15 @@ export async function listMoves(ctx: MovesContext): Promise<MoveLibraryDTO> {
     });
   }
 
+  // Club coaches: bring the club's move and level edits in (club version wins).
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { syncCoachClubContent } = await import("./org-content.server");
+    await syncCoachClubContent(supabaseAdmin, coachId);
+  } catch (err) {
+    console.error("[moves] club sync failed", err);
+  }
+
   const { data, error } = await supabase
     .from("moves")
     .select(MOVE_COLUMNS)
