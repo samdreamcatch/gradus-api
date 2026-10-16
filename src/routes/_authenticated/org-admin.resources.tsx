@@ -399,8 +399,8 @@ function EditResourceSheet({
                 value={kind}
                 onChange={(v) => setKind(v as "pdf" | "link")}
                 options={[
-                  { value: "pdf", label: "PDF" },
-                  { value: "link", label: "Link" },
+                  { key: "pdf", label: "PDF" },
+                  { key: "link", label: "Link" },
                 ]}
               />
               {kind === "pdf" ? (
