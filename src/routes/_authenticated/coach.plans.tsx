@@ -2,7 +2,16 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Plus, ListChecks, Clock, ChevronRight, Search, Loader2, Trash2 } from "lucide-react";
+import {
+  Plus,
+  ListChecks,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { CoachBottomNav } from "@/components/coach/bottom-nav";
 import { VoiceFab } from "@/components/coach/voice-fab";
@@ -513,6 +522,19 @@ function LibraryView({
     queryFn: () => fetchMoves(),
   });
   const [sport, setSport] = useState<string>("");
+  // Every category starts closed; a search opens them all so a match is never hidden.
+  const [openCategories, setOpenCategories] = useState<Set<string>>(() => new Set());
+  const searching = query.trim() !== "";
+  // While searching every category shows, so a tap there would only flip a hidden state.
+  const toggleCategory = (cat: string) => {
+    if (searching) return;
+    setOpenCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
 
   const moves = data?.moves ?? [];
   const sports = useMemo(() => Array.from(new Set(moves.map((m) => m.sport))).sort(), [moves]);
@@ -568,36 +590,61 @@ function LibraryView({
           }
         />
       ) : (
-        <div className="space-y-5">
-          {grouped.map(([cat, items]) => (
-            <section key={cat}>
-              <h3 className="mb-1 font-display text-base font-bold text-text-primary">{cat}</h3>
-              <ul className="divide-y divide-divider border-y border-divider">
-                {items.map((m) => (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelectMove(m.id)}
-                      className="flex w-full items-start gap-3 py-2.5 text-left transition active:bg-elevated"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-bold text-text-primary">{m.name}</p>
-                          <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
-                            {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
-                          </span>
-                        </div>
-                        {m.cue ? (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">{m.cue}</p>
-                        ) : null}
-                      </div>
-                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+        <div className="space-y-2">
+          {grouped.map(([cat, items]) => {
+            const open = searching || openCategories.has(cat);
+            return (
+              <section key={cat}>
+                <h3>
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    aria-expanded={open}
+                    className="press-soft flex min-h-11 w-full items-center gap-3 text-left font-display text-base font-bold text-text-primary"
+                  >
+                    <span className="min-w-0 flex-1">{cat}</span>
+                    <ChevronDown
+                      aria-hidden
+                      className={cn(
+                        "size-4 shrink-0 text-text-tertiary transition-transform",
+                        !open && "-rotate-90",
+                      )}
+                    />
+                  </button>
+                </h3>
+                {open ? (
+                  <ul className="divide-y divide-divider border-y border-divider">
+                    {items.map((m) => (
+                      <li key={m.id}>
+                        <button
+                          type="button"
+                          onClick={() => onSelectMove(m.id)}
+                          className="flex w-full items-start gap-3 py-2.5 text-left transition active:bg-elevated"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-bold text-text-primary">
+                                {m.name}
+                              </p>
+                              <span className="shrink-0 rounded-sm bg-elevated px-1.5 py-0.5 text-[10px] font-black uppercase tracking-tight text-text-secondary">
+                                {targetLabel(m.defaultTargetKind, m.defaultTargetValue)}
+                              </span>
+                            </div>
+                            {m.cue ? (
+                              <p className="mt-0.5 line-clamp-1 text-xs text-text-secondary">
+                                {m.cue}
+                              </p>
+                            ) : null}
+                          </div>
+                          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-tertiary" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>
