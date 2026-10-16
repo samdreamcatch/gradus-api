@@ -15421,6 +15421,14 @@
                         "minimum": 1,
                         "maximum": 180
                       },
+                      "transcript": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
                       "planId": {
                         "type": [
                           "string",

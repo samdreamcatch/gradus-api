@@ -45,9 +45,12 @@ export const Route = createFileRoute("/api/v1/rooms/$id/messages")({
         const roomId = z.string().uuid().parse(params.id);
         const data = { ...input, roomId } as z.infer<typeof sendMessageInputWithRole>;
         const { admin, userId } = requireContext(ctx);
-        // No transcript without the sender's AI permission (App Review 5.1.2(i)).
+        // No server transcript without the sender's AI permission (App Review
+        // 5.1.2(i)); a transcript made on the sender's device needs none.
         const transcribe =
-          data.kind === "voice" ? (await getAiConsent(admin, userId)).state === "granted" : true;
+          data.kind === "voice" && data.transcript === undefined
+            ? (await getAiConsent(admin, userId)).state === "granted"
+            : true;
         return sendMessage({ userId }, data, { transcribe });
       },
     }),

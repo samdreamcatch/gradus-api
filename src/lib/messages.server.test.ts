@@ -9,6 +9,7 @@ import {
   partitionByKind,
   roomsDigest,
   REPLY_EXCERPT_MAX,
+  sendMessageBody,
   setReactionBody,
   toMessageDTO,
   toReplyPreview,
@@ -294,5 +295,22 @@ describe("replies and reactions", () => {
     expect(missingLateColumn(err("body"))).toBeNull();
     expect(missingLateColumn({ code: "42501", message: "permission denied" })).toBeNull();
     expect(missingLateColumn(null)).toBeNull();
+  });
+});
+
+describe("device transcripts on voice notes", () => {
+  const voice = { kind: "voice" as const, audioPath: "r/u/a.m4a", mimeType: "audio/mp4", durationSeconds: 4 };
+
+  it("accepts a transcript made on the sender's device, trimmed", () => {
+    const parsed = sendMessageBody.parse({ ...voice, transcript: "  Bend the knee on the takeoff.  " });
+    expect(parsed.kind === "voice" && parsed.transcript).toBe("Bend the knee on the takeoff.");
+  });
+
+  it("keeps the transcript optional and refuses a blank or oversized one", () => {
+    expect(sendMessageBody.safeParse(voice).success).toBe(true);
+    // null: the device tried and got no words; the note is still sent.
+    expect(sendMessageBody.safeParse({ ...voice, transcript: null }).success).toBe(true);
+    expect(sendMessageBody.safeParse({ ...voice, transcript: "   " }).success).toBe(false);
+    expect(sendMessageBody.safeParse({ ...voice, transcript: "a".repeat(4001) }).success).toBe(false);
   });
 });

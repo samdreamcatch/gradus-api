@@ -429,6 +429,13 @@ export const sendMessageInput = z.discriminatedUnion("kind", [
     audioPath: z.string().min(1).max(300).optional(),
     mimeType: z.string().min(1).max(100),
     durationSeconds: z.number().int().min(1).max(180),
+    /**
+     * Made on the sender's device (iOS on-device speech recognition). A string
+     * is stored as the note's transcript; `null` means the device tried and
+     * got none. Either way the audio never goes to the transcription service,
+     * so no AI permission is needed. Leave it out for a server transcript.
+     */
+    transcript: z.string().trim().min(1).max(4000).nullable().optional(),
     planId: z.string().uuid().nullish(),
     /** The earlier message in this conversation that this one answers. */
     replyToId: z.string().uuid().nullish(),
@@ -455,6 +462,13 @@ export const sendMessageBody = z.discriminatedUnion("kind", [
     audioPath: z.string().min(1).max(300).optional(),
     mimeType: z.string().min(1).max(100),
     durationSeconds: z.number().int().min(1).max(180),
+    /**
+     * Made on the sender's device (iOS on-device speech recognition). A string
+     * is stored as the note's transcript; `null` means the device tried and
+     * got none. Either way the audio never goes to the transcription service,
+     * so no AI permission is needed. Leave it out for a server transcript.
+     */
+    transcript: z.string().trim().min(1).max(4000).nullable().optional(),
     planId: z.string().uuid().nullish(),
     /** The earlier message in this conversation that this one answers. */
     replyToId: z.string().uuid().nullish(),
@@ -1308,6 +1322,9 @@ export async function sendMessage(
     duration = data.durationSeconds;
   }
 
+  // Sent by the device (`null`: it tried and got none): no server transcript either way.
+  const fromDevice = data.kind === "voice" && data.transcript !== undefined;
+  const deviceTranscript = data.kind === "voice" ? (data.transcript ?? null) : null;
   const insertRow = {
     sender_user_id: userId,
     sender_role: role,
@@ -1320,9 +1337,12 @@ export async function sendMessage(
     ...(replyToId ? { reply_to_id: replyToId } : {}),
     room_id: room.kind === "athlete" ? room.id : null,
     direct_room_id: room.kind === "athlete" ? null : room.id,
+    // A transcript from the sender's device lands in the same insert, so the
+    // transcript sweep (which only claims notes without one) never sees it.
+    ...(deviceTranscript ? { transcript: deviceTranscript } : {}),
     // No AI permission: never transcribed, set in the same insert so the
     // transcript sweep can't claim the note first.
-    ...(data.kind === "voice" && opts.transcribe === false
+    ...(data.kind === "voice" && !deviceTranscript && (fromDevice || opts.transcribe === false)
       ? { transcript_failed_at: NEVER_TRANSCRIBE }
       : {}),
   };
@@ -1337,8 +1357,8 @@ export async function sendMessage(
   // Voice notes get a server-side transcript (PRD §6.7 item 3). Started now so
   // the guardian mirror below can reuse it; deferred past the response otherwise.
   const skipTranscript = data.kind === "voice" && opts.transcribe === false;
-  const transcription: Promise<string | null> | null =
-    data.kind === "voice" && inserted?.id && audioPath && !skipTranscript
+  const serverTranscription: Promise<string | null> | null =
+    data.kind === "voice" && inserted?.id && audioPath && !fromDevice && !skipTranscript
       ? transcribeVoiceNote(supabaseAdmin, {
           messageId: inserted.id,
           audioPath,
@@ -1346,8 +1366,9 @@ export async function sendMessage(
           bytes: voiceBytes,
         })
       : null;
-
-  if (transcription) await inBackground("transcript:voice-note", () => transcription);
+  if (serverTranscription) await inBackground("transcript:voice-note", () => serverTranscription);
+  // The guardian mirror reads whichever transcript the note has.
+  const transcription = deviceTranscript ? Promise.resolve(deviceTranscript) : serverTranscription;
 
   // Push the other participants (PRD §6.6 "New message in a room"). Deferred
   // past the response and never allowed to fail the send. Athlete rooms also
