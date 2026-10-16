@@ -3283,6 +3283,161 @@ export type Database = {
           },
         ]
       }
+      org_levels: {
+        Row: {
+          archived_at: string | null
+          id: string
+          is_custom: boolean
+          label: string
+          level_key: string
+          organization_id: string
+          practice_hours_per_week: number
+          sort_order: number
+          sport: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          id?: string
+          is_custom?: boolean
+          label: string
+          level_key: string
+          organization_id: string
+          practice_hours_per_week?: number
+          sort_order?: number
+          sport: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          id?: string
+          is_custom?: boolean
+          label?: string
+          level_key?: string
+          organization_id?: string
+          practice_hours_per_week?: number
+          sort_order?: number
+          sport?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_levels_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_move_overrides: {
+        Row: {
+          archived_at: string | null
+          category: string | null
+          cue: string | null
+          default_target_kind: string | null
+          default_target_value: number | null
+          description: string | null
+          id: string
+          name: string | null
+          organization_id: string
+          seed_move_id: string
+          updated_at: string
+          updated_by: string | null
+          why: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string | null
+          cue?: string | null
+          default_target_kind?: string | null
+          default_target_value?: number | null
+          description?: string | null
+          id?: string
+          name?: string | null
+          organization_id: string
+          seed_move_id: string
+          updated_at?: string
+          updated_by?: string | null
+          why?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string | null
+          cue?: string | null
+          default_target_kind?: string | null
+          default_target_value?: number | null
+          description?: string | null
+          id?: string
+          name?: string | null
+          organization_id?: string
+          seed_move_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          why?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_move_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_move_overrides_seed_move_id_fkey"
+            columns: ["seed_move_id"]
+            isOneToOne: false
+            referencedRelation: "seed_moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_resource_overrides: {
+        Row: {
+          archived_at: string | null
+          description: string | null
+          organization_id: string
+          resource_id: string
+          title: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          description?: string | null
+          organization_id: string
+          resource_id: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          description?: string | null
+          organization_id?: string
+          resource_id?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_resource_overrides_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_resource_overrides_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invite_codes: {
         Row: {
           active: boolean
@@ -3356,6 +3511,32 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      organization_sports: {
+        Row: {
+          created_at: string
+          organization_id: string
+          sport: string
+        }
+        Insert: {
+          created_at?: string
+          organization_id: string
+          sport: string
+        }
+        Update: {
+          created_at?: string
+          organization_id?: string
+          sport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_sports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizations: {
         Row: {
@@ -3935,6 +4116,84 @@ export type Database = {
           stripe_promo_id_live?: string | null
           stripe_promo_id_sandbox?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      resource_ack_requirements: {
+        Row: {
+          audiences: string[]
+          organization_id: string
+          required_at: string
+          resource_id: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          audiences?: string[]
+          organization_id: string
+          required_at?: string
+          resource_id: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          audiences?: string[]
+          organization_id?: string
+          required_at?: string
+          resource_id?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_ack_requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_ack_requirements_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: true
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          acted_for_athlete_id: string | null
+          id: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id?: string
+          resource_id?: string
+          role?: string
+          signer_name?: string
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
