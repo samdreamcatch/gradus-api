@@ -306,7 +306,7 @@ export async function syncCoachClubContent(admin: Admin, coachId: string): Promi
     .maybeSingle();
   if (oErr) dbError(oErr);
   const version = (org?.content_version as number | null) ?? 0;
-  if ((coach.last_synced_content_version ?? -1) >= version && version > 0) return;
+  if ((coach.last_synced_content_version ?? -1) >= version) return;
 
   await syncMoves(admin, coachId, orgId);
   await syncLevels(admin, coachId, orgId);
