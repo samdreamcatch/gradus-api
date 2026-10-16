@@ -293,7 +293,8 @@ export interface ParseContext {
   /** Log counts only, never the words (see `TranscribeOptions.quiet`). */
   quiet?: boolean;
   transcript: string;
-  athletes: { id: string; name: string }[];
+  /** `firstName`/`lastName` when known, so a two-part first name ("Mary Kate") stays whole. */
+  athletes: { id: string; name: string; firstName?: string; lastName?: string }[];
   library: LibraryMove[];
   currentPlan?: {
     title: string;
@@ -805,7 +806,9 @@ async function cleanupNotes(opts: {
  * names in the transcript and the plan being edited become placeholders, the
  * spoken athlete is matched to a placeholder here on the server (or, when the
  * mask missed the name, to the real roster, by spelling key only), and every
- * string in the draft is put back as it was said.
+ * string in the draft is put back as it was said. Move names the coach typed
+ * (the plan's moves, the library) are masked for exact names only, and a move
+ * kept as listed gets its stored name back.
  */
 export interface BuildDraftDeps {
   /** Tests: one slotting attempt (the gateway by default). */
@@ -820,25 +823,43 @@ export async function buildDraft(
 ): Promise<VoicePlanDraft> {
   const names = createNameMask(
     ctx.athletes.map((a) => {
+      if (a.firstName !== undefined || a.lastName !== undefined) {
+        return { role: "ATHLETE" as const, firstName: a.firstName, lastName: a.lastName };
+      }
       const [first = "", ...rest] = a.name.split(" ");
       return { role: "ATHLETE" as const, firstName: first, lastName: rest.join(" ") };
     }),
     { fuzzy: true },
   );
+  const typed = (s: string) => names.mask(s, { fuzzy: false });
   const masked: ParseContext = {
     ...ctx,
     transcript: names.mask(ctx.transcript),
     athletes: ctx.athletes.map((a, i) => ({ id: a.id, name: names.personTokens[i] || a.name })),
+    library: ctx.library.map((m) => ({ ...m, name: typed(m.name), category: typed(m.category) })),
     currentPlan: ctx.currentPlan
       ? {
           ...ctx.currentPlan,
           title: names.mask(ctx.currentPlan.title ?? ""),
           notes: names.mask(ctx.currentPlan.notes ?? ""),
+          moves: ctx.currentPlan.moves.map((m) => ({ ...m, name: typed(m.name) })),
         }
       : undefined,
   };
   const draft = await buildDraftFromMasked(masked, deps, ctx.athletes);
   const restored = unmaskStrings(draft, names.unmask);
+  // The unmask writes back the shortest form said ("Kate" for "Mary Kate"):
+  // a library move, or a plan move the model kept as listed, keeps its stored name.
+  const libraryNames = new Map(ctx.library.map((m) => [m.id, m.name]));
+  const planMoves = new Map((ctx.currentPlan?.moves ?? []).map((m) => [m.id, m.name]));
+  const maskedPlanMoves = new Map((masked.currentPlan?.moves ?? []).map((m) => [m.id, m.name]));
+  draft.moves.forEach((sent, i) => {
+    const move = restored.moves[i];
+    const libraryName = sent.libraryMoveId ? libraryNames.get(sent.libraryMoveId) : undefined;
+    if (libraryName !== undefined) move.name = libraryName.trim();
+    const id = sent.matchExistingMoveId;
+    if (id && sent.name === maskedPlanMoves.get(id)) move.name = planMoves.get(id) ?? move.name;
+  });
   // "Notes unchanged" is decided against the masked notes; compare the real ones.
   if (restored.notes !== undefined && restored.notes === (ctx.currentPlan?.notes ?? "")) {
     restored.notes = undefined;
@@ -1336,7 +1357,12 @@ export async function buildPlanFromVoice(
         athletes: { id: string; first_name: string; last_name: string };
       }
     ).athletes;
-    return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
+    return {
+      id: a.id,
+      name: `${a.first_name} ${a.last_name}`.trim(),
+      firstName: a.first_name,
+      lastName: a.last_name,
+    };
   });
 
   let currentPlan: ParseContext["currentPlan"];

@@ -20,11 +20,13 @@
  * - accents, apostrophes and hyphens don't matter ("jose" for José, O’Brien
  *   for O'Brien, "Anne Marie" for Anne-Marie);
  * - possessives keep their "'s" ("[ATHLETE]'s");
+ * - each part of a two-part first name matches on its own ("Kate" for a
+ *   Mary Kate), after any person whose whole first name it is;
  * - `unmask` writes back the shortest form the text used ("Sarah" over
  *   "Sarah Kim"), or the person's display name when the prompt never named them.
  *
- * With `fuzzy`, a capitalized word spelled like a first name is masked too
- * ("Lynnea" for "Linnea", "Sara" for "Sarah"); nicknames are not caught.
+ * With `fuzzy`, a word spelled like a first name is masked too ("Lynnea" for
+ * "Linnea", "Sara" for "Sarah"); nicknames are not caught.
  */
 
 export type NameRole = "ATHLETE" | "PARENT" | "COACH";
@@ -38,7 +40,8 @@ export interface MaskPerson {
 }
 
 export interface NameMask {
-  mask(text: string): string;
+  /** `{ fuzzy: false }` for typed names such as move titles, where only exact names count. */
+  mask(text: string, opts?: NameMaskOptions): string;
   /** Each input person's placeholder, in input order ("" when the person had no usable name). */
   personTokens: string[];
   unmask(text: string): string;
@@ -332,6 +335,13 @@ const DICTATION_WORDS = new Set([
 ]);
 
 /**
+ * Lower-case words that share a spelling key with a first name ("body" with a
+ * Bodie, "trip" with a Tripp): the fuzzy pass leaves them alone in lower case
+ * only, since "Body" could still be speech-to-text writing a Bodie.
+ */
+const LOWER_CASE_WORDS = new Set(["body", "trip", "mini", "rider", "tailor"]);
+
+/**
  * A first name's spelling key, equal for the ways speech-to-text spells one
  * name: accents and case folded, ph→f, ck→k, y→i, a silent h after a vowel
  * dropped ("Sarah", "John"), doubled consonants collapsed, and an -ie or -ey
@@ -402,15 +412,25 @@ interface Rule {
   re: RegExp;
   token: string;
   length: number;
+  /** A part of a two-part first name: loses a tie to a whole name. */
+  part: boolean;
 }
 
-function rule(name: string, token: string, caseInsensitive: boolean): Rule {
+function rule(name: string, token: string, caseInsensitive: boolean, part = false): Rule {
   const body = [...name].map((c) => charPattern(c, caseInsensitive)).join("");
   return {
     re: new RegExp(`(?<!${LETTER})${body}(?!${LETTER})`, caseInsensitive ? "giu" : "gu"),
     token,
     length: name.length,
+    part,
   };
+}
+
+interface FuzzyFirst {
+  name: string;
+  key: string;
+  variants: string[];
+  token: string;
 }
 
 function levenshtein(a: string, b: string): number {
@@ -428,20 +448,23 @@ function levenshtein(a: string, b: string): number {
 
 export interface NameMaskOptions {
   /**
-   * Also mask capitalized words speech-to-text could have written for a first
-   * name: the same spelling key ("Lynnea" for "Linnea", `nameSpellingKey`),
-   * or one edit away for a name of four letters or more (two from seven
-   * letters: "Sara" for "Sarah"). A three-letter name ending in "e" also
-   * takes -y and -ie ("Zoey" for "Zoe"). An everyday word matches by its key
-   * only ("Lily" for a Lilly, never "Will" for a Willa), and common dictation
-   * words are left alone.
+   * Also mask words speech-to-text could have written for a first name: the
+   * same spelling key ("Lynnea" for "Linnea", `nameSpellingKey`), or, for a
+   * capitalized word, one edit away from a name of four letters or more (two
+   * from seven letters: "Sara" for "Sarah"). A three-letter name ending in
+   * "e" also takes -y and -ie ("Zoey" for "Zoe"). A lower-case word of four
+   * letters or more and an everyday word match by key only ("lynnea", "Lily"
+   * for a Lilly; never "Will" for a Willa, never "lily"), and common
+   * dictation words are left alone.
    */
   fuzzy?: boolean;
 }
 
 export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {}): NameMask {
   const personTokens: string[] = [];
-  const fuzzyFirsts: { name: string; key: string; variants: string[]; token: string }[] = [];
+  const fuzzyFirsts: FuzzyFirst[] = [];
+  /** Parts of two-part first names, tried after every whole first name. */
+  const fuzzyParts: FuzzyFirst[] = [];
   /** The text each placeholder first replaced, so `unmask` restores it as written. */
   const seen = new Map<string, string>();
   const rules: Rule[] = [];
@@ -449,6 +472,27 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
   const firstToken = new Map<NameRole, string>();
   const counts = new Map<NameRole, number>();
   const surnameTokens = new Map<string, string>();
+
+  const addFirst = (first: string, token: string, part: boolean) => {
+    if (first.length >= 3) {
+      const name = first.toLocaleLowerCase();
+      const plain = name.normalize("NFD").replace(/\p{M}/gu, "");
+      // "Zoey" and "Zoie" for a Zoe: spelled out, since the key would also take "Joy" for a Joe.
+      const variants =
+        plain.length === 3 && plain.endsWith("e") ? [`${plain}y`, `${plain.slice(0, 2)}ie`] : [];
+      (part ? fuzzyParts : fuzzyFirsts).push({
+        name,
+        key: nameSpellingKey(first),
+        variants,
+        token,
+      });
+    }
+    if (EVERYDAY_WORD_NAMES.has(first.toLocaleLowerCase())) {
+      for (const form of capitalizedForms(first)) rules.push(rule(form, token, false, part));
+    } else {
+      rules.push(rule(first, token, true, part));
+    }
+  };
 
   for (const p of people) {
     const first = clean(p.firstName);
@@ -463,22 +507,12 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
     if (n === 1) firstToken.set(p.role, token);
     displays.set(token, p.display ?? (first || last));
     personTokens.push(token);
-    if (first.length >= 3) {
-      const name = first.toLocaleLowerCase();
-      const plain = name.normalize("NFD").replace(/\p{M}/gu, "");
-      // "Zoey" and "Zoie" for a Zoe: spelled out, since the key would also take "Joy" for a Joe.
-      const variants =
-        plain.length === 3 && plain.endsWith("e") ? [`${plain}y`, `${plain.slice(0, 2)}ie`] : [];
-      fuzzyFirsts.push({ name, key: nameSpellingKey(first), variants, token });
-    }
 
     if (first.length >= 2 && last.length >= 2) rules.push(rule(`${first} ${last}`, token, true));
     if (first.length >= 2) {
-      if (EVERYDAY_WORD_NAMES.has(first.toLocaleLowerCase())) {
-        for (const form of capitalizedForms(first)) rules.push(rule(form, token, false));
-      } else {
-        rules.push(rule(first, token, true));
-      }
+      addFirst(first, token, false);
+      const parts = first.split(/[\s-]+/).filter((part) => part.length >= 2);
+      if (parts.length > 1) for (const part of parts) addFirst(part, token, true);
     }
     if (last.length >= 2) {
       const key = last.toLocaleLowerCase();
@@ -495,8 +529,9 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
       }
     }
   }
-  // Longest first, so "Sarah Kim" wins over "Sarah".
-  rules.sort((a, b) => b.length - a.length);
+  // Longest first, so "Sarah Kim" wins over "Sarah"; a Kate's own name over a Mary Kate's part.
+  rules.sort((a, b) => b.length - a.length || Number(a.part) - Number(b.part));
+  const fuzzyNames = [...fuzzyFirsts, ...fuzzyParts];
 
   const tokenList = [...displays.keys()].sort((a, b) => b.length - a.length);
   const unmaskRes = tokenList.map((t) => ({
@@ -531,19 +566,28 @@ export function createNameMask(people: MaskPerson[], opts: NameMaskOptions = {})
 
   return {
     personTokens,
-    mask(text) {
+    mask(text, maskOpts) {
       let out = text;
       for (const r of rules) out = out.replace(r.re, (m) => remember(r.token, m));
-      if (opts.fuzzy && fuzzyFirsts.length) {
-        out = out.replace(/(?<![\p{L}\p{N}[])\p{Lu}[\p{L}]{2,}(?![\p{L}\p{N}])/gu, (word) => {
+      if ((maskOpts?.fuzzy ?? opts.fuzzy) && fuzzyNames.length) {
+        out = out.replace(/(?<![\p{L}\p{N}[])\p{L}{3,}(?![\p{L}\p{N}])/gu, (word) => {
           const w = word.toLocaleLowerCase();
           if (DICTATION_WORDS.has(w)) return word;
+          const capitalized = /^\p{Lu}/u.test(word);
+          // Lower case: "lynnea" yes, "lily" or "body" no.
+          if (
+            !capitalized &&
+            (w.length < 4 || EVERYDAY_WORD_NAMES.has(w) || LOWER_CASE_WORDS.has(w))
+          ) {
+            return word;
+          }
           // Same spelling key first, so "John" goes to a Jon before a Joan.
-          // An everyday word stops there: "Lily" is a Lilly, "Will" is no Willa.
+          // Only a capitalized word that is no everyday one goes on to edit
+          // distance: "Lily" is a Lilly, "Will" is no Willa.
           const key = nameSpellingKey(w);
-          let match = fuzzyFirsts.find((f) => f.key === key || f.variants.includes(w));
-          if (!match && !EVERYDAY_WORD_NAMES.has(w)) {
-            match = fuzzyFirsts.find((f) => {
+          let match = fuzzyNames.find((f) => f.key === key || f.variants.includes(w));
+          if (!match && capitalized && !EVERYDAY_WORD_NAMES.has(w)) {
+            match = fuzzyNames.find((f) => {
               // Three-letter names match on the key only.
               const limit = f.name.length >= 7 ? 2 : f.name.length >= 4 ? 1 : 0;
               return (

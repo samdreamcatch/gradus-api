@@ -268,6 +268,11 @@ describe("createNameMask — no rostered name reaches the model (App Review 5.1.
       "Eli",
       "Kai",
       "Jon",
+      "Bodie",
+      "Tripp",
+      "Minnie",
+      "Wynter",
+      "Myles",
     ];
     const m = createNameMask(
       roster.map((firstName) => ({ role: "ATHLETE" as const, firstName, lastName: null })),
@@ -279,8 +284,61 @@ describe("createNameMask — no rostered name reaches the model (App Review 5.1.
       "Camel spin, Layback, Twizzles. Mohawks and Choctaws. Test session in May.",
       "Lutzes. Loops. Axels. Salchows. Flips. Spiral sequence. Harness work on the Pole.",
       "Very good. Open the hip. Set up the edge. Try again. Never cheat. Line up. Fine.",
+      // Lower case, where only the spelling key applies.
+      "the lutz needs height, then a loop and an axel. salchow entries on the harness,",
+      "spirals across, flip and toe loop. upper body position. a trip to regionals.",
+      "mini session in winter. run two miles. you will see grace in the rose spiral.",
     ].join(" ");
     expect(m.mask(dictation)).toBe(dictation);
+  });
+
+  it("masks each part of a two-part first name, after a whole first name", () => {
+    const m = createNameMask(
+      [
+        { role: "ATHLETE", firstName: "Mary Kate", lastName: "Wexley" },
+        { role: "ATHLETE", firstName: "Kate", lastName: "Dunmore" },
+        { role: "ATHLETE", firstName: "Ella Rose", lastName: "Brandt" },
+        { role: "PARENT", firstName: "Anne-Marie", lastName: "Thorne" },
+      ],
+      { fuzzy: true },
+    );
+    expect(m.mask("Mary Kate, then Kate. Mary again. MARY's edges.")).toBe(
+      "[ATHLETE], then [ATHLETE 2]. [ATHLETE] again. [ATHLETE]'s edges.",
+    );
+    // An everyday-word part only when capitalized, like a first name.
+    expect(m.mask("Ella Rose, Rose and Ella; the rose spiral.")).toBe(
+      "[ATHLETE 3], [ATHLETE 3] and [ATHLETE 3]; the rose spiral.",
+    );
+    expect(m.mask("Marie called, and Katie.")).toBe("[PARENT] called, and [ATHLETE 2].");
+  });
+
+  it("masks typed text for exact names only when asked", () => {
+    const m = createNameMask([{ role: "ATHLETE", firstName: "Linnea", lastName: "Corwin" }], {
+      fuzzy: true,
+    });
+    expect(m.mask("Lynnea spiral set", { fuzzy: false })).toBe("Lynnea spiral set");
+    expect(m.mask("Linnea spiral set; Corwin warmup", { fuzzy: false })).toBe(
+      "[ATHLETE] spiral set; [SURNAME 1] warmup",
+    );
+    expect(m.mask("Lynnea spiral set")).toBe("[ATHLETE] spiral set");
+  });
+
+  it("masks a lower-case misspelling by its spelling key, never by edit distance", () => {
+    const mask = (first: string, text: string) =>
+      createNameMask([{ role: "ATHLETE", firstName: first, lastName: null }], {
+        fuzzy: true,
+      }).mask(text);
+    expect(mask("Linnea", "plan for lynnea and linea")).toBe("plan for [ATHLETE] and [ATHLETE]");
+    expect(mask("Sarah", "sara lands it")).toBe("[ATHLETE] lands it");
+    expect(mask("Zoe", "zoey lands it")).toBe("[ATHLETE] lands it");
+    // In lower case one edit is not enough, and a three-letter word is left alone.
+    expect(mask("Sarah", "sarahs and saran wrap")).toBe("sarahs and saran wrap");
+    expect(mask("Jon", "john lands it, jon too")).toBe("[ATHLETE] lands it, [ATHLETE] too");
+    expect(mask("John", "jon lands it")).toBe("jon lands it");
+    // Everyday words and dictation words stay in lower case.
+    expect(mask("Lilly", "lily pad drill")).toBe("lily pad drill");
+    expect(mask("Wynter", "winter season")).toBe("winter season");
+    expect(mask("Bodie", "upper body")).toBe("upper body");
   });
 });
 

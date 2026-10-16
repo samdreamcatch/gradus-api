@@ -342,6 +342,22 @@ describe("buildDraft — no roster names reach the model (App Review 5.1.2(i))",
     );
   });
 
+  it("masks a lower-case misspelling before the model sees it", async () => {
+    let seenByModel = "";
+    const draft = await buildDraft(
+      { mode: "create", transcript: "plan for lynnea: spirals", athletes: roster, library: [] },
+      {
+        attempt: async (c) => {
+          seenByModel = c.transcript;
+          return slotsFor("[ATHLETE 2]");
+        },
+        cleanup: async () => "",
+      },
+    );
+    expect(seenByModel).toBe("plan for [ATHLETE 2]: spirals");
+    expect(draft.athleteId).toBe("a-linnea");
+  });
+
   it("matches a spoken name the mask missed against the real roster, and sends no roster name", async () => {
     const seenByModel: string[] = [];
     let notesOpts: { athleteFirstName: string | null } | null = null;
@@ -349,22 +365,22 @@ describe("buildDraft — no roster names reach the model (App Review 5.1.2(i))",
     const draft = await buildDraft(
       {
         mode: "edit",
-        // The fuzzy pass reads capitalized words only, so a lower-case
-        // spelling reaches the model as said. The fallback must add nothing.
-        transcript: "plan for lynnea: spirals. Sarah and Theo watch.",
-        athletes: roster,
+        // An everyday word in lower case ("lily") is left alone, so it
+        // reaches the model as said. The fallback must add nothing.
+        transcript: "plan for lily: spirals. Sarah and Theo watch.",
+        athletes: [...roster, { id: "a-lilly", name: "Lilly Thorne" }],
         library: [],
         currentPlan: {
-          title: "Linnea Corwin spirals",
-          athleteId: "a-linnea",
-          notes: "Linnea and Sarah Kim share ice.",
+          title: "Lilly Thorne spirals",
+          athleteId: "a-lilly",
+          notes: "Lilly and Linnea Corwin share ice.",
           moves: [],
         },
       },
       {
         attempt: async (c) => {
           seenByModel.push(JSON.stringify(c));
-          return slotsFor("lynnea", "[ATHLETE] and [ATHLETE 3] watch.");
+          return slotsFor("lily", "[ATHLETE] and [ATHLETE 3] watch.");
         },
         cleanup: async (o) => {
           notesOpts = o;
@@ -373,14 +389,113 @@ describe("buildDraft — no roster names reach the model (App Review 5.1.2(i))",
         },
       },
     );
-    expect(draft.athleteId).toBe("a-linnea");
+    expect(draft.athleteId).toBe("a-lilly");
     expect(draft.unresolvedAthleteName).toBeNull();
-    expect(notesOpts!.athleteFirstName).toBe("[ATHLETE 2]");
+    expect(notesOpts!.athleteFirstName).toBe("[ATHLETE 4]");
     for (const sent of [...seenByModel, notesPrompt]) {
       // Ids are UUIDs in production; these test ids spell names.
       const words = sent.replace(/"(id|athleteId)":"[^"]*"/g, "");
-      expect(words).not.toMatch(/\b(linnea|corwin|sarah|kim|theo|marsh)\b/i);
+      expect(words).not.toMatch(/\b(lilly|thorne|linnea|corwin|sarah|kim|theo|marsh)\b/i);
     }
+  });
+
+  it("masks each part of a two-part first name", async () => {
+    let seenByModel = "";
+    const draft = await buildDraft(
+      {
+        mode: "create",
+        transcript: "Mary Kate needs spirals. Then Kate, then Mary.",
+        athletes: [
+          { id: "a-mk", name: "Mary Kate Wexley", firstName: "Mary Kate", lastName: "Wexley" },
+          { id: "a-kd", name: "Kate Dunmore", firstName: "Kate", lastName: "Dunmore" },
+        ],
+        library: [],
+      },
+      {
+        attempt: async (c) => {
+          seenByModel = c.transcript;
+          return slotsFor("[ATHLETE]");
+        },
+        cleanup: async () => "",
+      },
+    );
+    // "Kate" alone is the Kate on the roster, not half of Mary Kate.
+    expect(seenByModel).toBe("[ATHLETE] needs spirals. Then [ATHLETE 2], then [ATHLETE].");
+    expect(draft.athleteId).toBe("a-mk");
+  });
+
+  it("masks typed move names and gives a kept move its stored name back", async () => {
+    const seenByModel: string[] = [];
+    const move = (name: string, matchExistingMoveId: string | null = null) => ({
+      name,
+      nameQuote: null,
+      description: null,
+      descriptionQuote: null,
+      cue: null,
+      cueQuote: null,
+      why: null,
+      whyQuote: null,
+      targetKind: "reps",
+      targetValue: 5,
+      targetQuote: null,
+      matchExistingMoveId,
+    });
+    const draft = await buildDraft(
+      {
+        mode: "edit",
+        transcript: "Kate: keep the edge drill. Add the warmup. Linnea's spiral set gets longer.",
+        athletes: [
+          { id: "a-mk", name: "Mary Kate Wexley", firstName: "Mary Kate", lastName: "Wexley" },
+          { id: "a-linnea", name: "Linnea Corwin" },
+        ],
+        library: [
+          {
+            id: "lib-1",
+            name: "Linnea Corwin warmup",
+            category: "Linnea extras",
+            description: "",
+            cue: "",
+            why: "",
+            defaultTargetKind: "reps",
+            defaultTargetValue: 10,
+          },
+        ],
+        currentPlan: {
+          title: "Edges",
+          athleteId: "a-mk",
+          notes: "",
+          moves: [
+            { id: "pm-1", name: "Mary Kate edge drill", targetKind: "reps", targetValue: 5 },
+            { id: "pm-2", name: "Linnea spiral set", targetKind: "reps", targetValue: 3 },
+          ],
+        },
+      },
+      {
+        attempt: async (c) => {
+          seenByModel.push(JSON.stringify(c));
+          return {
+            ...slotsFor(null),
+            moves: [
+              move(c.currentPlan!.moves[0]!.name, "pm-1"),
+              move(c.library[0]!.name),
+              move("[ATHLETE 2] long spirals", "pm-2"),
+            ],
+          } as unknown as Slots;
+        },
+        cleanup: async () => "",
+      },
+    );
+    for (const sent of seenByModel) {
+      const words = sent.replace(/"(id|athleteId)":"[^"]*"/g, "");
+      expect(words).not.toMatch(/\b(mary|kate|wexley|linnea|corwin)\b/i);
+    }
+    // Unmasked as said, the first two would read "Kate edge drill" and "Linnea warmup".
+    expect(draft.moves.map((m) => m.name)).toEqual([
+      "Mary Kate edge drill",
+      "Linnea Corwin warmup",
+      "Linnea long spirals",
+    ]);
+    expect(draft.moves[1]?.libraryMoveId).toBe("lib-1");
   });
 
   it("keeps a pronoun or another name off the real roster", async () => {
