@@ -10,6 +10,7 @@ import { MessageCoachAboutPlanDialog } from "@/components/plans/message-coach-ab
 import { PlanSessionTimer } from "@/components/plans/plan-session-timer";
 import { ShareToSocialsButton } from "@/components/plans/share-to-socials-button";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
+import { SessionMoveRatings } from "@/components/plans/session-move-ratings";
 import { getPlanSessions, listPlanSessions } from "@/lib/plan-sessions.functions";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SettingsList, SettingsRow, SettingsButtonRow } from "@/components/settings/primitives";
@@ -183,7 +184,13 @@ function AthletePlanDetail() {
                     log.athleteFirstName,
                   )}
                   description={
-                    s.note ? `${stateLabel(s.stateIndex)} · ${s.note}` : stateLabel(s.stateIndex)
+                    s.moveRatings?.length ? (
+                      <SessionMoveRatings ratings={s.moveRatings} note={s.note} />
+                    ) : s.note ? (
+                      `${stateLabel(s.stateIndex)} · ${s.note}`
+                    ) : (
+                      stateLabel(s.stateIndex)
+                    )
                   }
                   value={sessionMetaLabel(s.loggedAt, s.durationSeconds)}
                 />
