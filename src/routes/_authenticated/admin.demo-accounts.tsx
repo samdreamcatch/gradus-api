@@ -11,6 +11,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import {
   adminGetDemoAccounts,
+  adminRefreshDemoActivity,
   adminReplaceDemoLessons,
   adminSeedDemoAccounts,
   DEMO_PEOPLE,
@@ -31,6 +32,7 @@ function DemoAccountsPage() {
   const getFn = useServerFn(adminGetDemoAccounts);
   const seedFn = useServerFn(adminSeedDemoAccounts);
   const lessonsFn = useServerFn(adminReplaceDemoLessons);
+  const activityFn = useServerFn(adminRefreshDemoActivity);
 
   const [coachEmail, setCoachEmail] = useState(DEFAULTS.coachEmail);
   const [parentEmail, setParentEmail] = useState(DEFAULTS.parentEmail);
@@ -64,10 +66,18 @@ function DemoAccountsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const activity = useMutation({
+    mutationFn: () => activityFn({ data: { coachEmail, parentEmail, athleteUsername } }),
+    onSuccess: (r) => toast.success(`${r.sessions} sessions and ${r.messages} messages refreshed`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const s = status.data;
   const anyExists = !!(s?.coach.userId || s?.parent.userId || s?.athlete.userId);
   const canSeed = password.length >= 12 && (!anyExists || reset) && !seed.isPending;
-  const canReplaceLessons = !!(s?.coach.coachId && s?.athlete.athleteId) && !lessons.isPending;
+  const demoExists = !!(s?.coach.coachId && s?.athlete.athleteId);
+  const canReplaceLessons = demoExists && !lessons.isPending;
+  const canRefreshActivity = demoExists && !activity.isPending;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-10">
@@ -89,9 +99,9 @@ function DemoAccountsPage() {
           </strong>{" "}
           (username login), seeded with lessons every two hours from 9am to 5pm every day (so the
           coach&rsquo;s Up next briefing is always showing), goals, the starter move library, one
-          active plan, four logged sessions and a short conversation. Invented names; every row is
-          marked as test data. The password is not stored anywhere here: put it in App Store
-          Connect.
+          active plan, six logged sessions from the last two weeks and a short conversation.
+          Invented names; every row is marked as test data. The password is not stored anywhere
+          here: put it in App Store Connect.
         </p>
       </header>
 
@@ -178,6 +188,24 @@ function DemoAccountsPage() {
             onClick={() => lessons.mutate()}
           >
             {lessons.isPending ? "Replacing…" : "Replace lessons"}
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-4">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="font-display text-xl">Recent activity</h2>
+            <p className="text-sm text-text-secondary max-w-prose">
+              Moves the demo athlete&rsquo;s practice sessions and messages back into the last two
+              weeks, so the coach&rsquo;s pre-lesson briefing has something to report. Run it again
+              whenever the briefing goes quiet; it never adds duplicates.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canRefreshActivity}
+            onClick={() => activity.mutate()}
+          >
+            {activity.isPending ? "Refreshing…" : "Refresh activity"}
           </Button>
         </div>
       </section>

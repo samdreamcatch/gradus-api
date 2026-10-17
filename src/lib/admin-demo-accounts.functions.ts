@@ -19,6 +19,7 @@ import { syntheticEmailForAthlete, usernameSchema } from "./api/auth-broker";
 import { deleteAccountForUser } from "./account-deletion.server";
 import { grantGuardianConsent, markParentVerifiedByAdmin } from "./guardian-verification.server";
 import { demoLessonSlots } from "./demo-lessons";
+import { DEMO_MESSAGES, DEMO_SESSIONS, demoTimestamp, type DemoMessage } from "./demo-activity";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -155,9 +156,194 @@ export const adminGetDemoAccounts = createServerFn({ method: "POST" })
   });
 
 /**
+ * The existing demo coach and athlete, for the actions that change them in
+ * place. Test rows only: a real coach or athlete typed into the form is
+ * refused.
+ */
+async function existingDemoAccounts(
+  admin: AnyClient,
+  input: { coachEmail: string; parentEmail: string; athleteUsername: string },
+): Promise<DemoAccountsStatus & { coachId: string; athleteId: string }> {
+  const s = await status(admin, input);
+  const coachId = s.coach.coachId;
+  const athleteId = s.athlete.athleteId;
+  if (!coachId || !athleteId) throw new Error("Create the demo accounts first");
+
+  const [coach, athlete] = await Promise.all([
+    admin.from("coach_profiles").select("is_test").eq("id", coachId).single(),
+    admin.from("athletes").select("is_test").eq("id", athleteId).single(),
+  ]);
+  if (coach.error) dbError(coach.error);
+  if (athlete.error) dbError(athlete.error);
+  if (!coach.data?.is_test || !athlete.data?.is_test) {
+    throw new Error("These aren't demo accounts: only test rows can be changed here");
+  }
+  return { ...s, coachId, athleteId };
+}
+
+/**
+ * Write the demo activity (`demo-activity.ts`) dated from `now`. Rows that
+ * are already there, found by their text, move to the new date; missing
+ * ones are inserted. Running it again never adds duplicates.
+ */
+async function writeDemoActivity(
+  admin: AnyClient,
+  ids: {
+    planId: string;
+    athleteId: string;
+    roomId: string;
+    senders: Record<DemoMessage["sender"], string>;
+  },
+  now: Date,
+): Promise<void> {
+  const sessionsRes = await admin
+    .from("plan_sessions")
+    .select("id, note")
+    .eq("plan_id", ids.planId)
+    .in(
+      "note",
+      DEMO_SESSIONS.map((s) => s.note),
+    );
+  if (sessionsRes.error) dbError(sessionsRes.error);
+  const sessionIdByNote = new Map<string, string>();
+  for (const r of (sessionsRes.data ?? []) as { id: string; note: string }[]) {
+    if (!sessionIdByNote.has(r.note)) sessionIdByNote.set(r.note, r.id);
+  }
+  const newSessions = [];
+  for (const s of DEMO_SESSIONS) {
+    const fields = {
+      logged_at: demoTimestamp(now, s.daysAgo, s.hourUtc),
+      state_index: s.state,
+      duration_seconds: s.minutes * 60,
+    };
+    const id = sessionIdByNote.get(s.note);
+    if (id) {
+      const moved = await admin.from("plan_sessions").update(fields).eq("id", id);
+      if (moved.error) dbError(moved.error);
+    } else {
+      newSessions.push({
+        ...fields,
+        plan_id: ids.planId,
+        athlete_id: ids.athleteId,
+        parent_id: null,
+        note: s.note,
+      });
+    }
+  }
+  if (newSessions.length) {
+    const added = await admin.from("plan_sessions").insert(newSessions);
+    if (added.error) dbError(added.error);
+  }
+
+  const messagesRes = await admin
+    .from("messages")
+    .select("id, body")
+    .eq("room_id", ids.roomId)
+    .in(
+      "body",
+      DEMO_MESSAGES.map((m) => m.body),
+    );
+  if (messagesRes.error) dbError(messagesRes.error);
+  const messageIdByBody = new Map<string, string>();
+  for (const r of (messagesRes.data ?? []) as { id: string; body: string }[]) {
+    if (!messageIdByBody.has(r.body)) messageIdByBody.set(r.body, r.id);
+  }
+  const newMessages = [];
+  for (const m of DEMO_MESSAGES) {
+    const createdAt = demoTimestamp(now, m.daysAgo, m.hourUtc, m.minute);
+    const id = messageIdByBody.get(m.body);
+    if (id) {
+      const moved = await admin.from("messages").update({ created_at: createdAt }).eq("id", id);
+      if (moved.error) dbError(moved.error);
+    } else {
+      newMessages.push({
+        sender_user_id: ids.senders[m.sender],
+        sender_role: m.sender,
+        body: m.body,
+        created_at: createdAt,
+        kind: "text",
+        room_id: ids.roomId,
+        direct_room_id: null,
+        plan_id: null,
+        audio_url: null,
+        duration_seconds: null,
+      });
+    }
+  }
+  if (newMessages.length) {
+    const added = await admin.from("messages").insert(newMessages);
+    if (added.error) dbError(added.error);
+  }
+}
+
+/**
+ * Bring the existing demo athlete's practice sessions and conversation back
+ * into the last two weeks, so the coach's pre-lesson briefing has something
+ * to report, without resetting the accounts.
+ */
+export const adminRefreshDemoActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: unknown) =>
+    demoAccountsInput.pick({ coachEmail: true, parentEmail: true, athleteUsername: true }).parse(d),
+  )
+  .handler(async ({ context, data }): Promise<{ sessions: number; messages: number }> => {
+    await assertAdmin(context);
+    const admin = await adminClient();
+    const s = await existingDemoAccounts(admin, data);
+    const { coachId, athleteId } = s;
+    if (!s.coach.userId || !s.parent.userId || !s.athlete.userId) {
+      throw new Error("Create the demo accounts first");
+    }
+
+    const plan = await admin
+      .from("plans")
+      .select("id")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", athleteId)
+      .eq("kind", "plan")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (plan.error) dbError(plan.error);
+    if (!plan.data) {
+      throw new Error("The demo athlete has no active plan: reset the demo accounts");
+    }
+
+    const room = await admin
+      .from("message_rooms")
+      .select("id")
+      .eq("coach_id", coachId)
+      .eq("athlete_id", athleteId)
+      .maybeSingle();
+    if (room.error) dbError(room.error);
+    let roomId = room.data?.id as string | undefined;
+    if (!roomId) {
+      const created = await admin
+        .from("message_rooms")
+        .insert({ coach_id: coachId, athlete_id: athleteId })
+        .select("id")
+        .single();
+      if (created.error) dbError(created.error);
+      roomId = created.data.id as string;
+    }
+
+    await writeDemoActivity(
+      admin,
+      {
+        planId: plan.data.id as string,
+        athleteId,
+        roomId,
+        senders: { coach: s.coach.userId, parent: s.parent.userId, athlete: s.athlete.userId },
+      },
+      new Date(),
+    );
+    return { sessions: DEMO_SESSIONS.length, messages: DEMO_MESSAGES.length };
+  });
+
+/**
  * Swap the existing demo athlete's lessons with this coach for the demo
- * schedule (`demo-lessons.ts`) without resetting the accounts. Test rows
- * only: a real coach or athlete typed into the form is refused.
+ * schedule (`demo-lessons.ts`) without resetting the accounts.
  */
 export const adminReplaceDemoLessons = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -167,20 +353,7 @@ export const adminReplaceDemoLessons = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<{ lessons: number }> => {
     await assertAdmin(context);
     const admin = await adminClient();
-    const s = await status(admin, data);
-    const coachId = s.coach.coachId;
-    const athleteId = s.athlete.athleteId;
-    if (!coachId || !athleteId) throw new Error("Create the demo accounts first");
-
-    const [coach, athlete] = await Promise.all([
-      admin.from("coach_profiles").select("is_test").eq("id", coachId).single(),
-      admin.from("athletes").select("is_test").eq("id", athleteId).single(),
-    ]);
-    if (coach.error) dbError(coach.error);
-    if (athlete.error) dbError(athlete.error);
-    if (!coach.data?.is_test || !athlete.data?.is_test) {
-      throw new Error("These aren't demo accounts: only test rows can be changed here");
-    }
+    const { coachId, athleteId } = await existingDemoAccounts(admin, data);
 
     const removed = await admin
       .from("athlete_lesson_slots")
@@ -211,8 +384,8 @@ function birthdateYearsAgo(years: number): string {
 /**
  * Create (or reset and recreate) the three accounts and seed them with a
  * roster link, sport scope, goals, the demo lesson schedule, the coach's starter
- * move library, one active plan with three moves, four logged sessions
- * and a short conversation. Idempotent per email/username when `reset` is
+ * move library, one active plan with three moves, and the demo activity
+ * (practice sessions and a short conversation). Idempotent per email/username when `reset` is
  * false: existing accounts are refused rather than duplicated.
  */
 export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
@@ -473,60 +646,23 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       );
       if (pm.error) dbError(pm.error);
     }
-    const sessionRows = [
-      { daysAgo: 2, state: 3, note: "Salchow landed 6 of 8." },
-      { daysAgo: 5, state: 2, note: "Tired after school." },
-      { daysAgo: 9, state: 2, note: "" },
-      { daysAgo: 13, state: 1, note: "" },
-    ].map((s) => ({
-      plan_id: planId,
-      athlete_id: athleteId,
-      parent_id: null,
-      duration_seconds: 1500,
-      logged_at: iso(s.daysAgo, 22, 10),
-      state_index: s.state,
-      note: s.note,
-    }));
-    const sessions = await admin.from("plan_sessions").insert(sessionRows);
-    if (sessions.error) dbError(sessions.error);
-
-    // ---- A short conversation ----
+    // ---- Practice sessions and a short conversation (demo-activity.ts) ----
     const room = await admin
       .from("message_rooms")
       .insert({ coach_id: coachId, athlete_id: athleteId })
       .select("id")
       .single();
     if (room.error) dbError(room.error);
-    const messageRows = [
+    await writeDemoActivity(
+      admin,
       {
-        sender_user_id: coachUserId,
-        sender_role: "coach",
-        body: "Welcome to Gradus! Your first plan is up — three moves, about eight minutes. Log a session after each practice.",
-        created_at: iso(6, 15, 0),
+        planId,
+        athleteId,
+        roomId: room.data.id as string,
+        senders: { coach: coachUserId, parent: parentUserId, athlete: athleteUserId },
       },
-      {
-        sender_user_id: parentUserId,
-        sender_role: "parent",
-        body: "Thanks Jordan. Sam practised Tuesday and Thursday this week.",
-        created_at: iso(5, 20, 30),
-      },
-      {
-        sender_user_id: athleteUserId,
-        sender_role: "athlete",
-        body: "The salchow felt way better today!",
-        created_at: iso(2, 22, 15),
-      },
-    ].map((m) => ({
-      ...m,
-      kind: "text",
-      room_id: room.data.id,
-      direct_room_id: null,
-      plan_id: null,
-      audio_url: null,
-      duration_seconds: null,
-    }));
-    const messages = await admin.from("messages").insert(messageRows);
-    if (messages.error) dbError(messages.error);
+      new Date(),
+    );
 
     return {
       coach: {
@@ -539,8 +675,8 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       athlete: { username: data.athleteUsername, userId: athleteUserId, athleteId },
       seeded: {
         plans: 1,
-        sessions: sessionRows.length,
-        messages: messageRows.length,
+        sessions: DEMO_SESSIONS.length,
+        messages: DEMO_MESSAGES.length,
         lessons: lessonRows.length,
       },
     };
