@@ -17,16 +17,11 @@ import {
   DEMO_PEOPLE,
   type DemoAccountsResult,
 } from "@/lib/admin-demo-accounts.functions";
+import { DEMO_ACCOUNT_DEFAULTS as DEFAULTS } from "@/lib/demo-activity";
 
 export const Route = createFileRoute("/_authenticated/admin/demo-accounts")({
   component: DemoAccountsPage,
 });
-
-const DEFAULTS = {
-  coachEmail: "demo-coach@gradussports.com",
-  parentEmail: "demo-parent@gradussports.com",
-  athleteUsername: "demo_athlete",
-};
 
 function DemoAccountsPage() {
   const getFn = useServerFn(adminGetDemoAccounts);
@@ -195,8 +190,9 @@ function DemoAccountsPage() {
             <h2 className="font-display text-xl">Recent activity</h2>
             <p className="text-sm text-text-secondary max-w-prose">
               Moves the demo athlete&rsquo;s practice sessions and messages back into the last two
-              weeks, so the coach&rsquo;s pre-lesson briefing has something to report. Run it again
-              whenever the briefing goes quiet; it never adds duplicates.
+              weeks, so the coach&rsquo;s pre-lesson briefing has something to report. It runs by
+              itself once a day for the default demo accounts; use this to refresh straight away, or
+              for accounts under other emails. It never adds duplicates.
             </p>
           </div>
           <Button
