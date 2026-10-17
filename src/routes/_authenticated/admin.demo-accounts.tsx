@@ -11,6 +11,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Tag } from "@/components/ui/tag";
 import {
   adminGetDemoAccounts,
+  adminReplaceDemoLessons,
   adminSeedDemoAccounts,
   DEMO_PEOPLE,
   type DemoAccountsResult,
@@ -29,6 +30,7 @@ const DEFAULTS = {
 function DemoAccountsPage() {
   const getFn = useServerFn(adminGetDemoAccounts);
   const seedFn = useServerFn(adminSeedDemoAccounts);
+  const lessonsFn = useServerFn(adminReplaceDemoLessons);
 
   const [coachEmail, setCoachEmail] = useState(DEFAULTS.coachEmail);
   const [parentEmail, setParentEmail] = useState(DEFAULTS.parentEmail);
@@ -56,9 +58,16 @@ function DemoAccountsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const lessons = useMutation({
+    mutationFn: () => lessonsFn({ data: { coachEmail, parentEmail, athleteUsername } }),
+    onSuccess: (r) => toast.success(`${r.lessons} lessons scheduled`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const s = status.data;
   const anyExists = !!(s?.coach.userId || s?.parent.userId || s?.athlete.userId);
   const canSeed = password.length >= 12 && (!anyExists || reset) && !seed.isPending;
+  const canReplaceLessons = !!(s?.coach.coachId && s?.athlete.athleteId) && !lessons.isPending;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-10">
@@ -78,9 +87,11 @@ function DemoAccountsPage() {
           <strong>
             {DEMO_PEOPLE.athlete.firstName} {DEMO_PEOPLE.athlete.lastName}
           </strong>{" "}
-          (username login), seeded with a lesson, goals, the starter move library, one active plan,
-          four logged sessions and a short conversation. Invented names; every row is marked as test
-          data. The password is not stored anywhere here: put it in App Store Connect.
+          (username login), seeded with lessons every two hours from 9am to 5pm every day (so the
+          coach&rsquo;s Up next briefing is always showing), goals, the starter move library, one
+          active plan, four logged sessions and a short conversation. Invented names; every row is
+          marked as test data. The password is not stored anywhere here: put it in App Store
+          Connect.
         </p>
       </header>
 
@@ -151,6 +162,26 @@ function DemoAccountsPage() {
         ) : null}
       </section>
 
+      <section className="space-y-3 rounded-xl border border-divider bg-card p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="font-display text-xl">Lesson schedule</h2>
+            <p className="text-sm text-text-secondary max-w-prose">
+              Replaces the demo athlete&rsquo;s lessons with one-hour lessons at 9, 11, 1, 3 and 5
+              every day. The rest of the accounts stay as they are; no password needed.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canReplaceLessons}
+            onClick={() => lessons.mutate()}
+          >
+            {lessons.isPending ? "Replacing…" : "Replace lessons"}
+          </Button>
+        </div>
+      </section>
+
       <section className="space-y-3">
         <h2 className="font-display text-xl">Current state</h2>
         {status.isLoading ? (
@@ -170,7 +201,7 @@ function DemoAccountsPage() {
         {result ? (
           <p className="text-sm text-text-secondary">
             Seeded {result.seeded.plans} plan, {result.seeded.sessions} sessions,{" "}
-            {result.seeded.messages} messages, {result.seeded.lessons} lesson. Sign in on the
+            {result.seeded.messages} messages, {result.seeded.lessons} lessons. Sign in on the
             TestFlight build as each account before pasting them into App Store Connect.
           </p>
         ) : null}

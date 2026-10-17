@@ -18,6 +18,7 @@ import { getSport } from "./coach-sports";
 import { syntheticEmailForAthlete, usernameSchema } from "./api/auth-broker";
 import { deleteAccountForUser } from "./account-deletion.server";
 import { grantGuardianConsent, markParentVerifiedByAdmin } from "./guardian-verification.server";
+import { demoLessonSlots } from "./demo-lessons";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -153,6 +154,46 @@ export const adminGetDemoAccounts = createServerFn({ method: "POST" })
     return status(await adminClient(), data);
   });
 
+/**
+ * Swap the existing demo athlete's lessons with this coach for the demo
+ * schedule (`demo-lessons.ts`) without resetting the accounts. Test rows
+ * only: a real coach or athlete typed into the form is refused.
+ */
+export const adminReplaceDemoLessons = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: unknown) =>
+    demoAccountsInput.pick({ coachEmail: true, parentEmail: true, athleteUsername: true }).parse(d),
+  )
+  .handler(async ({ context, data }): Promise<{ lessons: number }> => {
+    await assertAdmin(context);
+    const admin = await adminClient();
+    const s = await status(admin, data);
+    const coachId = s.coach.coachId;
+    const athleteId = s.athlete.athleteId;
+    if (!coachId || !athleteId) throw new Error("Create the demo accounts first");
+
+    const [coach, athlete] = await Promise.all([
+      admin.from("coach_profiles").select("is_test").eq("id", coachId).single(),
+      admin.from("athletes").select("is_test").eq("id", athleteId).single(),
+    ]);
+    if (coach.error) dbError(coach.error);
+    if (athlete.error) dbError(athlete.error);
+    if (!coach.data?.is_test || !athlete.data?.is_test) {
+      throw new Error("These aren't demo accounts: only test rows can be changed here");
+    }
+
+    const removed = await admin
+      .from("athlete_lesson_slots")
+      .delete()
+      .eq("athlete_id", athleteId)
+      .eq("coach_id", coachId);
+    if (removed.error) dbError(removed.error);
+    const rows = demoLessonSlots(athleteId, coachId);
+    const inserted = await admin.from("athlete_lesson_slots").insert(rows);
+    if (inserted.error) dbError(inserted.error);
+    return { lessons: rows.length };
+  });
+
 function iso(daysAgo: number, hour = 19, minute = 30): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - daysAgo);
@@ -169,7 +210,7 @@ function birthdateYearsAgo(years: number): string {
 
 /**
  * Create (or reset and recreate) the three accounts and seed them with a
- * roster link, sport scope, goals, a weekly lesson, the coach's starter
+ * roster link, sport scope, goals, the demo lesson schedule, the coach's starter
  * move library, one active plan with three moves, four logged sessions
  * and a short conversation. Idempotent per email/username when `reset` is
  * false: existing accounts are refused rather than duplicated.
@@ -372,17 +413,9 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       { onConflict: "athlete_id,sport" },
     );
     if (goals.error) dbError(goals.error);
-    const lesson = await admin.from("athlete_lesson_slots").insert({
-      athlete_id: athleteId,
-      coach_id: coachId,
-      day_of_week: 2,
-      start_minute: 16 * 60,
-      end_minute: 17 * 60,
-      frequency: "weekly",
-      weeks_of_month: [],
-      starts_on: null,
-    });
-    if (lesson.error) dbError(lesson.error);
+    const lessonRows = demoLessonSlots(athleteId, coachId);
+    const lessons = await admin.from("athlete_lesson_slots").insert(lessonRows);
+    if (lessons.error) dbError(lessons.error);
 
     // ---- One active plan from the seeded library, four sessions ----
     const libMoves = await admin
@@ -504,6 +537,11 @@ export const adminSeedDemoAccounts = createServerFn({ method: "POST" })
       },
       parent: { email: data.parentEmail, userId: parentUserId, parentId },
       athlete: { username: data.athleteUsername, userId: athleteUserId, athleteId },
-      seeded: { plans: 1, sessions: sessionRows.length, messages: messageRows.length, lessons: 1 },
+      seeded: {
+        plans: 1,
+        sessions: sessionRows.length,
+        messages: messageRows.length,
+        lessons: lessonRows.length,
+      },
     };
   });
