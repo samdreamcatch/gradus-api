@@ -128,7 +128,6 @@ import { Route as ApiPublicBoardRefreshRouteImport } from './routes/api/public/b
 import { Route as ApiPublicHooksBillingNoticesRouteImport } from './routes/api/public/hooks/billing-notices'
 import { Route as ApiPublicHooksCompetitionRecapsRouteImport } from './routes/api/public/hooks/competition-recaps'
 import { Route as ApiPublicHooksConsentRetentionRouteImport } from './routes/api/public/hooks/consent-retention'
-import { Route as ApiPublicHooksDemoActivityRouteImport } from './routes/api/public/hooks/demo-activity'
 import { Route as ApiPublicHooksErrorDigestRouteImport } from './routes/api/public/hooks/error-digest'
 import { Route as ApiPublicHooksIjsCatalogSweepRouteImport } from './routes/api/public/hooks/ijs-catalog-sweep'
 import { Route as ApiPublicHooksKnowledgeIngestRouteImport } from './routes/api/public/hooks/knowledge-ingest'
@@ -1019,12 +1018,6 @@ const ApiPublicHooksConsentRetentionRoute =
   ApiPublicHooksConsentRetentionRouteImport.update({
     id: '/api/public/hooks/consent-retention',
     path: '/api/public/hooks/consent-retention',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksDemoActivityRoute =
-  ApiPublicHooksDemoActivityRouteImport.update({
-    id: '/api/public/hooks/demo-activity',
-    path: '/api/public/hooks/demo-activity',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksErrorDigestRoute =
@@ -2404,7 +2397,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
-  '/api/public/hooks/demo-activity': typeof ApiPublicHooksDemoActivityRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
@@ -2748,7 +2740,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
-  '/api/public/hooks/demo-activity': typeof ApiPublicHooksDemoActivityRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
@@ -3100,7 +3091,6 @@ export interface FileRoutesById {
   '/api/public/hooks/billing-notices': typeof ApiPublicHooksBillingNoticesRoute
   '/api/public/hooks/competition-recaps': typeof ApiPublicHooksCompetitionRecapsRoute
   '/api/public/hooks/consent-retention': typeof ApiPublicHooksConsentRetentionRoute
-  '/api/public/hooks/demo-activity': typeof ApiPublicHooksDemoActivityRoute
   '/api/public/hooks/error-digest': typeof ApiPublicHooksErrorDigestRoute
   '/api/public/hooks/ijs-catalog-sweep': typeof ApiPublicHooksIjsCatalogSweepRoute
   '/api/public/hooks/knowledge-ingest': typeof ApiPublicHooksKnowledgeIngestRoute
@@ -3452,7 +3442,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
-    | '/api/public/hooks/demo-activity'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
@@ -3796,7 +3785,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
-    | '/api/public/hooks/demo-activity'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
@@ -4147,7 +4135,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/billing-notices'
     | '/api/public/hooks/competition-recaps'
     | '/api/public/hooks/consent-retention'
-    | '/api/public/hooks/demo-activity'
     | '/api/public/hooks/error-digest'
     | '/api/public/hooks/ijs-catalog-sweep'
     | '/api/public/hooks/knowledge-ingest'
@@ -4427,7 +4414,6 @@ export interface RootRouteChildren {
   ApiPublicHooksBillingNoticesRoute: typeof ApiPublicHooksBillingNoticesRoute
   ApiPublicHooksCompetitionRecapsRoute: typeof ApiPublicHooksCompetitionRecapsRoute
   ApiPublicHooksConsentRetentionRoute: typeof ApiPublicHooksConsentRetentionRoute
-  ApiPublicHooksDemoActivityRoute: typeof ApiPublicHooksDemoActivityRoute
   ApiPublicHooksErrorDigestRoute: typeof ApiPublicHooksErrorDigestRoute
   ApiPublicHooksIjsCatalogSweepRoute: typeof ApiPublicHooksIjsCatalogSweepRoute
   ApiPublicHooksKnowledgeIngestRoute: typeof ApiPublicHooksKnowledgeIngestRoute
@@ -5492,13 +5478,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/consent-retention'
       fullPath: '/api/public/hooks/consent-retention'
       preLoaderRoute: typeof ApiPublicHooksConsentRetentionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/demo-activity': {
-      id: '/api/public/hooks/demo-activity'
-      path: '/api/public/hooks/demo-activity'
-      fullPath: '/api/public/hooks/demo-activity'
-      preLoaderRoute: typeof ApiPublicHooksDemoActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/error-digest': {
@@ -7421,7 +7400,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBillingNoticesRoute: ApiPublicHooksBillingNoticesRoute,
   ApiPublicHooksCompetitionRecapsRoute: ApiPublicHooksCompetitionRecapsRoute,
   ApiPublicHooksConsentRetentionRoute: ApiPublicHooksConsentRetentionRoute,
-  ApiPublicHooksDemoActivityRoute: ApiPublicHooksDemoActivityRoute,
   ApiPublicHooksErrorDigestRoute: ApiPublicHooksErrorDigestRoute,
   ApiPublicHooksIjsCatalogSweepRoute: ApiPublicHooksIjsCatalogSweepRoute,
   ApiPublicHooksKnowledgeIngestRoute: ApiPublicHooksKnowledgeIngestRoute,

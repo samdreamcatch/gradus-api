@@ -4,23 +4,12 @@
  * Practice sessions and a short conversation, dated relative to "now". The
  * coach's pre-lesson briefing (pre-lesson-briefing.server.ts) reads the 14
  * days before a lesson, or back to the last wrap-up, so a seed dated only at
- * creation goes blank after two weeks. "Refresh activity", and the same
- * refresh run once a day by pg_cron (demo-activity.server.ts), moves these
- * same rows back to recent dates instead of adding more: each one is found again
+ * creation goes blank after two weeks. "Refresh activity" moves these same
+ * rows back to recent dates instead of adding more: each one is found again
  * by its text, so every note and body here must be unique and non-empty.
  * Three texts are the original seed's, so accounts seeded before this keep
  * their rows.
  */
-
-/**
- * The demo accounts' sign-ins: the admin form's defaults, and the accounts
- * the daily refresh looks for.
- */
-export const DEMO_ACCOUNT_DEFAULTS = {
-  coachEmail: "demo-coach@gradussports.com",
-  parentEmail: "demo-parent@gradussports.com",
-  athleteUsername: "demo_athlete",
-};
 
 export type DemoSession = {
   daysAgo: number;
