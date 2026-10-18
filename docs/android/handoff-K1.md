@@ -11,33 +11,33 @@
 
 ---
 
-## 1. Before you start: prerequisites
+## 1. How the work runs: daily cloud sprints
 
-Development is **local, on Mariah's MacBook Pro** (Mariah, 2026-10-14). Cloud sessions are not used for Android because the cloud environment cannot reach `dl.google.com`, where the Android SDK and Google's Maven artifacts download from.
+**Mariah, 2026-10-18:** a fresh Claude Code **cloud** session starts every morning (a scheduled routine), gets as far as it can without her, and opens PRs for her review. She asks a separate session for an adversarial review of each open PR and then merges it. **The sprint session never merges its own PRs.**
 
-| # | Prerequisite | Who | Status on 2026-10-14 | What it blocks |
-|---|---|---|---|---|
-| P1 | Private repo **`mariah-gill/gradus-android`**, with the Claude GitHub app given access | Mariah | **Done** (2026-10-14) | — |
-| P2 | **Updated design system ("Show, don't tell").** Decisions in `docs/design/show-dont-tell-handoff.md`, visuals in its canvas (https://claude.ai/artifact/6bUwfU8oiUGMP6HhrPrLuQ), already built on iOS (gradus-ios #136 and follow-ups); folded into PRD §8 (A61–A70) by PR #245 | Mariah, then a docs PR | **Done** (2026-10-17), once PR #245 is merged | — |
-| P3 | **The Mac toolchain:** PRD §5.2 steps 1–10. Android Studio (stable), its bundled JDK, the SDK platforms and system images, the `~/.zshrc` exports, the Homebrew extras, the named emulators, and the Pixel in developer mode | Mariah for the Android Studio install and the Pixel's settings; the session can run the terminal steps with her go-ahead | **Not done** | Building, running and testing anything in `gradus-android` |
-| P4 | Both repos cloned on the Mac, for example `~/Developer/gradus` (this repo) and `~/Developer/gradus-android`, plus `gradus-ios` for reference | The session, with `gh` | Not done | Everything |
+The cloud environment now allows `dl.google.com`, so Gradle, `sdkmanager` and Google's Maven work in the cloud. There is **no Android emulator** in the cloud (no hardware virtualization): unit tests, Robolectric, Roborazzi screenshot tests, lint, the contract drift check and release assembly run in the session; instrumented and emulator tests run in GitHub Actions on Linux runners with KVM.
 
-**Design source of truth:** PRD §8 (especially §8.6, the "Show, don't tell" principles and pen layer), then the handoff doc and its canvas. Where they differ, the merged iOS code at `c8f83d6` wins: for example, the practice line replaced the canvas's "Mirror" chart. Build the design-system package in K1 1.1 in the handoff's order: tokens and surfaces, then shared components, then the button pass.
+| # | Prerequisite | Status on 2026-10-18 |
+|---|---|---|
+| P1 | Private repo `mariah-gill/gradus-android` with Claude's GitHub app access | **Done** |
+| P2 | Design system ("Show, don't tell") in PRD §8 (A61–A70), from `docs/design/show-dont-tell-handoff.md` and its canvas (https://claude.ai/artifact/6bUwfU8oiUGMP6HhrPrLuQ) | **Done** (PR #245) |
+| P3 | Cloud environment network allows `dl.google.com` | **Done** |
+| P4 | Mariah's Mac toolchain (PRD §5.2 steps 1–10) and her Pixel in developer mode | Not needed for the cloud sprints. Needed when she wants to run builds on her Pixel; until the Play internal testing track exists (G2), she installs CI-built APKs (KT0) |
 
-Device and account steps beyond the toolchain (PRD §10.2, Mariah's G1 and G2: Google Cloud, Firebase, the Play Console) are **not** needed to start. Emulators and the local API cover K1. They become needed for Google sign-in (SA3), push (SA2), App Links verification (SA5), Play Integrity (SA6) and the internal testing track.
+**Design source of truth:** PRD §8 (especially §8.6), then the handoff doc and its canvas. Where they differ, the merged iOS code wins (for example, the practice line replaced the canvas's "Mirror" chart).
+
+**What needs Mariah, so park it and say so in the PR and the daily update:** anything needing her accounts or devices (G0–G2: Google Cloud, Firebase, OAuth clients, upload key, Apple Services ID, Play Console), publishing server changes in Lovable (and "apply pending migrations" after a migration), product decisions not settled in the PRD, and device-only checks (her Pixel, a Wear OS watch, real push, microphone, biometrics, App Link verification). Build those features behind interfaces with fakes and keep going.
 
 ---
 
-## 2. How to start the session (on the Mac)
+## 2. Each day's sprint
 
-1. In a terminal on the Mac, `cd ~/Developer` (create it if needed) and start Claude Code there, so all three repos sit side by side.
-2. First message:
-
-> Read `docs/android/handoff-K1.md` and `docs/android/PRD.md` in `mariah-gill/gradus-coach-start` (clone the repos you need under ~/Developer first). Walk me through the PRD §5.2 toolchain steps I haven't done, then carry out SA1 in gradus-coach-start and K1 in mariah-gill/gradus-android.
-
-3. The session checks the toolchain first (`java -version`, `adb version`, `sdkmanager --list_installed`, `emulator -list-avds`) and lists any §5.2 step still missing. Android Studio itself, the SDK Manager choices and the Pixel's Developer options are Mariah's clicks; the session can do the shell steps after asking.
-
-The session works in two repos: `gradus-coach-start` (server additions, the PRD, the contract) and `gradus-android` (the app). `gradus-ios` is read-only reference.
+1. **Orient.** Read this file, the PRD sections for today's package, and `docs/PROGRESS.md` in `gradus-android` (create it on day one: milestone and package status, open PRs, what is parked on Mariah, what is next). List open PRs in both repos.
+2. **Pick the next unfinished package** in the order in §3. If yesterday's PR is still open, either take an independent package, or branch from that PR's branch and say in the new PR that it is stacked on it. Never rewrite or force-push a branch Mariah may be reviewing.
+3. **Check iOS for drift.** Compare `gradus-ios` `main` with the reference commit in the PRD front matter for the area you are building. If iOS changed behavior there, follow the iOS code (A2) and note it in the PR; if it is a product decision the PRD doesn't record, flag it for Mariah instead of guessing.
+4. **Build in small PRs**, one package or a coherent slice, each with tests. Before opening a PR, run the full local checks (`./gradlew` lint, unit tests, Roborazzi verify, contract drift) and a self-review of the diff for correctness against the PRD. Open the PR with: what it does, how it was tested, what is parked on Mariah, and screenshots from Roborazzi for any UI.
+5. **Keep going** until the day's work is out of road: do as many packages as fit, in order.
+6. **Close the day.** Update `docs/PROGRESS.md` (in the day's last PR) and end with a short summary for Mariah: PRs opened, what's next, and what is waiting on her.
 
 ---
 
@@ -66,7 +66,7 @@ Done when merged and published (Mariah publishes in Lovable), and an `android/1.
 | 1.5 | App shell: role tabs, `AppRoute`, App Links and `gradus://`, FCM registration (stubbed until G1/SA2), notification routing, error states, error reporter, analytics tracker, mock mode (A28). |
 | 1.6 | CI (lint, unit tests, Roborazzi, contract drift, release assemble, emulator job), release workflow for the KT0 APK, signing config, run configurations, `docs/README.md`. |
 
-**K1 done when:** you can sign in with email or username on the `Gradus Automation Pixel` emulator against the local API on the Mac (`API_V1_ENABLED=true bun run dev`, then `adb reverse tcp:8080 tcp:8080`); role tabs render; the sync-engine tests and the shared contract-vector tests pass; `gradus://board/demo` opens the app; CI is green.
+**K1 done when:** CI is green on `main` with: unit and Robolectric tests for the API client, auth, sync engine and routing (sign-in exercised against a MockWebServer that replays responses shaped by the vendored `openapi.json`); the shared contract-vector tests passing; Roborazzi screenshots of the §8.6 components and the sign-in and role-tab screens in light and dark; and a GitHub Actions emulator job that launches the debug app in mock mode (A28), opens `gradus://board/demo`, and shows the role tabs. **Parked on Mariah:** signing in against the real API on her Pixel (she runs it from her Mac with `API_V1_ENABLED=true bun run dev`, or against production once she provides a test account).
 
 **Suggested order inside K1:** 1.6 skeleton and 1.1 module layout → contract sync and generated client → tokens, theme and the §8.6 shared components (with Roborazzi screenshots against the canvas) → 1.2 → 1.4 → 1.3 → 1.5.
 
