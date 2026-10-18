@@ -208,6 +208,14 @@ describe("getUpNext", () => {
     ).toHaveLength(1);
   });
 
+  it("lets the Today widget ask for 20 lessons, and no more", () => {
+    const parse = (limit: string) =>
+      upNextInput.safeParse({ lessonDate: DATE, dayOfWeek: 3, currentMinute: 5, limit }).success;
+    expect(parse("20")).toBe(true);
+    expect(parse("21")).toBe(false);
+    expect(parse("0")).toBe(false);
+  });
+
   it("validates the client's clock", () => {
     expect(
       upNextInput.safeParse({ lessonDate: DATE, dayOfWeek: 3, currentMinute: 1440 }).success,

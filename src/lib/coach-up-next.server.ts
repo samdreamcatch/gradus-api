@@ -26,8 +26,11 @@ export const upNextInput = z.object({
   lessonDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   currentMinute: z.coerce.number().int().min(0).max(1439),
-  /** At most this many lessons (default 3: the wrist shows a short list). */
-  limit: z.coerce.number().int().min(1).max(10).optional(),
+  /**
+   * At most this many lessons (default 3: the wrist shows a short list). Up
+   * to 20: the coach's Today widget asks for the whole day (watch asks 10).
+   */
+  limit: z.coerce.number().int().min(1).max(20).optional(),
 });
 
 export type UpNextLesson = {
