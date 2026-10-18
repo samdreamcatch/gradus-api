@@ -106,7 +106,9 @@ const eventSchema = z.object({
 });
 
 export const analyticsBatchInput = z.object({
-  platform: z.enum(["ios"]),
+  // A request enum, so widening it is safe for the installed iOS app
+  // (docs/android/PRD.md S-2, §4.1 rule 15).
+  platform: z.enum(["ios", "android", "wearos"]),
   // Version-like text only ("1.0.0 (12)", "26.0").
   appVersion: z.string().regex(/^[0-9A-Za-z .()_-]{0,40}$/),
   osVersion: z.string().regex(/^[0-9A-Za-z .()_-]{0,40}$/),

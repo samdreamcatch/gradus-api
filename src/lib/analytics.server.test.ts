@@ -130,6 +130,29 @@ describe("the batch schema", () => {
     ).toBe(false);
   });
 
+  it("accepts the Android and Wear OS apps, and nothing else (S-2)", () => {
+    const withPlatform = (platform: string) =>
+      analyticsBatchInput.safeParse({
+        platform,
+        appVersion: "1.0.0 (1)",
+        osVersion: "16",
+        events: [
+          {
+            id: uuid(1),
+            sessionId: uuid(2),
+            occurredAt: "2026-10-18T11:00:00Z",
+            event: "screen_time",
+            area: "plans",
+            screen: "plans",
+          },
+        ],
+      }).success;
+    expect(withPlatform("ios")).toBe(true);
+    expect(withPlatform("android")).toBe(true);
+    expect(withPlatform("wearos")).toBe(true);
+    expect(withPlatform("web")).toBe(false);
+  });
+
   it("drops props an event doesn't allow, never free text", () => {
     expect(
       cleanProps("resource_open", { kind: "pdf", origin: "library", query: "flip entry" }),

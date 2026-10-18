@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { ErrorDigestEmail, type DigestGroup } from "@/lib/email-templates/error-digest";
 import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 import { cronKeyMatches } from "@/lib/cron-auth";
+import { digestPlatformPrefix } from "@/lib/client-platform";
 
 const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "Gradus Training";
@@ -123,7 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/error-digest")({
           if (!entry) {
             entry = {
               g: {
-                message: ((r as any).platform === "ios" ? "[iOS] " : "") + (r.message as string),
+                message: digestPlatformPrefix((r as any).platform) + (r.message as string),
                 count: 0,
                 source: r.source as "client" | "server",
                 lastRoute: (r.route as string | null) ?? null,

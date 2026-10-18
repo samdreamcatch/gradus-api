@@ -9,6 +9,7 @@ import { listAdminErrorGroups, explainErrorGroup } from "@/lib/error-tracking.fu
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip, chipClasses } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
+import { clientPlatformLabel } from "@/lib/client-platform";
 
 const searchSchema = z.object({
   test: fallback(z.boolean(), false).default(false),
@@ -79,6 +80,12 @@ function AdminErrors() {
   );
 }
 
+/** "iOS app", "Android app", …; `null` for web rows, which show their source. */
+function appPlatformBadge(platform: string | null | undefined): string | null {
+  const label = clientPlatformLabel(platform);
+  return label ? `${label} app` : null;
+}
+
 function GroupCard({ group }: { group: any }) {
   const explainFn = useServerFn(explainErrorGroup);
   const qc = useQueryClient();
@@ -106,7 +113,7 @@ function GroupCard({ group }: { group: any }) {
                 : "bg-pen-pool-wash text-pen-pool-ink",
             )}
           >
-            {group.platform === "ios" ? "iOS app" : group.source}
+            {appPlatformBadge(group.platform) ?? group.source}
           </span>
           <span className="text-sm font-semibold text-text-primary break-all">
             {group.sampleMessage}

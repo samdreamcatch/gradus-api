@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { CLIENT_PLATFORMS } from "../client-platform";
 
 /**
  * `POST /api/v1/errors` (PRD §6.10 "Error reporting", §10.6 P9): a caught
- * error, a MetricKit crash, or a hang from the iOS app. Mirrors the web's
+ * error, a crash, or a hang from the iOS or Android app. Mirrors the web's
  * `reportClientError` input, plus what the admin errors dashboard needs to
  * tell platforms apart: the app version and build, the OS, the device.
  */
@@ -18,6 +19,11 @@ export const errorReportInput = z.object({
   device: z.string().max(64).optional().nullable(),
   /** When the error happened on the device (MetricKit diagnostics arrive on the next launch). */
   occurredAt: z.string().datetime({ offset: true }).optional().nullable(),
+  /**
+   * Only read when `X-Gradus-Client` is missing or malformed; the header is
+   * where the platform normally comes from (docs/android/PRD.md §4.1 rule 16).
+   */
+  platform: z.enum(CLIENT_PLATFORMS).optional().nullable(),
   metadata: z
     .record(z.unknown())
     .optional()

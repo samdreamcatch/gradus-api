@@ -48,7 +48,8 @@ export function companionSessionRoute(
     path: "/api/v1/auth/companion",
     operationId: "createCompanionSession",
     auth: "user",
-    summary: "Mint a second, independent session for the caller's paired Apple Watch",
+    summary:
+      "Mint a second, independent session for the caller's paired watch (Apple Watch or Wear OS)",
     output: companionSessionOutput,
     rateLimit: { windowSeconds: 600, max: 5 },
     handler: async ({ ctx }) => {

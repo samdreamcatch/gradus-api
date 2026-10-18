@@ -1,9 +1,10 @@
 # Shared test vectors
 
 JSON vectors that both the TypeScript app and the native clients run against
-(PRD §9.5 "Recurrence and formatting parity"). `gradus-ios` vendors this
-directory into `Contract/vectors/` with `scripts/sync-contract.sh`; every
-file here is part of the API contract and changes only by pull request.
+(PRD §9.5 "Recurrence and formatting parity"). `gradus-ios` and
+`gradus-android` each vendor this directory into `Contract/vectors/` with
+their `scripts/sync-contract.sh`; every file here is part of the API contract
+and changes only by pull request.
 
 Every file has the same envelope so a client can load any of them generically:
 

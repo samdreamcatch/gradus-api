@@ -114,6 +114,12 @@
                       "properties": {
                         "ios": {
                           "type": "string"
+                        },
+                        "android": {
+                          "type": "string"
+                        },
+                        "wearos": {
+                          "type": "string"
                         }
                       },
                       "required": [
@@ -12642,7 +12648,7 @@
     "/api/v1/auth/companion": {
       "post": {
         "operationId": "createCompanionSession",
-        "summary": "Mint a second, independent session for the caller's paired Apple Watch",
+        "summary": "Mint a second, independent session for the caller's paired watch (Apple Watch or Wear OS)",
         "security": [
           {
             "bearerAuth": []
@@ -18269,6 +18275,18 @@
                     ],
                     "format": "date-time"
                   },
+                  "platform": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "ios",
+                      "watchos",
+                      "android",
+                      "wearos"
+                    ]
+                  },
                   "metadata": {
                     "type": "object",
                     "additionalProperties": {}
@@ -19516,7 +19534,9 @@
                   "platform": {
                     "type": "string",
                     "enum": [
-                      "ios"
+                      "ios",
+                      "android",
+                      "wearos"
                     ]
                   },
                   "appVersion": {
