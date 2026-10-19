@@ -46,10 +46,18 @@ export async function clubRequirements(admin: Admin, orgId: string): Promise<Clu
       title: (r.resources as unknown as { title: string }).title,
       version: r.version,
       audiences: r.audiences,
-      sports: (sports.data ?? []).filter((s) => s.resource_id === r.resource_id).map((s) => s.sport),
+      sports: (sports.data ?? [])
+        .filter((s) => s.resource_id === r.resource_id)
+        .map((s) => s.sport),
       requiredAt: r.required_at,
     });
-    signers[r.resource_id] = await ackRoster(admin, orgId, r.resource_id, r.audiences as AckAudience[], r.version);
+    signers[r.resource_id] = await ackRoster(
+      admin,
+      orgId,
+      r.resource_id,
+      r.audiences as AckAudience[],
+      r.version,
+    );
   }
   docs.sort((a, b) => a.title.localeCompare(b.title));
   return { docs, signers };
@@ -121,7 +129,11 @@ export async function clubReadiness(admin: Admin, orgId: string) {
 
 export type ActivityEntry = { at: string; text: string };
 
-async function clubActivity(admin: Admin, orgId: string, docs: MatrixDoc[]): Promise<ActivityEntry[]> {
+async function clubActivity(
+  admin: Admin,
+  orgId: string,
+  docs: MatrixDoc[],
+): Promise<ActivityEntry[]> {
   const actions = await admin
     .from("org_admin_actions")
     .select("action, created_at")

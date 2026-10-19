@@ -57,7 +57,12 @@ describe("computeReadiness", () => {
     const r = computeReadiness({
       coachKeys: [],
       requirements: [],
-      minors: [{ linkedGuardian: true }, { linkedGuardian: false }, { linkedGuardian: false }, { linkedGuardian: true }],
+      minors: [
+        { linkedGuardian: true },
+        { linkedGuardian: false },
+        { linkedGuardian: false },
+        { linkedGuardian: true },
+      ],
       expiredInvites: 2,
       heldResources: 0,
       now,

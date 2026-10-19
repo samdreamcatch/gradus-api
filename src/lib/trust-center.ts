@@ -110,7 +110,9 @@ export function computeReadiness(input: ReadinessInput): Readiness {
     });
   }
 
-  items.sort((a, b) => (a.severity === b.severity ? b.count - a.count : a.severity === "blocked" ? -1 : 1));
+  items.sort((a, b) =>
+    a.severity === b.severity ? b.count - a.count : a.severity === "blocked" ? -1 : 1,
+  );
   const status: ReadinessStatus = items.some((i) => i.severity === "blocked")
     ? "blocked"
     : items.length

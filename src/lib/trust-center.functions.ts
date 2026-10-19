@@ -21,7 +21,11 @@ export const getClubReadiness = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     const { clubReadiness } = await import("./trust-center.server");
     return clubReadiness(admin, data.organizationId);
   });
@@ -30,7 +34,11 @@ export const listPolicyMatrix = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     const { clubRequirements } = await import("./trust-center.server");
     return clubRequirements(admin, data.organizationId);
   });
@@ -62,7 +70,11 @@ export const listPolicyPacks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
   .handler(async ({ data, context }): Promise<{ packs: PolicyPack[] }> => {
-    const admin = (await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId)) as Loose;
+    const admin = (await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    )) as Loose;
     const { data: rows, error } = await admin
       .from("policy_packs")
       .select("id, name, category, due_at, renew_months, policy_pack_items(resource_id)")
@@ -99,7 +111,11 @@ export const savePolicyPack = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const orgId = data.organizationId;
-    const admin = (await assertOrgAdmin(context.supabase as Client, context.userId, orgId)) as Loose;
+    const admin = (await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      orgId,
+    )) as Loose;
     const row = {
       organization_id: orgId,
       name: data.name,
@@ -111,7 +127,11 @@ export const savePolicyPack = createServerFn({ method: "POST" })
     };
     let id = data.id;
     if (id) {
-      const up = await admin.from("policy_packs").update(row).eq("id", id).eq("organization_id", orgId);
+      const up = await admin
+        .from("policy_packs")
+        .update(row)
+        .eq("id", id)
+        .eq("organization_id", orgId);
       if (up.error) dbError(up.error);
     } else {
       const ins = await admin.from("policy_packs").insert(row).select("id").single();
@@ -123,19 +143,28 @@ export const savePolicyPack = createServerFn({ method: "POST" })
       .from("resource_ack_requirements")
       .select("resource_id")
       .eq("organization_id", orgId)
-      .in("resource_id", data.resourceIds.length ? data.resourceIds : ["00000000-0000-0000-0000-000000000000"]);
+      .in(
+        "resource_id",
+        data.resourceIds.length ? data.resourceIds : ["00000000-0000-0000-0000-000000000000"],
+      );
     if (allowed.error) dbError(allowed.error);
     const keep: string[] = (allowed.data ?? []).map((r: Loose) => r.resource_id);
     const del = await admin.from("policy_pack_items").delete().eq("pack_id", id);
     if (del.error) dbError(del.error);
     if (keep.length) {
-      const ins = await admin.from("policy_pack_items").insert(keep.map((resource_id) => ({ pack_id: id, resource_id })));
+      const ins = await admin
+        .from("policy_pack_items")
+        .insert(keep.map((resource_id) => ({ pack_id: id, resource_id })));
       if (ins.error) dbError(ins.error);
     }
     await admin.from("org_admin_actions").insert({
       organization_id: orgId,
       actor_user_id: context.userId,
-      action: data.archive ? "policy_pack.archived" : data.id ? "policy_pack.updated" : "policy_pack.created",
+      action: data.archive
+        ? "policy_pack.archived"
+        : data.id
+          ? "policy_pack.updated"
+          : "policy_pack.created",
       payload: { pack_id: id, name: data.name },
     });
     return { id };

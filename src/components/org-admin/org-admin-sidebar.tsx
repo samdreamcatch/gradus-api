@@ -62,7 +62,9 @@ const GROUPS: Group[] = [
 export function OrgAdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
-    i.exact ? pathname === i.to || pathname === i.to + "/" : pathname === i.to || pathname.startsWith(i.to + "/");
+    i.exact
+      ? pathname === i.to || pathname === i.to + "/"
+      : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
     <Sidebar collapsible="icon">

@@ -20,8 +20,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FilterPill } from "@/components/ui/filter-pill";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { SectionLabel } from "@/components/org-admin/trust-ui";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,7 +47,10 @@ export const Route = createFileRoute("/_authenticated/org-admin/policies")({
       { title: "Policies · Gradus Club Admin" },
       { name: "description", content: "Policy packs and acknowledgement records for your club." },
       { property: "og:title", content: "Policies · Gradus Club Admin" },
-      { property: "og:description", content: "Policy packs and acknowledgement records for your club." },
+      {
+        property: "og:description",
+        content: "Policy packs and acknowledgement records for your club.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -88,7 +104,10 @@ function Policies() {
       .sort()[0] ?? null;
 
   const people = useMemo(() => {
-    const m = new Map<string, { key: string; name: string; role: string; cells: Record<string, string | null | undefined> }>();
+    const m = new Map<
+      string,
+      { key: string; name: string; role: string; cells: Record<string, string | null | undefined> }
+    >();
     for (const d of docs) {
       for (const s of matrix.data?.signers[d.resourceId] ?? []) {
         if (role !== "all" && s.role !== role) continue;
@@ -103,7 +122,8 @@ function Policies() {
 
   const remind = useMutation({
     mutationFn: (resourceId: string) => remindFn({ data: { organizationId: orgId!, resourceId } }),
-    onSuccess: (r) => toast.success(r.notified ? `Reminded ${r.notified} people` : "Everyone has signed"),
+    onSuccess: (r) =>
+      toast.success(r.notified ? `Reminded ${r.notified} people` : "Everyone has signed"),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -121,7 +141,18 @@ function Policies() {
     ]);
     downloadCsv(
       `${d.title.replace(/[^\w]+/g, "-").toLowerCase()}-v${d.version}-signoffs.csv`,
-      toCsv(["Document", "Version", "Role", "Person", "On behalf of athlete", "Signed by", "Acknowledged"], rows),
+      toCsv(
+        [
+          "Document",
+          "Version",
+          "Role",
+          "Person",
+          "On behalf of athlete",
+          "Signed by",
+          "Acknowledged",
+        ],
+        rows,
+      ),
     );
   };
 
@@ -137,7 +168,9 @@ function Policies() {
       <section>
         <SectionLabel>Policy packs</SectionLabel>
         {packs.isError ? (
-          <p className="text-meta text-text-secondary">Policy packs will be available once this update is live.</p>
+          <p className="text-meta text-text-secondary">
+            Policy packs will be available once this update is live.
+          </p>
         ) : (packs.data?.packs ?? []).length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {packs.data!.packs.map((p) => (
@@ -146,7 +179,9 @@ function Policies() {
                 onClick={() => setEditing(p)}
                 className="press rounded-lg border border-divider bg-card p-4 text-left"
               >
-                <p className="text-caption uppercase tracking-wide text-text-tertiary">{CATEGORY_LABEL[p.category]}</p>
+                <p className="text-caption uppercase tracking-wide text-text-tertiary">
+                  {CATEGORY_LABEL[p.category]}
+                </p>
                 <p className="font-display text-h3 text-text-primary">{p.name}</p>
                 <p className="mt-1 text-meta text-text-secondary">
                   {p.resourceIds.length} document{p.resourceIds.length === 1 ? "" : "s"}
@@ -158,7 +193,8 @@ function Policies() {
           </div>
         ) : (
           <p className="text-meta text-text-secondary">
-            Group required documents into packs, like "Safe Sport" or "Travel", and give them a due date.
+            Group required documents into packs, like "Safe Sport" or "Travel", and give them a due
+            date.
           </p>
         )}
       </section>
@@ -171,7 +207,9 @@ function Policies() {
               aria-label="Document"
               className="w-auto min-w-48"
               value={search.doc ?? "all"}
-              onValueChange={(v) => navigate({ search: (p) => ({ ...p, doc: v === "all" ? undefined : v }) })}
+              onValueChange={(v) =>
+                navigate({ search: (p) => ({ ...p, doc: v === "all" ? undefined : v }) })
+              }
               options={[
                 { value: "all", label: "All documents" },
                 ...(matrix.data?.docs ?? []).map((d) => ({ value: d.resourceId, label: d.title })),
@@ -181,7 +219,9 @@ function Policies() {
               aria-label="Role"
               className="w-auto min-w-32"
               value={role}
-              onValueChange={(v) => navigate({ search: (p) => ({ ...p, role: v === "all" ? undefined : v }) })}
+              onValueChange={(v) =>
+                navigate({ search: (p) => ({ ...p, role: v === "all" ? undefined : v }) })
+              }
               options={[
                 { value: "all", label: "Everyone" },
                 { value: "coach", label: "Coaches" },
@@ -198,7 +238,8 @@ function Policies() {
           </div>
         ) : !docs.length ? (
           <p className="rounded-lg border border-divider bg-card p-6 text-sm text-text-secondary">
-            No documents require acknowledgement yet. Turn it on for a club document in the Resource library.
+            No documents require acknowledgement yet. Turn it on for a club document in the Resource
+            library.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-divider bg-card">
@@ -218,7 +259,10 @@ function Policies() {
                             {due ? ` · due ${new Date(due).toLocaleDateString()}` : ""}
                           </p>
                           <div className="mt-1 flex gap-3 text-micro">
-                            <button className="press text-accent-ink" onClick={() => remind.mutate(d.resourceId)}>
+                            <button
+                              className="press text-accent-ink"
+                              onClick={() => remind.mutate(d.resourceId)}
+                            >
                               Remind
                             </button>
                             <button
@@ -277,7 +321,8 @@ function Policies() {
 
 function Cell({ value, dueAt }: { value: string | null | undefined; dueAt: string | null }) {
   if (value === undefined) return <span className="text-text-disabled">—</span>;
-  if (value) return <span className="text-accent-ink">Signed {new Date(value).toLocaleDateString()}</span>;
+  if (value)
+    return <span className="text-accent-ink">Signed {new Date(value).toLocaleDateString()}</span>;
   const overdue = dueAt && new Date(dueAt) < new Date();
   return overdue ? (
     <span className="rounded-pill bg-pen-pink-wash px-2 py-0.5 text-pen-pink-ink">Overdue</span>
@@ -333,7 +378,12 @@ function PackForm({
       </SheetHeader>
       <div className="space-y-1.5">
         <Label htmlFor="pack-name">Name</Label>
-        <Input id="pack-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Fall 2026 Safe Sport" />
+        <Input
+          id="pack-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Fall 2026 Safe Sport"
+        />
       </div>
       <div className="space-y-1.5">
         <Label>Category</Label>
@@ -351,7 +401,12 @@ function PackForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="pack-renew">Renew every (months)</Label>
-          <Input id="pack-renew" inputMode="numeric" value={renew} onChange={(e) => setRenew(e.target.value.replace(/\D/g, ""))} />
+          <Input
+            id="pack-renew"
+            inputMode="numeric"
+            value={renew}
+            onChange={(e) => setRenew(e.target.value.replace(/\D/g, ""))}
+          />
         </div>
       </div>
       <div className="space-y-2">
@@ -362,25 +417,38 @@ function PackForm({
               <Checkbox
                 checked={ids.includes(d.resourceId)}
                 onCheckedChange={(c) =>
-                  setIds((prev) => (c ? [...prev, d.resourceId] : prev.filter((x) => x !== d.resourceId)))
+                  setIds((prev) =>
+                    c ? [...prev, d.resourceId] : prev.filter((x) => x !== d.resourceId),
+                  )
                 }
               />
               {d.title}
             </label>
           ))
         ) : (
-          <p className="text-meta text-text-secondary">Require acknowledgement on a club document first.</p>
+          <p className="text-meta text-text-secondary">
+            Require acknowledgement on a club document first.
+          </p>
         )}
       </div>
       <div className="flex justify-between gap-2 pt-2">
         {pack ? (
-          <Button variant="outline" className="press" onClick={() => save.mutate(true)} disabled={save.isPending}>
+          <Button
+            variant="outline"
+            className="press"
+            onClick={() => save.mutate(true)}
+            disabled={save.isPending}
+          >
             Archive
           </Button>
         ) : (
           <span />
         )}
-        <Button className="press" onClick={() => save.mutate(false)} disabled={!name.trim() || save.isPending}>
+        <Button
+          className="press"
+          onClick={() => save.mutate(false)}
+          disabled={!name.trim() || save.isPending}
+        >
           {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null} Save
         </Button>
       </div>

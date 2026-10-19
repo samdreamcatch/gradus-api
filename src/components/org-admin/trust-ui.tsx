@@ -5,7 +5,10 @@ import type { AttentionItem as Item, ReadinessStatus } from "@/lib/trust-center"
 
 const STATUS: Record<ReadinessStatus, { label: string; cls: string }> = {
   ready: { label: "Ready", cls: "border-accent/40 bg-accent/10 text-accent-ink" },
-  attention: { label: "Needs attention", cls: "border-pen-orange/50 bg-pen-orange-wash text-pen-orange-ink" },
+  attention: {
+    label: "Needs attention",
+    cls: "border-pen-orange/50 bg-pen-orange-wash text-pen-orange-ink",
+  },
   blocked: { label: "Blocked", cls: "border-pen-pink/50 bg-pen-pink-wash text-pen-pink-ink" },
 };
 
