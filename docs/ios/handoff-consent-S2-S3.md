@@ -109,7 +109,8 @@ Apple account side (done by Mariah and the "iOS app PRD open items" session): th
 
 | Always on since #149 | Only with the switch on |
 |---|---|
-| Under-13 self-sign-up refused (422 `parent_required`) | The room rule for minors: a room opens or accepts a send only with a verified parent linked (403 / `guardian_required`) |
+| Under-13 self-sign-up refused (422 `parent_required`) | The adult-verification half of the room rule: a minor's linked parent must also have verified (403 / `guardian_required`) |
+| A minor's room needs a parent linked, joined or not yet verified (403 / `guardian_required`; decision #56, 2026-10-19: this half used to be switch-gated) | |
 | 13–17 self-sign-ups start `provisional`; connecting a coach answers 403 `provisional`; the guardian claim activates | `assertParentVerified` gates: guardian claim, merge-claim, co-guardian (team) claim, the parent's coach links at sign-up and in Settings (403 `parent_unverified`) |
 | Coaches invite the parent for anyone under 18 or with no birthdate (422) | Athlete login codes minted and shown only once the parent is verified |
 | Minors send text only (`text_only`); the bucket refuses their uploads | The email mirror to unclaimed guardians stops |
@@ -123,7 +124,7 @@ KWS sends the parent to `https://gradus.training/verified?status=<json>&external
 
 ### 5.4 The single room gate
 
-`athleteRoomGate(admin, athleteId, coachId)` returns `{ restriction, minor }`. Every place that opens or sends in an athlete room calls it: `ensureAthleteRoom`, `ensureRoomForMyAthlete`, `ensureRoomForTarget` (403 with the restriction as the code) and `sendMessage` (an `ok: false` result with the same reason). `roomHeader` uses it to set `messagingPausedByParent` and `viewerTextOnly`. Do not add a second age or pause check anywhere; extend this one.
+`athleteRoomGate(admin, athleteId, coachId)` returns `{ restriction, minor }`. Every place that opens or sends in an athlete room calls it: `ensureAthleteRoom`, `ensureRoomForMyAthlete`, `ensureRoomForTarget` (403 with the restriction as the code) and `sendMessage` (an `ok: false` result with the same reason). `roomHeader` uses it to set `messagingPausedByParent` and `viewerTextOnly`. Do not add a second age or pause check anywhere; extend this one. Since 2026-10-19 (decision #56) clients cannot insert into `public.messages` at all (the participant INSERT policy is dropped and INSERT revoked from `authenticated`): the server, through this gate, is the only writer.
 
 ### 5.5 Error codes clients must handle
 

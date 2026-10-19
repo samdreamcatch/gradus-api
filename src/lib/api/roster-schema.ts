@@ -58,6 +58,10 @@ export const rosterAthleteSchema = z.object({
   claimStatus: z
     .enum(["claimed", "waitingForParent", "waitingForAthlete", "notInvited"])
     .optional(),
+  // Whether this coach can open a conversation with the athlete right now
+  // (the room rule, PRD §6.13 A6, decision #56). Always sent; optional for the
+  // same reason as `claimStatus`. A missing value reads as open.
+  canMessage: z.boolean().optional(),
 });
 
 export const coachRosterSchema = z.object({

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { ApiError } from "./api/errors";
 import { addPlanMoveToLibrary, updateLibraryMoveFromPlanMove } from "./moves.server";
 import { resolvePlanViewerRole } from "./plan-detail.server";
@@ -965,5 +965,58 @@ describe("feedback on each move or the whole plan", () => {
       ),
     );
     expect(err?.status).toBe(422);
+  });
+});
+
+describe("setPlanStatus and the guardian on file (decision #56)", () => {
+  it("going live sends the existing guardian-activity copy once, on the transition only", async () => {
+    // A coach cannot message a minor whose parent hasn't joined, so this
+    // email is what tells the parent a plan was shared. Nothing new is sent:
+    // the "Guardian message copy" template already in Admin → Emails.
+    const real = await import("./guardian.server");
+    const mirrored: unknown[] = [];
+    mock.module("./guardian.server", () => ({
+      ...real,
+      mirrorGuardianActivity: async (p: unknown) => {
+        mirrored.push(p);
+      },
+    }));
+    try {
+      const draft = fakeClient({
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "Loop week", status: "draft" },
+      });
+      await setPlanStatus(
+        { userId: "u", supabase: draft },
+        "p1",
+        { status: "active" },
+        async () => {},
+      );
+      expect(mirrored).toEqual([
+        {
+          athleteId: "a1",
+          senderRole: "coach",
+          coachId: "coach-1",
+          body: "Assigned a new plan: Loop week",
+        },
+      ]);
+
+      // A replay of an activation that already landed sends nothing more.
+      const live = fakeClient({
+        ...coach,
+        ...roster,
+        plans: { id: "p1", athlete_id: "a1", title: "Loop week", status: "active" },
+      });
+      await setPlanStatus(
+        { userId: "u", supabase: live },
+        "p1",
+        { status: "active" },
+        async () => {},
+      );
+      expect(mirrored).toHaveLength(1);
+    } finally {
+      mock.module("./guardian.server", () => real);
+    }
   });
 });

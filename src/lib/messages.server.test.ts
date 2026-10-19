@@ -7,6 +7,7 @@ import {
   missingLateColumn,
   newMessagePush,
   partitionByKind,
+  roomClosedMessage,
   roomsDigest,
   REPLY_EXCERPT_MAX,
   sendMessageBody,
@@ -312,5 +313,33 @@ describe("device transcripts on voice notes", () => {
     expect(sendMessageBody.safeParse({ ...voice, transcript: null }).success).toBe(true);
     expect(sendMessageBody.safeParse({ ...voice, transcript: "   " }).success).toBe(false);
     expect(sendMessageBody.safeParse({ ...voice, transcript: "a".repeat(4001) }).success).toBe(false);
+  });
+});
+
+describe("roomClosedMessage", () => {
+  it("is null while the room is open", () => {
+    expect(roomClosedMessage(null, "coach")).toBeNull();
+  });
+
+  it("tells the coach the rule and the athlete and parent what they can do (decision #56)", () => {
+    expect(roomClosedMessage("guardian_required", "coach")).toBe(
+      "This athlete's parent or guardian hasn't joined Gradus yet. Messages open once they have.",
+    );
+    expect(roomClosedMessage("guardian_required", "athlete")).toBe(
+      "Messages with your coach open once your parent or guardian has joined Gradus.",
+    );
+    expect(roomClosedMessage("provisional", "athlete")).toBe(
+      "Messages with your coach open once your parent or guardian has joined Gradus.",
+    );
+    expect(roomClosedMessage("guardian_required", "parent")).toBe(
+      "Confirm you're an adult in Settings to open messaging with this coach.",
+    );
+  });
+
+  it("falls back to the shared restriction text for pauses", () => {
+    expect(roomClosedMessage("paused", "coach")).toBe("This athlete's account is paused.");
+    expect(roomClosedMessage("paused_by_parent", "parent")).toBe(
+      "The parent has paused messaging with this coach.",
+    );
   });
 });

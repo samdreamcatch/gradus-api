@@ -102,6 +102,33 @@ export function rosterClaimStatus(
   return invited();
 }
 
+export type RosterMessagingRow = RosterClaimRow & {
+  /** `coach_athletes.messaging_paused_at` for this coach's link. */
+  messaging_paused_at: string | null;
+};
+
+/**
+ * Whether this coach can open a conversation with the athlete right now: the
+ * roster's copy of `athleteRoomGate` (guardian-verification.server.ts), case
+ * for case, so the Message button never shows where the server would refuse
+ * (2026-10-19, decision #56). A paused account or a parent's pause closes it
+ * for anyone; an adult is otherwise free; a minor needs a parent linked, and
+ * one who has verified as an adult while verification is required; a
+ * provisional account never opens.
+ */
+export function rosterCanMessage(
+  row: RosterMessagingRow,
+  opts: { verificationRequired: boolean },
+): boolean {
+  if ((row.account_state ?? "active") === "paused") return false;
+  if (row.messaging_paused_at) return false;
+  if (!isMinorOrUnconfirmed(row.birthdate)) return true;
+  if ((row.account_state ?? "active") === "provisional") return false;
+  if (!row.parent_id) return false;
+  if (!opts.verificationRequired) return true;
+  return !!row.parent_adult_verified_at;
+}
+
 export type RosterAthlete = {
   athleteId: string;
   firstName: string;
@@ -119,6 +146,9 @@ export type RosterAthlete = {
   // Always set here; optional only because the API contract marks it so
   // (see roster-schema.ts).
   claimStatus?: RosterClaimStatus;
+  // Whether this coach can message the athlete right now (`rosterCanMessage`);
+  // same contract note as `claimStatus`.
+  canMessage?: boolean;
 };
 
 export type CoachRoster = {
@@ -153,7 +183,7 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
   const links = await admin
     .from("coach_athletes")
     .select(
-      "athlete_id, athletes!inner(id, first_name, last_name, self_managed, parent_id, guardian_email, guardian_claimed_at, invite_recipient, birthdate, account_state, parent_profiles(first_name, last_name, adult_verified_at))",
+      "athlete_id, messaging_paused_at, athletes!inner(id, first_name, last_name, self_managed, parent_id, guardian_email, guardian_claimed_at, invite_recipient, birthdate, account_state, parent_profiles(first_name, last_name, adult_verified_at))",
     )
     .eq("coach_id", coachId);
   if (links.error) dbError(links.error);
@@ -267,6 +297,10 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       } | null;
     } & Omit<RosterClaimRow, "parent_adult_verified_at">;
     const others = otherByAthlete.get(a.id) ?? [];
+    const claimRow = {
+      ...a,
+      parent_adult_verified_at: a.parent_profiles?.adult_verified_at ?? null,
+    };
     return {
       athleteId: a.id,
       firstName: a.first_name,
@@ -278,8 +312,13 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       slots: slotsByAthlete.get(a.id) ?? [],
       otherCoachCount: others.length,
       otherCoachLastName: others.length === 1 ? others[0] : null,
-      claimStatus: rosterClaimStatus(
-        { ...a, parent_adult_verified_at: a.parent_profiles?.adult_verified_at ?? null },
+      claimStatus: rosterClaimStatus(claimRow, { verificationRequired: required }),
+      canMessage: rosterCanMessage(
+        {
+          ...claimRow,
+          messaging_paused_at:
+            (r as { messaging_paused_at?: string | null }).messaging_paused_at ?? null,
+        },
         { verificationRequired: required },
       ),
     };

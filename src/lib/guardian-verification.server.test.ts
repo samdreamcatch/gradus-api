@@ -703,10 +703,24 @@ describe("athleteRoomGate", () => {
     ...extra,
   });
 
-  it("with the switch off, a minor with no parent is only blocked when provisional or paused", async () => {
+  it("with the switch off, a minor still needs a parent linked; any linked parent then opens the room (decision #56)", async () => {
+    // Build 101 QA (2026-10-19): a coach-added 13–17 athlete whose parent
+    // hadn't joined was reachable by direct message while the switch was off.
     expect(
       await athleteRoomGate(
         fakeAdmin({ athletes: [minorRow()], coach_athletes: [linkRow()] }),
+        "ath",
+        COACH,
+        OFF,
+      ),
+    ).toEqual({ restriction: "guardian_required", minor: true });
+    expect(
+      await athleteRoomGate(
+        fakeAdmin({
+          athletes: [minorRow({ parent_id: PARENT })],
+          coach_athletes: [linkRow()],
+          parent_profiles: [unverifiedParent()],
+        }),
         "ath",
         COACH,
         OFF,

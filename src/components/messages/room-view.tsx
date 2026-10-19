@@ -397,6 +397,15 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
             ? "You paused messaging with this coach. Resume it from Settings."
             : "Messaging in this conversation is paused by the athlete's parent."}
         </p>
+      ) : room.messagingClosedMessage ? (
+        // The room rule holds this conversation (PRD §6.13 A6, decision #56):
+        // the server says why in the viewer's own terms, and refuses sends too.
+        <p
+          role="status"
+          className="mt-3 rounded-xl border border-divider bg-elevated p-3 text-center text-sm text-text-secondary"
+        >
+          {room.messagingClosedMessage}
+        </p>
       ) : (
         <Composer
           roomId={roomId}

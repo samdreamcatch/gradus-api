@@ -5015,6 +5015,9 @@
                               "waitingForAthlete",
                               "notInvited"
                             ]
+                          },
+                          "canMessage": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -15084,6 +15087,12 @@
                         },
                         "messagingPausedByParent": {
                           "type": "boolean"
+                        },
+                        "messagingClosedMessage": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
                         "viewerTextOnly": {
                           "type": "boolean"

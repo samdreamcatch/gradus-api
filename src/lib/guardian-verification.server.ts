@@ -540,7 +540,7 @@ export interface AthleteRoomGate {
 
 export const ROOM_RESTRICTION_MESSAGES: Record<AthleteRoomRestriction, string> = {
   guardian_required:
-    "This athlete's parent or guardian needs to claim and verify their account before messages can start.",
+    "This athlete's parent or guardian hasn't joined Gradus yet. Messages open once they have.",
   provisional:
     "This athlete's account is waiting on their parent or guardian. Messages open once the parent claims it.",
   paused: "This athlete's account is paused.",
@@ -554,8 +554,9 @@ export const TEXT_ONLY_MESSAGE = "Athletes under 18 send text messages only.";
  * accepts sends, only with a verified adult who is not the coach as a
  * participant; a provisional or paused account never does; a parent's pause
  * on the coach link stops both directions. Adults are only subject to the
- * pause. With the regime switch off, "verified" is any linked parent and an
- * unclaimed guardian on file keeps the legacy email-mirror behaviour.
+ * pause. With the regime switch off, "verified" is any linked parent; a minor
+ * with no parent linked is refused either way (2026-10-19, decision #56), so a
+ * coach can share plans with such an athlete but never message them.
  */
 export async function athleteRoomGate(
   admin: Admin,
@@ -593,8 +594,11 @@ export async function athleteRoomGate(
 
   if (!minor) return { restriction: null, minor };
   if (state === "provisional") return { restriction: "provisional", minor };
-  if (!verificationRequired(env)) return { restriction: null, minor };
+  // Always on (2026-10-19, decision #56): a minor's room needs their parent as
+  // a participant whether or not the verification switch is on. The switch only
+  // decides whether that parent must also have verified as an adult.
   if (!row.parent_id) return { restriction: "guardian_required", minor };
+  if (!verificationRequired(env)) return { restriction: null, minor };
   const parent = await loadParentById(admin, row.parent_id);
   if (!parent || !parent.adult_verified_at) return { restriction: "guardian_required", minor };
   return { restriction: null, minor };

@@ -706,8 +706,10 @@ export async function setPlanStatus(
       .eq("coach_id", coachId);
     if (error) planWriteError(error);
 
-    // Guardian-on-file: email a copy of the assignment to an unclaimed
-    // guardian, but only on the transition into active.
+    // Guardian-on-file: the existing "Guardian message copy" email carries
+    // the assignment to a parent or guardian who hasn't joined yet, only on
+    // the transition into active. Since decision #56 a coach cannot message
+    // such an athlete, so this is what tells the parent a plan was shared.
     if (owned.athlete_id && owned.status !== "active") {
       try {
         const { mirrorGuardianActivity } = await import("./guardian.server");

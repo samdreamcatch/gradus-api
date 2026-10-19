@@ -92,6 +92,15 @@ export type RoomDetail = {
     myCoachId: string | null;
     /** Athlete rooms: the parent paused messaging with this coach (PRD §6.13 C); sends are refused both ways. */
     messagingPausedByParent: boolean;
+    /**
+     * Athlete rooms: why the room is closed right now, in the viewer's own
+     * terms (the athlete's parent hasn't joined, a provisional or paused
+     * account, a parent's pause), or null while it is open. Shown in place
+     * of the composer (decision #56). Optional on the wire only so an app
+     * that knows the field still decodes a room from a server published
+     * without it.
+     */
+    messagingClosedMessage?: string | null;
     /** The viewer is an athlete under 18: text only, no voice notes (PRD §6.13 A7). */
     viewerTextOnly: boolean;
   };

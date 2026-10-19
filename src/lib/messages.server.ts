@@ -23,6 +23,7 @@ import { NEVER_TRANSCRIBE, transcribeVoiceNote } from "./voice-transcripts.serve
 import { athleteVoiceAllowed } from "./minor-voice.server";
 import {
   athleteRoomGate,
+  type AthleteRoomRestriction,
   ROOM_RESTRICTION_MESSAGES,
   roomRestrictionError,
   TEXT_ONLY_MESSAGE,
@@ -894,13 +895,20 @@ async function roomHeader(
     myCoachId = cp?.id ?? null;
   }
   // §6.13 A7, C: the composer needs to know about a parent's pause and,
-  // for a minor athlete viewing their own room, that voice is off.
+  // for a minor athlete viewing their own room, that voice is off. Any other
+  // hold from the room rule (a parent who hasn't joined, a provisional or
+  // paused account) closes the composer with its reason, so a conversation
+  // that opened before the hold shows why it is quiet instead of refusing
+  // each send (2026-10-19, decision #56).
+  const myRole = myRoleByRoom.get(room.id)!;
   let messagingPausedByParent = false;
+  let messagingClosedMessage: string | null = null;
   let viewerTextOnly = false;
   if (room.kind === "athlete" && room.coachId && room.athleteId) {
     const gate = await athleteRoomGate(supabaseAdmin, room.athleteId, room.coachId);
     messagingPausedByParent = gate.restriction === "paused_by_parent";
-    viewerTextOnly = myRoleByRoom.get(room.id) === "athlete" && gate.minor;
+    messagingClosedMessage = roomClosedMessage(gate.restriction, myRole);
+    viewerTextOnly = myRole === "athlete" && gate.minor;
   }
   return {
     id: room.id,
@@ -908,12 +916,36 @@ async function roomHeader(
     coachId: room.coachId,
     athleteId: room.athleteId,
     participants,
-    myRole: myRoleByRoom.get(room.id)!,
+    myRole,
     myUserId: userId,
     myCoachId,
     messagingPausedByParent,
+    messagingClosedMessage,
     viewerTextOnly,
   };
+}
+
+/**
+ * The notice a closed athlete room shows in place of its composer, by seat.
+ * The coach reads the rule as it applies to the athlete; the athlete and the
+ * parent read what they themselves can do about it. Null while the room is
+ * open. A parent's pause keeps the clients' own seat-specific copy, so this
+ * text is their fallback only.
+ */
+export function roomClosedMessage(
+  restriction: AthleteRoomRestriction | null,
+  viewerRole: RoleInRoom,
+): string | null {
+  if (!restriction) return null;
+  if (restriction === "guardian_required" || restriction === "provisional") {
+    if (viewerRole === "athlete") {
+      return "Messages with your coach open once your parent or guardian has joined Gradus.";
+    }
+    if (viewerRole === "parent" && restriction === "guardian_required") {
+      return "Confirm you're an adult in Settings to open messaging with this coach.";
+    }
+  }
+  return ROOM_RESTRICTION_MESSAGES[restriction];
 }
 
 /** The room rule (PRD §6.13 A6, C) for the room-opening endpoints: 403 with the restriction as the code. */
@@ -1838,8 +1870,15 @@ export async function listMessageTargets(
 
     const targets: MessageTargetDTO[] = [];
 
-    // Athletes group
-    for (const r of roster) {
+    // Athletes group: only athletes whose room can open right now (PRD §6.13
+    // A6, C). A minor whose parent hasn't joined, a provisional or paused
+    // account, or a parent's pause keeps the athlete out of the picker, the
+    // same way `ensureRoomForMyAthlete` would refuse the tap.
+    const gates = await Promise.all(
+      roster.map((r) => athleteRoomGate(supabaseAdmin, r.athlete_id, coachId)),
+    );
+    for (const [i, r] of roster.entries()) {
+      if (gates[i].restriction) continue;
       const a = r.athletes;
       const name = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Athlete";
       targets.push({

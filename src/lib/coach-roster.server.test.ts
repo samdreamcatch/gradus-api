@@ -6,6 +6,7 @@ import {
   addLessonSlotInput,
   cancelLessonOccurrence,
   deleteLessonSlot,
+  rosterCanMessage,
   rosterClaimStatus,
   slotTimesInput,
   updateLessonSlot,
@@ -408,5 +409,64 @@ describe("rosterClaimStatus", () => {
     expect(rosterClaimStatus({ ...coachAdded, birthdate: ADULT, guardian_email: null }, off)).toBe(
       "notInvited",
     );
+  });
+});
+
+describe("rosterCanMessage", () => {
+  const minor = {
+    parent_id: null,
+    self_managed: false,
+    guardian_email: "parent@example.com",
+    guardian_claimed_at: null,
+    invite_recipient: "guardian",
+    birthdate: "2012-05-01",
+    account_state: "active",
+    parent_adult_verified_at: null,
+    messaging_paused_at: null,
+  };
+  const off = { verificationRequired: false };
+  const on = { verificationRequired: true };
+
+  it("a minor whose parent hasn't joined can never be messaged, switch on or off (decision #56)", () => {
+    expect(rosterCanMessage(minor, off)).toBe(false);
+    expect(rosterCanMessage(minor, on)).toBe(false);
+    expect(rosterCanMessage({ ...minor, birthdate: null }, off)).toBe(false);
+  });
+
+  it("a linked parent opens the room; verification is extra only while the switch is on", () => {
+    const linked = { ...minor, parent_id: "p1" };
+    expect(rosterCanMessage(linked, off)).toBe(true);
+    expect(rosterCanMessage(linked, on)).toBe(false);
+    expect(
+      rosterCanMessage({ ...linked, parent_adult_verified_at: "2026-10-01T00:00:00Z" }, on),
+    ).toBe(true);
+  });
+
+  it("provisional and paused accounts and a parent's pause close it for anyone", () => {
+    expect(rosterCanMessage({ ...minor, parent_id: "p1", account_state: "provisional" }, off)).toBe(
+      false,
+    );
+    expect(rosterCanMessage({ ...minor, parent_id: "p1", account_state: "paused" }, off)).toBe(
+      false,
+    );
+    expect(
+      rosterCanMessage(
+        { ...minor, parent_id: "p1", messaging_paused_at: "2026-10-01T00:00:00Z" },
+        off,
+      ),
+    ).toBe(false);
+    expect(
+      rosterCanMessage(
+        { ...minor, birthdate: "1990-01-01", messaging_paused_at: "2026-10-01T00:00:00Z" },
+        off,
+      ),
+    ).toBe(false);
+  });
+
+  it("an adult is otherwise free, invited directly or not", () => {
+    expect(rosterCanMessage({ ...minor, birthdate: "1990-01-01" }, on)).toBe(true);
+    expect(
+      rosterCanMessage({ ...minor, birthdate: "1990-01-01", invite_recipient: "athlete" }, on),
+    ).toBe(true);
   });
 });

@@ -98,6 +98,10 @@ export const roomDetailRoomSchema = z.object({
   myUserId: z.string(),
   myCoachId: z.string().nullable(),
   messagingPausedByParent: z.boolean(),
+  // Always sent (null while the room is open); optional in the contract so an
+  // iOS build that knows the field still decodes a room from a server that
+  // hasn't been published with it yet (see roster-schema.ts `claimStatus`).
+  messagingClosedMessage: z.string().nullable().optional(),
   viewerTextOnly: z.boolean(),
 }) satisfies z.ZodType<RoomDetail["room"]>;
 
