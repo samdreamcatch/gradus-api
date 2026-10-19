@@ -10,6 +10,14 @@
 ## Order and safety
 Verification is switched on only after steps 1–3 pass. If the test email fails, I stop and report back instead of switching it on, so nobody gets locked out.
 
+## iPhone app handoff document
+A downloadable handoff document for you, covering how to make confirmation and password-reset links open cleanly in the iPhone app:
+- What happens today: the app already opens gradus.training links inside itself, but the site doesn't yet publish the Apple "this app owns these links" file, so tapping a confirmation email on an iPhone likely opens Safari instead of the app.
+- Steps on the Mac/Xcode side: turn on Associated Domains for gradus.training, sync, and rebuild.
+- What I'll add on the site side so it's ready for you (the Apple link file, with a placeholder for your Team ID).
+- A test checklist on a real iPhone: sign up in the app, tap the email, land back signed in; same for password reset and Google sign-in; what to do if it opens Safari.
+- Also tracked in the project task list.
+
 ## Technical details
 - `src/routes/lovable/email/auth/webhook.ts` line 39: `SITE_NAME` → "Gradus Training" (keep signature verification, payload contract and enqueue call untouched).
 - Inspect `email_send_log` / DLQ for the dead-lettered messages, grouped by `template_name`.
