@@ -6,6 +6,9 @@ import {
   FileText,
   CalendarDays,
   Settings,
+  Layers,
+  ShieldCheck,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -21,10 +24,19 @@ import {
 } from "@/components/ui/sidebar";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
-type Item = { to: string; label: string; icon: LucideIcon };
-type Group = { label: string; items: Item[] };
+type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
+type Group = { label: string; items: Item[]; soon?: string[] };
 
 const GROUPS: Group[] = [
+  {
+    label: "Overview",
+    items: [{ to: "/org-admin", label: "Trust Center", icon: ShieldCheck, exact: true }],
+  },
+  {
+    label: "Safety",
+    items: [{ to: "/org-admin/policies", label: "Policies", icon: FileSignature }],
+    soon: ["People", "Communications", "Cases"],
+  },
   {
     label: "Roster",
     items: [{ to: "/org-admin/roster", label: "Coaches & invites", icon: Users }],
@@ -34,22 +46,23 @@ const GROUPS: Group[] = [
     items: [
       { to: "/org-admin/resources", label: "Resource library", icon: BookOpen },
       { to: "/org-admin/moves", label: "Move library", icon: Dumbbell },
+      { to: "/org-admin/levels", label: "Levels", icon: Layers },
       { to: "/org-admin/templates", label: "Template plans", icon: FileText },
     ],
   },
   {
-    label: "Schedule",
-    items: [{ to: "/org-admin/calendar", label: "Club calendar", icon: CalendarDays }],
-  },
-  {
     label: "Settings",
-    items: [{ to: "/org-admin/settings", label: "Organization", icon: Settings }],
+    items: [
+      { to: "/org-admin/calendar", label: "Club calendar", icon: CalendarDays },
+      { to: "/org-admin/settings", label: "Organization", icon: Settings },
+    ],
   },
 ];
 
 export function OrgAdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isActive = (to: string) => pathname === to || pathname.startsWith(to + "/");
+  const isActive = (i: Item) =>
+    i.exact ? pathname === i.to || pathname === i.to + "/" : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
     <Sidebar collapsible="icon">
@@ -69,11 +82,10 @@ export function OrgAdminSidebar() {
               <SidebarMenu>
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = isActive(item.to);
                   return (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                        <Link to={item.to as any}>
+                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label}>
+                        <Link to={item.to as never}>
                           <Icon className="size-4" />
                           <span>{item.label}</span>
                         </Link>
@@ -81,6 +93,14 @@ export function OrgAdminSidebar() {
                     </SidebarMenuItem>
                   );
                 })}
+                {group.soon?.map((label) => (
+                  <SidebarMenuItem key={label}>
+                    <div className="flex items-center justify-between px-2 py-1.5 text-sm text-text-tertiary group-data-[collapsible=icon]:hidden">
+                      <span>{label}</span>
+                      <span className="font-mono text-nano uppercase">Soon</span>
+                    </div>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
