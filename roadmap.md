@@ -8,4 +8,4 @@
 - [ ] Sign-up confirmation links via /auth/confirm so they open the iOS app (see ios-email-verification-handoff.md)
 
 - [ ] Trust Center phase 2+: People readiness, Communications safety, Cases, Season campaigns
-- [ ] Trust Center: let clubs require Gradus documents (needs per-club requirement key), PDF proof packet, pack due dates feeding Trust Center "Blocked"
+- [ ] Continue approved club admin functionality: finish Phase 1 policy requirements, PDF proof packets, and pack due dates feeding the overview before starting People; defer naming and visual tweaks.
