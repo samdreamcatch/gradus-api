@@ -412,7 +412,7 @@ async function notifyOutstanding(
       route: "resources",
       title: "Please acknowledge",
       body: `Your club asks you to read and acknowledge "${title}".`,
-      collapseId: `ack:${resourceId}:${version}`,
+      collapseId: `ack:${orgId}:${resourceId}:${version}`,
     });
   } catch (err) {
     console.error("[ack] push failed", err);

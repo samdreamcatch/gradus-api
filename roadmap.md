@@ -8,4 +8,6 @@
 - [ ] Sign-up confirmation links via /auth/confirm so they open the iOS app (see ios-email-verification-handoff.md)
 
 - [ ] Trust Center phase 2+: People readiness, Communications safety, Cases, Season campaigns
-- [ ] Continue approved club admin functionality: finish Phase 1 policy requirements, PDF proof packets, and pack due dates feeding the overview before starting People; defer naming and visual tweaks.
+- [x] Implement Phase 1 club-scoped policy requirements, PDF proof packets, guardian sign-offs, and shared deadline tracking; defer naming and visual tweaks.
+- [ ] Verify the policy flow as Buddy and a club member on desktop/phone after accepting the draft (requires the staged policy storage).
+- [ ] Begin People after policy acceptance checks: coach sports, levels, policy status, then credentials and expiry reminders.

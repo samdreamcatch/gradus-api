@@ -204,7 +204,7 @@ export const exportPolicyProof = createServerFn({ method: "POST" })
     if (history.error) dbError(history.error);
     const versions = await (admin as SupabaseClient)
       .from("club_policy_versions")
-      .select("version, title, audiences, required_at, external_url")
+      .select("version, title, audiences, required_at, external_url, storage_path")
       .eq("organization_id", data.organizationId)
       .eq("resource_id", data.resourceId)
       .order("version");
@@ -216,8 +216,10 @@ export const exportPolicyProof = createServerFn({ method: "POST" })
       .single();
     if (club.error) dbError(club.error);
     let original: Uint8Array | undefined;
-    if (res.kind === "pdf" && res.storage_path) {
-      const download = await admin.storage.from("resource-pdfs").download(res.storage_path);
+    const snapshot = versions.data?.find((v) => v.version === doc.version);
+    const documentPath = snapshot?.storage_path ?? res.storage_path;
+    if (res.kind === "pdf" && documentPath) {
+      const download = await admin.storage.from("resource-pdfs").download(documentPath);
       if (download.error || !download.data)
         throw new Error("Could not include the original document. Try again.");
       original = new Uint8Array(await download.data.arrayBuffer());
@@ -225,12 +227,12 @@ export const exportPolicyProof = createServerFn({ method: "POST" })
     const { buildPolicyProof } = await import("./policy-proof.server");
     const bytes = await buildPolicyProof({
       club: club.data.name,
-      title: doc.title,
+      title: snapshot?.title ?? doc.title,
       version: doc.version,
       audiences: doc.audiences,
       dueAt: doc.dueAt,
       requiredAt: doc.requiredAt,
-      sourceUrl: res.external_url,
+      sourceUrl: snapshot?.external_url ?? res.external_url,
       signers: matrix.signers[data.resourceId] ?? [],
       history: history.data ?? [],
       versions: versions.data ?? [],
