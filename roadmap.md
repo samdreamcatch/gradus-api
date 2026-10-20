@@ -10,4 +10,5 @@
 - [ ] Trust Center phase 2+: People readiness, Communications safety, Cases, Season campaigns
 - [x] Implement Phase 1 club-scoped policy requirements, PDF proof packets, guardian sign-offs, and shared deadline tracking; defer naming and visual tweaks.
 - [ ] Verify the policy flow as Buddy and a club member on desktop/phone after accepting the draft (requires the staged policy storage).
-- [ ] Build People with existing coach roster, sports, levels, and policy status; keep policy acceptance checks separate, then add credentials and expiry reminders.
+- [x] Build People with existing coach roster, sports, levels, CSV export and policy detail; verified Buddy's roster/detail/search. Policy read-back waits on draft acceptance.
+- [ ] Add People credentials and expiry tracking next; Communications, Cases and campaigns remain later milestones.
