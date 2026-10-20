@@ -17,7 +17,11 @@
 export const FOUNDING_COACH_PROMO_CODE = "FOUNDING_COACH";
 
 /** Any coach who onboards before this date is auto-granted Founding Coach. */
-export const FOUNDING_COACH_CUTOFF = new Date("2026-11-01T00:00:00Z");
+export const FOUNDING_COACH_CUTOFF = new Date("2026-12-01T00:00:00Z");
+
+/** Free Coach Pro trial length for founding coaches (3 months). */
+export const FOUNDING_PRO_TRIAL_MONTHS = 3;
+export const FOUNDING_PRO_TRIAL_DAYS = 90;
 
 export function isFoundingCoachWindowOpen(now: Date = new Date()): boolean {
   return now < FOUNDING_COACH_CUTOFF;

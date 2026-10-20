@@ -52,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/coach")({
     // Founding Coaches inside completeOnboarding + ensureProfile, so the
     // entitlement check is skipped entirely. Also skipped while the Founding
     // Coach window is open — every onboarded coach gets free access until
-    // Nov 1, 2026, regardless of their stored entitlement.
+    // Dec 1, 2026, regardless of their stored entitlement.
     if (
       isCoachPaywallEnabled() &&
       !isFoundingCoachWindowOpen() &&

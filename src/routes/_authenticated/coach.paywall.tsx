@@ -1,3 +1,4 @@
+import { FOUNDING_PRO_TRIAL_MONTHS } from "@/lib/paywall-flag";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -614,7 +615,8 @@ function PaywallPage() {
   // Founding coaches get a one-time 1-month Pro trial (card required, no promo needed).
   const foundingProTrialAvailable =
     isFoundingCoach && !foundingProTrialUsed && promo.status !== "valid";
-  const proMonths = proPromoMonths > 0 ? proPromoMonths : foundingProTrialAvailable ? 1 : 0;
+  const proMonths =
+    proPromoMonths > 0 ? proPromoMonths : foundingProTrialAvailable ? FOUNDING_PRO_TRIAL_MONTHS : 0;
   const proCtaLabel =
     proMonths > 0 ? `Start ${proMonths} month${proMonths === 1 ? "" : "s"} free` : "Continue";
 
@@ -773,7 +775,8 @@ function PaywallPage() {
                 )}
                 {foundingTrialHere && (
                   <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-ink sm:text-[11px]">
-                    <Sparkles className="h-3 w-3" /> Founding · 1 month free · card required
+                    <Sparkles className="h-3 w-3" /> Founding · {FOUNDING_PRO_TRIAL_MONTHS} months
+                    free · card required
                   </p>
                 )}
 
