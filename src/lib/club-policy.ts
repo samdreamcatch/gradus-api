@@ -14,27 +14,55 @@ export function policyDeadline(resourceId: string, packs: DeadlinePack[]): strin
 }
 
 export function matchesPolicyAcknowledgement(
-  ack: { organization_id: string; resource_id: string; version: number; user_id: string; acted_for_athlete_id: string | null },
-  target: { organizationId: string; resourceId: string; version: number; userId: string; forAthleteId: string | null },
+  ack: {
+    organization_id: string;
+    resource_id: string;
+    version: number;
+    user_id: string;
+    acted_for_athlete_id: string | null;
+  },
+  target: {
+    organizationId: string;
+    resourceId: string;
+    version: number;
+    userId: string;
+    forAthleteId: string | null;
+  },
 ): boolean {
-  return ack.organization_id === target.organizationId &&
-    ack.resource_id === target.resourceId && ack.version === target.version &&
+  return (
+    ack.organization_id === target.organizationId &&
+    ack.resource_id === target.resourceId &&
+    ack.version === target.version &&
     (target.forAthleteId
       ? ack.acted_for_athlete_id === target.forAthleteId
-      : ack.user_id === target.userId && !ack.acted_for_athlete_id);
+      : ack.user_id === target.userId && !ack.acted_for_athlete_id)
+  );
 }
 
-export function appliesToSelf(role: string, isMinor: boolean | undefined, audiences: string[]): boolean {
+export function appliesToSelf(
+  role: string,
+  isMinor: boolean | undefined,
+  audiences: string[],
+): boolean {
   return audiences.includes(role) && !(role === "athlete" && isMinor);
 }
 
 export function isClubPolicyResource(
-  resource: { organization_id: string | null; coach_id: string | null; is_org_template: boolean; published: boolean; review_state: string; sport: string },
+  resource: {
+    organization_id: string | null;
+    coach_id: string | null;
+    is_org_template: boolean;
+    published: boolean;
+    review_state: string;
+    sport: string;
+  },
   orgId: string,
   sports: string[],
   archived: boolean,
 ): boolean {
   if (resource.coach_id || resource.review_state !== "released" || archived) return false;
-  return (resource.organization_id === orgId && resource.is_org_template) ||
-    (resource.organization_id === null && resource.published && sports.includes(resource.sport));
+  return (
+    (resource.organization_id === orgId && resource.is_org_template) ||
+    (resource.organization_id === null && resource.published && sports.includes(resource.sport))
+  );
 }

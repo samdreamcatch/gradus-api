@@ -110,7 +110,9 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <FollowingBanner />
       <CompetitionRecapPrompt />
-      {!pathname.startsWith("/admin") && !pathname.startsWith("/org-admin") ? <PendingPolicyAcknowledgements /> : null}
+      {!pathname.startsWith("/admin") && !pathname.startsWith("/org-admin") ? (
+        <PendingPolicyAcknowledgements />
+      ) : null}
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
     </ActiveSessionProvider>

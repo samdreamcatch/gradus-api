@@ -56,13 +56,19 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/resources")({
-  head: () => ({ meta: [
-    { title: "Resource library · Organization Admin · Gradus" },
-    { name: "description", content: "Club resources and required document acknowledgements." },
-    { property: "og:title", content: "Resource library · Organization Admin · Gradus" },
-    { property: "og:description", content: "Club resources and required document acknowledgements." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Resource library · Organization Admin · Gradus" },
+      { name: "description", content: "Club resources and required document acknowledgements." },
+      { property: "og:title", content: "Resource library · Organization Admin · Gradus" },
+      {
+        property: "og:description",
+        content: "Club resources and required document acknowledgements.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgResourcesPage,
 });
 
@@ -114,7 +120,8 @@ function OrgResourcesPage() {
     [q.data, sport, showArchived],
   );
   const refresh = () => {
-    for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"]) qc.invalidateQueries({ queryKey: [key, orgId] });
+    for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"])
+      qc.invalidateQueries({ queryKey: [key, orgId] });
   };
 
   const archive = useMutation({
@@ -131,9 +138,7 @@ function OrgResourcesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
-      <PageTitle>
-        Resource library
-      </PageTitle>
+      <PageTitle>Resource library</PageTitle>
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
@@ -201,13 +206,23 @@ function OrgResourcesPage() {
                       </TableCell>
                       <TableCell className="text-sm text-text-secondary">
                         {r.ack ? (
-                          <button className="press underline" onClick={() => setAckFor(r)}>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            disabled={r.archived || r.reviewState !== "released"}
+                            onClick={() => setAckFor(r)}
+                          >
                             {r.ack.done} of {r.ack.total} acknowledged
-                          </button>
+                          </Button>
                         ) : (
-                          <button className="press underline" onClick={() => setAckFor(r)}>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            disabled={r.archived || r.reviewState !== "released"}
+                            onClick={() => setAckFor(r)}
+                          >
                             Not required
-                          </button>
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell className="text-right space-x-1 whitespace-nowrap">
@@ -264,8 +279,8 @@ function OrgResourcesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Archive this resource?</AlertDialogTitle>
             <AlertDialogDescription>
-              Coaches, parents and athletes in your club won't see "{archiveTarget?.title}"
-              anymore. You can restore it any time.
+              Coaches, parents and athletes in your club won't see "{archiveTarget?.title}" anymore.
+              You can restore it any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -372,8 +387,8 @@ function EditResourceSheet({
           <SheetTitle>{isNew ? "Add resource" : "Edit resource"}</SheetTitle>
           {isGradus && (
             <SheetDescription>
-              This is a Gradus document. Your edits to the title and description show only for
-              your club.
+              This is a Gradus document. Your edits to the title and description show only for your
+              club.
             </SheetDescription>
           )}
         </SheetHeader>
@@ -440,11 +455,7 @@ function EditResourceSheet({
             </Button>
             <Button
               onClick={submit}
-              disabled={
-                busy ||
-                !title.trim() ||
-                (isNew && (kind === "pdf" ? !file : !url.trim()))
-              }
+              disabled={busy || !title.trim() || (isNew && (kind === "pdf" ? !file : !url.trim()))}
             >
               {busy ? "Saving…" : "Save"}
             </Button>
@@ -519,7 +530,9 @@ function BulkUploadSheet({
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Bulk upload</SheetTitle>
-          <SheetDescription>Pick several PDFs, then choose a title and sport for each.</SheetDescription>
+          <SheetDescription>
+            Pick several PDFs, then choose a title and sport for each.
+          </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
           <Input
@@ -545,7 +558,9 @@ function BulkUploadSheet({
               <Input
                 value={it.title}
                 onChange={(e) =>
-                  setItems((xs) => xs.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))
+                  setItems((xs) =>
+                    xs.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
+                  )
                 }
               />
               <SportSelect
@@ -587,8 +602,11 @@ function AckSheet({
   const remindFn = useServerFn(remindOutstandingAcks);
   const qc = useQueryClient();
   const q = useQuery({
-    queryKey: ["org-ack", row?.id],
-    queryFn: () => statusFn({ data: { organizationId: orgId, resourceId: row!.id } }),
+    queryKey: ["org-ack", orgId, row?.id],
+    queryFn: () => {
+      if (!row) throw new Error("Select a document");
+      return statusFn({ data: { organizationId: orgId, resourceId: row.id } });
+    },
     enabled: !!row,
   });
   const [audiences, setAudiences] = useState<string[]>([]);
@@ -599,25 +617,30 @@ function AckSheet({
   }, [q.data]);
 
   const save = useMutation({
-    mutationFn: () =>
-      setFn({
+    mutationFn: () => {
+      if (!row) throw new Error("Select a document");
+      return setFn({
         data: {
           organizationId: orgId,
-          resourceId: row!.id,
+          resourceId: row.id,
           audiences: audiences as ("coach" | "parent" | "athlete")[],
           askAgain,
           notify: true,
         },
-      }),
+      });
+    },
     onSuccess: (r) => {
       toast.success(r.notified ? `Saved. Notified ${r.notified} people.` : "Saved");
-      qc.invalidateQueries({ queryKey: ["org-ack", row?.id] });
+      qc.invalidateQueries({ queryKey: ["org-ack", orgId, row?.id] });
       onSaved();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save"),
   });
   const remind = useMutation({
-    mutationFn: () => remindFn({ data: { organizationId: orgId, resourceId: row!.id } }),
+    mutationFn: () => {
+      if (!row) throw new Error("Select a document");
+      return remindFn({ data: { organizationId: orgId, resourceId: row.id } });
+    },
     onSuccess: (r) => toast.success(`Reminded ${r.notified} people`),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't send"),
   });

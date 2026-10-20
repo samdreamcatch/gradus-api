@@ -175,9 +175,14 @@ function humanAction(action: string): string {
 
 export async function clubDeadlinePacks(admin: Admin, orgId: string) {
   // Policy packs are additive draft storage; do not simulate success before acceptance.
-  const result = await (admin as SupabaseClient).from("policy_packs")
-    .select("due_at, policy_pack_items(resource_id)").eq("organization_id", orgId).is("archived_at", null);
+  const result = await (admin as SupabaseClient)
+    .from("policy_packs")
+    .select("due_at, policy_pack_items(resource_id)")
+    .eq("organization_id", orgId)
+    .is("archived_at", null);
   if (result.error) dbError(result.error);
-  return (result.data ?? []).map((p) => ({ dueAt: p.due_at as string | null,
-    resourceIds: (p.policy_pack_items as { resource_id: string }[]).map((i) => i.resource_id) }));
+  return (result.data ?? []).map((p) => ({
+    dueAt: p.due_at as string | null,
+    resourceIds: (p.policy_pack_items as { resource_id: string }[]).map((i) => i.resource_id),
+  }));
 }

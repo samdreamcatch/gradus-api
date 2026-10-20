@@ -36,7 +36,11 @@ export const getOrgSports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     const { orgSports } = await import("./org-content.server");
     return { sports: await orgSports(admin, data.organizationId) };
   });
@@ -83,88 +87,92 @@ export type OrgResourceRow = {
 export const listOrgResources = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
-  .handler(async ({ data, context }): Promise<{ sports: string[]; resources: OrgResourceRow[] }> => {
-    const orgId = data.organizationId;
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
-    const { orgSports, ackRoster } = await import("./org-content.server");
-    const sports = await orgSports(admin, orgId);
-    if (!sports.length) return { sports, resources: [] };
+  .handler(
+    async ({ data, context }): Promise<{ sports: string[]; resources: OrgResourceRow[] }> => {
+      const orgId = data.organizationId;
+      const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
+      const { orgSports, ackRoster } = await import("./org-content.server");
+      const sports = await orgSports(admin, orgId);
+      if (!sports.length) return { sports, resources: [] };
 
-    const [lib, club, overrides, reqs] = await Promise.all([
-      admin
-        .from("resources")
-        .select("id, sport, title, description, kind, external_url, storage_path, review_state")
-        .is("coach_id", null)
-        .is("organization_id", null)
-        .eq("published", true)
-        .in("sport", sports)
-        .order("display_order")
-        .order("title"),
-      admin
-        .from("resources")
-        .select("id, sport, title, description, kind, external_url, storage_path, review_state")
-        .eq("organization_id", orgId)
-        .eq("is_org_template", true)
-        .is("coach_id", null)
-        .in("sport", sports)
-        .order("created_at", { ascending: false }),
-      admin
-        .from("org_resource_overrides")
-        .select("resource_id, title, description, archived_at")
-        .eq("organization_id", orgId),
-      policyClient(admin)
-        .from("club_resource_ack_requirements")
-        .select("resource_id, audiences, version")
-        .eq("organization_id", orgId),
-    ]);
-    for (const r of [lib, club, overrides, reqs]) if (r.error) dbError(r.error);
-    const ov = new Map((overrides.data ?? []).map((o) => [o.resource_id, o]));
-    const req = new Map((reqs.data ?? []).map((r) => [r.resource_id, r]));
+      const [lib, club, overrides, reqs] = await Promise.all([
+        admin
+          .from("resources")
+          .select("id, sport, title, description, kind, external_url, storage_path, review_state")
+          .is("coach_id", null)
+          .is("organization_id", null)
+          .eq("published", true)
+          .in("sport", sports)
+          .order("display_order")
+          .order("title"),
+        admin
+          .from("resources")
+          .select("id, sport, title, description, kind, external_url, storage_path, review_state")
+          .eq("organization_id", orgId)
+          .eq("is_org_template", true)
+          .is("coach_id", null)
+          .in("sport", sports)
+          .order("created_at", { ascending: false }),
+        admin
+          .from("org_resource_overrides")
+          .select("resource_id, title, description, archived_at")
+          .eq("organization_id", orgId),
+        policyClient(admin)
+          .from("club_resource_ack_requirements")
+          .select("resource_id, audiences, version")
+          .eq("organization_id", orgId),
+      ]);
+      for (const r of [lib, club, overrides, reqs]) if (r.error) dbError(r.error);
+      const ov = new Map((overrides.data ?? []).map((o) => [o.resource_id, o]));
+      const req = new Map((reqs.data ?? []).map((r) => [r.resource_id, r]));
 
-    const rows: OrgResourceRow[] = [];
-    for (const [source, list] of [
-      ["club", club.data ?? []],
-      ["gradus", lib.data ?? []],
-    ] as const) {
-      for (const r of list) {
-        const o = ov.get(r.id);
-        const rq = req.get(r.id);
-        let ack: OrgResourceRow["ack"] = null;
-        if (rq && rq.audiences.length) {
-          const roster = await ackRoster(admin, orgId, r.id, rq.audiences as never, rq.version);
-          ack = {
-            audiences: rq.audiences,
-            version: rq.version,
-            done: roster.filter((s) => s.acknowledgedAt).length,
-            total: roster.length,
-          };
+      const rows: OrgResourceRow[] = [];
+      for (const [source, list] of [
+        ["club", club.data ?? []],
+        ["gradus", lib.data ?? []],
+      ] as const) {
+        for (const r of list) {
+          const o = ov.get(r.id);
+          const rq = req.get(r.id);
+          let ack: OrgResourceRow["ack"] = null;
+          if (rq && rq.audiences.length) {
+            const roster = await ackRoster(admin, orgId, r.id, rq.audiences as never, rq.version);
+            ack = {
+              audiences: rq.audiences,
+              version: rq.version,
+              done: roster.filter((s) => s.acknowledgedAt).length,
+              total: roster.length,
+            };
+          }
+          rows.push({
+            id: r.id,
+            sport: r.sport,
+            title: o?.title ?? r.title,
+            description: o?.description ?? r.description ?? "",
+            kind: (r.kind as OrgResourceRow["kind"]) ?? "pdf",
+            externalUrl: r.external_url,
+            storagePath: r.storage_path,
+            source,
+            archived: !!o?.archived_at,
+            reviewState: r.review_state,
+            edited: source === "gradus" && !!(o?.title || o?.description),
+            ack,
+          });
         }
-        rows.push({
-          id: r.id,
-          sport: r.sport,
-          title: o?.title ?? r.title,
-          description: o?.description ?? r.description ?? "",
-          kind: (r.kind as OrgResourceRow["kind"]) ?? "pdf",
-          externalUrl: r.external_url,
-          storagePath: r.storage_path,
-          source,
-          archived: !!o?.archived_at,
-          reviewState: r.review_state,
-          edited: source === "gradus" && !!(o?.title || o?.description),
-          ack,
-        });
       }
-    }
-    return { sports, resources: rows };
-  });
+      return { sports, resources: rows };
+    },
+  );
 
 export const createOrgResourceUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    orgOnly.extend({ contentType: z.string().max(100) }).parse(i),
-  )
+  .inputValidator((i: unknown) => orgOnly.extend({ contentType: z.string().max(100) }).parse(i))
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     if (data.contentType.split(";")[0].trim().toLowerCase() !== "application/pdf") {
       throw new Error("Choose a PDF file.");
     }
@@ -342,7 +350,11 @@ export const setOrgResourcesArchived = createServerFn({ method: "POST" })
 
 /* ============================ Acknowledgements ============================ */
 
-async function loadClubResource(admin: Awaited<ReturnType<typeof assertOrgAdmin>>, orgId: string, id: string) {
+async function loadClubResource(
+  admin: Awaited<ReturnType<typeof assertOrgAdmin>>,
+  orgId: string,
+  id: string,
+) {
   const { loadPolicyResource } = await import("./org-content.server");
   return loadPolicyResource(admin, orgId, id);
 }
@@ -365,8 +377,11 @@ export const setResourceAckRequirement = createServerFn({ method: "POST" })
     const res = await loadClubResource(admin, orgId, data.resourceId);
     const audiences = Array.from(new Set(data.audiences));
     const result = await policyClient(admin).rpc("set_club_policy_requirement", {
-      p_org: orgId, p_resource: res.id, p_audiences: audiences,
-      p_again: data.askAgain, p_actor: context.userId,
+      p_org: orgId,
+      p_resource: res.id,
+      p_audiences: audiences,
+      p_again: data.askAgain,
+      p_actor: context.userId,
     });
     if (result.error) dbError(result.error);
     const version = result.data;
@@ -459,7 +474,16 @@ export const remindOutstandingAcks = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) dbError(error);
     if (!req) throw new Error("This document doesn't require acknowledgement.");
-    return { notified: await notifyOutstanding(admin, orgId, res.id, res.title, req.audiences, req.version) };
+    return {
+      notified: await notifyOutstanding(
+        admin,
+        orgId,
+        res.id,
+        res.title,
+        req.audiences,
+        req.version,
+      ),
+    };
   });
 
 /** Signed-in member: club documents waiting for their acknowledgement. */
@@ -606,7 +630,9 @@ export const listOrgMoves = createServerFn({ method: "POST" })
           defaultTargetKind: (o?.default_target_kind ?? s.default_target_kind) as "reps" | "mins",
           defaultTargetValue: Number(o?.default_target_value ?? s.default_target_value),
           archived: !!o?.archived_at,
-          edited: !!o && !!(o.name || o.category || o.description || o.cue || o.why || o.default_target_kind),
+          edited:
+            !!o &&
+            !!(o.name || o.category || o.description || o.cue || o.why || o.default_target_kind),
         };
       }),
     ];
@@ -752,14 +778,25 @@ export const importOrgMoves = createServerFn({ method: "POST" })
       const c = (club.data ?? []).find((x) => x.sport === m.sport && n(x.name) === n(m.name));
       const s = (seeds.data ?? []).find((x) => x.sport === m.sport && n(x.name) === n(m.name));
       if (c) {
-        const r = await admin.from("moves").update({ ...fields, updated_at: now }).eq("id", c.id);
+        const r = await admin
+          .from("moves")
+          .update({ ...fields, updated_at: now })
+          .eq("id", c.id);
         if (r.error) dbError(r.error);
         updated++;
       } else if (s) {
-        const r = await admin.from("org_move_overrides").upsert(
-          { organization_id: orgId, seed_move_id: s.id, ...fields, updated_at: now, updated_by: context.userId },
-          { onConflict: "organization_id,seed_move_id" },
-        );
+        const r = await admin
+          .from("org_move_overrides")
+          .upsert(
+            {
+              organization_id: orgId,
+              seed_move_id: s.id,
+              ...fields,
+              updated_at: now,
+              updated_by: context.userId,
+            },
+            { onConflict: "organization_id,seed_move_id" },
+          );
         if (r.error) dbError(r.error);
         updated++;
       } else {
@@ -870,9 +907,10 @@ export const saveOrgLevels = createServerFn({ method: "POST" })
     const rows = data.levels.map((l, i) => {
       const key =
         l.levelKey ||
-        `club_${l.label.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40)}_${crypto
-          .randomUUID()
-          .slice(0, 5)}`;
+        `club_${l.label
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_")
+          .slice(0, 40)}_${crypto.randomUUID().slice(0, 5)}`;
       return {
         organization_id: orgId,
         sport: data.sport,

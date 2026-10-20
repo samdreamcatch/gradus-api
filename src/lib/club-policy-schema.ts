@@ -11,7 +11,13 @@ type ClubPolicyDatabase = Omit<Database, "public"> & {
     };
     Functions: Database["public"]["Functions"] & {
       set_club_policy_requirement: {
-        Args: { p_org: string; p_resource: string; p_audiences: string[]; p_again: boolean; p_actor: string };
+        Args: {
+          p_org: string;
+          p_resource: string;
+          p_audiences: string[];
+          p_again: boolean;
+          p_actor: string;
+        };
         Returns: number;
       };
     };
