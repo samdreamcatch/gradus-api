@@ -17,7 +17,7 @@ export function StatusTag({ status, className }: { status: ReadinessStatus; clas
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
         s.cls,
         className,
       )}

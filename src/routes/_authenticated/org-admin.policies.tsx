@@ -327,9 +327,9 @@ function Cell({ value, dueAt }: { value: string | null | undefined; dueAt: strin
     return <span className="text-accent-ink">Signed {new Date(value).toLocaleDateString()}</span>;
   const overdue = dueAt && new Date(dueAt) < new Date();
   return overdue ? (
-    <span className="rounded-pill bg-destructive/10 px-2 py-0.5 text-destructive">Overdue</span>
+    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-destructive">Overdue</span>
   ) : (
-    <span className="rounded-pill bg-attention-wash px-2 py-0.5 text-attention-ink">Due</span>
+    <span className="rounded-full bg-attention-wash px-2 py-0.5 text-attention-ink">Due</span>
   );
 }
 
