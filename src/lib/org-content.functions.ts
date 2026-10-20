@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { policyClient } from "./club-policy-schema";
 
 type Client = SupabaseClient<Database>;
 
@@ -111,8 +112,8 @@ export const listOrgResources = createServerFn({ method: "POST" })
         .from("org_resource_overrides")
         .select("resource_id, title, description, archived_at")
         .eq("organization_id", orgId),
-      admin
-        .from("resource_ack_requirements")
+      policyClient(admin)
+        .from("club_resource_ack_requirements")
         .select("resource_id, audiences, version")
         .eq("organization_id", orgId),
     ]);
@@ -342,16 +343,8 @@ export const setOrgResourcesArchived = createServerFn({ method: "POST" })
 /* ============================ Acknowledgements ============================ */
 
 async function loadClubResource(admin: Awaited<ReturnType<typeof assertOrgAdmin>>, orgId: string, id: string) {
-  const { data, error } = await admin
-    .from("resources")
-    .select("id, title, organization_id, is_org_template, coach_id")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) dbError(error);
-  if (!data || data.coach_id || data.organization_id !== orgId || !data.is_org_template) {
-    throw new Error("Acknowledgement can be required on your club's own documents.");
-  }
-  return data;
+  const { loadPolicyResource } = await import("./org-content.server");
+  return loadPolicyResource(admin, orgId, id);
 }
 
 export const setResourceAckRequirement = createServerFn({ method: "POST" })
@@ -370,26 +363,13 @@ export const setResourceAckRequirement = createServerFn({ method: "POST" })
     const orgId = data.organizationId;
     const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
     const res = await loadClubResource(admin, orgId, data.resourceId);
-    const { data: existing, error } = await admin
-      .from("resource_ack_requirements")
-      .select("version, audiences")
-      .eq("resource_id", res.id)
-      .maybeSingle();
-    if (error) dbError(error);
     const audiences = Array.from(new Set(data.audiences));
-    const version = existing ? existing.version + (data.askAgain ? 1 : 0) : 1;
-    const up = await admin.from("resource_ack_requirements").upsert(
-      {
-        resource_id: res.id,
-        organization_id: orgId,
-        audiences,
-        version,
-        required_at: !existing || data.askAgain ? new Date().toISOString() : undefined,
-        updated_by: context.userId,
-      },
-      { onConflict: "resource_id" },
-    );
-    if (up.error) dbError(up.error);
+    const result = await policyClient(admin).rpc("set_club_policy_requirement", {
+      p_org: orgId, p_resource: res.id, p_audiences: audiences,
+      p_again: data.askAgain, p_actor: context.userId,
+    });
+    if (result.error) dbError(result.error);
+    const version = result.data;
 
     let notified = 0;
     if (data.notify && audiences.length) {
@@ -432,10 +412,11 @@ export const getResourceAckStatus = createServerFn({ method: "POST" })
     const orgId = data.organizationId;
     const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
     await loadClubResource(admin, orgId, data.resourceId);
-    const { data: req, error } = await admin
-      .from("resource_ack_requirements")
+    const { data: req, error } = await policyClient(admin)
+      .from("club_resource_ack_requirements")
       .select("audiences, version, required_at")
       .eq("resource_id", data.resourceId)
+      .eq("organization_id", orgId)
       .maybeSingle();
     if (error) dbError(error);
     if (!req) return { requirement: null, signers: [], history: [] };
@@ -447,10 +428,11 @@ export const getResourceAckStatus = createServerFn({ method: "POST" })
       req.audiences as never,
       req.version,
     );
-    const { data: hist, error: hErr } = await admin
-      .from("resource_acknowledgements")
+    const { data: hist, error: hErr } = await policyClient(admin)
+      .from("club_resource_acknowledgements")
       .select("version, signer_name, role, acknowledged_at, acted_for_athlete_id")
       .eq("resource_id", data.resourceId)
+      .eq("organization_id", orgId)
       .lt("version", req.version)
       .order("acknowledged_at", { ascending: false })
       .limit(500);
@@ -469,10 +451,11 @@ export const remindOutstandingAcks = createServerFn({ method: "POST" })
     const orgId = data.organizationId;
     const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
     const res = await loadClubResource(admin, orgId, data.resourceId);
-    const { data: req, error } = await admin
-      .from("resource_ack_requirements")
+    const { data: req, error } = await policyClient(admin)
+      .from("club_resource_ack_requirements")
       .select("audiences, version")
       .eq("resource_id", res.id)
+      .eq("organization_id", orgId)
       .maybeSingle();
     if (error) dbError(error);
     if (!req) throw new Error("This document doesn't require acknowledgement.");
@@ -496,6 +479,7 @@ export const acknowledgeResource = createServerFn({ method: "POST" })
     z
       .object({
         resourceId: z.string().uuid(),
+        organizationId: z.string().uuid(),
         version: z.number().int().min(1),
         forAthleteId: z.string().uuid().nullable(),
       })
@@ -510,19 +494,14 @@ export const acknowledgeResource = createServerFn({ method: "POST" })
     const item = pending.find(
       (p) =>
         p.resourceId === data.resourceId &&
+        p.organizationId === data.organizationId &&
         p.version === data.version &&
         p.forAthleteId === data.forAthleteId,
     );
     if (!item) return { ok: true, already: true };
-    const { data: req, error } = await supabaseAdmin
-      .from("resource_ack_requirements")
-      .select("organization_id")
-      .eq("resource_id", data.resourceId)
-      .single();
-    if (error) dbError(error);
-    const ins = await supabaseAdmin.from("resource_acknowledgements").insert({
+    const ins = await policyClient(supabaseAdmin).from("club_resource_acknowledgements").insert({
       resource_id: data.resourceId,
-      organization_id: req.organization_id,
+      organization_id: item.organizationId,
       version: data.version,
       user_id: context.userId,
       role: m.role,
