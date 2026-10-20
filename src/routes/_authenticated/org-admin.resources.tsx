@@ -56,7 +56,13 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/resources")({
-  head: () => ({ meta: [{ title: "Resource library · Organization Admin · Gradus" }] }),
+  head: () => ({ meta: [
+    { title: "Resource library · Organization Admin · Gradus" },
+    { name: "description", content: "Club resources and required document acknowledgements." },
+    { property: "og:title", content: "Resource library · Organization Admin · Gradus" },
+    { property: "og:description", content: "Club resources and required document acknowledgements." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrgResourcesPage,
 });
 
@@ -107,7 +113,9 @@ function OrgResourcesPage() {
       ),
     [q.data, sport, showArchived],
   );
-  const refresh = () => qc.invalidateQueries({ queryKey: ["org-resources", orgId] });
+  const refresh = () => {
+    for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"]) qc.invalidateQueries({ queryKey: [key, orgId] });
+  };
 
   const archive = useMutation({
     mutationFn: (v: { row: OrgResourceRow; archived: boolean }) =>
@@ -192,9 +200,7 @@ function OrgResourcesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-text-secondary">
-                        {r.source !== "club" ? (
-                          "—"
-                        ) : r.ack ? (
+                        {r.ack ? (
                           <button className="press underline" onClick={() => setAckFor(r)}>
                             {r.ack.done} of {r.ack.total} acknowledged
                           </button>

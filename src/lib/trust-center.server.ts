@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
+import { policyClient } from "./club-policy-schema";
+import { policyDeadline } from "./club-policy";
 import { ackRoster, isMinor, type AckAudience, type AckSigner } from "./org-content.server";
 import { computeReadiness, type RequirementInput } from "./trust-center";
 
@@ -13,14 +15,15 @@ export type MatrixDoc = {
   audiences: string[];
   sports: string[];
   requiredAt: string;
+  dueAt: string | null;
 };
 
 export type ClubRequirements = { docs: MatrixDoc[]; signers: Record<string, AckSigner[]> };
 
 /** Every live acknowledgement requirement in the club, with its signer roster. */
 export async function clubRequirements(admin: Admin, orgId: string): Promise<ClubRequirements> {
-  const reqs = await admin
-    .from("resource_ack_requirements")
+  const reqs = await policyClient(admin)
+    .from("club_resource_ack_requirements")
     .select("resource_id, audiences, version, required_at, resources!inner(title)")
     .eq("organization_id", orgId);
   if (reqs.error) dbError(reqs.error);
@@ -38,6 +41,7 @@ export async function clubRequirements(admin: Admin, orgId: string): Promise<Clu
     : { data: [], error: null };
   if (sports.error) dbError(sports.error);
 
+  const packs = await clubDeadlinePacks(admin, orgId);
   const docs: MatrixDoc[] = [];
   const signers: Record<string, AckSigner[]> = {};
   for (const r of live) {
@@ -50,6 +54,7 @@ export async function clubRequirements(admin: Admin, orgId: string): Promise<Clu
         .filter((s) => s.resource_id === r.resource_id)
         .map((s) => s.sport),
       requiredAt: r.required_at,
+      dueAt: policyDeadline(r.resource_id, packs),
     });
     signers[r.resource_id] = await ackRoster(
       admin,
@@ -107,7 +112,7 @@ export async function clubReadiness(admin: Admin, orgId: string) {
     resourceId: d.resourceId,
     title: d.title,
     sports: d.sports,
-    dueAt: null,
+    dueAt: d.dueAt,
     signers: (signers[d.resourceId] ?? []).map((s) => ({
       role: s.role,
       key: s.key,
@@ -143,10 +148,11 @@ async function clubActivity(
   if (actions.error) dbError(actions.error);
   const ids = docs.map((d) => d.resourceId);
   const acks = ids.length
-    ? await admin
-        .from("resource_acknowledgements")
+    ? await policyClient(admin)
+        .from("club_resource_acknowledgements")
         .select("resource_id, signer_name, acknowledged_at")
         .in("resource_id", ids)
+        .eq("organization_id", orgId)
         .order("acknowledged_at", { ascending: false })
         .limit(15)
     : { data: [], error: null };
@@ -165,4 +171,13 @@ async function clubActivity(
 function humanAction(action: string): string {
   const s = action.replace(/[._]/g, " ");
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export async function clubDeadlinePacks(admin: Admin, orgId: string) {
+  // Policy packs are additive draft storage; do not simulate success before acceptance.
+  const result = await (admin as SupabaseClient).from("policy_packs")
+    .select("due_at, policy_pack_items(resource_id)").eq("organization_id", orgId).is("archived_at", null);
+  if (result.error) dbError(result.error);
+  return (result.data ?? []).map((p) => ({ dueAt: p.due_at as string | null,
+    resourceIds: (p.policy_pack_items as { resource_id: string }[]).map((i) => i.resource_id) }));
 }

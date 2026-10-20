@@ -8,6 +8,7 @@ import { LessonWrapUpProvider } from "@/components/coach/lesson-wrap-up-provider
 import { ActiveSessionProvider } from "@/lib/active-session-store";
 import { ActiveSessionBar } from "@/components/plans/active-session-bar";
 import { FollowingBanner } from "@/components/board/following-banner";
+import { PendingPolicyAcknowledgements } from "@/components/org-admin/pending-policy-acknowledgements";
 import { CompetitionRecapPrompt } from "@/components/board/competition-recap-prompt";
 
 import { acceptTerms } from "@/lib/terms.functions";
@@ -109,6 +110,7 @@ function AuthedLayout() {
       <ActiveSessionBar />
       <FollowingBanner />
       <CompetitionRecapPrompt />
+      {!pathname.startsWith("/admin") && !pathname.startsWith("/org-admin") ? <PendingPolicyAcknowledgements /> : null}
       <Outlet />
       {isCoach ? <LessonWrapUpProvider /> : null}
     </ActiveSessionProvider>

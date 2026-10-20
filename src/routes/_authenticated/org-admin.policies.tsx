@@ -7,6 +7,7 @@ import { Download, Loader2, Plus } from "lucide-react";
 import { z } from "zod";
 import {
   listPolicyMatrix,
+  exportPolicyProof,
   listPolicyPacks,
   savePolicyPack,
   PACK_CATEGORIES,
@@ -97,11 +98,19 @@ function Policies() {
     () => (matrix.data?.docs ?? []).filter((d) => !search.doc || d.resourceId === search.doc),
     [matrix.data, search.doc],
   );
-  const dueFor = (resourceId: string) =>
-    (packs.data?.packs ?? [])
-      .filter((p) => p.resourceIds.includes(resourceId) && p.dueAt)
-      .map((p) => p.dueAt!)
-      .sort()[0] ?? null;
+  const dueFor = (resourceId: string) => matrix.data?.docs.find((d) => d.resourceId === resourceId)?.dueAt ?? null;
+  const proofFn = useServerFn(exportPolicyProof);
+  const proof = useMutation({
+    mutationFn: async (resourceId: string) => {
+      if (!orgId) throw new Error("Select a club");
+      const result = await proofFn({ data: { organizationId: orgId, resourceId } });
+      const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const link = document.createElement("a"); link.href = url; link.download = result.filename;
+      link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const people = useMemo(() => {
     const m = new Map<
@@ -271,8 +280,11 @@ function Policies() {
                               className="press inline-flex items-center gap-1 text-accent-ink"
                               onClick={() => exportProof(d.resourceId)}
                             >
-                              <Download className="size-3" /> Records
+                              <Download className="size-3" /> CSV
                             </button>
+                            <Button variant="ghost" size="sm" className="press" disabled={proof.isPending} onClick={() => proof.mutate(d.resourceId)}>
+                              <Download className="size-3" /> PDF
+                            </Button>
                           </div>
                         </div>
                       </TableHead>
@@ -310,7 +322,7 @@ function Policies() {
               docs={matrix.data?.docs ?? []}
               onDone={() => {
                 setEditing(null);
-                qc.invalidateQueries({ queryKey: ["policy-packs", orgId] });
+                for (const key of ["policy-packs", "policy-matrix", "trust-center"]) qc.invalidateQueries({ queryKey: [key, orgId] });
               }}
               orgId={orgId!}
             />
