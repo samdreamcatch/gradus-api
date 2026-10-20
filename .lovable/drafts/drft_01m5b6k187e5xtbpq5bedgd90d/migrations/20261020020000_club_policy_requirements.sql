@@ -59,9 +59,9 @@ DECLARE v integer; stamp timestamptz; res public.resources%ROWTYPE;
 BEGIN
   SELECT * INTO res FROM public.resources WHERE id = p_resource;
   IF NOT FOUND OR res.coach_id IS NOT NULL OR res.review_state <> 'released'
-    OR NOT (res.organization_id = p_org AND res.is_org_template
+    OR NOT coalesce((res.organization_id = p_org AND res.is_org_template
       OR res.organization_id IS NULL AND res.published AND EXISTS (
-        SELECT 1 FROM public.organization_sports s WHERE s.organization_id = p_org AND s.sport = res.sport))
+        SELECT 1 FROM public.organization_sports s WHERE s.organization_id = p_org AND s.sport = res.sport)), false)
     OR EXISTS (SELECT 1 FROM public.org_resource_overrides o WHERE o.organization_id = p_org AND o.resource_id = p_resource AND o.archived_at IS NOT NULL)
   THEN RAISE EXCEPTION 'Document is not available for this club'; END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(p_org::text || ':' || p_resource::text, 0));

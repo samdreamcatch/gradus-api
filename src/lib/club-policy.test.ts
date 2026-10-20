@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { appliesToSelf, matchesPolicyAcknowledgement, policyDeadline } from "./club-policy";
+import { appliesToSelf, isClubPolicyResource, matchesPolicyAcknowledgement, policyDeadline } from "./club-policy";
 import { computeReadiness } from "./trust-center";
 
 describe("club policy rules", () => {
@@ -36,5 +36,16 @@ describe("club policy rules", () => {
     expect(appliesToSelf("athlete", true, ["athlete"])).toBe(false);
     expect(appliesToSelf("athlete", false, ["athlete"])).toBe(true);
     expect(appliesToSelf("parent", false, ["parent"])).toBe(true);
+  });
+  it("allows released Gradus documents only in the club's purchased sports", () => {
+    const resource = { organization_id: null, coach_id: null, is_org_template: false, published: true, review_state: "released", sport: "golf" };
+    expect(isClubPolicyResource(resource, "club-a", ["golf"], false)).toBe(true);
+    expect(isClubPolicyResource(resource, "club-a", ["figure_skating"], false)).toBe(false);
+  });
+  it("rejects another club's private documents and archived or held documents", () => {
+    const resource = { organization_id: "club-a", coach_id: null, is_org_template: true, published: true, review_state: "released", sport: "golf" };
+    expect(isClubPolicyResource(resource, "club-b", ["golf"], false)).toBe(false);
+    expect(isClubPolicyResource(resource, "club-a", ["golf"], true)).toBe(false);
+    expect(isClubPolicyResource({ ...resource, review_state: "held" }, "club-a", ["golf"], false)).toBe(false);
   });
 });

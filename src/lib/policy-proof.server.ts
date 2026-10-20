@@ -29,7 +29,7 @@ export async function buildPolicyProof(input: ProofInput): Promise<Uint8Array> {
     const text = safe(value);
     const size = title ? 18 : 10;
     const face = title ? heading : font;
-    let words = text.split(/\s+/);
+    const words = text.split(/\s+/);
     let current = "";
     const draw = (chunk: string) => {
       if (y < 55) { page = pdf.addPage([595, 842]); y = 790; }

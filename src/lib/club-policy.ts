@@ -27,3 +27,14 @@ export function matchesPolicyAcknowledgement(
 export function appliesToSelf(role: string, isMinor: boolean | undefined, audiences: string[]): boolean {
   return audiences.includes(role) && !(role === "athlete" && isMinor);
 }
+
+export function isClubPolicyResource(
+  resource: { organization_id: string | null; coach_id: string | null; is_org_template: boolean; published: boolean; review_state: string; sport: string },
+  orgId: string,
+  sports: string[],
+  archived: boolean,
+): boolean {
+  if (resource.coach_id || resource.review_state !== "released" || archived) return false;
+  return (resource.organization_id === orgId && resource.is_org_template) ||
+    (resource.organization_id === null && resource.published && sports.includes(resource.sport));
+}

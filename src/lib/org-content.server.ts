@@ -14,7 +14,7 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SPORTS } from "./coach-sports";
 import { dbError } from "./db-error";
 import { policyClient } from "./club-policy-schema";
-import { appliesToSelf, matchesPolicyAcknowledgement } from "./club-policy";
+import { appliesToSelf, isClubPolicyResource, matchesPolicyAcknowledgement } from "./club-policy";
 
 export type Admin = typeof supabaseAdmin;
 export type AckAudience = "coach" | "parent" | "athlete";
@@ -696,9 +696,7 @@ export async function loadPolicyResource(admin: Admin, orgId: string, resourceId
   const archived = await admin.from("org_resource_overrides").select("archived_at")
     .eq("organization_id", orgId).eq("resource_id", resourceId).maybeSingle();
   if (archived.error) dbError(archived.error);
-  const owned = res?.organization_id === orgId && res?.is_org_template;
-  const shared = res?.organization_id === null && res?.published && sports.includes(res.sport);
-  if (!res || res.coach_id || res.review_state !== "released" || archived.data?.archived_at || !(owned || shared)) {
+  if (!res || !isClubPolicyResource(res, orgId, sports, !!archived.data?.archived_at)) {
     throw new Error("Document is not available for this club");
   }
   return res;
