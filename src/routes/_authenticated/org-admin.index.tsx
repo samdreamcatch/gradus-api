@@ -93,7 +93,7 @@ function TrustCenter() {
                   {r.bySport.length ? (
                     r.bySport.map((s) => (
                       <div key={s.sport} className="space-y-1">
-                        <div className="flex justify-between text-meta">
+                        <div className="flex justify-between text-xs">
                           <span className="text-text-primary">{sportDisplayLabel(s.sport)}</span>
                           <span className="font-mono text-text-secondary">
                             {s.done}/{s.total}
@@ -103,7 +103,7 @@ function TrustCenter() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-meta text-text-secondary">
+                    <p className="text-xs text-text-secondary">
                       No documents require acknowledgement yet.
                     </p>
                   )}
@@ -114,7 +114,7 @@ function TrustCenter() {
                 <ul className="divide-y divide-divider rounded-lg border border-divider bg-card">
                   {r.activity.length ? (
                     r.activity.map((a, i) => (
-                      <li key={i} className="flex gap-3 px-4 py-2.5 text-meta">
+                      <li key={i} className="flex gap-3 px-4 py-2.5 text-xs">
                         <span className="w-12 shrink-0 font-mono text-text-tertiary">
                           {fmtWhen(a.at)}
                         </span>
@@ -122,13 +122,13 @@ function TrustCenter() {
                       </li>
                     ))
                   ) : (
-                    <li className="px-4 py-3 text-meta text-text-secondary">No activity yet.</li>
+                    <li className="px-4 py-3 text-xs text-text-secondary">No activity yet.</li>
                   )}
                 </ul>
               </div>
             </aside>
           </div>
-          <p className="text-meta text-text-tertiary">
+          <p className="text-xs text-text-tertiary">
             Readiness reflects the records in Gradus. It isn't a legal or certification judgement.
           </p>
         </>

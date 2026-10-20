@@ -170,7 +170,7 @@ function Policies() {
       <section>
         <SectionLabel>Policy packs</SectionLabel>
         {packs.isError ? (
-          <p className="text-meta text-text-secondary">
+          <p className="text-xs text-text-secondary">
             Policy packs will be available once this update is live.
           </p>
         ) : (packs.data?.packs ?? []).length ? (
@@ -185,7 +185,7 @@ function Policies() {
                   {CATEGORY_LABEL[p.category]}
                 </p>
                 <p className="font-display text-h3 text-text-primary">{p.name}</p>
-                <p className="mt-1 text-meta text-text-secondary">
+                <p className="mt-1 text-xs text-text-secondary">
                   {p.resourceIds.length} document{p.resourceIds.length === 1 ? "" : "s"}
                   {p.dueAt ? ` · due ${new Date(p.dueAt).toLocaleDateString()}` : ""}
                   {p.renewMonths ? ` · renews every ${p.renewMonths} mo` : ""}
@@ -194,7 +194,7 @@ function Policies() {
             ))}
           </div>
         ) : (
-          <p className="text-meta text-text-secondary">
+          <p className="text-xs text-text-secondary">
             Group required documents into packs, like "Safe Sport" or "Travel", and give them a due
             date.
           </p>
@@ -282,7 +282,7 @@ function Policies() {
               </TableHeader>
               <TableBody>
                 {people.map((p) => (
-                  <TableRow key={p.key} className="text-meta">
+                  <TableRow key={p.key} className="text-xs">
                     <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
                     <TableCell className="py-2 text-text-secondary">{ROLE_LABEL[p.role]}</TableCell>
                     {docs.map((d) => (
@@ -327,9 +327,9 @@ function Cell({ value, dueAt }: { value: string | null | undefined; dueAt: strin
     return <span className="text-accent-ink">Signed {new Date(value).toLocaleDateString()}</span>;
   const overdue = dueAt && new Date(dueAt) < new Date();
   return overdue ? (
-    <span className="rounded-pill bg-pen-pink-wash px-2 py-0.5 text-pen-pink-ink">Overdue</span>
+    <span className="rounded-pill bg-destructive/10 px-2 py-0.5 text-destructive">Overdue</span>
   ) : (
-    <span className="rounded-pill bg-pen-orange-wash px-2 py-0.5 text-pen-orange-ink">Due</span>
+    <span className="rounded-pill bg-attention-wash px-2 py-0.5 text-attention-ink">Due</span>
   );
 }
 
@@ -428,7 +428,7 @@ function PackForm({
             </label>
           ))
         ) : (
-          <p className="text-meta text-text-secondary">
+          <p className="text-xs text-text-secondary">
             Require acknowledgement on a club document first.
           </p>
         )}

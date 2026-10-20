@@ -7,9 +7,9 @@ const STATUS: Record<ReadinessStatus, { label: string; cls: string }> = {
   ready: { label: "Ready", cls: "border-accent/40 bg-accent/10 text-accent-ink" },
   attention: {
     label: "Needs attention",
-    cls: "border-pen-orange/50 bg-pen-orange-wash text-pen-orange-ink",
+    cls: "border-attention/50 bg-attention-wash text-attention-ink",
   },
-  blocked: { label: "Blocked", cls: "border-pen-pink/50 bg-pen-pink-wash text-pen-pink-ink" },
+  blocked: { label: "Blocked", cls: "border-destructive/50 bg-destructive/10 text-destructive" },
 };
 
 export function StatusTag({ status, className }: { status: ReadinessStatus; className?: string }) {
@@ -49,15 +49,15 @@ export function AttentionRow({ item }: { item: Item }) {
         className={cn(
           "grid size-9 shrink-0 place-items-center rounded-md font-mono text-sm",
           item.severity === "blocked"
-            ? "bg-pen-pink-wash text-pen-pink-ink"
-            : "bg-pen-orange-wash text-pen-orange-ink",
+            ? "bg-destructive/10 text-destructive"
+            : "bg-attention-wash text-attention-ink",
         )}
       >
         {item.count}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-text-primary">{item.title}</span>
-        <span className="block text-meta text-text-secondary">{item.reason}</span>
+        <span className="block text-xs text-text-secondary">{item.reason}</span>
       </span>
       <span className="inline-flex items-center gap-1 text-xs text-accent-ink">
         Fix <ChevronRight className="size-3.5" />
