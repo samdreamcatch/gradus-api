@@ -79,6 +79,7 @@ export type RosterCoach = {
   parentCount: number;
   adultAthleteCount: number;
   joinedAt: string | null;
+  levels: { sport: string; key: string; label: string; practiceHours: number }[];
 };
 
 export const listOrgRoster = createServerFn({ method: "POST" })
@@ -98,6 +99,15 @@ export const listOrgRoster = createServerFn({ method: "POST" })
 
     const coachIds = (coaches.data ?? []).map((c) => c.id);
     const userIds = (coaches.data ?? []).map((c) => c.user_id);
+    const [levels, clubLevels] = await Promise.all([
+      coachIds.length
+        ? supabaseAdmin.from("coach_levels").select("coach_id, sport, level_key, practice_hours_per_week").in("coach_id", coachIds)
+        : Promise.resolve({ data: [], error: null }),
+      supabaseAdmin.from("org_levels").select("sport, level_key, label").eq("organization_id", data.organizationId),
+    ]);
+    if (levels.error) dbError(levels.error);
+    if (clubLevels.error) dbError(clubLevels.error);
+    const { SPORTS } = await import("./coach-sports");
 
     // Athlete + parent counts per coach
     const links = await supabaseAdmin
@@ -117,7 +127,7 @@ export const listOrgRoster = createServerFn({ method: "POST" })
       }
       if (a.parent_id) {
         if (!parentSetByCoach.has(l.coach_id)) parentSetByCoach.set(l.coach_id, new Set());
-        parentSetByCoach.get(l.coach_id)!.add(a.parent_id);
+        parentSetByCoach.get(l.coach_id)?.add(a.parent_id);
       }
     }
 
@@ -141,6 +151,14 @@ export const listOrgRoster = createServerFn({ method: "POST" })
         parentCount: parentSetByCoach.get(c.id)?.size ?? 0,
         adultAthleteCount: adultByCoach.get(c.id) ?? 0,
         joinedAt: c.created_at,
+        levels: (levels.data ?? []).filter((l) => l.coach_id === c.id).map((l) => ({
+          sport: l.sport,
+          key: l.level_key,
+          label: (clubLevels.data ?? []).find((cl) => cl.sport === l.sport && cl.level_key === l.level_key)?.label
+            ?? SPORTS.find((s) => s.key === l.sport)?.levels.find((sl) => sl.key === l.level_key)?.label
+            ?? l.level_key,
+          practiceHours: Number(l.practice_hours_per_week),
+        })),
       })),
     };
   });
