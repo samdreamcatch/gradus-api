@@ -1,3 +1,4 @@
+import { FOUNDING_PRO_TRIAL_DAYS } from "@/lib/paywall-flag";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -194,7 +195,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
       // Founding-coach one-time 1-month Coach Pro trial. Only fires when
       // no other promo code is being redeemed at checkout (typed codes and
       // profile-attached forever codes win) and the coach hasn't used the
-      // trial before. The 30 free days remain, but a card is collected up
+      // trial before. The free founding trial days remain, but a card is collected up
       // front so the first charge after the trial can't silently fail.
       const useFoundingProTrial =
         !discountPromoId &&
@@ -218,7 +219,7 @@ export const startCoachCheckout = createServerFn({ method: "POST" })
         customer: customerId,
         subscription_data: {
           metadata: { userId },
-          ...(useFoundingProTrial && { trial_period_days: 30 }),
+          ...(useFoundingProTrial && { trial_period_days: FOUNDING_PRO_TRIAL_DAYS }),
         },
         metadata: { userId },
         payment_method_collection: paymentMethodCollection,
