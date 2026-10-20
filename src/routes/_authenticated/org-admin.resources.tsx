@@ -123,7 +123,7 @@ function OrgResourcesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
-      <PageTitle subtitle="What your coaches, parents and athletes see, per sport">
+      <PageTitle>
         Resource library
       </PageTitle>
       {q.isPending ? (

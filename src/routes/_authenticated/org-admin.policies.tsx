@@ -160,7 +160,7 @@ function Policies() {
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 md:px-8 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <PageTitle subtitle="Who has signed what">Policies</PageTitle>
+          <PageTitle>Policies</PageTitle>
         </div>
         <Button className="press" onClick={() => setEditing("new")}>
           <Plus className="size-4" /> New policy pack

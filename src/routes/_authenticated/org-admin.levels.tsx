@@ -101,7 +101,7 @@ function OrgLevelsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-4xl">
-      <PageTitle subtitle="Level ladders and weekly practice expectations">Levels</PageTitle>
+      <PageTitle>Levels</PageTitle>
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (

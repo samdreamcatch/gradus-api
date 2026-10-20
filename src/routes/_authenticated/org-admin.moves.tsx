@@ -126,7 +126,7 @@ function OrgMovesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
-      <PageTitle subtitle="Default moves your coaches get, per sport">Move library</PageTitle>
+      <PageTitle>Move library</PageTitle>
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
