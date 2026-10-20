@@ -3,3 +3,4 @@
 - DEV tools use the shared, tested preview-host predicate for main and numbered draft previews; published domains stay excluded to avoid exposing the account switcher there.
 - Club policies use club-scoped requirement and append-only evidence tables, with local draft schema types instead of editing generated clients; this isolates shared Gradus documents and retains legacy sign-offs.
 - Policy deadlines come from one pure helper shared through the matrix and overview, and PDF evidence generation stays server-only; this keeps status calculations consistent and private evidence off the client import chain.
+- People reuses the authorized club roster and policy matrix; coach policy attribution is pure and tested, and policy failures never imply a coach is signed off.

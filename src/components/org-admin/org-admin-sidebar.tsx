@@ -34,8 +34,11 @@ const GROUPS: Group[] = [
   },
   {
     label: "Safety",
-    items: [{ to: "/org-admin/policies", label: "Policies", icon: FileSignature }],
-    soon: ["People", "Communications", "Cases"],
+    items: [
+      { to: "/org-admin/policies", label: "Policies", icon: FileSignature },
+      { to: "/org-admin/people", label: "People", icon: Users },
+    ],
+    soon: ["Communications", "Cases"],
   },
   {
     label: "Roster",
