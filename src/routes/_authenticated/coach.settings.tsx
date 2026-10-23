@@ -51,7 +51,6 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { requestSport } from "@/lib/sport-requests.functions";
-import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
@@ -124,7 +123,6 @@ function SettingsPage() {
 
         <SettingsGroup label="Support">
           <SettingsList>
-            <InstallAppRow />
             <NativeAppSection />
             <FeedbackSettingsRow />
           </SettingsList>

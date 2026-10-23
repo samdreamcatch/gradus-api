@@ -21,7 +21,6 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { SportChip } from "@/components/onboarding/sport-chip";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
-import { InstallAppRow } from "@/components/settings/install-app-row";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
@@ -153,7 +152,6 @@ function AthleteSettingsPage() {
 
             <SettingsGroup label="Support">
               <SettingsList>
-                <InstallAppRow />
                 <NativeAppSection />
                 <FeedbackSettingsRow />
               </SettingsList>
