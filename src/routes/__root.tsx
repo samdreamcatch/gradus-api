@@ -18,7 +18,6 @@ import { DevToolsMount } from "@/components/dev/dev-tools-mount";
 import { registerServiceWorker } from "@/pwa/register-sw";
 import { initNativeShell } from "@/lib/native";
 import { BiometricGate } from "@/components/native/biometric-gate";
-import { InstallBannerMount } from "@/components/install-banner-mount";
 import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
 import { installChunkErrorRecovery, isModuleLoadError, recoverFromStaleChunks } from "@/pwa/chunk-recovery";
@@ -191,7 +190,6 @@ function RootComponent() {
         </main>
         <Toaster />
         <BiometricGate />
-        <InstallBannerMount />
         <PwaUpdatePrompt />
         <DevToolsMount />
       </ThemeProvider>
