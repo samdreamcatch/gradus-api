@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { isNativeApp } from "@/lib/native";
+import { AppStoreBadges } from "@/components/app-store-badges";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getSharedPlanPublic,
@@ -226,7 +228,9 @@ function ImportCTA({ token }: { token: string }) {
           </p>
           <p className="text-[13px] text-text-secondary">
             {authState === "anon"
-              ? "Coaches can save this to their library, and athletes can add it to their plans."
+              ? isNativeApp()
+                ? "Sign in to save this to your library or plans."
+                : "Open it in the Gradus app for iPhone and Apple Watch."
               : authState === "user" && !canSave
                 ? "Only coaches and athletes can save shared plans."
                 : role === "athlete"
@@ -236,20 +240,18 @@ function ImportCTA({ token }: { token: string }) {
         </div>
 
         {authState === "anon" ? (
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              to="/login"
-              search={{ redirect: redirectTo }}
-              className="inline-flex flex-1 items-center justify-center rounded-full border border-divider bg-card px-4 py-2.5 text-sm font-bold text-text-primary sm:flex-none"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/signup/coach"
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-card sm:flex-none"
-            >
-              Sign up
-            </Link>
+          <div className="flex shrink-0 flex-col gap-1.5 sm:items-end">
+            {!isNativeApp() && <AppStoreBadges />}
+            <p className="text-[12px] text-text-secondary">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                search={{ redirect: redirectTo }}
+                className="font-bold text-accent-ink underline underline-offset-2"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
         ) : (
           <button
