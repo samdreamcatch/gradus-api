@@ -900,8 +900,8 @@ export type Database = {
           guardian_claimed_at: string | null
           guardian_email: string | null
           guardian_first_name: string | null
-          guardian_last_name: string | null
           guardian_invited_at: string | null
+          guardian_last_name: string | null
           id: string
           invite_recipient: string | null
           is_test: boolean
@@ -927,8 +927,8 @@ export type Database = {
           guardian_claimed_at?: string | null
           guardian_email?: string | null
           guardian_first_name?: string | null
-          guardian_last_name?: string | null
           guardian_invited_at?: string | null
+          guardian_last_name?: string | null
           id?: string
           invite_recipient?: string | null
           is_test?: boolean
@@ -954,8 +954,8 @@ export type Database = {
           guardian_claimed_at?: string | null
           guardian_email?: string | null
           guardian_first_name?: string | null
-          guardian_last_name?: string | null
           guardian_invited_at?: string | null
+          guardian_last_name?: string | null
           id?: string
           invite_recipient?: string | null
           is_test?: boolean
