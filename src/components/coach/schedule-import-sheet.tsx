@@ -166,7 +166,7 @@ export function ScheduleImportSheet({
               guardianEmail: g.guardianEmail,
               athleteEmail: g.athleteEmail,
               sport: g.sport || defaultSport,
-              // Decision #30 (PRD §6.13 A5): an import carries no birthdate, so
+              // Decision #30 (PRD §6.13 A5), amended by #59 for the apps: the web sheet still has no age choice, so
               // every invite goes to a parent or guardian.
               emailRecipient: "guardian" as const,
               slots: g.rows.map((r) => ({
@@ -764,7 +764,7 @@ function RowSummary({
   const otherErrors = Object.entries(errors)
     .filter(([k]) => k !== "guardianEmail" && k !== "athleteEmail")
     .map(([, v]) => v);
-  // Decision #30 (PRD §6.13 A5): the invite always goes to a parent or
+  // Decision #30 (PRD §6.13 A5), amended by #59 for the apps: here the invite always goes to a parent or
   // guardian; an import has no birthdate to prove anyone is an adult.
   return (
     <>

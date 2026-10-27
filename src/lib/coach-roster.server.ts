@@ -183,7 +183,7 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
   const links = await admin
     .from("coach_athletes")
     .select(
-      "athlete_id, messaging_paused_at, athletes!inner(id, first_name, last_name, self_managed, parent_id, guardian_email, guardian_claimed_at, invite_recipient, birthdate, account_state, parent_profiles(first_name, last_name, adult_verified_at))",
+      "athlete_id, messaging_paused_at, athletes!inner(id, first_name, last_name, self_managed, parent_id, guardian_email, guardian_first_name, guardian_last_name, guardian_claimed_at, invite_recipient, birthdate, account_state, parent_profiles(first_name, last_name, adult_verified_at))",
     )
     .eq("coach_id", coachId);
   if (links.error) dbError(links.error);
@@ -290,6 +290,8 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       id: string;
       first_name: string;
       last_name: string;
+      guardian_first_name: string | null;
+      guardian_last_name: string | null;
       parent_profiles: {
         first_name: string;
         last_name: string;
@@ -306,8 +308,10 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       firstName: a.first_name,
       lastName: a.last_name,
       sport: sportByAthlete.get(a.id) ?? null,
-      parentFirstName: a.parent_profiles?.first_name ?? null,
-      parentLastName: a.parent_profiles?.last_name ?? null,
+      // The claimed parent's own profile name wins; before the claim, the
+      // name the coach typed on import (if any).
+      parentFirstName: a.parent_profiles?.first_name ?? a.guardian_first_name ?? null,
+      parentLastName: a.parent_profiles?.last_name ?? a.guardian_last_name ?? null,
       selfManaged: a.self_managed === true,
       slots: slotsByAthlete.get(a.id) ?? [],
       otherCoachCount: others.length,
@@ -460,6 +464,16 @@ export const addAthleteInput = z.object({
     .optional(),
   sport: z.string().trim().min(1).max(40).optional(),
   emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
+  /**
+   * The coach marked the athlete "Over 18" (decision #59, 2026-10-27: coaches
+   * never enter a birthdate in the app, only Under 18 / Over 18). Lets the
+   * athlete be invited directly without a birthdate on file. Their own
+   * sign-up still establishes age; this only decides who gets the invite.
+   */
+  adultConfirmed: z.boolean().default(false),
+  /** Under 18: the parent or guardian's name as the coach typed it. */
+  guardianFirstName: z.string().trim().max(80).default(""),
+  guardianLastName: z.string().trim().max(80).default(""),
 });
 
 export type AddAthleteResult = { athleteId: string; guardianEmail: string | null };
@@ -517,11 +531,12 @@ export async function addAthleteWithGuardian(
     knownAdult = age >= 18;
   }
 
-  // Decision #30 (PRD §6.13 A5): the invite goes to the parent for anyone
-  // under 18 or with no birthdate on file; only a known adult is invited directly.
-  if (data.emailRecipient === "athlete" && !knownAdult) {
+  // Decision #30 (PRD §6.13 A5), amended by #59: the invite goes to the
+  // parent for anyone under 18. A known adult (birthdate, web) or an athlete
+  // the coach marked Over 18 (iOS) may be invited directly.
+  if (data.emailRecipient === "athlete" && !knownAdult && !data.adultConfirmed) {
     throw unprocessable(
-      "Invite the parent or guardian for athletes under 18. To invite an athlete directly, enter a birthdate that makes them 18 or over.",
+      "Invite the parent or guardian for athletes under 18. To invite an athlete directly, mark them as over 18.",
     );
   }
 
@@ -538,6 +553,8 @@ export async function addAthleteWithGuardian(
       self_managed: false,
       motivation: "",
       guardian_email: guardianEmail,
+      guardian_first_name: data.emailRecipient === "guardian" ? data.guardianFirstName || null : null,
+      guardian_last_name: data.emailRecipient === "guardian" ? data.guardianLastName || null : null,
       guardian_claim_token: token,
       guardian_invited_at: guardianEmail ? now.toISOString() : null,
       added_by_coach_id: coachId,

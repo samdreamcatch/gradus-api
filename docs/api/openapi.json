@@ -5199,6 +5199,20 @@
                       "athlete"
                     ],
                     "default": "guardian"
+                  },
+                  "adultConfirmed": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "guardianFirstName": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "default": ""
+                  },
+                  "guardianLastName": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "default": ""
                   }
                 },
                 "required": [
@@ -5964,6 +5978,16 @@
                         "athleteEmail": {
                           "type": "string",
                           "maxLength": 255,
+                          "default": ""
+                        },
+                        "guardianFirstName": {
+                          "type": "string",
+                          "maxLength": 80,
+                          "default": ""
+                        },
+                        "guardianLastName": {
+                          "type": "string",
+                          "maxLength": 80,
                           "default": ""
                         },
                         "sport": {

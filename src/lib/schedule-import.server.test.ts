@@ -760,6 +760,8 @@ describe("commitScheduleImport", () => {
         self_managed: false,
         motivation: "",
         guardian_email: "parent@example.com",
+        guardian_first_name: null,
+        guardian_last_name: null,
         guardian_claim_token: MINTED,
         guardian_invited_at: NOW.toISOString(),
         added_by_coach_id: "coach-1",
@@ -808,7 +810,29 @@ describe("commitScheduleImport", () => {
     expect(commitScheduleImportResultSchema.safeParse(out).success).toBe(true);
   });
 
-  it("an athlete-addressed group still invites that address, but in guardian voice (decision #30: an import has no birthdate)", async () => {
+  it("stores the parent or guardian's name the coach typed on the new athlete row (iOS Under 18 card), trimmed, empty as null", async () => {
+    const { admin, inserted } = fakeAdmin({ coach_profiles: [COACH] });
+    const { deps } = commitDeps();
+    await commitScheduleImport(
+      { admin, userId: USER },
+      { groups: [group({ guardianFirstName: "  Devi ", guardianLastName: "Okonkwo" })] },
+      { apiContract: true },
+      deps,
+    );
+    expect(inserted.athletes[0]).toMatchObject({
+      first_name: "Leo",
+      guardian_first_name: "Devi",
+      guardian_last_name: "Okonkwo",
+    });
+    // The contract accepts the fields as optional: an iOS build or the web
+    // sheet that never sends them still writes null.
+    expect(commitScheduleImportInput.parse({ groups: [{ key: "k", firstName: "A", lastName: "B", slots: [slot()] }] }).groups[0]).toMatchObject({
+      guardianFirstName: "",
+      guardianLastName: "",
+    });
+  });
+
+  it("an Over 18 group (emailRecipient athlete) invites the athlete directly, in athlete voice (decision #59 amends #30)", async () => {
     const { admin, inserted } = fakeAdmin({ coach_profiles: [COACH] });
     const { deps, sent } = commitDeps();
     const out = await commitScheduleImport(
@@ -833,12 +857,13 @@ describe("commitScheduleImport", () => {
         athleteName: "Leo Lee",
         coachName: "Sam Ortiz",
         token: MINTED,
-        recipient: "guardian",
+        recipient: "athlete",
       },
     ]);
     expect(inserted.athletes![0]).toMatchObject({
       guardian_email: "leo@example.com",
-      invite_recipient: "guardian",
+      invite_recipient: "athlete",
+      guardian_first_name: null,
     });
   });
 

@@ -899,6 +899,8 @@ export type Database = {
           guardian_claim_token: string | null
           guardian_claimed_at: string | null
           guardian_email: string | null
+          guardian_first_name: string | null
+          guardian_last_name: string | null
           guardian_invited_at: string | null
           id: string
           invite_recipient: string | null
@@ -924,6 +926,8 @@ export type Database = {
           guardian_claim_token?: string | null
           guardian_claimed_at?: string | null
           guardian_email?: string | null
+          guardian_first_name?: string | null
+          guardian_last_name?: string | null
           guardian_invited_at?: string | null
           id?: string
           invite_recipient?: string | null
@@ -949,6 +953,8 @@ export type Database = {
           guardian_claim_token?: string | null
           guardian_claimed_at?: string | null
           guardian_email?: string | null
+          guardian_first_name?: string | null
+          guardian_last_name?: string | null
           guardian_invited_at?: string | null
           id?: string
           invite_recipient?: string | null

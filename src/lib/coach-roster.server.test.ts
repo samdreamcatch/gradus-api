@@ -15,6 +15,8 @@ import { getPendingLessonWrapUps, pendingWrapUpsInput } from "./lesson-wrap-ups.
 
 /** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
 function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, unknown[]> = {}) {
+  // Every `.insert(payload)` by table, so a test can read back what was written.
+  const inserted: Record<string, unknown[]> = {};
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
     for (const m of [
@@ -34,6 +36,10 @@ function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, 
     ]) {
       self[m] = () => self;
     }
+    self.insert = (payload: unknown) => {
+      (inserted[table] ??= []).push(payload);
+      return self;
+    };
     self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
     self.single = async () => ({ data: rows[table] ?? null, error: null });
     // Awaiting the chain itself (list reads and writes) resolves to the list.
@@ -44,7 +50,7 @@ function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, 
     return self;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { from: (table: string) => chain(table) } as any;
+  return { from: (table: string) => chain(table), inserted } as any;
 }
 
 async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
@@ -214,7 +220,7 @@ describe("addAthleteWithGuardian", () => {
     expect(err?.message).toBe("Athletes under 18 need a parent or guardian email.");
   });
 
-  it("invites the parent, never the athlete, for a minor or an athlete with no birthdate (decision #30)", async () => {
+  it("invites the parent, never the athlete, for a minor or an athlete with no birthdate and no Over 18 mark (decision #30)", async () => {
     for (const birthdate of ["2014-09-08", undefined]) {
       const data = addAthleteInput.parse({
         firstName: "Rory",
@@ -233,6 +239,42 @@ describe("addAthleteWithGuardian", () => {
       expect(err?.status).toBe(422);
       expect(err?.message).toMatch(/Invite the parent or guardian/);
     }
+  });
+
+  it("an athlete the coach marked Over 18 may be invited directly without a birthdate (decision #59)", async () => {
+    const data = addAthleteInput.parse({
+      firstName: "Lane",
+      lastName: "Kim",
+      guardianEmail: "lane@example.com",
+      emailRecipient: "athlete",
+      adultConfirmed: true,
+    });
+    const admin = fakeClient({
+      coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" },
+      athletes: { id: "new-athlete" },
+    });
+    const result = await addAthleteWithGuardian({ userId: "u", admin }, data, new Date("2026-09-06T12:00:00Z"));
+    expect(result.athleteId).toBe("new-athlete");
+  });
+
+  it("stores the parent or guardian's name for an Under 18 athlete (and never for an Over 18 one)", async () => {
+    const admin = fakeClient({
+      coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" },
+      athletes: { id: "new-athlete" },
+    });
+    const minor = addAthleteInput.parse({
+      firstName: "Rory",
+      lastName: "Gilmore",
+      guardianEmail: "lorelai@example.com",
+      guardianFirstName: " Lorelai ",
+      guardianLastName: "Gilmore",
+    });
+    await addAthleteWithGuardian({ userId: "u", admin }, minor, new Date("2026-09-06T12:00:00Z"));
+    expect(admin.inserted.athletes[0]).toMatchObject({
+      guardian_first_name: "Lorelai",
+      guardian_last_name: "Gilmore",
+      invite_recipient: "guardian",
+    });
   });
 
   it("a known adult may be invited directly", async () => {

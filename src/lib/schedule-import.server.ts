@@ -441,6 +441,9 @@ export const commitScheduleImportInput = z.object({
         lastName: z.string().trim().min(1).max(80),
         guardianEmail: z.string().trim().toLowerCase().max(255).default(""),
         athleteEmail: z.string().trim().toLowerCase().max(255).default(""),
+        /** The parent or guardian's name as the coach typed it (iOS review card, Under 18). Stored on the new athlete row until the parent claims. */
+        guardianFirstName: z.string().trim().max(80).default(""),
+        guardianLastName: z.string().trim().max(80).default(""),
         sport: z.string().trim().max(40).default(""),
         emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
         slots: z.array(slotSchema).min(1).max(20),
@@ -552,14 +555,15 @@ export async function commitScheduleImport(
 
   for (const g of input.groups) {
     const name = `${g.firstName} ${g.lastName}`.trim();
-    // One address either way. Decision #30 (PRD §6.13 A5): an import carries
-    // no birthdate, so the invite is always voiced for a parent or guardian;
-    // an "athlete" choice only decides which address wins when both exist.
+    // One address either way. Decision #59 (2026-10-27) amends #30: the
+    // review card asks Under 18 / Over 18, so an "athlete" choice is the
+    // coach saying the athlete is an adult — the invite goes to the athlete
+    // in their own voice. Under 18 (the default) stays guardian-voiced.
     const inviteEmail =
       (g.emailRecipient === "athlete"
         ? g.athleteEmail || g.guardianEmail
         : g.guardianEmail || g.athleteEmail) || null;
-    const inviteRecipient = "guardian" as const;
+    const inviteRecipient = g.emailRecipient === "athlete" ? ("athlete" as const) : ("guardian" as const);
 
     for (const s of g.slots) {
       if (s.endMinute <= s.startMinute) {
@@ -619,6 +623,8 @@ export async function commitScheduleImport(
             self_managed: false,
             motivation: "",
             guardian_email: inviteEmail,
+            guardian_first_name: inviteRecipient === "guardian" ? g.guardianFirstName || null : null,
+            guardian_last_name: inviteRecipient === "guardian" ? g.guardianLastName || null : null,
             guardian_claim_token: token,
             guardian_invited_at: inviteEmail ? now().toISOString() : null,
             added_by_coach_id: coachId,
