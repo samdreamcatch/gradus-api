@@ -18,7 +18,12 @@ import type { Database } from "@/integrations/supabase/types";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
+import {
+  currentGoalValues,
+  prefilledGoalsForAthletes,
+  recordGoalsChange,
+  type PrefilledGoal,
+} from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
 import { ageInYears } from "./pending-athlete-dob";
@@ -342,6 +347,30 @@ async function requireStrictlySelfManagedAthleteId(
   if (!me.data) throw unprocessable("Finish setting up your athlete profile first.");
   if (!me.data.self_managed) throw unprocessable("This account is parent-managed.");
   return me.data.id;
+}
+
+export type AdultGoalsList = { goals: PrefilledGoal[] };
+
+/**
+ * `getAdultAthleteGoals`: the caller's goals on file per sport, for the
+ * onboarding goals step to open prefilled. A goal that is still the coach's
+ * starting levels from the invite (decision #60) carries
+ * `suggestedByCoachName`, so the step can say "Suggested by Coach <name>".
+ * No athlete row yet → no goals (never an error: the step runs before the
+ * profile step has necessarily finished on a resumed onboarding).
+ */
+export async function getAdultAthleteGoals(
+  ctx: Pick<AdultContext, "userId" | "supabase" | "admin">,
+): Promise<AdultGoalsList> {
+  const me = await ctx.supabase
+    .from("athletes")
+    .select("id")
+    .eq("user_id", ctx.userId)
+    .maybeSingle();
+  if (me.error) dbError(me.error);
+  if (!me.data) return { goals: [] };
+  const prefill = await prefilledGoalsForAthletes(ctx.admin, [me.data.id]);
+  return { goals: prefill.get(me.data.id) ?? [] };
 }
 
 export const adultGoalsInput = z.object({

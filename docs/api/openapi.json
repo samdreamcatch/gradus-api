@@ -3234,12 +3234,50 @@
                           },
                           "lastName": {
                             "type": "string"
+                          },
+                          "goals": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "sport": {
+                                  "type": "string"
+                                },
+                                "currentLevelKey": {
+                                  "type": "string"
+                                },
+                                "seasonGoalKey": {
+                                  "type": "string"
+                                },
+                                "longTermGoal": {
+                                  "type": "string"
+                                },
+                                "suggestedByCoach": {
+                                  "type": "boolean"
+                                },
+                                "suggestedByCoachName": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "sport",
+                                "currentLevelKey",
+                                "seasonGoalKey",
+                                "longTermGoal",
+                                "suggestedByCoach",
+                                "suggestedByCoachName"
+                              ]
+                            }
                           }
                         },
                         "required": [
                           "id",
                           "firstName",
-                          "lastName"
+                          "lastName",
+                          "goals"
                         ]
                       }
                     },
@@ -4321,6 +4359,79 @@
       }
     },
     "/api/v1/adult-athlete/goals": {
+      "get": {
+        "operationId": "getAdultAthleteGoals",
+        "summary": "The caller's goals per sport, for prefilling",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "goals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sport": {
+                            "type": "string"
+                          },
+                          "currentLevelKey": {
+                            "type": "string"
+                          },
+                          "seasonGoalKey": {
+                            "type": "string"
+                          },
+                          "longTermGoal": {
+                            "type": "string"
+                          },
+                          "suggestedByCoach": {
+                            "type": "boolean"
+                          },
+                          "suggestedByCoachName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "sport",
+                          "currentLevelKey",
+                          "seasonGoalKey",
+                          "longTermGoal",
+                          "suggestedByCoach",
+                          "suggestedByCoachName"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "goals"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
       "put": {
         "operationId": "putAdultAthleteGoals",
         "summary": "Save the caller's goals for a sport",
@@ -5213,6 +5324,20 @@
                     "type": "string",
                     "maxLength": 80,
                     "default": ""
+                  },
+                  "currentLevelKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
+                  },
+                  "seasonGoalKey": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 64
                   }
                 },
                 "required": [
@@ -6042,6 +6167,20 @@
                           },
                           "minItems": 1,
                           "maxItems": 20
+                        },
+                        "currentLevelKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 64
+                        },
+                        "seasonGoalKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 64
                         }
                       },
                       "required": [
@@ -6255,7 +6394,8 @@
                                 "type": "string",
                                 "enum": [
                                   "parent",
-                                  "athlete"
+                                  "athlete",
+                                  "coach"
                                 ]
                               },
                               "at": {

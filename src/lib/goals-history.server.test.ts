@@ -1,13 +1,15 @@
 import { describe, expect, it } from "bun:test";
 import {
+  applyCoachStartingLevels,
   authorshipFromRows,
   goalsDiffer,
+  prefilledGoalsForAthletes,
   recordGoalsChange,
   type GoalsHistoryRow,
 } from "./goals-history.server";
 
 const row = (
-  role: "parent" | "athlete",
+  role: "parent" | "athlete" | "coach",
   at: string,
   values: Partial<GoalsHistoryRow> = {},
 ): GoalsHistoryRow => ({
@@ -100,14 +102,22 @@ describe("authorshipFromRows with a floor", () => {
 });
 
 describe("recordGoalsChange", () => {
-  const fakeAdmin = (calls: unknown[]) =>
+  /** `latestRole` answers the newest history row's author (null = no history). */
+  const fakeAdmin = (calls: unknown[], latestRole: string | null = null) =>
     ({
-      from: (table: string) => ({
-        insert: async (payload: unknown) => {
+      from: (table: string) => {
+        const self: Record<string, unknown> = {};
+        for (const m of ["select", "eq", "order", "limit"]) self[m] = () => self;
+        self.maybeSingle = async () => ({
+          data: latestRole ? { changed_by_role: latestRole } : null,
+          error: null,
+        });
+        self.insert = async (payload: unknown) => {
           calls.push({ table, payload });
           return { error: null };
-        },
-      }),
+        };
+        return self;
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any;
   const next = { currentLevelKey: "l1", seasonGoalKey: "g2", longTermGoal: "Go" };
@@ -154,6 +164,44 @@ describe("recordGoalsChange", () => {
     expect(calls).toEqual([]);
   });
 
+  it("records a parent's or athlete's unchanged save when the goal on file is still the coach's suggestion (decision #60)", async () => {
+    const calls: unknown[] = [];
+    await recordGoalsChange(fakeAdmin(calls, "coach"), {
+      athleteId: "a1",
+      sport: "hockey",
+      role: "parent",
+      userId: "u1",
+      next,
+      previous: { ...next },
+    });
+    expect(calls).toHaveLength(1);
+    expect((calls[0] as { payload: { changed_by_role: string } }).payload.changed_by_role).toBe(
+      "parent",
+    );
+    // Once the family has saved, an identical save stays silent, as before.
+    const quiet: unknown[] = [];
+    await recordGoalsChange(fakeAdmin(quiet, "parent"), {
+      athleteId: "a1",
+      sport: "hockey",
+      role: "athlete",
+      userId: "u2",
+      next,
+      previous: { ...next },
+    });
+    expect(quiet).toEqual([]);
+    // And the coach re-sending the same levels never records anything.
+    const coach: unknown[] = [];
+    await recordGoalsChange(fakeAdmin(coach, "coach"), {
+      athleteId: "a1",
+      sport: "hockey",
+      role: "coach",
+      userId: "c1",
+      next,
+      previous: { ...next },
+    });
+    expect(coach).toEqual([]);
+  });
+
   it("records a first save with null previous values", async () => {
     const calls: unknown[] = [];
     await recordGoalsChange(fakeAdmin(calls), {
@@ -168,5 +216,289 @@ describe("recordGoalsChange", () => {
       (calls[0] as { payload: { previous_season_goal_key: unknown } }).payload
         .previous_season_goal_key,
     ).toBeNull();
+  });
+});
+
+describe("authorshipFromRows with a coach's starting levels (decision #60)", () => {
+  it("credits the coach as last set when nobody in the family has saved yet, with nothing to differ from", () => {
+    const out = authorshipFromRows([row("coach", "2026-10-27T10:00:00Z")]);
+    expect(out.get("figure_skating")).toEqual({
+      lastSetBy: { role: "coach", at: "2026-10-27T10:00:00Z" },
+      differsFrom: null,
+    });
+  });
+
+  it("never flags the coach's suggestion as the other version once the parent saves something else", () => {
+    const out = authorshipFromRows([
+      row("coach", "2026-10-27T10:00:00Z", { season_goal_key: "juvenile" }),
+      row("parent", "2026-10-28T10:00:00Z", { season_goal_key: "intermediate" }),
+    ]);
+    expect(out.get("figure_skating")).toEqual({
+      lastSetBy: { role: "parent", at: "2026-10-28T10:00:00Z" },
+      differsFrom: null,
+    });
+  });
+
+  it("keeps the parent-versus-athlete rule with a coach row in the history", () => {
+    const out = authorshipFromRows([
+      row("coach", "2026-10-27T10:00:00Z", { season_goal_key: "juvenile" }),
+      row("parent", "2026-10-28T10:00:00Z", { season_goal_key: "intermediate" }),
+      row("athlete", "2026-10-29T10:00:00Z", { season_goal_key: "novice" }),
+    ]);
+    const a = out.get("figure_skating")!;
+    expect(a.lastSetBy).toEqual({ role: "athlete", at: "2026-10-29T10:00:00Z" });
+    expect(a.differsFrom).toMatchObject({ role: "parent", seasonGoalKey: "intermediate" });
+  });
+});
+
+/** Chainable fake: `rows[table]` answers `maybeSingle`; `lists[table]` answers awaited selects; writes are recorded. */
+function fakeAdmin(
+  rows: Record<string, unknown | null>,
+  lists: Record<string, unknown[]> = {},
+  writes: { table: string; method: string; payload: unknown }[] = [],
+) {
+  const chain = (table: string) => {
+    const self: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "order"]) self[m] = () => self;
+    for (const m of ["insert", "upsert"]) {
+      self[m] = (payload: unknown) => {
+        writes.push({ table, method: m, payload });
+        return self;
+      };
+    }
+    self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
+    self.then = (resolve: (v: unknown) => void) =>
+      resolve({ data: lists[table] ?? [], error: null });
+    return self;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { from: (table: string) => chain(table) } as any;
+}
+
+describe("applyCoachStartingLevels", () => {
+  const args = {
+    athleteId: "a1",
+    sport: "figure_skating",
+    coachId: "coach-1",
+    coachUserId: "coach-user",
+    currentLevelKey: "pre_juvenile",
+    seasonGoalKey: "juvenile",
+  };
+
+  it("writes the first goals row with an empty long-term goal and records a coach change", async () => {
+    const writes: { table: string; method: string; payload: unknown }[] = [];
+    expect(await applyCoachStartingLevels(fakeAdmin({}, {}, writes), args)).toBe(true);
+    // History first, so a refused history row leaves no unattributed goal behind.
+    expect(writes).toEqual([
+      {
+        table: "athlete_goals_history",
+        method: "insert",
+        payload: expect.objectContaining({
+          athlete_id: "a1",
+          sport: "figure_skating",
+          changed_by_role: "coach",
+          changed_by_user_id: "coach-user",
+          current_level_key: "pre_juvenile",
+          season_goal_key: "juvenile",
+          long_term_goal: "",
+          previous_current_level_key: null,
+        }),
+      },
+      {
+        table: "athlete_goals",
+        method: "upsert",
+        payload: {
+          athlete_id: "a1",
+          coach_id: "coach-1",
+          sport: "figure_skating",
+          current_level_key: "pre_juvenile",
+          season_goal_key: "juvenile",
+          long_term_goal: "",
+        },
+      },
+    ]);
+  });
+
+  it("writes nothing when the family (or an earlier import) already saved goals for the sport", async () => {
+    const writes: { table: string; method: string; payload: unknown }[] = [];
+    const admin = fakeAdmin(
+      {
+        athlete_goals: {
+          current_level_key: "juvenile",
+          season_goal_key: "intermediate",
+          long_term_goal: "",
+        },
+      },
+      {},
+      writes,
+    );
+    expect(await applyCoachStartingLevels(admin, args)).toBe(false);
+    expect(writes).toEqual([]);
+  });
+});
+
+describe("prefilledGoalsForAthletes", () => {
+  it("names the coach while the latest author is the coach, and not after the family saved", async () => {
+    const admin = fakeAdmin(
+      {},
+      {
+        athlete_goals: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            coach_id: "coach-1",
+            current_level_key: "pre_juvenile",
+            season_goal_key: "juvenile",
+            long_term_goal: "",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+          {
+            athlete_id: "a2",
+            sport: "figure_skating",
+            coach_id: "coach-1",
+            current_level_key: "juvenile",
+            season_goal_key: "intermediate",
+            long_term_goal: "Pass the test.",
+            created_at: "2026-10-20T10:00:00Z",
+          },
+        ],
+        // Newest first, as the query orders them.
+        athlete_goals_history: [
+          {
+            athlete_id: "a2",
+            sport: "figure_skating",
+            changed_by_role: "parent",
+            created_at: "2026-10-21T10:00:00Z",
+          },
+          {
+            athlete_id: "a2",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-10-20T10:00:00Z",
+          },
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+        ],
+        coach_profiles: [{ id: "coach-1", first_name: "Renata", last_name: "Pruitt" }],
+      },
+    );
+    const out = await prefilledGoalsForAthletes(admin, ["a1", "a2"]);
+    expect(out.get("a1")).toEqual([
+      {
+        sport: "figure_skating",
+        currentLevelKey: "pre_juvenile",
+        seasonGoalKey: "juvenile",
+        longTermGoal: "",
+        suggestedByCoach: true,
+        suggestedByCoachName: "Renata Pruitt",
+      },
+    ]);
+    expect(out.get("a2")).toEqual([
+      {
+        sport: "figure_skating",
+        currentLevelKey: "juvenile",
+        seasonGoalKey: "intermediate",
+        longTermGoal: "Pass the test.",
+        suggestedByCoach: false,
+        suggestedByCoachName: null,
+      },
+    ]);
+  });
+
+  it("ignores history from before the goal now on file was created (an earlier, deleted goal's era)", async () => {
+    const goal = {
+      athlete_id: "a1",
+      sport: "figure_skating",
+      coach_id: "coach-1",
+      current_level_key: "pre_juvenile",
+      season_goal_key: "juvenile",
+      long_term_goal: "",
+      created_at: "2026-10-27T10:00:00Z",
+    };
+    const profiles = [{ id: "coach-1", first_name: "Renata", last_name: "Pruitt" }];
+    // The parent's row predates the goal on file: a previous era (goals are
+    // deleted when a coach is unlinked), so the coach's row is the latest author.
+    const admin = fakeAdmin(
+      {},
+      {
+        athlete_goals: [goal],
+        athlete_goals_history: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "parent",
+            created_at: "2026-09-01T10:00:00Z",
+          },
+        ],
+        coach_profiles: profiles,
+      },
+    );
+    expect((await prefilledGoalsForAthletes(admin, ["a1"])).get("a1")?.[0]).toMatchObject({
+      suggestedByCoach: true,
+      suggestedByCoachName: "Renata Pruitt",
+    });
+    // The parent saved after the coach's row: no longer a suggestion.
+    const admin2 = fakeAdmin(
+      {},
+      {
+        athlete_goals: [goal],
+        athlete_goals_history: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "parent",
+            created_at: "2026-10-28T10:00:00Z",
+          },
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+        ],
+        coach_profiles: profiles,
+      },
+    );
+    expect((await prefilledGoalsForAthletes(admin2, ["a1"])).get("a1")?.[0]).toMatchObject({
+      suggestedByCoach: false,
+      suggestedByCoachName: null,
+    });
+    // Only a coach row, but from before the goal on file: a previous era, so
+    // not a suggestion (without the floor this would read as suggested).
+    const admin3 = fakeAdmin(
+      {},
+      {
+        athlete_goals: [goal],
+        athlete_goals_history: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-09-01T10:00:00Z",
+          },
+        ],
+        coach_profiles: profiles,
+      },
+    );
+    expect((await prefilledGoalsForAthletes(admin3, ["a1"])).get("a1")?.[0]).toMatchObject({
+      suggestedByCoach: false,
+      suggestedByCoachName: null,
+    });
+  });
+
+  it("reads nothing for no athletes", async () => {
+    const writes: never[] = [];
+    const out = await prefilledGoalsForAthletes(fakeAdmin({}, {}, writes), []);
+    expect(out.size).toBe(0);
   });
 });

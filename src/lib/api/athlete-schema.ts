@@ -5,10 +5,12 @@
  * real shapes.
  */
 import { z } from "zod";
+import { goalPrefillSchema } from "./signup-schema";
 import type { AthleteInviteSummary, MyAthlete } from "@/lib/athlete-signup.server";
 import type {
   AdultCoachList,
   AdultCoachPreview,
+  AdultGoalsList,
   AdultOnboardingStatus,
   CoachScheduleDTO,
 } from "@/lib/adult-athlete.server";
@@ -48,6 +50,11 @@ export const adultOnboardingStatusSchema = z.object({
   selfManaged: z.boolean(),
   athleteId: z.string().nullable(),
 }) satisfies z.ZodType<AdultOnboardingStatus>;
+
+/** `GET /adult-athlete/goals`: the caller's goals per sport, with the coach's suggestion flag (decision #60). */
+export const adultGoalsListSchema = z.object({
+  goals: z.array(goalPrefillSchema),
+}) satisfies z.ZodType<AdultGoalsList>;
 
 export const adultCoachListSchema = z.object({
   hasAthlete: z.boolean(),

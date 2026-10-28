@@ -18,6 +18,8 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ApiError } from "./api/errors";
 import { getSportLevel } from "./coach-sports";
 import { dbError } from "./db-error";
+import { applyCoachStartingLevels } from "./goals-history.server";
+import { refineStartingLevels, startingLevelKeySchema, startingLevelsOf } from "./starting-levels";
 import type { LessonFrequency } from "./lesson-recurrence";
 import { isMinorOrUnconfirmed } from "./athlete-age";
 import { verificationRequired } from "./guardian-verification.server";
@@ -448,33 +450,43 @@ export async function getRosterPracticeSummaries(
 
 // --- Roster mutations -----------------------------------------------------
 
-export const addAthleteInput = z.object({
-  firstName: z.string().trim().min(1, "First name is required").max(80),
-  lastName: z.string().trim().min(1, "Last name is required").max(80),
-  birthdate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate")
-    .optional(),
-  guardianEmail: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Enter a valid parent or guardian email")
-    .max(255)
-    .optional(),
-  sport: z.string().trim().min(1).max(40).optional(),
-  emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
-  /**
-   * The coach marked the athlete "Over 18" (decision #59, 2026-10-27: coaches
-   * never enter a birthdate in the app, only Under 18 / Over 18). Lets the
-   * athlete be invited directly without a birthdate on file. Their own
-   * sign-up still establishes age; this only decides who gets the invite.
-   */
-  adultConfirmed: z.boolean().default(false),
-  /** Under 18: the parent or guardian's name as the coach typed it. */
-  guardianFirstName: z.string().trim().max(80).default(""),
-  guardianLastName: z.string().trim().max(80).default(""),
-});
+/**
+ * `currentLevelKey` / `seasonGoalKey` (decision #60, 2026-10-27): the coach's
+ * optional starting levels for the athlete's `sport`, both or neither, each
+ * a key of that sport's catalog (`getSportLevel`). They become the athlete's
+ * first goals row, recorded as set by the coach.
+ */
+export const addAthleteInput = z
+  .object({
+    firstName: z.string().trim().min(1, "First name is required").max(80),
+    lastName: z.string().trim().min(1, "Last name is required").max(80),
+    birthdate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid birthdate")
+      .optional(),
+    guardianEmail: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Enter a valid parent or guardian email")
+      .max(255)
+      .optional(),
+    sport: z.string().trim().min(1).max(40).optional(),
+    emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
+    /**
+     * The coach marked the athlete "Over 18" (decision #59, 2026-10-27: coaches
+     * never enter a birthdate in the app, only Under 18 / Over 18). Lets the
+     * athlete be invited directly without a birthdate on file. Their own
+     * sign-up still establishes age; this only decides who gets the invite.
+     */
+    adultConfirmed: z.boolean().default(false),
+    /** Under 18: the parent or guardian's name as the coach typed it. */
+    guardianFirstName: z.string().trim().max(80).default(""),
+    guardianLastName: z.string().trim().max(80).default(""),
+    currentLevelKey: startingLevelKeySchema,
+    seasonGoalKey: startingLevelKeySchema,
+  })
+  .superRefine(refineStartingLevels);
 
 export type AddAthleteResult = { athleteId: string; guardianEmail: string | null };
 
@@ -553,7 +565,8 @@ export async function addAthleteWithGuardian(
       self_managed: false,
       motivation: "",
       guardian_email: guardianEmail,
-      guardian_first_name: data.emailRecipient === "guardian" ? data.guardianFirstName || null : null,
+      guardian_first_name:
+        data.emailRecipient === "guardian" ? data.guardianFirstName || null : null,
       guardian_last_name: data.emailRecipient === "guardian" ? data.guardianLastName || null : null,
       guardian_claim_token: token,
       guardian_invited_at: guardianEmail ? now.toISOString() : null,
@@ -595,6 +608,26 @@ export async function addAthleteWithGuardian(
       token,
       recipient: data.emailRecipient,
     });
+  }
+
+  // Starting levels (decision #60): the athlete's first goals row, set by the
+  // coach, for the parent or athlete to start from at sign-up. After the
+  // invite and best-effort: the athlete is on the roster and invited by now,
+  // and a failure here (for example the history CHECK before migration
+  // 20261027170000 is applied) must not undo that or 500 the request.
+  const levels = startingLevelsOf(data);
+  if (levels && data.sport) {
+    try {
+      await applyCoachStartingLevels(admin, {
+        athleteId,
+        sport: data.sport,
+        coachId,
+        coachUserId: userId,
+        ...levels,
+      });
+    } catch (err) {
+      console.error("[roster] starting levels not saved", err);
+    }
   }
 
   return { athleteId, guardianEmail };

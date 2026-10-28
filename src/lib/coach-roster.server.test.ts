@@ -13,33 +13,30 @@ import {
 } from "./coach-roster.server";
 import { getPendingLessonWrapUps, pendingWrapUpsInput } from "./lesson-wrap-ups.server";
 
-/** A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]` answers awaited selects. */
-function fakeClient(rows: Record<string, unknown | null>, lists: Record<string, unknown[]> = {}) {
-  // Every `.insert(payload)` by table, so a test can read back what was written.
+/**
+ * A chainable fake: `rows[table]` answers `maybeSingle`/`single`; `lists[table]`
+ * answers awaited selects. Every `.insert(payload)` is kept by table in
+ * `inserted`, and every write (insert, upsert, update, delete) is recorded in
+ * `writes` as `{ table, method, payload }`, in call order.
+ */
+function fakeClient(
+  rows: Record<string, unknown | null>,
+  lists: Record<string, unknown[]> = {},
+  writes: { table: string; method: string; payload: unknown }[] = [],
+) {
   const inserted: Record<string, unknown[]> = {};
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of [
-      "select",
-      "eq",
-      "neq",
-      "in",
-      "lte",
-      "gte",
-      "lt",
-      "order",
-      "limit",
-      "update",
-      "delete",
-      "insert",
-      "upsert",
-    ]) {
+    for (const m of ["select", "eq", "neq", "in", "lte", "gte", "lt", "order", "limit"]) {
       self[m] = () => self;
     }
-    self.insert = (payload: unknown) => {
-      (inserted[table] ??= []).push(payload);
-      return self;
-    };
+    for (const m of ["update", "delete", "insert", "upsert"]) {
+      self[m] = (payload: unknown) => {
+        if (m === "insert") (inserted[table] ??= []).push(payload);
+        writes.push({ table, method: m, payload });
+        return self;
+      };
+    }
     self.maybeSingle = async () => ({ data: rows[table] ?? null, error: null });
     self.single = async () => ({ data: rows[table] ?? null, error: null });
     // Awaiting the chain itself (list reads and writes) resolves to the list.
@@ -253,7 +250,11 @@ describe("addAthleteWithGuardian", () => {
       coach_profiles: { id: "coach-1", subscription_tier: "coach_pro" },
       athletes: { id: "new-athlete" },
     });
-    const result = await addAthleteWithGuardian({ userId: "u", admin }, data, new Date("2026-09-06T12:00:00Z"));
+    const result = await addAthleteWithGuardian(
+      { userId: "u", admin },
+      data,
+      new Date("2026-09-06T12:00:00Z"),
+    );
     expect(result.athleteId).toBe("new-athlete");
   });
 
@@ -337,6 +338,147 @@ describe("addAthleteWithGuardian", () => {
     );
     const result = await addAthleteWithGuardian({ userId: "u", admin }, data);
     expect(result.athleteId).toBe("new-athlete");
+  });
+});
+
+describe("addAthleteInput starting levels (decision #60)", () => {
+  const base = { firstName: "Priya", lastName: "Okonkwo", sport: "figure_skating" };
+
+  it("accepts the block skipped, with blank or null keys reading as unset", () => {
+    const parsed = addAthleteInput.parse({ ...base, currentLevelKey: "", seasonGoalKey: null });
+    expect(parsed.currentLevelKey).toBeUndefined();
+    expect(parsed.seasonGoalKey).toBeUndefined();
+  });
+
+  it("needs both keys or neither", () => {
+    const r = addAthleteInput.safeParse({ ...base, currentLevelKey: "juvenile" });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].path).toEqual(["seasonGoalKey"]);
+  });
+
+  it("needs a sport, and keys from that sport's catalog", () => {
+    expect(
+      addAthleteInput.safeParse({
+        firstName: "P",
+        lastName: "O",
+        currentLevelKey: "juvenile",
+        seasonGoalKey: "intermediate",
+      }).success,
+    ).toBe(false);
+    expect(
+      addAthleteInput.safeParse({ ...base, currentLevelKey: "ntrp_3_0", seasonGoalKey: "juvenile" })
+        .success,
+    ).toBe(false);
+    expect(
+      addAthleteInput.safeParse({
+        ...base,
+        currentLevelKey: "juvenile",
+        seasonGoalKey: "intermediate",
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("addAthleteWithGuardian with starting levels (decision #60)", () => {
+  const now = new Date("2026-10-27T12:00:00Z");
+
+  it("writes the athlete's first goals row, stamped with this coach, and a coach history row", async () => {
+    const writes: { table: string; method: string; payload: unknown }[] = [];
+    const admin = fakeClient(
+      {
+        coach_profiles: { id: "coach-1", first_name: "Renata", last_name: "Pruitt" },
+        athletes: { id: "new-athlete" },
+      },
+      {},
+      writes,
+    );
+    const data = addAthleteInput.parse({
+      firstName: "Priya",
+      lastName: "Okonkwo",
+      sport: "figure_skating",
+      guardianEmail: "d.okonkwo@example.com",
+      currentLevelKey: "juvenile",
+      seasonGoalKey: "intermediate",
+    });
+    const result = await addAthleteWithGuardian({ userId: "coach-user", admin }, data, now);
+    expect(result.athleteId).toBe("new-athlete");
+    const goals = writes.find((w) => w.table === "athlete_goals");
+    expect(goals).toEqual({
+      table: "athlete_goals",
+      method: "upsert",
+      payload: {
+        athlete_id: "new-athlete",
+        coach_id: "coach-1",
+        sport: "figure_skating",
+        current_level_key: "juvenile",
+        season_goal_key: "intermediate",
+        long_term_goal: "",
+      },
+    });
+    const history = writes.find((w) => w.table === "athlete_goals_history");
+    expect(history?.payload).toMatchObject({
+      athlete_id: "new-athlete",
+      sport: "figure_skating",
+      changed_by_role: "coach",
+      changed_by_user_id: "coach-user",
+      current_level_key: "juvenile",
+      season_goal_key: "intermediate",
+      previous_current_level_key: null,
+    });
+    // The goals land last: after the roster link, the sport scope and the invite.
+    const order = writes.map((w) => `${w.method}:${w.table}`);
+    expect(order.indexOf("insert:coach_athletes")).toBeLessThan(
+      order.indexOf("upsert:athlete_goals"),
+    );
+    // History before the goal row, so a refused history row leaves nothing behind.
+    expect(order.slice(-2)).toEqual(["insert:athlete_goals_history", "upsert:athlete_goals"]);
+  });
+
+  it("a failed goals write is logged, never a failed invite: the athlete is created and the result returned", async () => {
+    const writes: { table: string; method: string; payload: unknown }[] = [];
+    const admin = fakeClient(
+      { coach_profiles: { id: "coach-1" }, athletes: { id: "new-athlete" } },
+      {},
+      writes,
+    );
+    // The history insert fails as it would before migration 20261027170000 is applied.
+    const original = admin.from;
+    admin.from = (table: string) => {
+      const chain = original(table);
+      if (table === "athlete_goals_history") {
+        chain.then = (resolve: (v: unknown) => void) =>
+          resolve({ data: null, error: { message: "violates check constraint" } });
+      }
+      return chain;
+    };
+    const data = addAthleteInput.parse({
+      firstName: "Priya",
+      lastName: "Okonkwo",
+      sport: "figure_skating",
+      guardianEmail: "d.okonkwo@example.com",
+      currentLevelKey: "juvenile",
+      seasonGoalKey: "intermediate",
+    });
+    const result = await addAthleteWithGuardian({ userId: "coach-user", admin }, data, now);
+    expect(result.athleteId).toBe("new-athlete");
+  });
+
+  it("writes no goals when the block was skipped", async () => {
+    const writes: { table: string; method: string; payload: unknown }[] = [];
+    const admin = fakeClient(
+      { coach_profiles: { id: "coach-1" }, athletes: { id: "new-athlete" } },
+      {},
+      writes,
+    );
+    const data = addAthleteInput.parse({
+      firstName: "Priya",
+      lastName: "Okonkwo",
+      sport: "figure_skating",
+      guardianEmail: "d.okonkwo@example.com",
+    });
+    await addAthleteWithGuardian({ userId: "coach-user", admin }, data, now);
+    expect(writes.map((w) => w.table)).not.toContain("athlete_goals");
+    expect(writes.map((w) => w.table)).not.toContain("athlete_goals_history");
   });
 });
 

@@ -28,8 +28,10 @@ import { ApiError } from "./api/errors";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { athleteLimitForTier, computeEffectiveTier } from "./coach-profile-types";
 import { dbError } from "./db-error";
+import { applyCoachStartingLevels } from "./goals-history.server";
 import type { LessonFrequency } from "./lesson-recurrence";
 import { isRosterFullError } from "./roster-limits";
+import { refineStartingLevels, startingLevelKeySchema, startingLevelsOf } from "./starting-levels";
 import { parseDay, parseFrequency, parseTimeToMinutes } from "./schedule-import";
 
 type Admin = typeof supabaseAdmin;
@@ -431,23 +433,33 @@ const slotSchema = z.object({
  * Verbatim from the web flow. Server leniency is deliberate parity: no email
  * or birthdate is required here (the web review step enforces an email
  * client-side) — flagged as an open question for the API.
+ *
+ * `currentLevelKey` / `seasonGoalKey` per group (decision #60, 2026-10-27):
+ * the coach's optional starting levels for the group's `sport`, both or
+ * neither, each a key of that sport's catalog. Written as the athlete's
+ * first goals row (set by the coach) when the group creates the athlete; an
+ * athlete who already has goals for the sport keeps them.
  */
 export const commitScheduleImportInput = z.object({
   groups: z
     .array(
-      z.object({
-        key: z.string().min(1).max(300),
-        firstName: z.string().trim().min(1).max(80),
-        lastName: z.string().trim().min(1).max(80),
-        guardianEmail: z.string().trim().toLowerCase().max(255).default(""),
-        athleteEmail: z.string().trim().toLowerCase().max(255).default(""),
-        /** The parent or guardian's name as the coach typed it (iOS review card, Under 18). Stored on the new athlete row until the parent claims. */
-        guardianFirstName: z.string().trim().max(80).default(""),
-        guardianLastName: z.string().trim().max(80).default(""),
-        sport: z.string().trim().max(40).default(""),
-        emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
-        slots: z.array(slotSchema).min(1).max(20),
-      }),
+      z
+        .object({
+          key: z.string().min(1).max(300),
+          firstName: z.string().trim().min(1).max(80),
+          lastName: z.string().trim().min(1).max(80),
+          guardianEmail: z.string().trim().toLowerCase().max(255).default(""),
+          athleteEmail: z.string().trim().toLowerCase().max(255).default(""),
+          /** The parent or guardian's name as the coach typed it (iOS review card, Under 18). Stored on the new athlete row until the parent claims. */
+          guardianFirstName: z.string().trim().max(80).default(""),
+          guardianLastName: z.string().trim().max(80).default(""),
+          sport: z.string().trim().max(40).default(""),
+          emailRecipient: z.enum(["guardian", "athlete"]).default("guardian"),
+          slots: z.array(slotSchema).min(1).max(20),
+          currentLevelKey: startingLevelKeySchema,
+          seasonGoalKey: startingLevelKeySchema,
+        })
+        .superRefine(refineStartingLevels),
     )
     .min(1)
     .max(100),
@@ -563,7 +575,8 @@ export async function commitScheduleImport(
       (g.emailRecipient === "athlete"
         ? g.athleteEmail || g.guardianEmail
         : g.guardianEmail || g.athleteEmail) || null;
-    const inviteRecipient = g.emailRecipient === "athlete" ? ("athlete" as const) : ("guardian" as const);
+    const inviteRecipient =
+      g.emailRecipient === "athlete" ? ("athlete" as const) : ("guardian" as const);
 
     for (const s of g.slots) {
       if (s.endMinute <= s.startMinute) {
@@ -623,7 +636,8 @@ export async function commitScheduleImport(
             self_managed: false,
             motivation: "",
             guardian_email: inviteEmail,
-            guardian_first_name: inviteRecipient === "guardian" ? g.guardianFirstName || null : null,
+            guardian_first_name:
+              inviteRecipient === "guardian" ? g.guardianFirstName || null : null,
             guardian_last_name: inviteRecipient === "guardian" ? g.guardianLastName || null : null,
             guardian_claim_token: token,
             guardian_invited_at: inviteEmail ? now().toISOString() : null,
@@ -693,6 +707,25 @@ export async function commitScheduleImport(
           await admin
             .from("coach_athlete_sports")
             .insert({ coach_id: coachId, athlete_id: athleteId, sport: g.sport });
+        }
+
+        // Starting levels (decision #60): only when this group created the
+        // athlete — an athlete reused by name keeps whatever goals they have
+        // (and `applyCoachStartingLevels` never overwrites an existing row
+        // either way). Best effort: a failure never fails the athlete.
+        const levels = startingLevelsOf(g);
+        if (levels && created) {
+          try {
+            await applyCoachStartingLevels(admin, {
+              athleteId,
+              sport: g.sport,
+              coachId,
+              coachUserId: userId,
+              ...levels,
+            });
+          } catch (err) {
+            console.error("[schedule-import] starting levels not saved", err);
+          }
         }
       }
 

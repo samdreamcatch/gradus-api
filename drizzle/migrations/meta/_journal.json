@@ -148,6 +148,13 @@
       "when": 1793125707650,
       "tag": "0020_athlete_guardian_name",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793128200000,
+      "tag": "0021_goals_history_coach_role",
+      "breakpoints": true
     }
   ]
 }

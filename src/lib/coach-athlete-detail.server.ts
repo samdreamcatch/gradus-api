@@ -53,8 +53,12 @@ export interface AthleteGoalDTO {
   currentLevelLabel: string;
   seasonGoalLabel: string;
   longTermGoal: string;
-  /** Who saved this goal last (from athlete_goals_history); null when nothing is on record. */
-  lastSetBy: { role: "parent" | "athlete"; at: string } | null;
+  /**
+   * Who saved this goal last (from athlete_goals_history); null when nothing is
+   * on record. `coach` (decision #60, 2026-10-27) is the viewing coach's own
+   * starting levels from the invite, shown as "Set by you".
+   */
+  lastSetBy: { role: "parent" | "athlete" | "coach"; at: string } | null;
   /**
    * The other person's most recent goals, when they differ from what is saved
    * now — the parent and the athlete want different things, and the coach

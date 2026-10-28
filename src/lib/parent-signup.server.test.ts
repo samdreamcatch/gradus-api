@@ -1,9 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
+import { athletesForCodeSchema } from "./api/signup-schema";
 import {
   athleteScheduleInput,
   lessonSlotSchema,
   linkAthletesToCoach,
+  listAthletesForCode,
   optionalInviteCodeSchema,
   saveAthleteSchedule,
   validateSignupCode,
@@ -41,7 +43,7 @@ function fakeClient(
 ) {
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of ["select", "eq", "order", "limit"]) self[m] = () => self;
+    for (const m of ["select", "eq", "in", "order", "limit"]) self[m] = () => self;
     for (const m of ["insert", "update", "delete", "upsert"] as const) {
       self[m] = () => {
         writes.push(`${m}:${table}`);
@@ -151,6 +153,61 @@ describe("linkAthletesToCoach", () => {
     expect(await linkAthletesToCoach({ userId: "u", admin }, input)).toEqual({ ok: true });
     expect(writes).toContain("insert:athletes");
     expect(writes).toContain("insert:coach_athletes");
+  });
+});
+
+describe("listAthletesForCode goals prefill (decision #60)", () => {
+  it("carries each athlete's goals on file, naming the coach while the goal is still the coach's suggestion", async () => {
+    const admin = fakeClient(
+      {},
+      {
+        athletes: [
+          { id: "a1", first_name: "Priya", last_name: "Okonkwo" },
+          { id: "a2", first_name: "Maren", last_name: "Castillo" },
+        ],
+        athlete_goals: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            coach_id: "coach-1",
+            current_level_key: "pre_juvenile",
+            season_goal_key: "juvenile",
+            long_term_goal: "",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+        ],
+        athlete_goals_history: [
+          {
+            athlete_id: "a1",
+            sport: "figure_skating",
+            changed_by_role: "coach",
+            created_at: "2026-10-27T10:00:00Z",
+          },
+        ],
+        coach_profiles: [{ id: "coach-1", first_name: "Renata", last_name: "Pruitt" }],
+      },
+    );
+    const out = await listAthletesForCode({ userId: "u", admin }, null);
+    expect(out.coachId).toBeNull();
+    expect(out.athletes).toEqual([
+      {
+        id: "a1",
+        firstName: "Priya",
+        lastName: "Okonkwo",
+        goals: [
+          {
+            sport: "figure_skating",
+            currentLevelKey: "pre_juvenile",
+            seasonGoalKey: "juvenile",
+            longTermGoal: "",
+            suggestedByCoach: true,
+            suggestedByCoachName: "Renata Pruitt",
+          },
+        ],
+      },
+      { id: "a2", firstName: "Maren", lastName: "Castillo", goals: [] },
+    ]);
+    expect(athletesForCodeSchema.safeParse(out).success).toBe(true);
   });
 });
 

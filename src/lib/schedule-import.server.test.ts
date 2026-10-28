@@ -100,6 +100,9 @@ function fakeAdmin(
       in: (c: string, vs: unknown[]) =>
         builder(table, [...filters, (r) => vs.includes(r[c])], mode, payload),
       insert: (row: Row | Row[]) => builder(table, filters, "insert", row),
+      // Upserts are only ever first writes in these flows; the fake treats them as inserts.
+      upsert: (row: Row | Row[]) => builder(table, filters, "insert", row),
+      order: () => api,
       update: (patch: Row) => builder(table, filters, "update", patch),
       delete: () => builder(table, filters, "delete", null),
       maybeSingle: async () => {
@@ -826,7 +829,11 @@ describe("commitScheduleImport", () => {
     });
     // The contract accepts the fields as optional: an iOS build or the web
     // sheet that never sends them still writes null.
-    expect(commitScheduleImportInput.parse({ groups: [{ key: "k", firstName: "A", lastName: "B", slots: [slot()] }] }).groups[0]).toMatchObject({
+    expect(
+      commitScheduleImportInput.parse({
+        groups: [{ key: "k", firstName: "A", lastName: "B", slots: [slot()] }],
+      }).groups[0],
+    ).toMatchObject({
       guardianFirstName: "",
       guardianLastName: "",
     });
@@ -883,6 +890,105 @@ describe("commitScheduleImport", () => {
       guardian_invited_at: null,
     });
     expect(sent).toEqual([]);
+  });
+
+  it("writes the coach's starting levels as the new athlete's first goals row and a coach history row (decision #60)", async () => {
+    const { admin, inserted } = fakeAdmin({ coach_profiles: [COACH] });
+    const { deps } = commitDeps();
+    const out = await commitScheduleImport(
+      { admin, userId: USER },
+      { groups: [group({ currentLevelKey: "pre_juvenile", seasonGoalKey: "juvenile" })] },
+      { apiContract: true },
+      deps,
+    );
+    expect(out.outcomes[0]).toMatchObject({ status: "created", slotsAdded: 1 });
+    expect(inserted.athlete_goals).toEqual([
+      expect.objectContaining({
+        athlete_id: inserted.athletes[0].id,
+        coach_id: "coach-1",
+        sport: "figure_skating",
+        current_level_key: "pre_juvenile",
+        season_goal_key: "juvenile",
+        long_term_goal: "",
+      }),
+    ]);
+    expect(inserted.athlete_goals_history).toEqual([
+      expect.objectContaining({
+        athlete_id: inserted.athletes[0].id,
+        sport: "figure_skating",
+        changed_by_role: "coach",
+        changed_by_user_id: USER,
+        current_level_key: "pre_juvenile",
+        season_goal_key: "juvenile",
+        long_term_goal: "",
+        previous_current_level_key: null,
+      }),
+    ]);
+  });
+
+  it("keeps the goals a linked athlete already has: a re-import's starting levels never overwrite them", async () => {
+    const { admin, inserted } = fakeAdmin({
+      coach_profiles: [COACH],
+      athletes: [{ id: "a-existing", first_name: "Leo", last_name: "Lee" }],
+      coach_athletes: [{ coach_id: "coach-1", athlete_id: "a-existing" }],
+      athlete_goals: [
+        {
+          athlete_id: "a-existing",
+          sport: "figure_skating",
+          coach_id: "coach-1",
+          current_level_key: "juvenile",
+          season_goal_key: "intermediate",
+          long_term_goal: "Pass the test.",
+        },
+      ],
+    });
+    const { deps } = commitDeps();
+    const out = await commitScheduleImport(
+      { admin, userId: USER },
+      { groups: [group({ currentLevelKey: "pre_juvenile", seasonGoalKey: "juvenile" })] },
+      { apiContract: true },
+      deps,
+    );
+    expect(out.outcomes[0]).toMatchObject({ status: "linked" });
+    expect(inserted.athlete_goals).toBeUndefined();
+    expect(inserted.athlete_goals_history).toBeUndefined();
+  });
+
+  it("never writes starting levels onto an athlete reused by name, even one with no goals yet (PRD #60: only when the group creates the athlete)", async () => {
+    const { admin, inserted } = fakeAdmin({
+      coach_profiles: [COACH],
+      athletes: [{ id: "a-existing", first_name: "Leo", last_name: "Lee" }],
+      coach_athletes: [{ coach_id: "coach-1", athlete_id: "a-existing" }],
+    });
+    const { deps } = commitDeps();
+    const out = await commitScheduleImport(
+      { admin, userId: USER },
+      { groups: [group({ currentLevelKey: "pre_juvenile", seasonGoalKey: "juvenile" })] },
+      { apiContract: true },
+      deps,
+    );
+    expect(out.outcomes[0]).toMatchObject({ status: "linked" });
+    expect(inserted.athlete_goals).toBeUndefined();
+    expect(inserted.athlete_goals_history).toBeUndefined();
+  });
+
+  it("refuses a group with one starting-level key, an unknown key, or levels without a sport", () => {
+    const base = {
+      key: "k",
+      firstName: "Leo",
+      lastName: "Lee",
+      slots: [slot()],
+      sport: "figure_skating",
+    };
+    const parse = (over: Record<string, unknown>) =>
+      commitScheduleImportInput.safeParse({ groups: [{ ...base, ...over }] }).success;
+    expect(parse({ currentLevelKey: "juvenile" })).toBe(false);
+    expect(parse({ currentLevelKey: "ntrp_3_0", seasonGoalKey: "juvenile" })).toBe(false);
+    expect(parse({ sport: "", currentLevelKey: "juvenile", seasonGoalKey: "intermediate" })).toBe(
+      false,
+    );
+    expect(parse({ currentLevelKey: "juvenile", seasonGoalKey: "intermediate" })).toBe(true);
+    expect(parse({ currentLevelKey: "", seasonGoalKey: null })).toBe(true);
   });
 
   it("links an athlete already on THIS coach's roster by name (case and spacing insensitive) and only adds slots — no new row, no invite", async () => {

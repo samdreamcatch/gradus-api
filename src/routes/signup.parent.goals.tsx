@@ -58,13 +58,21 @@ function ParentGoalsPage() {
   const sports = data?.sports ?? [];
   const current = athletes[index];
 
-  const defaultSport = sports.length === 1 ? sports[0] : "";
+  // Prefill from a goal already on file — a coach's starting levels from the
+  // invite (decision #60) or an earlier save — for the sport in play.
+  const onFile = current?.goals ?? [];
+  // Only a sport this coach offers can be the default (a goal from another coach is not).
+  const offeredOnFile = onFile.filter((g) => sports.includes(g.sport));
+  const defaultSport =
+    sports.length === 1 ? sports[0] : offeredOnFile.length === 1 ? offeredOnFile[0].sport : "";
+  const prefill = onFile.find((g) => g.sport === defaultSport);
   const state: GoalsState = byAthlete[current?.id ?? ""] ?? {
     sport: defaultSport,
-    currentLevelKey: "",
-    seasonGoalKey: "",
-    longTermGoal: "",
+    currentLevelKey: prefill?.currentLevelKey ?? "",
+    seasonGoalKey: prefill?.seasonGoalKey ?? "",
+    longTermGoal: prefill?.longTermGoal ?? "",
   };
+  const suggestion = onFile.find((g) => g.sport === state.sport && g.suggestedByCoach) ?? null;
 
   const sportMeta = useMemo(() => getSport(state.sport), [state.sport]);
 
@@ -136,6 +144,15 @@ function ParentGoalsPage() {
             <p className="mt-2 text-sm text-text-secondary">
               Where {current.firstName} is now, and where you&apos;d like them to go.
             </p>
+            {suggestion ? (
+              <p className="mt-2 text-sm text-text-primary">
+                Suggested by{" "}
+                {suggestion.suggestedByCoachName
+                  ? `Coach ${suggestion.suggestedByCoachName}`
+                  : "your coach"}
+                . Change anything that doesn&apos;t fit.
+              </p>
+            ) : null}
 
             <div className="mt-8 space-y-5">
               {sports.length > 1 && (
@@ -143,9 +160,15 @@ function ParentGoalsPage() {
                   <Label>{code ? "Sport with this coach" : "Sport"}</Label>
                   <Select
                     value={state.sport}
-                    onValueChange={(v) =>
-                      update({ sport: v, currentLevelKey: "", seasonGoalKey: "" })
-                    }
+                    onValueChange={(v) => {
+                      const g = onFile.find((x) => x.sport === v);
+                      update({
+                        sport: v,
+                        currentLevelKey: g?.currentLevelKey ?? "",
+                        seasonGoalKey: g?.seasonGoalKey ?? "",
+                        longTermGoal: g?.longTermGoal ?? state.longTermGoal,
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pick a sport" />

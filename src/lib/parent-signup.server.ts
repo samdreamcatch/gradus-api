@@ -10,7 +10,12 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SPORT_KEYS } from "@/lib/coach-sports";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
+import {
+  currentGoalValues,
+  prefilledGoalsForAthletes,
+  recordGoalsChange,
+  type PrefilledGoal,
+} from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { checkRosterRoom } from "./roster-limits";
 
@@ -338,7 +343,23 @@ export async function linkAthletesToCoach(
   return { ok: true as const };
 }
 
-export type AthleteForCode = { id: string; firstName: string; lastName: string };
+/**
+ * A goal already on file for the athlete, so the goals step opens prefilled.
+ * `suggestedByCoachName` is set when the goal is a coach's starting levels
+ * from the invite (decision #60) that nobody in the family has changed yet;
+ * the client shows "Suggested by Coach <name>. Change anything that doesn't
+ * fit." `suggestedByCoach` stays true when the coach profile could not be
+ * resolved, so the copy can still fall back to "your coach".
+ */
+export type AthleteGoalPrefill = PrefilledGoal;
+
+export type AthleteForCode = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  /** Goals on file per sport (additive, 2026-10-27); empty for a brand-new athlete. */
+  goals: AthleteGoalPrefill[];
+};
 export type AthletesForCode = {
   coachId: string | null;
   athletes: AthleteForCode[];
@@ -348,7 +369,8 @@ export type AthletesForCode = {
 /**
  * `listAthletesForCode`: the parent's athletes linked to the coach behind
  * `code` and that coach's sports; without a code, every athlete and every
- * catalog sport.
+ * catalog sport. Each athlete carries the goals already on file, so the
+ * goals step can prefill a coach's starting levels (decision #60).
  */
 export async function listAthletesForCode(
   ctx: ParentContext,
@@ -365,12 +387,18 @@ export async function listAthletesForCode(
       .order("created_at", { ascending: true });
     if (athletesRes.error) dbError(athletesRes.error);
 
+    const rows = athletesRes.data ?? [];
+    const prefill = await prefilledGoalsForAthletes(
+      admin,
+      rows.map((a) => a.id),
+    );
     return {
       coachId: null,
-      athletes: (athletesRes.data ?? []).map((a) => ({
+      athletes: rows.map((a) => ({
         id: a.id,
         firstName: a.first_name,
         lastName: a.last_name,
+        goals: prefill.get(a.id) ?? [],
       })),
       sports: [...SPORT_KEYS] as string[],
     };
@@ -399,7 +427,7 @@ export async function listAthletesForCode(
   if (links.error) dbError(links.error);
   if (levels.error) dbError(levels.error);
 
-  const athletes = (links.data ?? [])
+  const mine = (links.data ?? [])
     .map(
       (l) =>
         l.athletes as unknown as {
@@ -409,8 +437,17 @@ export async function listAthletesForCode(
           parent_id: string;
         },
     )
-    .filter((a) => a.parent_id === parentId)
-    .map((a) => ({ id: a.id, firstName: a.first_name, lastName: a.last_name }));
+    .filter((a) => a.parent_id === parentId);
+  const prefill = await prefilledGoalsForAthletes(
+    admin,
+    mine.map((a) => a.id),
+  );
+  const athletes = mine.map((a) => ({
+    id: a.id,
+    firstName: a.first_name,
+    lastName: a.last_name,
+    goals: prefill.get(a.id) ?? [],
+  }));
 
   const sports = Array.from(new Set((levels.data ?? []).map((l) => l.sport)));
 

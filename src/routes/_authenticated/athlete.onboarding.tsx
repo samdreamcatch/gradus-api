@@ -32,6 +32,7 @@ import {
   linkAdultAthleteToCoach,
   listAdultAthleteCoaches,
   previewCoachForAdultAthlete,
+  getAdultAthleteGoals,
   saveAdultAthleteGoals,
 } from "@/lib/adult-athlete-signup.functions";
 import {
@@ -576,6 +577,14 @@ type GoalDraft = {
 
 function GoalsStep({ initialSports, onDone }: { initialSports: string[]; onDone: () => void }) {
   const saveGoals = useServerFn(saveAdultAthleteGoals);
+  const fetchGoals = useServerFn(getAdultAthleteGoals);
+  // Goals already on file — a coach's starting levels from the invite
+  // (decision #60) or an earlier save — so the step opens prefilled.
+  const onFileQuery = useQuery({
+    queryKey: ["adult-athlete-goals"],
+    queryFn: () => fetchGoals(),
+  });
+  const onFile = onFileQuery.data?.goals ?? [];
 
   // If the coach step gave us sports, use them; otherwise let the athlete
   // pick from the full catalog.
@@ -587,11 +596,13 @@ function GoalsStep({ initialSports, onDone }: { initialSports: string[]; onDone:
   const [saving, setSaving] = useState(false);
 
   const current = sports[index];
+  const prefill = onFile.find((g) => g.sport === current);
   const state: GoalDraft = byS[current ?? ""] ?? {
-    currentLevelKey: "",
-    seasonGoalKey: "",
-    longTermGoal: "",
+    currentLevelKey: prefill?.currentLevelKey ?? "",
+    seasonGoalKey: prefill?.seasonGoalKey ?? "",
+    longTermGoal: prefill?.longTermGoal ?? "",
   };
+  const suggestion = prefill?.suggestedByCoach ? prefill : null;
   const sportMeta = useMemo(() => (current ? getSport(current) : undefined), [current]);
 
   const update = (patch: Partial<GoalDraft>) => {
@@ -691,6 +702,15 @@ function GoalsStep({ initialSports, onDone }: { initialSports: string[]; onDone:
       <p className="mt-2 text-sm text-text-secondary">
         Where you are now, and where you&apos;d like to go.
       </p>
+      {suggestion ? (
+        <p className="mt-2 text-sm text-text-primary">
+          Suggested by{" "}
+          {suggestion.suggestedByCoachName
+            ? `Coach ${suggestion.suggestedByCoachName}`
+            : "your coach"}
+          . Change anything that doesn&apos;t fit.
+        </p>
+      ) : null}
 
       <div className="mt-6 space-y-5">
         <div className="space-y-2">

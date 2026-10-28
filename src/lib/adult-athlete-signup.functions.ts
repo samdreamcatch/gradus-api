@@ -14,6 +14,7 @@ import {
   linkAdultCoachInput,
   listAdultAthleteCoaches as listAdultAthleteCoachesShared,
   previewCoachForAdultAthlete as previewCoachForAdultAthleteShared,
+  getAdultAthleteGoals as getAdultAthleteGoalsShared,
   saveAdultAthleteGoals as saveAdultAthleteGoalsShared,
   unlinkAdultAthleteFromCoach as unlinkAdultAthleteFromCoachShared,
   updateAdultAthleteCoachSports as updateAdultAthleteCoachSportsShared,
@@ -73,6 +74,11 @@ export const getAdultOnboardingStatus = createServerFn({ method: "GET" })
       supabase: context.supabase as Client,
     }),
   );
+
+/** The caller's goals on file per sport, with the coach's suggestion flag (decision #60). */
+export const getAdultAthleteGoals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => getAdultAthleteGoalsShared(await adultContext(context)));
 
 /** Upsert a goal for the caller's self-managed athlete. */
 export const saveAdultAthleteGoals = createServerFn({ method: "POST" })

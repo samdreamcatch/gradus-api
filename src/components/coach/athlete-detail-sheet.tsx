@@ -360,7 +360,7 @@ function formatSportList(labels: string[]): string {
   return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
-type GoalAuthor = { role: "parent" | "athlete"; at: string };
+type GoalAuthor = { role: "parent" | "athlete" | "coach"; at: string };
 
 type GoalRow = {
   sport: string;
@@ -393,8 +393,9 @@ function GoalsList({
   athleteName: string;
   parentName?: string | null;
 }) {
-  const who = (role: "parent" | "athlete") =>
-    role === "athlete" ? athleteName : (parentName ?? "the parent");
+  // "coach" is the viewing coach's own starting levels from the invite (decision #60).
+  const who = (role: "parent" | "athlete" | "coach") =>
+    role === "coach" ? "you" : role === "athlete" ? athleteName : (parentName ?? "the parent");
   return (
     <ul className="mt-2 space-y-2">
       {goals.map((g) => (
