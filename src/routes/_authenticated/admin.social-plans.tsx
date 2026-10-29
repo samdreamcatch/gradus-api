@@ -467,7 +467,8 @@ function SocialPlansPage() {
             <SheetHeader>
               <SheetTitle>Improve every move</SheetTitle>
               <SheetDescription>
-                AI rewrites each move using your instructions. Nothing saves until you save the plan.
+                AI rewrites each move using your instructions. Nothing saves until you save the
+                plan.
               </SheetDescription>
             </SheetHeader>
             <div className="px-4">

@@ -541,7 +541,7 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
       data.notes ? `Intro note: ${data.notes}` : "",
       `Instruction from the editor: ${data.prompt}`,
       "Rewrite every move following that instruction. Keep the same number and order of moves unless the instruction says otherwise (max 12). Never include athlete names.",
-      "Limits: name ≤120 chars, description ≤600, cue ≤300, why ≤300. targetKind is \"reps\" or \"mins\"; targetValue is a number 1–600.",
+      'Limits: name ≤120 chars, description ≤600, cue ≤300, why ≤300. targetKind is "reps" or "mins"; targetValue is a number 1–600.',
       'Respond with ONLY a JSON object: {"moves":[{"name","description","cue","why","targetKind","targetValue"}]}.',
       `Current moves (JSON): ${JSON.stringify(data.moves)}`,
     ]
