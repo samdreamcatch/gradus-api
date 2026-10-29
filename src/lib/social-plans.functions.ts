@@ -20,7 +20,16 @@ type SocialDatabase = Omit<Database, "public"> & {
       };
     };
     Functions: Database["public"]["Functions"] & {
-      admin_update_social_plan: { Args: { _plan_id: string; _title: string; _notes: string; _coach_name: string; _moves: Json }; Returns: undefined };
+      admin_update_social_plan: {
+        Args: {
+          _plan_id: string;
+          _title: string;
+          _notes: string;
+          _coach_name: string;
+          _moves: Json;
+        };
+        Returns: undefined;
+      };
     };
   };
 };
@@ -178,10 +187,22 @@ Respond with ONLY a JSON object with EXACTLY these top-level keys:
 ${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}` : ""}`;
 
     const lenientMove = z.object({
-      name: z.string().min(1).transform((s) => s.slice(0, 120)),
-      description: z.string().default("").transform((s) => s.slice(0, 600)),
-      cue: z.string().default("").transform((s) => s.slice(0, 300)),
-      why: z.string().default("").transform((s) => s.slice(0, 300)),
+      name: z
+        .string()
+        .min(1)
+        .transform((s) => s.slice(0, 120)),
+      description: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 600)),
+      cue: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 300)),
+      why: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 300)),
       targetKind: z.preprocess(
         (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
         z.enum(["reps", "mins"]),
@@ -192,9 +213,18 @@ ${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}
       }, z.number()),
     });
     const schema = z.object({
-      title: z.string().min(1).transform((s) => s.slice(0, 120)),
-      notes: z.string().default("").transform((s) => s.slice(0, 600)),
-      moves: z.array(lenientMove).min(1).transform((a) => a.slice(0, 8)),
+      title: z
+        .string()
+        .min(1)
+        .transform((s) => s.slice(0, 120)),
+      notes: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 600)),
+      moves: z
+        .array(lenientMove)
+        .min(1)
+        .transform((a) => a.slice(0, 8)),
     });
 
     const content: any[] = [{ type: "text", text: prompt }];
@@ -351,37 +381,60 @@ export const adminGetSocialPlan = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const plan = await socialClient(supabaseAdmin).from("plans")
-      .select("id, title, notes, social_coach_name, kind, source, coach_id, athlete_id, share_token")
-      .eq("id", data.planId).maybeSingle();
+    const plan = await socialClient(supabaseAdmin)
+      .from("plans")
+      .select(
+        "id, title, notes, social_coach_name, kind, source, coach_id, athlete_id, share_token",
+      )
+      .eq("id", data.planId)
+      .maybeSingle();
     if (plan.error) dbError(plan.error);
     if (!plan.data || !isAdminSocialPlan(plan.data)) throw new Error("Plan not found.");
-    const moves = await supabaseAdmin.from("plan_moves")
+    const moves = await supabaseAdmin
+      .from("plan_moves")
       .select("name, description, cue, why, target_kind, target_value")
-      .eq("plan_id", data.planId).order("position");
+      .eq("plan_id", data.planId)
+      .order("position");
     if (moves.error) dbError(moves.error);
     return {
-      title: plan.data.title, notes: plan.data.notes, coachName: plan.data.social_coach_name,
+      title: plan.data.title,
+      notes: plan.data.notes,
+      coachName: plan.data.social_coach_name,
       token: plan.data.share_token,
-      moves: (moves.data ?? []).map((m) => moveSchema.parse({
-        name: m.name, description: m.description ?? "", cue: m.cue ?? "", why: m.why ?? "",
-        targetKind: m.target_kind, targetValue: m.target_value,
-      })),
+      moves: (moves.data ?? []).map((m) =>
+        moveSchema.parse({
+          name: m.name,
+          description: m.description ?? "",
+          cue: m.cue ?? "",
+          why: m.why ?? "",
+          targetKind: m.target_kind,
+          targetValue: m.target_value,
+        }),
+      ),
     };
   });
 
 export const adminUpdateSocialPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({
-    planId: z.string().uuid(), title: z.string().trim().min(1).max(140),
-    notes: z.string().max(1000), coachName: z.string().trim().max(120),
-    moves: z.array(moveSchema).min(1).max(12),
-  }).parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        title: z.string().trim().min(1).max(140),
+        notes: z.string().max(1000),
+        coachName: z.string().trim().max(120),
+        moves: z.array(moveSchema).min(1).max(12),
+      })
+      .parse(input),
+  )
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { error } = await socialClient(context.supabase).rpc("admin_update_social_plan", {
-      _plan_id: data.planId, _title: data.title, _notes: data.notes,
-      _coach_name: data.coachName, _moves: data.moves,
+      _plan_id: data.planId,
+      _title: data.title,
+      _notes: data.notes,
+      _coach_name: data.coachName,
+      _moves: data.moves,
     });
     if (error) dbError(error);
     return { ok: true };

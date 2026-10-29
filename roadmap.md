@@ -13,4 +13,5 @@
 - [x] Build People with existing coach roster, sports, levels, CSV export and policy detail; verified Buddy's roster/detail/search. Policy read-back waits on draft acceptance.
 - [ ] Add People credentials and expiry tracking next; Communications, Cases and campaigns remain later milestones.
 
-- [ ] Social plans: edit published plans and coach attribution; repair share-link copy.
+- [x] Social plans: implement published-plan editing and coach attribution with stable links; clipboard fallbacks verified signed in.
+- [ ] Verify social-plan edit/save and public coach-name read-back after draft acceptance (requires staged attribution column and transactional update).

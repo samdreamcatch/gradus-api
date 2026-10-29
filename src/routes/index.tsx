@@ -6,14 +6,22 @@ import { getMyRole } from "@/lib/parent-signup.functions";
 import { checkIsAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [
-    { title: "Gradus — Practice plans for coaches and athletes" },
-    { name: "description", content: "Connect coaches, athletes and families through Gradus practice plans." },
-    { property: "og:title", content: "Gradus — Practice plans for coaches and athletes" },
-    { property: "og:description", content: "Connect coaches, athletes and families through Gradus practice plans." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Gradus — Practice plans for coaches and athletes" },
+      {
+        name: "description",
+        content: "Connect coaches, athletes and families through Gradus practice plans.",
+      },
+      { property: "og:title", content: "Gradus — Practice plans for coaches and athletes" },
+      {
+        property: "og:description",
+        content: "Connect coaches, athletes and families through Gradus practice plans.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) return;

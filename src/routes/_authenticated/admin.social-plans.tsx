@@ -30,14 +30,19 @@ import {
 } from "@/lib/social-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/social-plans")({
-  head: () => ({ meta: [
-    { title: "Social plans — Gradus Admin" },
-    { name: "description", content: "Create and edit Gradus shared practice plans and coach attribution." },
-    { property: "og:title", content: "Social plans — Gradus Admin" },
-    { property: "og:description", content: "Manage Gradus shared practice plans." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Social plans — Gradus Admin" },
+      {
+        name: "description",
+        content: "Create and edit Gradus shared practice plans and coach attribution.",
+      },
+      { property: "og:title", content: "Social plans — Gradus Admin" },
+      { property: "og:description", content: "Manage Gradus shared practice plans." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SocialPlansPage,
 });
 
@@ -185,10 +190,14 @@ function SocialPlansPage() {
     setSaving(true);
     try {
       if (editingId) {
-        await updateFn({ data: { planId: editingId, title: title.trim(), notes, coachName, moves: clean } });
+        await updateFn({
+          data: { planId: editingId, title: title.trim(), notes, coachName, moves: clean },
+        });
         toast.success("Plan updated");
       } else {
-        const res = await createFn({ data: { title: title.trim(), notes, coachName, moves: clean } });
+        const res = await createFn({
+          data: { title: title.trim(), notes, coachName, moves: clean },
+        });
         await copy(`${SITE_ORIGIN}/p/${res.token}`);
       }
       resetEditor();
@@ -293,7 +302,12 @@ function SocialPlansPage() {
             />
           </div>
           <div className="flex items-end">
-            <Button type="button" onClick={handleDraft} disabled={drafting || saving || Boolean(editingId)} className="w-full">
+            <Button
+              type="button"
+              onClick={handleDraft}
+              disabled={drafting || saving || Boolean(editingId)}
+              className="w-full"
+            >
               <Sparkles className="size-4" />
               {drafting ? "Drafting…" : "Draft with AI"}
             </Button>
@@ -302,7 +316,9 @@ function SocialPlansPage() {
       </section>
 
       <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
-        <h2 className="font-display text-h3 text-text-primary">Or draft from a competition result</h2>
+        <h2 className="font-display text-h3 text-text-primary">
+          Or draft from a competition result
+        </h2>
         <div className="space-y-1.5">
           <Label htmlFor="result-file">Result image or PDF</Label>
           <Input
@@ -335,12 +351,25 @@ function SocialPlansPage() {
 
       <section id="plan-editor" className="rounded-2xl border border-divider bg-card p-5 space-y-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-h3 text-text-primary">{editingId ? "Edit published plan" : "2. Edit the plan"}</h2>
-          {editingId ? <Button variant="ghost" size="sm" onClick={resetEditor} disabled={saving}><X className="size-4" />Cancel</Button> : null}
+          <h2 className="font-display text-h3 text-text-primary">
+            {editingId ? "Edit published plan" : "2. Edit the plan"}
+          </h2>
+          {editingId ? (
+            <Button variant="ghost" size="sm" onClick={resetEditor} disabled={saving}>
+              <X className="size-4" />
+              Cancel
+            </Button>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="coach-name">Coach name</Label>
-          <Input id="coach-name" value={coachName} onChange={(e) => setCoachName(e.target.value)} maxLength={120} placeholder="A Gradus coach" />
+          <Input
+            id="coach-name"
+            value={coachName}
+            onChange={(e) => setCoachName(e.target.value)}
+            maxLength={120}
+            placeholder="A Gradus coach"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="plan-title">Title</Label>
@@ -454,13 +483,17 @@ function SocialPlansPage() {
         </div>
       </section>
 
-      {shareUrl ? <div className="space-y-2">
-        <Label htmlFor="share-url">Share link</Label>
-        <div className="flex gap-2">
-          <Input id="share-url" value={shareUrl} readOnly onFocus={(e) => e.target.select()} />
-          <Button variant="secondary" onClick={() => copy(shareUrl)} aria-label="Copy share link"><Copy className="size-4" /></Button>
+      {shareUrl ? (
+        <div className="space-y-2">
+          <Label htmlFor="share-url">Share link</Label>
+          <div className="flex gap-2">
+            <Input id="share-url" value={shareUrl} readOnly onFocus={(e) => e.target.select()} />
+            <Button variant="secondary" onClick={() => copy(shareUrl)} aria-label="Copy share link">
+              <Copy className="size-4" />
+            </Button>
+          </div>
         </div>
-      </div> : null}
+      ) : null}
 
       <section className="rounded-2xl border border-divider bg-card p-5">
         <h2 className="font-display text-h3 text-text-primary mb-3">
@@ -483,8 +516,15 @@ function SocialPlansPage() {
                   </span>
                 </span>
                 <span className="flex items-center gap-2">
-                  <Button type="button" variant="secondary" size="sm" disabled={saving || loadingId !== null} onClick={() => handleEdit(p.id)}>
-                    <Pencil className="size-4" />{loadingId === p.id ? "Opening…" : "Edit"}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={saving || loadingId !== null}
+                    onClick={() => handleEdit(p.id)}
+                  >
+                    <Pencil className="size-4" />
+                    {loadingId === p.id ? "Opening…" : "Edit"}
                   </Button>
                   <Button
                     type="button"
