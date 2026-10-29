@@ -447,6 +447,41 @@ export const adminUpdateSocialPlan = createServerFn({ method: "POST" })
       _coach_name: data.coachName,
       _moves: data.moves,
     });
-    if (error) dbError(error);
+    if (!error) return { ok: true };
+    // The staged update function may not exist yet; save directly instead.
+    if (error.code !== "PGRST202") dbError(error);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const existing = await supabaseAdmin
+      .from("plans")
+      .select("id, kind, source, coach_id, athlete_id, share_token")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+    if (!existing.data || !isAdminSocialPlan(existing.data)) throw new Error("Plan not found.");
+    const upd = await supabaseAdmin
+      .from("plans")
+      .update({ title: data.title.trim(), notes: data.notes.trim() })
+      .eq("id", data.planId);
+    if (upd.error) dbError(upd.error);
+    // Best effort: only succeeds once the coach-name column exists.
+    await socialClient(supabaseAdmin)
+      .from("plans")
+      .update({ social_coach_name: data.coachName.trim() })
+      .eq("id", data.planId);
+    const del = await supabaseAdmin.from("plan_moves").delete().eq("plan_id", data.planId);
+    if (del.error) dbError(del.error);
+    const ins = await supabaseAdmin.from("plan_moves").insert(
+      data.moves.map((m, i) => ({
+        plan_id: data.planId,
+        position: i + 1,
+        name: m.name.trim(),
+        description: m.description.trim(),
+        cue: m.cue.trim(),
+        why: m.why.trim(),
+        target_kind: m.targetKind,
+        target_value: m.targetValue,
+      })),
+    );
+    if (ins.error) dbError(ins.error);
     return { ok: true };
   });

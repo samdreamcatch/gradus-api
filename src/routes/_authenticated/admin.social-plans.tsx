@@ -422,21 +422,26 @@ function SocialPlansPage() {
                 placeholder="How to do it"
                 rows={2}
                 maxLength={600}
+                className="field-sizing-content min-h-16 resize-y"
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  value={m.cue}
-                  onChange={(e) => patchMove(i, { cue: e.target.value })}
-                  placeholder="Coaching cue"
-                  maxLength={300}
-                />
-                <Input
-                  value={m.why}
-                  onChange={(e) => patchMove(i, { why: e.target.value })}
-                  placeholder="Why it matters"
-                  maxLength={300}
-                />
-              </div>
+              <Textarea
+                value={m.cue}
+                onChange={(e) => patchMove(i, { cue: e.target.value })}
+                placeholder="Coaching cue"
+                aria-label="Coaching cue"
+                rows={2}
+                maxLength={300}
+                className="field-sizing-content min-h-16 resize-y"
+              />
+              <Textarea
+                value={m.why}
+                onChange={(e) => patchMove(i, { why: e.target.value })}
+                placeholder="Why it matters"
+                aria-label="Why it matters"
+                rows={2}
+                maxLength={300}
+                className="field-sizing-content min-h-16 resize-y"
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select
                   value={m.targetKind}
