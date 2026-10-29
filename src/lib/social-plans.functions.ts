@@ -485,3 +485,77 @@ export const adminUpdateSocialPlan = createServerFn({ method: "POST" })
     if (ins.error) dbError(ins.error);
     return { ok: true };
   });
+
+/** AI rewrite of every move in a social plan, following an admin prompt. */
+export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(60),
+        level: z.string().max(60).default(""),
+        title: z.string().max(140).default(""),
+        notes: z.string().max(1000).default(""),
+        prompt: z.string().trim().min(1).max(1000),
+        moves: z.array(moveSchema).min(1).max(12),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const clip = (n: number) =>
+      z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, n));
+    const schema = z.object({
+      moves: z
+        .array(
+          z.object({
+            name: z
+              .string()
+              .min(1)
+              .transform((s) => s.slice(0, 120)),
+            description: clip(600),
+            cue: clip(300),
+            why: clip(300),
+            targetKind: z.preprocess(
+              (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
+              z.enum(["reps", "mins"]),
+            ),
+            targetValue: z.preprocess((v) => {
+              const n = Math.round(Number(v));
+              return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
+            }, z.number()),
+          }),
+        )
+        .min(1)
+        .transform((a) => a.slice(0, 12)),
+    });
+    const prompt = [
+      `You are an expert ${data.sport} coach improving a shareable practice plan${data.level ? ` for level ${data.level}` : ""}.`,
+      data.title ? `Plan title: ${data.title}` : "",
+      data.notes ? `Intro note: ${data.notes}` : "",
+      `Instruction from the editor: ${data.prompt}`,
+      "Rewrite every move following that instruction. Keep the same number and order of moves unless the instruction says otherwise (max 12). Never include athlete names.",
+      "Limits: name ≤120 chars, description ≤600, cue ≤300, why ≤300. targetKind is \"reps\" or \"mins\"; targetValue is a number 1–600.",
+      'Respond with ONLY a JSON object: {"moves":[{"name","description","cue","why","targetKind","targetValue"}]}.',
+      `Current moves (JSON): ${JSON.stringify(data.moves)}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-3.8-flash"),
+        schema,
+        prompt,
+      });
+      return { moves: object.moves as SocialPlanMoveInput[] };
+    } catch (err) {
+      console.error("[social-plans improve]", err);
+      throw new Error("Could not improve the moves. Please try again.");
+    }
+  });
