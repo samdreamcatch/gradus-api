@@ -3,7 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Sparkles, Pencil, Copy, Save, X } from "lucide-react";
+import { copyText } from "@/lib/copy-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +24,20 @@ import {
   adminCreateSocialPlan,
   adminListSocialPlans,
   adminDeleteSocialPlan,
+  adminGetSocialPlan,
+  adminUpdateSocialPlan,
   type SocialPlanMoveInput,
 } from "@/lib/social-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/social-plans")({
+  head: () => ({ meta: [
+    { title: "Social plans — Gradus Admin" },
+    { name: "description", content: "Create and edit Gradus shared practice plans and coach attribution." },
+    { property: "og:title", content: "Social plans — Gradus Admin" },
+    { property: "og:description", content: "Manage Gradus shared practice plans." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SocialPlansPage,
 });
 
@@ -46,6 +57,8 @@ function SocialPlansPage() {
   const createFn = useServerFn(adminCreateSocialPlan);
   const listFn = useServerFn(adminListSocialPlans);
   const deleteFn = useServerFn(adminDeleteSocialPlan);
+  const getFn = useServerFn(adminGetSocialPlan);
+  const updateFn = useServerFn(adminUpdateSocialPlan);
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -59,6 +72,10 @@ function SocialPlansPage() {
   const [moveCount, setMoveCount] = useState(4);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [coachName, setCoachName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
   const [moves, setMoves] = useState<SocialPlanMoveInput[]>([emptyMove()]);
   const [drafting, setDrafting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,11 +91,37 @@ function SocialPlansPage() {
     setMoves((prev) => prev.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
 
   const copy = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
+    setShareUrl(url);
+    if (await copyText(url)) {
       toast.success("Share link copied", { description: url });
-    } catch {
-      toast.success("Share link", { description: url });
+    } else {
+      toast.error("Copy is blocked by your browser. Select the share link to copy it.");
+    }
+  };
+
+  const resetEditor = () => {
+    setEditingId(null);
+    setTitle("");
+    setNotes("");
+    setCoachName("");
+    setMoves([emptyMove()]);
+  };
+
+  const handleEdit = async (planId: string) => {
+    setLoadingId(planId);
+    try {
+      const plan = await getFn({ data: { planId } });
+      setEditingId(planId);
+      setTitle(plan.title);
+      setNotes(plan.notes);
+      setCoachName(plan.coachName);
+      setMoves(plan.moves);
+      document.getElementById("plan-editor")?.scrollIntoView({ block: "start" });
+      document.getElementById("plan-title")?.focus({ preventScroll: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not open the plan");
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -141,11 +184,14 @@ function SocialPlansPage() {
     }
     setSaving(true);
     try {
-      const res = await createFn({ data: { title: title.trim(), notes, moves: clean } });
-      await copy(`${SITE_ORIGIN}/p/${res.token}`);
-      setTitle("");
-      setNotes("");
-      setMoves([emptyMove()]);
+      if (editingId) {
+        await updateFn({ data: { planId: editingId, title: title.trim(), notes, coachName, moves: clean } });
+        toast.success("Plan updated");
+      } else {
+        const res = await createFn({ data: { title: title.trim(), notes, coachName, moves: clean } });
+        await copy(`${SITE_ORIGIN}/p/${res.token}`);
+      }
+      resetEditor();
       setFocus("");
       await qc.invalidateQueries({ queryKey: ["admin-social-plans"] });
     } catch (err) {
@@ -158,6 +204,7 @@ function SocialPlansPage() {
   const handleDelete = async (planId: string) => {
     try {
       await deleteFn({ data: { planId } });
+      if (editingId === planId) resetEditor();
       await qc.invalidateQueries({ queryKey: ["admin-social-plans"] });
       toast.success("Plan deleted");
     } catch (err) {
@@ -246,7 +293,7 @@ function SocialPlansPage() {
             />
           </div>
           <div className="flex items-end">
-            <Button type="button" onClick={handleDraft} disabled={drafting} className="w-full">
+            <Button type="button" onClick={handleDraft} disabled={drafting || saving || Boolean(editingId)} className="w-full">
               <Sparkles className="size-4" />
               {drafting ? "Drafting…" : "Draft with AI"}
             </Button>
@@ -279,15 +326,22 @@ function SocialPlansPage() {
         <Button
           type="button"
           onClick={handleDraftFromResult}
-          disabled={drafting || (!resultFile && !resultText.trim())}
+          disabled={drafting || saving || Boolean(editingId) || (!resultFile && !resultText.trim())}
         >
           <Sparkles className="size-4" />
           {drafting ? "Reading result…" : `Draft ${sportLabel} plan from result`}
         </Button>
       </section>
 
-      <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
-        <h2 className="font-display text-h3 text-text-primary">2. Edit the plan</h2>
+      <section id="plan-editor" className="rounded-2xl border border-divider bg-card p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-h3 text-text-primary">{editingId ? "Edit published plan" : "2. Edit the plan"}</h2>
+          {editingId ? <Button variant="ghost" size="sm" onClick={resetEditor} disabled={saving}><X className="size-4" />Cancel</Button> : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="coach-name">Coach name</Label>
+          <Input id="coach-name" value={coachName} onChange={(e) => setCoachName(e.target.value)} maxLength={120} placeholder="A Gradus coach" />
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="plan-title">Title</Label>
           <Input
@@ -394,10 +448,19 @@ function SocialPlansPage() {
 
         <div className="pt-2">
           <Button type="button" onClick={handleCreate} disabled={saving}>
-            {saving ? "Publishing…" : "Publish & copy share link"}
+            <Save className="size-4" />
+            {saving ? "Saving…" : editingId ? "Save changes" : "Publish & copy share link"}
           </Button>
         </div>
       </section>
+
+      {shareUrl ? <div className="space-y-2">
+        <Label htmlFor="share-url">Share link</Label>
+        <div className="flex gap-2">
+          <Input id="share-url" value={shareUrl} readOnly onFocus={(e) => e.target.select()} />
+          <Button variant="secondary" onClick={() => copy(shareUrl)} aria-label="Copy share link"><Copy className="size-4" /></Button>
+        </div>
+      </div> : null}
 
       <section className="rounded-2xl border border-divider bg-card p-5">
         <h2 className="font-display text-h3 text-text-primary mb-3">
@@ -420,12 +483,16 @@ function SocialPlansPage() {
                   </span>
                 </span>
                 <span className="flex items-center gap-2">
+                  <Button type="button" variant="secondary" size="sm" disabled={saving || loadingId !== null} onClick={() => handleEdit(p.id)}>
+                    <Pencil className="size-4" />{loadingId === p.id ? "Opening…" : "Edit"}
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
                     size="sm"
                     onClick={() => copy(`${SITE_ORIGIN}/p/${p.shareToken}`)}
                   >
+                    <Copy className="size-4" />
                     Copy share link
                   </Button>
                   <Button
