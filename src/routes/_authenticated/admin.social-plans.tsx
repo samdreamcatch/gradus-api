@@ -11,6 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +34,7 @@ import {
   adminDeleteSocialPlan,
   adminGetSocialPlan,
   adminUpdateSocialPlan,
+  adminImproveSocialPlanMoves,
   type SocialPlanMoveInput,
 } from "@/lib/social-plans.functions";
 
@@ -47,6 +56,9 @@ export const Route = createFileRoute("/_authenticated/admin/social-plans")({
 });
 
 const SITE_ORIGIN = "https://gradus.training";
+
+const DEFAULT_IMPROVE_PROMPT =
+  "Make every move clearer and more coachable: tighten the how-to, sharpen the cue, and explain why it matters for this sport and level.";
 
 const emptyMove = (): SocialPlanMoveInput => ({
   name: "",
@@ -87,6 +99,33 @@ function SocialPlansPage() {
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [resultText, setResultText] = useState("");
   const draftFromResultFn = useServerFn(adminDraftSocialPlanFromResult);
+  const improveFn = useServerFn(adminImproveSocialPlanMoves);
+  const [improveOpen, setImproveOpen] = useState(false);
+  const [improvePrompt, setImprovePrompt] = useState(DEFAULT_IMPROVE_PROMPT);
+  const [improving, setImproving] = useState(false);
+  const [previousMoves, setPreviousMoves] = useState<SocialPlanMoveInput[] | null>(null);
+
+  const improveMoves = async () => {
+    const valid = moves.filter((m) => m.name.trim());
+    if (valid.length === 0) {
+      toast.error("Add at least one move with a name first.");
+      return;
+    }
+    setImproving(true);
+    try {
+      const res = await improveFn({
+        data: { sport: sportLabel, level, title, notes, prompt: improvePrompt, moves: valid },
+      });
+      setPreviousMoves(moves);
+      setMoves(res.moves);
+      setImproveOpen(false);
+      toast.success("Moves improved. Review, then save.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not improve the moves.");
+    } finally {
+      setImproving(false);
+    }
+  };
 
   const sportObj = SPORTS.find((s) => s.key === sport);
   const sportLabel = sportObj?.label ?? sport;
@@ -391,6 +430,69 @@ function SocialPlansPage() {
             maxLength={1000}
           />
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+            Moves
+          </Eyebrow>
+          <div className="flex gap-2">
+            {previousMoves && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="press"
+                onClick={() => {
+                  setMoves(previousMoves);
+                  setPreviousMoves(null);
+                }}
+              >
+                Undo
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="press"
+              onClick={() => setImproveOpen(true)}
+            >
+              <Sparkles className="size-4" />
+              Improve moves with AI
+            </Button>
+          </div>
+        </div>
+        <Sheet open={improveOpen} onOpenChange={setImproveOpen}>
+          <SheetContent side="bottom" className="paper-surface">
+            <SheetHeader>
+              <SheetTitle>Improve every move</SheetTitle>
+              <SheetDescription>
+                AI rewrites each move using your instructions. Nothing saves until you save the plan.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="px-4">
+              <Textarea
+                aria-label="Instructions for AI"
+                value={improvePrompt}
+                onChange={(e) => setImprovePrompt(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="field-sizing-content min-h-24"
+              />
+            </div>
+            <SheetFooter>
+              <Button
+                type="button"
+                className="press"
+                onClick={improveMoves}
+                disabled={improving || !improvePrompt.trim()}
+              >
+                <Sparkles className="size-4" />
+                {improving ? "Improving…" : "Improve"}
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
 
         <div className="space-y-4">
           {moves.map((m, i) => (
