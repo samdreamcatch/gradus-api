@@ -5,6 +5,26 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
+import { isAdminSocialPlan } from "./social-plan-rules";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+// Draft-local schema extension; generated database types remain untouched.
+type SocialDatabase = Omit<Database, "public"> & {
+  public: Omit<Database["public"], "Tables" | "Functions"> & {
+    Tables: Omit<Database["public"]["Tables"], "plans"> & {
+      plans: Omit<Database["public"]["Tables"]["plans"], "Row" | "Insert" | "Update"> & {
+        Row: Database["public"]["Tables"]["plans"]["Row"] & { social_coach_name: string };
+        Insert: Database["public"]["Tables"]["plans"]["Insert"] & { social_coach_name?: string };
+        Update: Database["public"]["Tables"]["plans"]["Update"] & { social_coach_name?: string };
+      };
+    };
+    Functions: Database["public"]["Functions"] & {
+      admin_update_social_plan: { Args: { _plan_id: string; _title: string; _notes: string; _coach_name: string; _moves: Database["public"]["Tables"]["plans"]["Row"] extends never ? never : import("@/integrations/supabase/types").Json }; Returns: undefined };
+    };
+  };
+};
+const socialClient = (client: unknown) => client as SupabaseClient<SocialDatabase>;
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -34,6 +54,7 @@ export interface SocialPlanRow {
   moveCount: number;
   shareToken: string | null;
   createdAt: string;
+  coachName: string;
 }
 
 /** AI first draft of a shareable plan for any sport. */
@@ -130,7 +151,9 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
       if (!m || !(RESULT_FILE_TYPES as readonly string[]).includes(mediaType)) {
         throw new Error("Upload a JPG, PNG, WebP, or PDF.");
       }
-      file = { bytes: Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0)), mediaType };
+      const encoded = m[2];
+      if (!encoded) throw new Error("Upload a valid image or PDF.");
+      file = { bytes: Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)), mediaType };
     }
 
     const sport = sanitizeUserContent(data.sport, 60);
@@ -205,6 +228,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
       .object({
         title: z.string().min(1).max(140),
         notes: z.string().max(1000).default(""),
+        coachName: z.string().max(120).default(""),
         moves: z.array(moveSchema).min(1).max(12),
       })
       .parse(input),
@@ -217,7 +241,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
     crypto.getRandomValues(buf);
     const token = Array.from(buf, (b) => b.toString(36).padStart(2, "0")).join("");
 
-    const ins = await supabaseAdmin
+    const ins = await socialClient(supabaseAdmin)
       .from("plans")
       .insert({
         kind: "template",
@@ -227,6 +251,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
         athlete_id: null,
         title: data.title.trim(),
         notes: data.notes.trim(),
+        social_coach_name: data.coachName.trim(),
         share_token: token,
         shared_at: new Date().toISOString(),
       })
@@ -234,7 +259,8 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
       .single();
     if (ins.error) dbError(ins.error);
 
-    const planId = ins.data!.id;
+    if (!ins.data) throw new Error("Could not create the plan.");
+    const planId = ins.data.id;
     const rows = data.moves.map((m, i) => ({
       plan_id: planId,
       position: i + 1,
@@ -261,9 +287,9 @@ export const adminListSocialPlans = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const res = await supabaseAdmin
+    const res = await socialClient(supabaseAdmin)
       .from("plans")
-      .select("id, title, notes, share_token, created_at")
+      .select("id, title, notes, share_token, created_at, social_coach_name")
       .eq("kind", "template")
       .eq("source", "gradus")
       .is("coach_id", null)
@@ -291,6 +317,7 @@ export const adminListSocialPlans = createServerFn({ method: "GET" })
         moveCount: counts.get(p.id) ?? 0,
         shareToken: p.share_token,
         createdAt: p.created_at,
+        coachName: p.social_coach_name,
       })),
     };
   });
@@ -305,17 +332,59 @@ export const adminDeleteSocialPlan = createServerFn({ method: "POST" })
 
     const plan = await supabaseAdmin
       .from("plans")
-      .select("id, kind, source, coach_id, athlete_id")
+      .select("id, kind, source, coach_id, athlete_id, share_token")
       .eq("id", data.planId)
       .maybeSingle();
     if (plan.error) dbError(plan.error);
     if (!plan.data) throw new Error("Plan not found.");
-    if (plan.data.kind !== "template" || plan.data.coach_id || plan.data.athlete_id) {
+    if (!isAdminSocialPlan(plan.data)) {
       throw new Error("Only admin-created social plans can be deleted here.");
     }
 
     await supabaseAdmin.from("plan_moves").delete().eq("plan_id", data.planId);
     const del = await supabaseAdmin.from("plans").delete().eq("id", data.planId);
     if (del.error) dbError(del.error);
+    return { ok: true };
+  });
+
+export const adminGetSocialPlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const plan = await socialClient(supabaseAdmin).from("plans")
+      .select("id, title, notes, social_coach_name, kind, source, coach_id, athlete_id, share_token")
+      .eq("id", data.planId).maybeSingle();
+    if (plan.error) dbError(plan.error);
+    if (!plan.data || !isAdminSocialPlan(plan.data)) throw new Error("Plan not found.");
+    const moves = await supabaseAdmin.from("plan_moves")
+      .select("name, description, cue, why, target_kind, target_value")
+      .eq("plan_id", data.planId).order("position");
+    if (moves.error) dbError(moves.error);
+    return {
+      title: plan.data.title, notes: plan.data.notes, coachName: plan.data.social_coach_name,
+      token: plan.data.share_token,
+      moves: (moves.data ?? []).map((m) => moveSchema.parse({
+        name: m.name, description: m.description ?? "", cue: m.cue ?? "", why: m.why ?? "",
+        targetKind: m.target_kind, targetValue: m.target_value,
+      })),
+    };
+  });
+
+export const adminUpdateSocialPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({
+    planId: z.string().uuid(), title: z.string().trim().min(1).max(140),
+    notes: z.string().max(1000), coachName: z.string().trim().max(120),
+    moves: z.array(moveSchema).min(1).max(12),
+  }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { error } = await socialClient(context.supabase).rpc("admin_update_social_plan", {
+      _plan_id: data.planId, _title: data.title, _notes: data.notes,
+      _coach_name: data.coachName, _moves: data.moves,
+    });
+    if (error) dbError(error);
     return { ok: true };
   });
