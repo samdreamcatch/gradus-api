@@ -97,6 +97,87 @@ Be specific to ${sport}. Never invent medical claims.`;
     }
   });
 
+const RESULT_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+
+/** AI first draft of a shareable plan from a competition result (image, PDF, or pasted text). */
+export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(60),
+        text: z.string().max(20000).optional().default(""),
+        fileDataUrl: z
+          .string()
+          .max(14_000_000)
+          .refine((v) => v.startsWith("data:"), "Upload an image or PDF")
+          .optional(),
+        moveCount: z.number().int().min(2).max(8).default(4),
+      })
+      .refine((v) => v.text.trim() || v.fileDataUrl, "Add a result file or paste the result text")
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+
+    let file: { bytes: Uint8Array; mediaType: string } | null = null;
+    if (data.fileDataUrl) {
+      const m = /^data:([^;,]+);base64,(.*)$/s.exec(data.fileDataUrl);
+      const mediaType = m?.[1]?.toLowerCase() ?? "";
+      if (!m || !(RESULT_FILE_TYPES as readonly string[]).includes(mediaType)) {
+        throw new Error("Upload a JPG, PNG, WebP, or PDF.");
+      }
+      file = { bytes: Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0)), mediaType };
+    }
+
+    const sport = sanitizeUserContent(data.sport, 60);
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are a ${sport} coach. Below is a competition result (judges' protocol, score sheet, or results text) — attached as a file and/or pasted. Write a practice plan that will be shared publicly by Gradus as an example of turning results into training.
+
+Write exactly ${data.moveCount} practice moves that target exactly what the result shows lost points or value (e.g. negative GOE, underrotations, falls, low components, missed shots, slow splits). Do not invent problems the result does not show. Never include any athlete's name, club, or other identifying detail — refer to "the athlete".
+For each move give:
+- name: short and specific (max 6 words)
+- description: 1-2 sentences on how to practise it
+- cue: one short cue the athlete can repeat
+- why: one sentence tying it to the result (name the element or component)
+- targetKind: "reps" or "mins"
+- targetValue: a realistic number
+
+Also write a plan title (max 8 words, no emoji, no names) and a 1-2 sentence intro note summarising the takeaway.
+${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}` : ""}`;
+
+    const schema = z.object({
+      title: z.string().min(1).max(120),
+      notes: z.string().max(600),
+      moves: z.array(moveSchema).min(1).max(8),
+    });
+
+    const content: any[] = [{ type: "text", text: prompt }];
+    if (file) {
+      content.push(
+        file.mediaType === "application/pdf"
+          ? { type: "file", data: file.bytes, mediaType: file.mediaType }
+          : { type: "image", image: file.bytes, mediaType: file.mediaType },
+      );
+    }
+
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-2.5-flash"),
+        schema,
+        messages: [{ role: "user", content }],
+      });
+      return object;
+    } catch (err) {
+      console.error("[social-plans result draft]", err);
+      throw new Error("Could not read that result. Try a clearer image or paste the text.");
+    }
+  });
+
 /** Create a shareable Gradus plan (not assigned to any athlete) and mint its share link. */
 export const adminCreateSocialPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

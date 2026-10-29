@@ -19,6 +19,7 @@ import {
 import { SPORTS } from "@/lib/coach-sports";
 import {
   adminDraftSocialPlan,
+  adminDraftSocialPlanFromResult,
   adminCreateSocialPlan,
   adminListSocialPlans,
   adminDeleteSocialPlan,
@@ -61,6 +62,9 @@ function SocialPlansPage() {
   const [moves, setMoves] = useState<SocialPlanMoveInput[]>([emptyMove()]);
   const [drafting, setDrafting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [resultFile, setResultFile] = useState<File | null>(null);
+  const [resultText, setResultText] = useState("");
+  const draftFromResultFn = useServerFn(adminDraftSocialPlanFromResult);
 
   const sportObj = SPORTS.find((s) => s.key === sport);
   const sportLabel = sportObj?.label ?? sport;
@@ -88,6 +92,35 @@ function SocialPlansPage() {
           focus: focus.trim(),
           moveCount,
         },
+      });
+      setTitle(res.title);
+      setNotes(res.notes);
+      setMoves(res.moves);
+      toast.success("Draft ready — edit anything before you publish");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not draft the plan");
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  const handleDraftFromResult = async () => {
+    if (resultFile && resultFile.size > 10 * 1024 * 1024) {
+      toast.error("That file is over 10 MB");
+      return;
+    }
+    setDrafting(true);
+    try {
+      const fileDataUrl = resultFile
+        ? await new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.onerror = () => reject(new Error("Could not read the file"));
+            r.readAsDataURL(resultFile);
+          })
+        : undefined;
+      const res = await draftFromResultFn({
+        data: { sport: sportLabel, text: resultText.trim(), fileDataUrl, moveCount },
       });
       setTitle(res.title);
       setNotes(res.notes);
@@ -219,6 +252,38 @@ function SocialPlansPage() {
             </Button>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
+        <h2 className="font-display text-h3 text-text-primary">Or draft from a competition result</h2>
+        <div className="space-y-1.5">
+          <Label htmlFor="result-file">Result image or PDF</Label>
+          <Input
+            id="result-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={(e) => setResultFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="result-text">Or paste the result text</Label>
+          <Textarea
+            id="result-text"
+            value={resultText}
+            onChange={(e) => setResultText(e.target.value)}
+            rows={4}
+            maxLength={20000}
+            placeholder="Paste a protocol, score sheet, or results summary"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={handleDraftFromResult}
+          disabled={drafting || (!resultFile && !resultText.trim())}
+        >
+          <Sparkles className="size-4" />
+          {drafting ? "Reading result…" : `Draft ${sportLabel} plan from result`}
+        </Button>
       </section>
 
       <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
