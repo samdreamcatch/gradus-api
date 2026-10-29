@@ -167,7 +167,7 @@ ${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}
 
     try {
       const { object } = await generateObject({
-        model: gateway("google/gemini-2.5-flash"),
+        model: gateway("google/gemini-3.8-flash"),
         schema,
         messages: [{ role: "user", content }],
       });
