@@ -381,13 +381,24 @@ export const adminGetSocialPlan = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const plan = await socialClient(supabaseAdmin)
+    const baseCols = "id, title, notes, kind, source, coach_id, athlete_id, share_token";
+    let plan = await socialClient(supabaseAdmin)
       .from("plans")
-      .select(
-        "id, title, notes, social_coach_name, kind, source, coach_id, athlete_id, share_token",
-      )
+      .select(`${baseCols}, social_coach_name`)
       .eq("id", data.planId)
       .maybeSingle();
+    // Coach-name column may not exist until the staged update is applied.
+    if (plan.error?.code === "42703") {
+      const fallback = await supabaseAdmin
+        .from("plans")
+        .select(baseCols)
+        .eq("id", data.planId)
+        .maybeSingle();
+      plan = {
+        ...fallback,
+        data: fallback.data ? { ...fallback.data, social_coach_name: "" } : null,
+      } as typeof plan;
+    }
     if (plan.error) dbError(plan.error);
     if (!plan.data || !isAdminSocialPlan(plan.data)) throw new Error("Plan not found.");
     const moves = await supabaseAdmin
