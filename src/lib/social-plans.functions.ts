@@ -410,7 +410,7 @@ export const adminGetSocialPlan = createServerFn({ method: "GET" })
     return {
       title: plan.data.title,
       notes: plan.data.notes,
-      coachName: plan.data.social_coach_name,
+      coachName: plan.data.social_coach_name ?? "",
       token: plan.data.share_token,
       moves: (moves.data ?? []).map((m) =>
         moveSchema.parse({
