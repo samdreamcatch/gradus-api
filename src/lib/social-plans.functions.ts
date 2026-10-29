@@ -7,7 +7,7 @@ import { PROMPT_INJECTION_GUARD, sanitizeUserContent } from "./ai-prompt-safety"
 import { dbError } from "./db-error";
 import { isAdminSocialPlan } from "./social-plan-rules";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 // Draft-local schema extension; generated database types remain untouched.
 type SocialDatabase = Omit<Database, "public"> & {
@@ -20,7 +20,7 @@ type SocialDatabase = Omit<Database, "public"> & {
       };
     };
     Functions: Database["public"]["Functions"] & {
-      admin_update_social_plan: { Args: { _plan_id: string; _title: string; _notes: string; _coach_name: string; _moves: Database["public"]["Tables"]["plans"]["Row"] extends never ? never : import("@/integrations/supabase/types").Json }; Returns: undefined };
+      admin_update_social_plan: { Args: { _plan_id: string; _title: string; _notes: string; _coach_name: string; _moves: Json }; Returns: undefined };
     };
   };
 };
@@ -54,7 +54,6 @@ export interface SocialPlanRow {
   moveCount: number;
   shareToken: string | null;
   createdAt: string;
-  coachName: string;
 }
 
 /** AI first draft of a shareable plan for any sport. */
@@ -287,9 +286,9 @@ export const adminListSocialPlans = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const res = await socialClient(supabaseAdmin)
+    const res = await supabaseAdmin
       .from("plans")
-      .select("id, title, notes, share_token, created_at, social_coach_name")
+      .select("id, title, notes, share_token, created_at")
       .eq("kind", "template")
       .eq("source", "gradus")
       .is("coach_id", null)
@@ -317,7 +316,6 @@ export const adminListSocialPlans = createServerFn({ method: "GET" })
         moveCount: counts.get(p.id) ?? 0,
         shareToken: p.share_token,
         createdAt: p.created_at,
-        coachName: p.social_coach_name,
       })),
     };
   });
