@@ -12,3 +12,5 @@
 - [ ] Verify the policy flow as Buddy and a club member on desktop/phone after accepting the draft (requires the staged policy storage).
 - [x] Build People with existing coach roster, sports, levels, CSV export and policy detail; verified Buddy's roster/detail/search. Policy read-back waits on draft acceptance.
 - [ ] Add People credentials and expiry tracking next; Communications, Cases and campaigns remain later milestones.
+
+- [ ] Social plans: edit published plans and coach attribution; repair share-link copy.
