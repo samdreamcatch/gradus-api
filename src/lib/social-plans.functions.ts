@@ -148,12 +148,31 @@ For each move give:
 - targetValue: a realistic number
 
 Also write a plan title (max 8 words, no emoji, no names) and a 1-2 sentence intro note summarising the takeaway.
+
+Respond with ONLY a JSON object with EXACTLY these top-level keys:
+- "title": string
+- "notes": string
+- "moves": array of objects, each with exactly "name", "description", "cue", "why" (strings), "targetKind" ("reps" or "mins"), "targetValue" (number)
 ${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}` : ""}`;
 
+    const lenientMove = z.object({
+      name: z.string().min(1).transform((s) => s.slice(0, 120)),
+      description: z.string().default("").transform((s) => s.slice(0, 600)),
+      cue: z.string().default("").transform((s) => s.slice(0, 300)),
+      why: z.string().default("").transform((s) => s.slice(0, 300)),
+      targetKind: z.preprocess(
+        (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
+        z.enum(["reps", "mins"]),
+      ),
+      targetValue: z.preprocess((v) => {
+        const n = Math.round(Number(v));
+        return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
+      }, z.number()),
+    });
     const schema = z.object({
-      title: z.string().min(1).max(120),
-      notes: z.string().max(600),
-      moves: z.array(moveSchema).min(1).max(8),
+      title: z.string().min(1).transform((s) => s.slice(0, 120)),
+      notes: z.string().default("").transform((s) => s.slice(0, 600)),
+      moves: z.array(lenientMove).min(1).transform((a) => a.slice(0, 8)),
     });
 
     const content: any[] = [{ type: "text", text: prompt }];
