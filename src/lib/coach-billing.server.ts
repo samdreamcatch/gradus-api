@@ -14,8 +14,23 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { getCoachProfile, type CoachContext } from "./coach-onboarding.server";
 
-/** The web's plan section, where a coach changes or cancels their plan. */
+/** The web's plan section (billing portal): update the card, cancel. */
 export const BILLING_MANAGE_URL = "https://gradus.training/coach/settings";
+/** The web paywall: choose or change a plan. */
+export const BILLING_PAYWALL_URL = "https://gradus.training/coach/paywall";
+
+/**
+ * Where "Manage your plan" in the app should land. A coach with a live
+ * Stripe subscription manages it on the settings page (portal); everyone
+ * else has nothing to manage yet, so the link is the paywall (TestFlight,
+ * 2026-10-28: the app's plan card sent coaches without a plan to settings).
+ * The app's own "Upgrade to Coach Pro" buttons never read this: they always
+ * open the paywall.
+ */
+export function billingManageUrl(profile: Pick<CoachProfileDTO, "entitlement" | "hasStripeCustomer" | "subscriptionStatus">): string {
+  const live = ["active", "trialing", "past_due"].includes(profile.subscriptionStatus ?? "");
+  return profile.entitlement === "paid" && profile.hasStripeCustomer && live ? BILLING_MANAGE_URL : BILLING_PAYWALL_URL;
+}
 
 export type CoachBillingDTO = {
   entitlement: CoachProfileDTO["entitlement"];
@@ -59,7 +74,7 @@ export function toCoachBilling(profile: CoachProfileDTO): CoachBillingDTO {
     organizationName: profile.organizationName,
     promoLabel: profile.promoLabel,
     promoPercentOff: profile.promoPercentOff,
-    manageUrl: BILLING_MANAGE_URL,
+    manageUrl: billingManageUrl(profile),
   };
 }
 
