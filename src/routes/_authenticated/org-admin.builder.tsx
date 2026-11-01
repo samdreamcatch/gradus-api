@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
+import { PdfBrandingSheet } from "@/components/org-admin/pdf-branding-sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,7 @@ function BuilderPage() {
                     { value: "everyone", label: "For everyone" },
                   ]}
                 />
+                <div className="ml-auto">{orgId && <PdfBrandingSheet orgId={orgId} />}</div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rb-title">Working title</Label>
