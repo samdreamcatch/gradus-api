@@ -3704,6 +3704,50 @@ export type Database = {
           },
         ]
       }
+      org_pdf_branding: {
+        Row: {
+          body_font: string
+          footer_text: string
+          header_text: string
+          heading_font: string
+          logo_path: string | null
+          organization_id: string
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+        }
+        Insert: {
+          body_font?: string
+          footer_text?: string
+          header_text?: string
+          heading_font?: string
+          logo_path?: string | null
+          organization_id: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Update: {
+          body_font?: string
+          footer_text?: string
+          header_text?: string
+          heading_font?: string
+          logo_path?: string | null
+          organization_id?: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_pdf_branding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_resource_overrides: {
         Row: {
           archived_at: string | null
