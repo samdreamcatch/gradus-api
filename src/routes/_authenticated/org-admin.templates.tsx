@@ -295,7 +295,7 @@ function TemplateSheet({
                     <SegmentedToggle
                       value={m.targetKind}
                       onChange={(v) => setMove(i, { targetKind: v })}
-                      options={[{ value: "reps", label: "Reps" }, { value: "minutes", label: "Minutes" }]}
+                      options={[{ key: "reps", label: "Reps" }, { key: "minutes", label: "Minutes" }]}
                     />
                   </div>
                 </CardContent>
