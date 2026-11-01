@@ -67,12 +67,13 @@ BEGIN
     SELECT user_id FROM coaches WHERE user_id IS NOT NULL
     UNION SELECT user_id FROM linked WHERE user_id IS NOT NULL
     UNION SELECT p.user_id FROM public.parent_profiles p JOIN linked l ON l.parent_id = p.id WHERE p.user_id IS NOT NULL
-    UNION SELECT g.user_id FROM public.athlete_guardians g JOIN linked l ON l.id = g.athlete_id WHERE g.user_id IS NOT NULL
+    UNION SELECT p.user_id FROM public.athlete_guardians g JOIN linked l ON l.id = g.athlete_id JOIN public.parent_profiles p ON p.id = g.parent_id WHERE p.user_id IS NOT NULL
   ), sources AS (
     SELECT DISTINCT ON (id) 'parent_not_joined'::text AS kind, 'athletes'::text AS source_table, id AS source_id, 'athletes'::text AS about,
       'Parent has not joined'::text AS title, concat_ws(' ', first_name, last_name) AS subject, coach_name AS coach, 'needs_action'::text AS status,
       coalesce(guardian_invited_at, created_at) AS opened_at, '/org-admin/notifications'::text AS go_to
     FROM linked WHERE birthdate > (current_date - interval '18 years')::date AND guardian_claimed_at IS NULL AND parent_id IS NULL
+      AND NOT EXISTS (SELECT 1 FROM public.athlete_guardians g WHERE g.athlete_id = linked.id)
     ORDER BY id, coach_id
   ), other_sources AS (
     SELECT 'paused_messaging', 'coach_athletes', ca.id, 'athletes', 'Parent paused messaging', concat_ws(' ', a.first_name, a.last_name), c.name, 'needs_action', ca.messaging_paused_at, '/org-admin/notifications'
