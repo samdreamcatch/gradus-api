@@ -62,7 +62,9 @@ describe("organizations column grants (admin notes)", () => {
       const columns = selectGrant(stmt);
       return Array.isArray(columns) ? columns : [];
     }));
-    expect(stmts.flatMap(addedColumns)).toEqual(expect.arrayContaining(["coach_seats", "admin_seats", "storefront_share_bps", "contract_signed_on"]));
+    for (const column of ["coach_seats", "admin_seats", "storefront_share_bps", "contract_signed_on"]) {
+      expect(stmts.flatMap(addedColumns)).toContain(column);
+    }
     expect(stmts.flatMap(addedColumns).filter((column) => !grants.has(column))).toEqual([]);
   });
   const hideIndex = migrations.indexOf(HIDE_MIGRATION);
