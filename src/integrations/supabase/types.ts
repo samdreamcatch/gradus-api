@@ -3884,6 +3884,169 @@ export type Database = {
           },
         ]
       }
+      org_template_deployments: {
+        Row: {
+          coach_id: string
+          deployed_at: string
+          deployed_by: string | null
+          id: string
+          organization_id: string
+          plan_id: string | null
+          template_id: string
+        }
+        Insert: {
+          coach_id: string
+          deployed_at?: string
+          deployed_by?: string | null
+          id?: string
+          organization_id: string
+          plan_id?: string | null
+          template_id: string
+        }
+        Update: {
+          coach_id?: string
+          deployed_at?: string
+          deployed_by?: string | null
+          id?: string
+          organization_id?: string
+          plan_id?: string | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_deployments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "org_template_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_template_plan_moves: {
+        Row: {
+          cue: string
+          description: string
+          id: string
+          move_id: string | null
+          name: string
+          organization_id: string
+          position: number
+          target_kind: string
+          target_value: number
+          template_id: string
+          why: string
+        }
+        Insert: {
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name: string
+          organization_id: string
+          position?: number
+          target_kind?: string
+          target_value?: number
+          template_id: string
+          why?: string
+        }
+        Update: {
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name?: string
+          organization_id?: string
+          position?: number
+          target_kind?: string
+          target_value?: number
+          template_id?: string
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_plan_moves_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_plan_moves_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "org_template_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_template_plans: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level_keys: string[]
+          notes: string
+          organization_id: string
+          sport: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_keys?: string[]
+          notes?: string
+          organization_id: string
+          sport: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_keys?: string[]
+          notes?: string
+          organization_id?: string
+          sport?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invite_codes: {
         Row: {
           active: boolean

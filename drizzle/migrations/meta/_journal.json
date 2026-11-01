@@ -211,6 +211,13 @@
       "when": 1793548586714,
       "tag": "0029_club_schedule_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793562084396,
+      "tag": "0030_org_template_plans",
+      "breakpoints": true
     }
   ]
 }
