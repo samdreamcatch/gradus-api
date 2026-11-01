@@ -6,3 +6,5 @@
 - People reuses the authorized club roster and policy matrix; coach policy attribution is pure and tested, and policy failures never imply a coach is signed off.
 - Admin social-plan updates use an admin-authorized transactional RPC and preserve share tokens; attribution uses draft-local schema extensions, never generated-client edits.
 - Clipboard operations use a selection fallback and expose a selectable link when copying is denied, never report false success.
+- Gradus Club contract reads use draft-local schema types and privileged clients only after caller authorization; database triggers enforce seat capacity across web/native membership writers so entry paths cannot bypass seat limits.
+- Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.

@@ -67,6 +67,7 @@
   --color-attention-wash: var(--attention-wash);
   --color-attention-ink: var(--attention-ink);
   --color-attention-foreground: var(--attention-foreground);
+  --color-club-healthy: var(--pen-tennis-ink);
 
   /* Surface simulations — see `:root` note. */
   --color-surface-athlete-screen: var(--surface-athlete-screen);
