@@ -1,7 +1,9 @@
 
 ## Open
-- [ ] Gradus Club redesign: review uploaded PDF mockups before shaping Stage 1 pages; support both themes.
+- [x] Gradus Club redesign: reviewed uploaded PDF Settings/People layouts; preserve existing components and both themes.
 - [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
+  - [x] Stage seat inventory/contract columns and cross-path seat/capacity guards; add read-only Settings and internal contract editor.
+  - [ ] Complete People seat/admin management and invite acceptance transaction; verify new-data flows after draft acceptance.
 - [ ] Gradus Club Stage 2: notifications, safeguarding evidence, aggregate-only Home and saved table views.
 - [ ] Gradus Club Stage 3: versioned Library acknowledgements and existing-template reminders.
 - [ ] Gradus Club Stage 4: Coaches analytics and full coach profile pages.

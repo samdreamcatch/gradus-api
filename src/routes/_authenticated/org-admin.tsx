@@ -42,7 +42,8 @@ function OrgAdminLayout() {
             <div className="flex items-center gap-3 px-4 py-3">
               <SidebarTrigger />
               <div className="flex-1 min-w-0" />
-              <Button variant="ghost"
+              <Button
+                variant="ghost"
                 onClick={handleSignOut}
                 className="min-h-11 shrink-0 text-text-primary"
                 title="Sign out"

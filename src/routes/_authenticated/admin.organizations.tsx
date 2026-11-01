@@ -41,6 +41,13 @@ type OrgRow = {
 };
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
+  head: () => ({ meta: [
+    { title: "Organizations · Gradus Admin" },
+    { name: "description", content: "Manage Gradus club accounts, contracts and organization details." },
+    { property: "og:title", content: "Organizations · Gradus Admin" },
+    { property: "og:description", content: "Manage Gradus club accounts, contracts and organization details." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrganizationsPage,
 });
 
