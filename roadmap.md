@@ -1,6 +1,6 @@
 
 ## Open
-- [ ] Continue the Gradus Club plan: build privacy-safe Coaches analytics/profile and shared saved views; investigate Library versions, schedule import, and marketplace dependencies without activating emails or payments.
+- [x] Continue the Gradus Club plan: add Coaches directory/profile, per-admin device-saved coach views and aggregate-only Home practice strip; investigate remaining stage dependencies without activating emails or payments.
 - [x] Gradus Club redesign: reviewed uploaded PDF Settings/People layouts; preserve existing components and both themes.
 - [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
   - [x] Stage seat inventory/contract columns and cross-path seat/capacity guards; add read-only Settings and internal contract editor.
@@ -9,10 +9,12 @@
 - [ ] Gradus Club Stage 2: notifications, safeguarding evidence, aggregate-only Home and saved table views.
   - [x] Build persistent Notifications, private append-only evidence notes, per-admin read state and aggregate-only Home notification counts; stage new storage for acceptance.
   - [ ] Verify Notifications source refresh, read receipts and note save/readback after acceptance; new storage is unavailable in this draft. Weekly practice/development rollups, saved views, acknowledgement/seat-grace feed entries and approved nightly refresh remain unfinished.
-- [ ] Gradus Club Stage 3: versioned Library acknowledgements and existing-template reminders.
+- [ ] Gradus Club Stage 3: versioned Library acknowledgements; email reminder delivery waits on Mariah choosing an existing template (none identified). No new templates or push reminders added.
 - [ ] Gradus Club Stage 4: Coaches analytics and full coach profile pages.
+  - [x] Build searchable Coaches table, week/sport/sort filters, device-saved views, CSV, full coach profile with levels and 8-week practice, and aggregate-only Home practice totals. Buddy search/profile and saved-view reload verified; 18 tests passed, lint has zero errors, latest checks report build OK.
+  - [ ] Verify weekly refresh/readback after draft acceptance; new aggregate storage is unavailable here. Development/mastery/effort and prior-season metrics require reliable source definitions (session mood is not effort/mastery). Full seat/policy/template sections and cross-page saved views remain.
 - [ ] Gradus Club Stage 5: club schedule import, matching, review and explicit invite sending.
-- [ ] Gradus Club Stage 6: storefront read side, contingent on available marketplace tables; no payment activation.
+- [ ] Gradus Club Stage 6: storefront read side blocked on marketplace listings/sales/payout/review tables; none identified. No payment activation or fabricated revenue.
 - Coach post-event competition linking workflow (in progress)
 - Audit hand-rolled buttons in coach week schedule view -> shared Button (done for expanded row)
 - [ ] Verify stale-chunk recovery on live after next publish
