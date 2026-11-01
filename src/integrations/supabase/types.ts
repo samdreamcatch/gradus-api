@@ -3543,6 +3543,57 @@ export type Database = {
           },
         ]
       }
+      org_coach_week_stats: {
+        Row: {
+          coach_id: string
+          computed_at: string
+          minors: number | null
+          organization_id: string
+          practice_min: number
+          sessions: number
+          students: number | null
+          target_min: number | null
+          week_start: string
+        }
+        Insert: {
+          coach_id: string
+          computed_at?: string
+          minors?: number | null
+          organization_id: string
+          practice_min?: number
+          sessions?: number
+          students?: number | null
+          target_min?: number | null
+          week_start: string
+        }
+        Update: {
+          coach_id?: string
+          computed_at?: string
+          minors?: number | null
+          organization_id?: string
+          practice_min?: number
+          sessions?: number
+          students?: number | null
+          target_min?: number | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_coach_week_stats_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_coach_week_stats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_levels: {
         Row: {
           archived_at: string | null
@@ -5394,6 +5445,7 @@ export type Database = {
         }
         Returns: number
       }
+      refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined }
       refresh_club_notifications: {
         Args: { p_org_id: string }
         Returns: undefined

@@ -197,6 +197,13 @@
       "when": 1793548479676,
       "tag": "0027_club_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793548533730,
+      "tag": "0028_club_coach_week_stats",
+      "breakpoints": true
     }
   ]
 }
