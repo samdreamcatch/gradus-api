@@ -16,6 +16,7 @@ import {
 import { remindOutstandingAcks } from "@/lib/org-content.functions";
 import { useOrgId } from "@/components/org-admin/org-shared";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,6 +180,7 @@ function Policies() {
           <Plus className="size-4" /> New policy pack
         </Button>
       </div>
+      <ClubLibraryNav />
 
       <section>
         <SectionLabel>Policy packs</SectionLabel>

@@ -13,7 +13,7 @@ const pages = [
 export function ClubLibraryNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (!pages.some((p) => pathname === p.to || pathname.startsWith(`${p.to}/`))) return null;
-  return <nav aria-label="Club library" className="flex flex-wrap gap-2 border-b border-divider px-4 py-3 md:px-6">
+  return <nav aria-label="Club library" className="flex flex-wrap gap-2 border-b border-divider pb-3">
     {pages.map((p) => <Button key={p.to} asChild variant={pathname === p.to ? "secondary" : "ghost"} className="min-h-11 press-soft">
       <Link to={p.to} aria-current={pathname === p.to ? "page" : undefined}>{p.label}</Link>
     </Button>)}

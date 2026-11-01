@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,6 +140,7 @@ function OrgResourcesPage() {
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
       <PageTitle>Resource library</PageTitle>
+      <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
