@@ -24,8 +24,15 @@ export const getClubCoachWeeks = createServerFn({ method: "POST" })
     if (!permission.data) throw new Error("Not authorized for this club.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as unknown as SupabaseClient<CoachDatabase>;
-    const refresh = await admin.rpc("refresh_club_coach_weeks", { p_org: data.organizationId });
-    if (refresh.error) dbError(refresh.error);
+    // Recompute at most every 10 minutes; Home, Coaching and profiles all read this.
+    const latest = await admin.from("org_coach_week_stats").select("computed_at")
+      .eq("organization_id", data.organizationId).order("computed_at", { ascending: false }).limit(1);
+    if (latest.error) dbError(latest.error);
+    const last = latest.data?.[0]?.computed_at;
+    if (!last || Date.now() - new Date(last).getTime() > 10 * 60_000) {
+      const refresh = await admin.rpc("refresh_club_coach_weeks", { p_org: data.organizationId });
+      if (refresh.error) dbError(refresh.error);
+    }
     const result = await admin.from("org_coach_week_stats")
       .select("coach_id,week_start,students,minors,practice_min,target_min,sessions,computed_at")
       .eq("organization_id", data.organizationId).order("week_start", { ascending: false });

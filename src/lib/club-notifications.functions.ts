@@ -18,9 +18,12 @@ async function readFeed(
   admin: SupabaseClient,
   orgId: string,
   userId: string,
+  refresh = true,
 ): Promise<ClubNotification[]> {
-  const refreshed = await admin.rpc("refresh_club_notifications", { p_org_id: orgId });
-  if (refreshed.error) dbError(refreshed.error);
+  if (refresh) {
+    const refreshed = await admin.rpc("refresh_club_notifications", { p_org_id: orgId });
+    if (refreshed.error) dbError(refreshed.error);
+  }
   const [items, reads] = await Promise.all([
     admin
       .from("club_notifications")
@@ -67,7 +70,8 @@ export const getClubNotificationCounts = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orgInput.parse(input))
   .handler(async ({ data, context }) => {
     const admin = await authorize(context.supabase, context.userId, data.organizationId);
-    const rows = await readFeed(admin, data.organizationId, context.userId);
+    // Counts read the last sweep; the Notifications page itself re-sweeps.
+    const rows = await readFeed(admin, data.organizationId, context.userId, false);
     return {
       unread: rows.filter((r) => r.unread).length,
       open: rows.filter((r) => r.status !== "resolved").length,
