@@ -41,7 +41,12 @@ BEGIN
     LEFT JOIN LATERAL (
       SELECT CASE WHEN count(*) FILTER (WHERE coalesce(pt.hours_per_week, cl.practice_hours_per_week) IS NULL) > 0 THEN NULL
         ELSE sum(coalesce(pt.hours_per_week, cl.practice_hours_per_week) * 60) END AS minutes
-      FROM public.athlete_goals g
+      FROM (
+        SELECT DISTINCT ON (sport) sport, athlete_id, current_level_key
+        FROM public.athlete_goals
+        WHERE athlete_id = ca.athlete_id
+        ORDER BY sport, (coach_id = c.id) DESC NULLS LAST, updated_at DESC, id
+      ) g
       JOIN public.athlete_primary_coaches pc ON pc.athlete_id = g.athlete_id AND pc.sport = g.sport AND pc.coach_id = c.id
       LEFT JOIN public.coach_levels cl ON cl.coach_id = c.id AND cl.sport = g.sport AND cl.level_key = g.current_level_key
       LEFT JOIN public.coach_athlete_practice_targets pt ON pt.coach_id = c.id AND pt.athlete_id = g.athlete_id AND pt.sport = g.sport
