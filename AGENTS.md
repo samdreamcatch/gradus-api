@@ -12,3 +12,4 @@
 - Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
 - Club schedule review uses separate org-scoped import storage and a transactional save; parsing, matching, and saving never create lessons or send invitations, so delivery remains an explicit later action.
 - Club content pages share Library navigation while preserving their existing URLs, so acknowledgement, move, level, and template workflows stay accessible without duplicate screens.
+- Club template plans live in org-scoped service-role tables; sending copies them into each matching coach's own templates and records a deployment, so resending never overwrites a coach's edits. Matching rules are pure and tested in `src/lib/org-templates.ts`.

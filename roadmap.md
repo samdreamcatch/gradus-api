@@ -35,3 +35,6 @@
 
 - [x] Social plans: implement published-plan editing and coach attribution with stable links; clipboard fallbacks verified signed in.
 - [ ] Verify social-plan edit/save and public coach-name read-back after draft acceptance (requires staged attribution column and transactional update).
+- [x] Org admin Stage 2: template plans (build, CSV import, send by sport/level)
+- [ ] Club custom levels in coaches' level pickers (needs coach picker to read club ladder)
+- [ ] Stage 3: branded PDF resource builder
