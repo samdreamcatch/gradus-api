@@ -1,5 +1,6 @@
 
 ## Open
+- [ ] Continue the Gradus Club plan: build privacy-safe Coaches analytics/profile and shared saved views; investigate Library versions, schedule import, and marketplace dependencies without activating emails or payments.
 - [x] Gradus Club redesign: reviewed uploaded PDF Settings/People layouts; preserve existing components and both themes.
 - [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
   - [x] Stage seat inventory/contract columns and cross-path seat/capacity guards; add read-only Settings and internal contract editor.
