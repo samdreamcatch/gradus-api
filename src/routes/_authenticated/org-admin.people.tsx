@@ -16,6 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { SectionLabel } from "@/components/org-admin/trust-ui";
+import { getClubContract, removeClubAdmin } from "@/lib/club-contract.functions";
+import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { StatusDot } from "@/components/org-admin/status-dot";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 const peopleOptions = () => queryOptions({
   queryKey: ["org-people"],
@@ -84,7 +91,40 @@ function PeoplePage() {
         <TableCell><Button variant="ghost" size="icon" aria-label={`View ${c.firstName} ${c.lastName}`} onClick={() => setSelected(c)}><ChevronRight className="size-4" /></Button></TableCell>
       </TableRow>)}{!filtered.length && <TableRow><TableCell colSpan={5} className="py-10 text-center text-text-secondary">{coaches.length ? "No matching coaches." : "No coaches have joined this club yet."}</TableCell></TableRow>}</TableBody>
     </Table>
+    <ClubCapacity orgId={org.id} coaches={coaches} />
     <CoachSheet coach={selected} orgId={org.id} onClose={() => setSelected(null)} />
+  </div>;
+}
+
+function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {
+  const read = useServerFn(getClubContract);
+  const remove = useServerFn(removeClubAdmin);
+  const qc = useQueryClient();
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const { data } = useSuspenseQuery(queryOptions({ queryKey: ["club-capacity", orgId], queryFn: () => read({ data: { organizationId: orgId } }) }));
+  return <div className="space-y-6">
+    <section className="space-y-3"><h2 className="font-display text-h3">Coach seats · {data.club.coach_seats} in contract</h2>
+      <ClubTable><TableHeader><TableRow><TableHead>Seat</TableHead><TableHead>Coach</TableHead><TableHead>Status</TableHead><TableHead>Sports</TableHead><TableHead>Seat since</TableHead><TableHead>Grace ends</TableHead><TableHead className="text-right">Students</TableHead></TableRow></TableHeader>
+        <TableBody>{data.seats.map((seat) => {
+          const coach = coaches.find((person) => person.coachId === seat.coach_id);
+          const status = clubSeatStatus(seat);
+          return <TableRow key={seat.id}><TableCell className="font-mono text-right tabular-nums">{seat.seat_no}</TableCell><TableCell>{coach ? `${coach.firstName} ${coach.lastName}` : seat.coach_id ? "Former coach" : "—"}</TableCell><TableCell><StatusDot status={status === "filled" ? "healthy" : status === "grace" ? "attention" : "informational"} label={status} /></TableCell><TableCell>{coach ? [...new Set(coach.levels.map((level) => sportDisplayLabel(level.sport)))].join(", ") : "—"}</TableCell><TableCell>{seat.filled_at?.slice(0, 10) ?? "—"}</TableCell><TableCell>{seat.grace_until?.slice(0, 10) ?? "—"}</TableCell><TableCell className="font-mono text-right tabular-nums">{coach?.athleteCount ?? "—"}</TableCell></TableRow>;
+        })}</TableBody></ClubTable>
+    </section>
+    <section className="space-y-3"><h2 className="font-display text-h3">Admins · {data.club.admin_seats} in contract</h2>
+      <ClubTable><TableHeader><TableRow><TableHead>Person</TableHead><TableHead>Role</TableHead><TableHead>Role at the club</TableHead><TableHead>Added</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
+        <TableBody>{data.admins.map((admin) => {
+          const coach = coaches.find((person) => person.userId === admin.user_id);
+          return <TableRow key={admin.id}><TableCell>{coach ? `${coach.firstName} ${coach.lastName}` : "Club administrator"}</TableCell><TableCell>{admin.club_role}</TableCell><TableCell>{admin.club_title ?? "—"}</TableCell><TableCell>{admin.created_at.slice(0, 10)}</TableCell><TableCell><Button variant="link" className="min-h-11 text-text-primary" disabled={!canRemoveClubAdmin(data.admins, admin.id)} onClick={() => setRemoving(admin.id)}>Remove</Button></TableCell></TableRow>;
+        })}</TableBody></ClubTable>
+    </section>
+    <AlertDialog open={!!removing} onOpenChange={(open) => { if (!open && !busy) setRemoving(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remove this club admin?</AlertDialogTitle><AlertDialogDescription>They will no longer have access to the club panel. Their coach account and coach seat are unchanged.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={async (event) => {
+      event.preventDefault(); if (!removing) return; setBusy(true);
+      try { await remove({ data: { organizationId: orgId, adminId: removing } }); await qc.invalidateQueries({ queryKey: ["club-capacity", orgId] }); setRemoving(null); toast.success("Club admin removed."); }
+      catch (error) { toast.error(error instanceof Error ? error.message : "Could not remove club admin."); }
+      finally { setBusy(false); }
+    }}>{busy ? "Removing…" : "Remove admin"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
 
