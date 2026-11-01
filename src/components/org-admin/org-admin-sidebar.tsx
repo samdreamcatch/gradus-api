@@ -54,7 +54,7 @@ export function OrgAdminSidebar() {
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
-    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
+    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
       ? pathname === i.to || pathname === i.to + "/"
       : pathname === i.to || pathname.startsWith(i.to + "/");
 
