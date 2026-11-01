@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/org-admin/coaches")({
+export const Route = createFileRoute("/_authenticated/org-admin/coaches/")({
   head: () => ({ meta: [
     { title: "Coaches · Gradus Club" },
     { name: "description", content: "Club coach directory and private weekly practice totals." },
