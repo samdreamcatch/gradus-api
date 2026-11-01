@@ -9,7 +9,10 @@ const WRITER_MODEL = "claude-sonnet-4-5";
 const draftSchema = z.object({
   title: z.string().min(1).max(200),
   summary: z.string().max(600),
-  sections: z.array(z.object({ heading: z.string().max(200), body: z.string().max(6000) })).min(1).max(12),
+  sections: z
+    .array(z.object({ heading: z.string().max(200), body: z.string().max(6000) }))
+    .min(1)
+    .max(12),
 });
 
 export type WriteInput = {
@@ -32,14 +35,21 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
       type: "object",
       properties: {
         title: { type: "string" },
-        summary: { type: "string", description: "One or two plain sentences on what this document is for." },
+        summary: {
+          type: "string",
+          description: "One or two plain sentences on what this document is for.",
+        },
         sections: {
           type: "array",
           items: {
             type: "object",
             properties: {
               heading: { type: "string" },
-              body: { type: "string", description: "Plain text. Separate paragraphs with a blank line. Use '- ' for list items." },
+              body: {
+                type: "string",
+                description:
+                  "Plain text. Separate paragraphs with a blank line. Use '- ' for list items.",
+              },
             },
             required: ["heading", "body"],
           },
@@ -59,20 +69,23 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
       PROMPT_INJECTION_GUARD,
     tools: [tool],
     tool_choice: { type: "tool", name: "submit_document" },
-    messages: [{
-      role: "user",
-      content: [
-        `Club: ${sanitizeUserContent(input.club, 120)}`,
-        `Sport: ${input.sport}`,
-        `Audience: ${input.audience}`,
-        wrapUntrusted("working_title", sanitizeUserContent(input.title, 200)),
-        wrapUntrusted("brief", sanitizeUserContent(input.brief, 3000)),
-      ].join("\n"),
-    }],
+    messages: [
+      {
+        role: "user",
+        content: [
+          `Club: ${sanitizeUserContent(input.club, 120)}`,
+          `Sport: ${input.sport}`,
+          `Audience: ${input.audience}`,
+          wrapUntrusted("working_title", sanitizeUserContent(input.title, 200)),
+          wrapUntrusted("brief", sanitizeUserContent(input.brief, 3000)),
+        ].join("\n"),
+      },
+    ],
   });
   const call = res.content.find((c) => c.type === "tool_use");
   const parsed = draftSchema.safeParse(call && "input" in call ? call.input : null);
-  if (!parsed.success) throw new Error("The writing assistant didn't return a usable draft. Try again.");
+  if (!parsed.success)
+    throw new Error("The writing assistant didn't return a usable draft. Try again.");
   return parsed.data;
 }
 
@@ -91,7 +104,10 @@ async function loadLogo(pdf: PDFDocument, url: string | null): Promise<PDFImage 
 }
 
 /** Club-branded A4/Letter-friendly PDF: logo + club name header, Tennis rule, page numbers. */
-export async function renderResourcePdf(draft: BuilderDraft, club: { name: string; logoUrl: string | null }) {
+export async function renderResourcePdf(
+  draft: BuilderDraft,
+  club: { name: string; logoUrl: string | null },
+) {
   const pdf = await PDFDocument.create();
   pdf.setTitle(pdfSafe(draft.title));
   pdf.setAuthor(pdfSafe(club.name));
@@ -102,7 +118,10 @@ export async function renderResourcePdf(draft: BuilderDraft, club: { name: strin
   const ink = rgb(0.12, 0.16, 0.22);
   const muted = rgb(0.42, 0.45, 0.5);
   const pen = rgb(0.753, 0.867, 0.153);
-  const W = 612, H = 792, M = 56, width = W - M * 2;
+  const W = 612,
+    H = 792,
+    M = 56,
+    width = W - M * 2;
 
   let page = pdf.addPage([W, H]);
   let y = H - M;
@@ -119,7 +138,10 @@ export async function renderResourcePdf(draft: BuilderDraft, club: { name: strin
   };
   header();
   const ensure = (need: number) => {
-    if (y - need < M + 24) { page = pdf.addPage([W, H]); header(); }
+    if (y - need < M + 24) {
+      page = pdf.addPage([W, H]);
+      header();
+    }
   };
   const block = (text: string, font: typeof body, size: number, color = ink, gap = size * 1.45) => {
     for (const line of wrapLines(pdfSafe(text), width, (s) => font.widthOfTextAtSize(s, size))) {
@@ -131,18 +153,28 @@ export async function renderResourcePdf(draft: BuilderDraft, club: { name: strin
 
   block(draft.title, serif, 26, ink, 30);
   y -= 4;
-  if (draft.summary) { block(draft.summary, body, 12, muted); y -= 10; }
+  if (draft.summary) {
+    block(draft.summary, body, 12, muted);
+    y -= 10;
+  }
   for (const s of draft.sections) {
     y -= 8;
     ensure(40);
-    if (s.heading) { block(s.heading, serif, 16, ink, 20); y -= 2; }
+    if (s.heading) {
+      block(s.heading, serif, 16, ink, 20);
+      y -= 2;
+    }
     block(s.body, body, 11);
   }
 
   const pages = pdf.getPages();
   pages.forEach((p, i) =>
     p.drawText(pdfSafe(`${club.name} - ${i + 1} of ${pages.length}`), {
-      x: M, y: M - 20, size: 9, font: body, color: muted,
+      x: M,
+      y: M - 20,
+      size: 9,
+      font: body,
+      color: muted,
     }),
   );
   return pdf.save();
