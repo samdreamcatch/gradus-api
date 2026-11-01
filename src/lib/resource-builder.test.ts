@@ -22,3 +22,16 @@ describe("wrapLines", () => {
     expect(wrapLines("supercalifragilistic", 5, measure)).toEqual(["supercalifragilistic"]);
   });
 });
+
+import { brandFooter, brandHeader, hexToUnit } from "./resource-builder";
+describe("branding", () => {
+  it("converts brand hex colors", () => {
+    expect(hexToUnit("#FF0000")).toEqual([1, 0, 0]);
+    expect(hexToUnit("nope", "#0000FF")).toEqual([0, 0, 1]);
+  });
+  it("uses custom header/footer text, else the club name", () => {
+    expect(brandHeader({ headerText: "" }, "Test Club")).toBe("Test Club");
+    expect(brandHeader({ headerText: "TC Skating" }, "Test Club")).toBe("TC Skating");
+    expect(brandFooter({ footerText: "testclub.org" }, "Test Club", 2, 3)).toBe("testclub.org - 2 of 3");
+  });
+});

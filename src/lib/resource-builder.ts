@@ -50,3 +50,38 @@ export function wrapLines(
   }
   return out;
 }
+
+export type BrandFont = "sans" | "serif" | "mono";
+export type PdfBranding = {
+  primaryColor: string;
+  secondaryColor: string;
+  headingFont: BrandFont;
+  bodyFont: BrandFont;
+  headerText: string;
+  footerText: string;
+  logoPath: string | null;
+};
+export const DEFAULT_BRANDING: PdfBranding = {
+  primaryColor: "#C0DD27",
+  secondaryColor: "#6B7280",
+  headingFont: "serif",
+  bodyFont: "sans",
+  headerText: "",
+  footerText: "",
+  logoPath: null,
+};
+
+/** "#RRGGBB" → 0..1 channels; anything malformed falls back to the given default. */
+export function hexToUnit(hex: string, fallback = DEFAULT_BRANDING.primaryColor): [number, number, number] {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex.trim()) ?? /^#([0-9a-f]{6})$/i.exec(fallback)!;
+  const n = parseInt(m[1], 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+/** Header line: the club's own text when set, otherwise the club name. Footer adds page numbers. */
+export function brandHeader(b: Pick<PdfBranding, "headerText">, clubName: string) {
+  return b.headerText.trim() || clubName;
+}
+export function brandFooter(b: Pick<PdfBranding, "footerText">, clubName: string, page: number, total: number) {
+  return `${b.footerText.trim() || clubName} - ${page} of ${total}`;
+}

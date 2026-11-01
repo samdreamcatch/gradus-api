@@ -2,7 +2,17 @@ import Anthropic from "@anthropic-ai/sdk";
 import { PDFDocument, StandardFonts, rgb, type PDFImage } from "pdf-lib";
 import { z } from "zod";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
-import { pdfSafe, wrapLines, type BuilderDraft } from "./resource-builder";
+import {
+  brandFooter,
+  brandHeader,
+  DEFAULT_BRANDING,
+  hexToUnit,
+  pdfSafe,
+  wrapLines,
+  type BrandFont,
+  type BuilderDraft,
+  type PdfBranding,
+} from "./resource-builder";
 
 const WRITER_MODEL = "claude-sonnet-5-5";
 
@@ -102,12 +112,18 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
   return parsed.data;
 }
 
-async function loadLogo(pdf: PDFDocument, url: string | null): Promise<PDFImage | null> {
-  if (!url) return null;
+async function loadLogo(
+  pdf: PDFDocument,
+  src: string | Uint8Array | null,
+): Promise<PDFImage | null> {
+  if (!src) return null;
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) return null;
-    const bytes = new Uint8Array(await r.arrayBuffer());
+    let bytes: Uint8Array;
+    if (typeof src === "string") {
+      const r = await fetch(src, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) return null;
+      bytes = new Uint8Array(await r.arrayBuffer());
+    } else bytes = src;
     if (bytes[0] === 0x89 && bytes[1] === 0x50) return await pdf.embedPng(bytes);
     if (bytes[0] === 0xff && bytes[1] === 0xd8) return await pdf.embedJpg(bytes);
   } catch {
@@ -119,18 +135,24 @@ async function loadLogo(pdf: PDFDocument, url: string | null): Promise<PDFImage 
 /** Club-branded A4/Letter-friendly PDF: logo + club name header, Tennis rule, page numbers. */
 export async function renderResourcePdf(
   draft: BuilderDraft,
-  club: { name: string; logoUrl: string | null },
+  club: { name: string; logoUrl: string | null; logoBytes?: Uint8Array | null },
+  branding: PdfBranding = DEFAULT_BRANDING,
 ) {
   const pdf = await PDFDocument.create();
   pdf.setTitle(pdfSafe(draft.title));
   pdf.setAuthor(pdfSafe(club.name));
-  const body = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const serif = await pdf.embedFont(StandardFonts.TimesRomanBold);
-  const logo = await loadLogo(pdf, club.logoUrl);
+  const FONTS: Record<BrandFont, [StandardFonts, StandardFonts]> = {
+    sans: [StandardFonts.Helvetica, StandardFonts.HelveticaBold],
+    serif: [StandardFonts.TimesRoman, StandardFonts.TimesRomanBold],
+    mono: [StandardFonts.Courier, StandardFonts.CourierBold],
+  };
+  const body = await pdf.embedFont(FONTS[branding.bodyFont][0]);
+  const bold = await pdf.embedFont(FONTS[branding.bodyFont][1]);
+  const serif = await pdf.embedFont(FONTS[branding.headingFont][1]);
+  const logo = await loadLogo(pdf, club.logoBytes ?? club.logoUrl);
   const ink = rgb(0.12, 0.16, 0.22);
-  const muted = rgb(0.42, 0.45, 0.5);
-  const pen = rgb(0.753, 0.867, 0.153);
+  const muted = rgb(...hexToUnit(branding.secondaryColor, DEFAULT_BRANDING.secondaryColor));
+  const pen = rgb(...hexToUnit(branding.primaryColor));
   const W = 612,
     H = 792,
     M = 56,
@@ -145,7 +167,7 @@ export async function renderResourcePdf(
       page.drawImage(logo, { x, y: H - M - 28 + 6, width: logo.width * s, height: 28 });
       x += logo.width * s + 10;
     }
-    page.drawText(pdfSafe(club.name), { x, y: H - M - 14, size: 11, font: bold, color: muted });
+    page.drawText(pdfSafe(brandHeader(branding, club.name)), { x, y: H - M - 14, size: 11, font: bold, color: muted });
     page.drawRectangle({ x: M, y: H - M - 34, width, height: 2, color: pen });
     y = H - M - 60;
   };
@@ -174,7 +196,7 @@ export async function renderResourcePdf(
     y -= 8;
     ensure(40);
     if (s.heading) {
-      block(s.heading, serif, 16, ink, 20);
+      block(s.heading, serif, 16, muted, 20);
       y -= 2;
     }
     block(s.body, body, 11);
@@ -182,7 +204,7 @@ export async function renderResourcePdf(
 
   const pages = pdf.getPages();
   pages.forEach((p, i) =>
-    p.drawText(pdfSafe(`${club.name} - ${i + 1} of ${pages.length}`), {
+    p.drawText(pdfSafe(brandFooter(branding, club.name, i + 1, pages.length)), {
       x: M,
       y: M - 20,
       size: 9,
