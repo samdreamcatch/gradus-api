@@ -27,7 +27,13 @@ export type WriteInput = {
 export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraft> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("The writing assistant isn't set up yet.");
-  const client = new Anthropic({ apiKey, timeout: 60_000, maxRetries: 1 });
+  const workspace = process.env.ANTHROPIC_WORKSPACE_ID;
+  const client = new Anthropic({
+    apiKey,
+    timeout: 60_000,
+    maxRetries: 1,
+    defaultHeaders: workspace ? { "anthropic-workspace-id": workspace } : undefined,
+  });
   const tool: Anthropic.Tool = {
     name: "submit_document",
     description: "Hand back the finished document. Call exactly once.",
@@ -58,7 +64,9 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
       required: ["title", "summary", "sections"],
     },
   };
-  const res = await client.messages.create({
+  let res: Anthropic.Message;
+  try {
+    res = await client.messages.create({
     model: WRITER_MODEL,
     max_tokens: 4000,
     system:
