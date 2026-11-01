@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { OrgAdminSidebar } from "@/components/org-admin/org-admin-sidebar";
 import { Button } from "@/components/ui/button";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 
 export const Route = createFileRoute("/_authenticated/org-admin")({
   beforeLoad: async () => {
@@ -53,6 +54,7 @@ function OrgAdminLayout() {
               </Button>
             </div>
           </header>
+          <ClubLibraryNav />
           <Outlet />
         </SidebarInset>
       </div>

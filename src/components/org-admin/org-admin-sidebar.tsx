@@ -2,13 +2,10 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Users,
   BookOpen,
-  Dumbbell,
-  FileText,
   CalendarDays,
   Settings,
-  Layers,
   ShieldCheck,
-  FileSignature,
+  Store,
   Bell,
   type LucideIcon,
 } from "lucide-react";
@@ -32,43 +29,15 @@ import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
 type Group = { label: string; items: Item[]; soon?: string[] };
 
-const GROUPS: Group[] = [
-  {
-    label: "Overview",
-    items: [
-      { to: "/org-admin", label: "Home", icon: ShieldCheck, exact: true },
-      { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
-    ],
-  },
-  {
-    label: "Safety",
-    items: [
-      { to: "/org-admin/policies", label: "Policies", icon: FileSignature },
-      { to: "/org-admin/people", label: "People", icon: Users },
-    ],
-    soon: ["Communications", "Cases"],
-  },
-  {
-    label: "Roster",
-    items: [{ to: "/org-admin/coaches", label: "Coaches", icon: Users }],
-  },
-  {
-    label: "Content",
-    items: [
-      { to: "/org-admin/resources", label: "Library", icon: BookOpen },
-      { to: "/org-admin/moves", label: "Move library", icon: Dumbbell },
-      { to: "/org-admin/levels", label: "Levels", icon: Layers },
-      { to: "/org-admin/templates", label: "Template plans", icon: FileText },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [
-      { to: "/org-admin/calendar", label: "Club calendar", icon: CalendarDays },
-      { to: "/org-admin/settings", label: "Organization", icon: Settings },
-    ],
-  },
-];
+const GROUPS: Group[] = [{ label: "Club", items: [
+  { to: "/org-admin", label: "Home", icon: ShieldCheck, exact: true },
+  { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
+  { to: "/org-admin/coaches", label: "Coaches", icon: Users },
+  { to: "/org-admin/people", label: "People", icon: Users },
+  { to: "/org-admin/resources", label: "Library", icon: BookOpen },
+  { to: "/org-admin/schedule", label: "Schedule", icon: CalendarDays },
+  { to: "/org-admin/settings", label: "Settings", icon: Settings },
+] }];
 
 export function OrgAdminSidebar() {
   const { orgId, orgName } = useOrgId();
@@ -85,7 +54,7 @@ export function OrgAdminSidebar() {
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
-    i.exact
+    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
       ? pathname === i.to || pathname === i.to + "/"
       : pathname === i.to || pathname.startsWith(i.to + "/");
 
@@ -111,6 +80,7 @@ export function OrgAdminSidebar() {
                   const Icon = item.icon;
                   return (
                     <SidebarMenuItem key={item.to}>
+                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1"><Store className="size-4" /><span>Storefront</span><span className="ml-auto text-xs">Not connected</span></SidebarMenuButton>}
                       <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label}>
                         <Link to={item.to as never}>
                           <Icon className="size-4" />

@@ -10,3 +10,5 @@
 - Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.
 - Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
 - Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
+- Club schedule review uses separate org-scoped import storage and a transactional save; parsing, matching, and saving never create lessons or send invitations, so delivery remains an explicit later action.
+- Club content pages share Library navigation while preserving their existing URLs, so acknowledgement, move, level, and template workflows stay accessible without duplicate screens.
