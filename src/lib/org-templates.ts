@@ -67,8 +67,7 @@ export function groupTemplateCsv(
     });
   });
   const templates = Array.from(byKey.values());
-  for (const t of templates)
-    if (!t.moves.length) errors.push(`"${t.title}" has no moves`);
+  for (const t of templates) if (!t.moves.length) errors.push(`"${t.title}" has no moves`);
   return { templates: templates.filter((t) => t.moves.length), errors };
 }
 

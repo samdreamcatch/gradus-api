@@ -120,56 +120,58 @@ async function writeTemplate(
 export const listOrgTemplates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => orgOnly.parse(i))
-  .handler(async ({ data, context }): Promise<{ sports: string[]; templates: OrgTemplateRow[] }> => {
-    const orgId = data.organizationId;
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
-    const [sports, tpl, moves, deps, coachLevels] = await Promise.all([
-      sportsFor(admin, orgId),
-      admin
-        .from("org_template_plans")
-        .select("id, sport, level_keys, title, notes, archived_at, updated_at")
-        .eq("organization_id", orgId)
-        .order("updated_at", { ascending: false }),
-      admin
-        .from("org_template_plan_moves")
-        .select("template_id, position, name, cue, why, target_kind, target_value")
-        .eq("organization_id", orgId)
-        .order("position"),
-      admin.from("org_template_deployments").select("template_id").eq("organization_id", orgId),
-      clubCoachLevels(admin, orgId),
-    ]);
-    if (tpl.error) dbError(tpl.error);
-    if (moves.error) dbError(moves.error);
-    if (deps.error) dbError(deps.error);
-    return {
-      sports,
-      templates: (tpl.data ?? []).map((t) => {
-        const target = { sport: t.sport, levelKeys: t.level_keys ?? [] };
-        return {
-          id: t.id,
-          sport: t.sport,
-          levelKeys: t.level_keys ?? [],
-          title: t.title,
-          notes: t.notes,
-          archived: !!t.archived_at,
-          updatedAt: t.updated_at,
-          moves: (moves.data ?? [])
-            .filter((m) => m.template_id === t.id)
-            .map((m) => ({
-              name: m.name,
-              cue: m.cue,
-              why: m.why,
-              targetKind: m.target_kind === "minutes" ? "minutes" : "reps",
-              targetValue: Number(m.target_value),
-            })),
-          deployedCount: (deps.data ?? []).filter((d) => d.template_id === t.id).length,
-          eligibleCount: Array.from(coachLevels.values()).filter((l) =>
-            coachReceivesTemplate(l, target),
-          ).length,
-        };
-      }),
-    };
-  });
+  .handler(
+    async ({ data, context }): Promise<{ sports: string[]; templates: OrgTemplateRow[] }> => {
+      const orgId = data.organizationId;
+      const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
+      const [sports, tpl, moves, deps, coachLevels] = await Promise.all([
+        sportsFor(admin, orgId),
+        admin
+          .from("org_template_plans")
+          .select("id, sport, level_keys, title, notes, archived_at, updated_at")
+          .eq("organization_id", orgId)
+          .order("updated_at", { ascending: false }),
+        admin
+          .from("org_template_plan_moves")
+          .select("template_id, position, name, cue, why, target_kind, target_value")
+          .eq("organization_id", orgId)
+          .order("position"),
+        admin.from("org_template_deployments").select("template_id").eq("organization_id", orgId),
+        clubCoachLevels(admin, orgId),
+      ]);
+      if (tpl.error) dbError(tpl.error);
+      if (moves.error) dbError(moves.error);
+      if (deps.error) dbError(deps.error);
+      return {
+        sports,
+        templates: (tpl.data ?? []).map((t) => {
+          const target = { sport: t.sport, levelKeys: t.level_keys ?? [] };
+          return {
+            id: t.id,
+            sport: t.sport,
+            levelKeys: t.level_keys ?? [],
+            title: t.title,
+            notes: t.notes,
+            archived: !!t.archived_at,
+            updatedAt: t.updated_at,
+            moves: (moves.data ?? [])
+              .filter((m) => m.template_id === t.id)
+              .map((m) => ({
+                name: m.name,
+                cue: m.cue,
+                why: m.why,
+                targetKind: m.target_kind === "minutes" ? "minutes" : "reps",
+                targetValue: Number(m.target_value),
+              })),
+            deployedCount: (deps.data ?? []).filter((d) => d.template_id === t.id).length,
+            eligibleCount: Array.from(coachLevels.values()).filter((l) =>
+              coachReceivesTemplate(l, target),
+            ).length,
+          };
+        }),
+      };
+    },
+  );
 
 export const saveOrgTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -177,10 +179,20 @@ export const saveOrgTemplate = createServerFn({ method: "POST" })
     orgOnly.extend({ id: z.string().uuid().optional(), template: templateSchema }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     if (!(await sportsFor(admin, data.organizationId)).includes(data.template.sport))
       throw new Error("That sport isn't set up for your club");
-    const id = await writeTemplate(admin, data.organizationId, context.userId, data.template, data.id);
+    const id = await writeTemplate(
+      admin,
+      data.organizationId,
+      context.userId,
+      data.template,
+      data.id,
+    );
     return { id };
   });
 
@@ -190,11 +202,17 @@ export const importOrgTemplates = createServerFn({ method: "POST" })
     orgOnly.extend({ templates: z.array(templateSchema).min(1).max(200) }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     const sports = await sportsFor(admin, data.organizationId);
     for (const t of data.templates)
-      if (!sports.includes(t.sport)) throw new Error(`"${t.title}": sport isn't set up for your club`);
-    for (const t of data.templates) await writeTemplate(admin, data.organizationId, context.userId, t);
+      if (!sports.includes(t.sport))
+        throw new Error(`"${t.title}": sport isn't set up for your club`);
+    for (const t of data.templates)
+      await writeTemplate(admin, data.organizationId, context.userId, t);
     return { count: data.templates.length };
   });
 
@@ -204,7 +222,11 @@ export const archiveOrgTemplate = createServerFn({ method: "POST" })
     orgOnly.extend({ id: z.string().uuid(), archived: z.boolean() }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const admin = await assertOrgAdmin(context.supabase as Client, context.userId, data.organizationId);
+    const admin = await assertOrgAdmin(
+      context.supabase as Client,
+      context.userId,
+      data.organizationId,
+    );
     const r = await admin
       .from("org_template_plans")
       .update({ archived_at: data.archived ? new Date().toISOString() : null })
