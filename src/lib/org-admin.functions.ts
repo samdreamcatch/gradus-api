@@ -301,7 +301,8 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
     const code = generateInviteCode();
     const token = generateToken();
 
-    const { data: row, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("org_coach_invites")
       .insert({
         organization_id: data.organizationId,
@@ -459,32 +460,16 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing — finish coach signup first");
 
-    const upd = await supabaseAdmin
-      .from("coach_profiles")
-      .update({
-        organization_id: invite.data.organization_id,
-        entitlement: "club_covered",
-      })
-      .eq("id", coach.data.id);
-    if (upd.error) dbError(upd.error);
-
-    const markAccepted = await supabaseAdmin
-      .from("org_coach_invites")
-      .update({
-        status: "accepted",
-        accepted_at: new Date().toISOString(),
-        accepted_user_id: context.userId,
-      })
-      .eq("id", invite.data.id);
-    if (markAccepted.error) dbError(markAccepted.error);
-
-    await supabaseAdmin.from("org_admin_actions").insert({
-      actor_user_id: context.userId,
-      organization_id: invite.data.organization_id,
-      target_coach_id: coach.data.id,
-      action: "coach.joined_via_invite",
-      payload: { inviteId: invite.data.id },
-    });
+    type InviteDatabase = Omit<Database, "public"> & {
+      public: Omit<Database["public"], "Functions"> & {
+        Functions: Database["public"]["Functions"] & {
+          club_accept_coach_invite: { Args: { p_code: string; p_user_id: string }; Returns: string };
+        };
+      };
+    };
+    const admin = supabaseAdmin as unknown as SupabaseClient<InviteDatabase>;
+    const accepted = await admin.rpc("club_accept_coach_invite", { p_code: data.code, p_user_id: context.userId });
+    if (accepted.error) dbError(accepted.error);
 
     return { ok: true, organizationId: invite.data.organization_id };
   });

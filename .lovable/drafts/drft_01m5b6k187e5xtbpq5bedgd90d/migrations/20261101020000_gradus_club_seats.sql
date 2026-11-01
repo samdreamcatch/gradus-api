@@ -90,7 +90,7 @@ CREATE TRIGGER club_seat_capacity AFTER INSERT OR UPDATE OF coach_seats, admin_s
 
 -- All membership paths (web, native, staff, and invite acceptance) share this boundary.
 CREATE FUNCTION public.sync_coach_club_seat() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE selected_seat uuid; email_address text;
+DECLARE selected_seat uuid; email_address text; accepting_invite uuid;
 BEGIN
   IF TG_OP = 'UPDATE' AND NEW.organization_id IS NOT DISTINCT FROM OLD.organization_id THEN RETURN NEW; END IF;
   -- Lock both clubs in deterministic order before moving a coach.
@@ -106,10 +106,12 @@ BEGIN
     UPDATE public.org_seats s SET reserved_invite_id = NULL WHERE s.organization_id = NEW.organization_id
       AND reserved_invite_id IN (SELECT id FROM public.org_coach_invites WHERE status <> 'pending' OR expires_at <= now());
     SELECT email INTO email_address FROM auth.users WHERE id = NEW.user_id;
+    accepting_invite := nullif(current_setting('gradus.accepting_org_invite', true), '')::uuid;
     SELECT s.id INTO selected_seat FROM public.org_seats s
       LEFT JOIN public.org_coach_invites i ON i.id = s.reserved_invite_id
       WHERE s.organization_id = NEW.organization_id AND (s.coach_id IS NULL OR s.released_at IS NOT NULL)
-        AND (s.reserved_invite_id IS NULL OR (i.status = 'pending' AND i.expires_at > now() AND lower(i.email) = lower(email_address)))
+        AND (s.reserved_invite_id IS NULL OR (i.status = 'pending' AND i.expires_at > now()
+          AND (i.id = accepting_invite OR lower(i.email) = lower(email_address))))
       ORDER BY (s.reserved_invite_id IS NOT NULL) DESC, s.seat_no LIMIT 1 FOR UPDATE OF s;
     IF selected_seat IS NULL THEN RAISE EXCEPTION 'No coach seat is available in this club'; END IF;
     UPDATE public.org_seats SET coach_id = NEW.id, filled_at = now(), released_at = NULL, grace_until = NULL, reserved_invite_id = NULL WHERE id = selected_seat;
@@ -177,5 +179,29 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.club_remove_admin(uuid, uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.club_remove_admin(uuid, uuid) TO service_role;
+
+CREATE FUNCTION public.club_accept_coach_invite(p_code text, p_user_id uuid) RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE invitation public.org_coach_invites; coach public.coach_profiles;
+BEGIN
+  SELECT * INTO invitation FROM public.org_coach_invites WHERE invite_code = p_code;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Invite not found'; END IF;
+  PERFORM id FROM public.organizations WHERE id = invitation.organization_id FOR UPDATE;
+  SELECT * INTO invitation FROM public.org_coach_invites WHERE id = invitation.id FOR UPDATE;
+  IF invitation.status <> 'pending' OR invitation.expires_at <= now() THEN RAISE EXCEPTION 'Invite is no longer available'; END IF;
+  SELECT * INTO coach FROM public.coach_profiles WHERE user_id = p_user_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Coach profile missing'; END IF;
+  IF coach.organization_id IS NOT NULL AND coach.organization_id <> invitation.organization_id THEN
+    RAISE EXCEPTION 'Leave your current club before accepting this invite';
+  END IF;
+  PERFORM set_config('gradus.accepting_org_invite', invitation.id::text, true);
+  UPDATE public.coach_profiles SET organization_id = invitation.organization_id, entitlement = 'club_covered' WHERE id = coach.id;
+  UPDATE public.org_coach_invites SET status = 'accepted', accepted_at = now(), accepted_user_id = p_user_id WHERE id = invitation.id;
+  INSERT INTO public.org_admin_actions(actor_user_id, organization_id, target_coach_id, action, payload)
+    VALUES (p_user_id, invitation.organization_id, coach.id, 'coach.joined_via_invite', jsonb_build_object('inviteId', invitation.id));
+  RETURN invitation.organization_id;
+END $$;
+REVOKE ALL ON FUNCTION public.club_accept_coach_invite(text, uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.club_accept_coach_invite(text, uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION public.sync_club_seat_capacity(), public.sync_coach_club_seat(), public.reserve_club_invite_seat(), public.guard_club_admin_capacity() FROM PUBLIC, anon, authenticated;
