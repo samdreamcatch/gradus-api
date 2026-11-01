@@ -1,5 +1,12 @@
 
 ## Open
+- [ ] Gradus Club redesign: review staged plan against forthcoming PDF mockups; support both themes.
+- [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
+- [ ] Gradus Club Stage 2: notifications, safeguarding evidence, aggregate-only Home and saved table views.
+- [ ] Gradus Club Stage 3: versioned Library acknowledgements and existing-template reminders.
+- [ ] Gradus Club Stage 4: Coaches analytics and full coach profile pages.
+- [ ] Gradus Club Stage 5: club schedule import, matching, review and explicit invite sending.
+- [ ] Gradus Club Stage 6: storefront read side, contingent on available marketplace tables; no payment activation.
 - Coach post-event competition linking workflow (in progress)
 - Audit hand-rolled buttons in coach week schedule view -> shared Button (done for expanded row)
 - [ ] Verify stale-chunk recovery on live after next publish
