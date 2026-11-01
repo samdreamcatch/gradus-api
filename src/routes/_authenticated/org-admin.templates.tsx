@@ -22,16 +22,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -248,34 +238,31 @@ function OrgTemplatesPage() {
         />
       )}
 
-      <AlertDialog open={!!deploying} onOpenChange={(o) => !o && setDeploying(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Send "{deploying?.title}" to coaches?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Sheet open={!!deploying} onOpenChange={(o) => !o && setDeploying(null)}>
+        <SheetContent side="right" className="bg-popover w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Send "{deploying?.title}" to coaches</SheetTitle>
+            <SheetDescription>
               {deploying && deploying.eligibleCount - deploying.deployedCount > 0
                 ? `${deploying.eligibleCount - deploying.deployedCount} coach${deploying.eligibleCount - deploying.deployedCount === 1 ? "" : "es"} who teach ${deploying.levelKeys.length ? "these levels" : "this sport"} will get a copy in their templates. Coaches who already have it keep their own version.`
                 : "Every coach who teaches these levels already has this template."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            </SheetDescription>
+          </SheetHeader>
+          <div className="p-4">
+            <Button
+              className="w-full press"
               disabled={
                 deploy.isPending ||
                 !deploying ||
                 deploying.eligibleCount - deploying.deployedCount <= 0
               }
-              onClick={(e) => {
-                e.preventDefault();
-                if (deploying) deploy.mutate(deploying.id);
-              }}
+              onClick={() => deploying && deploy.mutate(deploying.id)}
             >
               {deploy.isPending ? "Sending…" : "Send"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
