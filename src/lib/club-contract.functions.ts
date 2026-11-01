@@ -42,7 +42,10 @@ export type ClubAdmin = {
 };
 type Table<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 type ClubDatabase = Omit<Database, "public"> & {
-  public: Omit<Database["public"], "Tables"> & {
+  public: Omit<Database["public"], "Tables" | "Functions"> & {
+    Functions: Database["public"]["Functions"] & {
+      club_remove_admin: { Args: { p_org_id: string; p_admin_id: string }; Returns: undefined };
+    };
     Tables: Omit<Database["public"]["Tables"], "organizations" | "org_admins"> & {
       organizations: Table<ClubContract>;
       org_seats: Table<ClubSeat>;
@@ -179,4 +182,14 @@ export const getStaffClubContract = createServerFn({ method: "POST" })
       .single();
     if (result.error) dbError(result.error);
     return result.data;
+  });
+
+export const removeClubAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ adminId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const admin = await authorizedClient(context.supabase, context.userId, data.organizationId);
+    const result = await admin.rpc("club_remove_admin", { p_org_id: data.organizationId, p_admin_id: data.adminId });
+    if (result.error) dbError(result.error);
+    return { ok: true };
   });
