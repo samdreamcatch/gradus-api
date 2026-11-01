@@ -1,6 +1,6 @@
 
 ## Open
-- [ ] Gradus Club redesign: review staged plan against forthcoming PDF mockups; support both themes.
+- [ ] Gradus Club redesign: review uploaded PDF mockups before shaping Stage 1 pages; support both themes.
 - [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
 - [ ] Gradus Club Stage 2: notifications, safeguarding evidence, aggregate-only Home and saved table views.
 - [ ] Gradus Club Stage 3: versioned Library acknowledgements and existing-template reminders.
