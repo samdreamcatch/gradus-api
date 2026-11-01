@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FilterPill } from "@/components/ui/filter-pill";
+import { MultiFilterPill } from "@/components/ui/filter-pill";
 import { NoSportsCard, SportFilter, useOrgId } from "@/components/org-admin/org-shared";
 import { getOrgSports, saveOrgResource } from "@/lib/org-content.functions";
 import { buildClubResourcePdf, writeClubResourceDraft } from "@/lib/resource-builder.functions";
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/builder")({
   component: BuilderPage,
 });
 
-type Audience = "coaches" | "parents" | "athletes" | "everyone";
+type Audience = "coaches" | "parents" | "athletes";
 
 function BuilderPage() {
   const { orgId } = useOrgId();
@@ -45,7 +45,7 @@ function BuilderPage() {
   const sports = sportsQ.data?.sports ?? [];
   const [sport, setSport] = useState("");
   useEffect(() => { if (!sport && sports.length) setSport(sports[0]); }, [sports, sport]);
-  const [audience, setAudience] = useState<Audience>("parents");
+  const [audience, setAudience] = useState<Audience[]>(["parents"]);
   const [title, setTitle] = useState("");
   const [brief, setBrief] = useState("");
   const [draft, setDraft] = useState<BuilderDraft | null>(null);
@@ -53,7 +53,7 @@ function BuilderPage() {
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const write = useMutation({
-    mutationFn: () => writeFn({ data: { organizationId: orgId!, sport, audience, title, brief } }),
+    mutationFn: () => writeFn({ data: { organizationId: orgId!, sport, audiences: audience, title, brief } }),
     onSuccess: (d) => { setDraft(d); setBuilt(null); setSavedId(null); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't write a draft"),
   });
@@ -93,16 +93,16 @@ function BuilderPage() {
             <CardContent className="space-y-4 p-4">
               <div className="flex flex-wrap gap-2">
                 <SportFilter sports={sports} value={sport} onChange={setSport} />
-                <FilterPill
+                <MultiFilterPill
                   aria-label="Audience"
-                  className="w-auto min-w-40"
+                  className="w-auto min-w-40 max-w-72"
+                  placeholder="Who is it for?"
                   value={audience}
-                  onValueChange={(v) => setAudience(v as Audience)}
+                  onValueChange={(v) => setAudience(v as Audience[])}
                   options={[
-                    { value: "parents", label: "For parents" },
-                    { value: "athletes", label: "For athletes" },
-                    { value: "coaches", label: "For coaches" },
-                    { value: "everyone", label: "For everyone" },
+                    { value: "parents", label: "Parents" },
+                    { value: "athletes", label: "Athletes" },
+                    { value: "coaches", label: "Coaches" },
                   ]}
                 />
                 <div className="ml-auto">{orgId && <PdfBrandingSheet orgId={orgId} />}</div>
