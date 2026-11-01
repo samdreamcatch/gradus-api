@@ -141,7 +141,7 @@ export async function renderResourcePdf(draft: BuilderDraft, club: { name: strin
 
   const pages = pdf.getPages();
   pages.forEach((p, i) =>
-    p.drawText(pdfSafe(`${club.name} · ${i + 1} of ${pages.length}`).replace("·", "-"), {
+    p.drawText(pdfSafe(`${club.name} - ${i + 1} of ${pages.length}`), {
       x: M, y: M - 20, size: 9, font: body, color: muted,
     }),
   );
