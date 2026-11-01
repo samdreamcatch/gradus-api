@@ -150,7 +150,7 @@ async function clubActivity(
   const acks = ids.length
     ? await policyClient(admin)
         .from("club_resource_acknowledgements")
-        .select("resource_id, signer_name, acknowledged_at")
+        .select("resource_id, acknowledged_at")
         .in("resource_id", ids)
         .eq("organization_id", orgId)
         .order("acknowledged_at", { ascending: false })
@@ -162,7 +162,7 @@ async function clubActivity(
     ...(actions.data ?? []).map((a) => ({ at: a.created_at, text: humanAction(a.action) })),
     ...(acks.data ?? []).map((a) => ({
       at: a.acknowledged_at,
-      text: `${a.signer_name ?? "Someone"} acknowledged "${title(a.resource_id)}"`,
+      text: `Document acknowledged: "${title(a.resource_id)}"`,
     })),
   ];
   return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 15);

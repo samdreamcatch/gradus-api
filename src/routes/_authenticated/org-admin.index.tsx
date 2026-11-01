@@ -12,9 +12,9 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 export const Route = createFileRoute("/_authenticated/org-admin/")({
   head: () => ({
     meta: [
-      { title: "Trust Center · Gradus Club Admin" },
+      { title: "Home · Gradus Club Admin" },
       { name: "description", content: "Your club's safe sport readiness at a glance." },
-      { property: "og:title", content: "Trust Center · Gradus Club Admin" },
+      { property: "og:title", content: "Home · Gradus Club Admin" },
       { property: "og:description", content: "Your club's safe sport readiness at a glance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -32,7 +32,10 @@ function TrustCenter() {
   const fn = useServerFn(getClubReadiness);
   const q = useQuery({
     queryKey: ["trust-center", orgId],
-    queryFn: () => fn({ data: { organizationId: orgId! } }),
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return fn({ data: { organizationId: orgId } });
+    },
     enabled: !!orgId,
   });
   const r = q.data;
@@ -41,12 +44,14 @@ function TrustCenter() {
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <PageTitle subtitle={orgName || undefined}>Club readiness</PageTitle>
+          <PageTitle>Home</PageTitle>
         </div>
         {r ? <StatusTag status={r.status} /> : null}
       </div>
 
-      {!r ? (
+      {q.isError ? (
+        <p role="alert" className="text-text-secondary">Could not load the club overview. {q.error.message}</p>
+      ) : !r ? (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Loader2 className="size-4 animate-spin" /> Loading readiness…
         </div>

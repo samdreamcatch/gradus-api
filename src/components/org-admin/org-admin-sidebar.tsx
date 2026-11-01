@@ -9,6 +9,7 @@ import {
   Layers,
   ShieldCheck,
   FileSignature,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -23,6 +24,10 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { useOrgId } from "./org-shared";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 
 type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
 type Group = { label: string; items: Item[]; soon?: string[] };
@@ -30,7 +35,10 @@ type Group = { label: string; items: Item[]; soon?: string[] };
 const GROUPS: Group[] = [
   {
     label: "Overview",
-    items: [{ to: "/org-admin", label: "Trust Center", icon: ShieldCheck, exact: true }],
+    items: [
+      { to: "/org-admin", label: "Home", icon: ShieldCheck, exact: true },
+      { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
+    ],
   },
   {
     label: "Safety",
@@ -63,6 +71,18 @@ const GROUPS: Group[] = [
 ];
 
 export function OrgAdminSidebar() {
+  const { orgId, orgName } = useOrgId();
+  const countFn = useServerFn(getClubNotificationCounts);
+  const counts = useQuery({
+    queryKey: ["club-notification-counts", orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return countFn({ data: { organizationId: orgId } });
+    },
+    enabled: !!orgId,
+    retry: false,
+    staleTime: 60_000,
+  });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
     i.exact
@@ -76,7 +96,7 @@ export function OrgAdminSidebar() {
           <Eyebrow size="small" tone="accent-ink">
             Club
           </Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">Organization Admin</p>
+          <p className="font-display text-h3 text-text-primary leading-tight">{orgName || "Gradus Club"}</p>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -93,6 +113,7 @@ export function OrgAdminSidebar() {
                         <Link to={item.to as never}>
                           <Icon className="size-4" />
                           <span>{item.label}</span>
+                          {item.to === "/org-admin/notifications" && counts.data && counts.data.unread > 0 && <span className="ml-auto font-mono text-xs">{counts.data.unread}</span>}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
