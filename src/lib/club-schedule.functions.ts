@@ -1,0 +1,98 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/integrations/supabase/types";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { dbError } from "./db-error";
+import { clubScheduleErrors, type ClubScheduleRow } from "./club-schedule";
+
+type ImportRecord = { id: string; file_name: string; status: string; counts: Json; created_at: string; organization_id: string; uploaded_by: string };
+type Table<R> = { Row: R; Insert: never; Update: never; Relationships: [] };
+type ScheduleDatabase = Omit<Database, "public"> & { public: Omit<Database["public"], "Tables" | "Functions"> & {
+  Tables: Database["public"]["Tables"] & {
+    org_seats: Table<{ organization_id: string; coach_id: string | null; seat_no: number }>;
+    org_schedule_imports: Table<ImportRecord>;
+    org_schedule_import_rows: Table<{ import_id: string; organization_id: string; row_no: number; review_row: Json }>;
+  };
+  Functions: Database["public"]["Functions"] & { club_save_schedule_review: { Args: { p_org: string; p_user: string; p_file: string; p_rows: Json; p_ready: boolean }; Returns: string } };
+} };
+const orgInput = z.object({ organizationId: z.string().uuid() });
+const reviewRow = z.object({
+  id: z.string().min(1).max(100), firstName: z.string().max(100), lastName: z.string().max(100),
+  coachName: z.string().max(200), coachId: z.string().uuid().nullable(), age: z.number().int().min(0).max(120).nullable(),
+  dayOfWeek: z.number().int().min(0).max(6).nullable(), startMinute: z.number().int().min(0).max(1439).nullable(),
+  lengthMinutes: z.number().int().min(1).max(1440).nullable(), frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]),
+  guardianEmail: z.string().max(254), athleteEmail: z.string().max(254), sport: z.string().max(100),
+});
+
+async function authorized(supabase: SupabaseClient<Database>, userId: string, organizationId: string) {
+  const permission = await supabase.rpc("has_org_admin", { _user_id: userId, _org_id: organizationId });
+  if (permission.error) dbError(permission.error);
+  if (!permission.data) throw new Error("Not authorized for this club.");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return { base: supabaseAdmin, draft: supabaseAdmin as unknown as SupabaseClient<ScheduleDatabase> };
+}
+
+export const getClubScheduleSeats = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input)).handler(async ({ data, context }) => {
+    const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const seats = await draft.from("org_seats").select("coach_id,seat_no").eq("organization_id", data.organizationId).not("coach_id", "is", null);
+    if (seats.error) dbError(seats.error);
+    return seats.data ?? [];
+  });
+
+export const getClubScheduleHistory = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input)).handler(async ({ data, context }) => {
+    const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const result = await draft.from("org_schedule_imports").select("id,file_name,status,counts,created_at")
+      .eq("organization_id", data.organizationId).order("created_at", { ascending: false }).limit(100);
+    if (result.error) dbError(result.error);
+    return result.data ?? [];
+  });
+
+export const getClubScheduleReview = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ importId: z.string().uuid() }).parse(input)).handler(async ({ data, context }) => {
+    const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const result = await draft.from("org_schedule_import_rows").select("review_row")
+      .eq("organization_id", data.organizationId).eq("import_id", data.importId).order("row_no");
+    if (result.error) dbError(result.error);
+    return z.array(reviewRow).parse((result.data ?? []).map((r) => r.review_row));
+  });
+
+export const saveClubScheduleReview = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ fileName: z.string().min(1).max(255), rows: z.array(reviewRow).min(1).max(500) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { base, draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const sports = await base.from("organization_sports").select("sport").eq("organization_id", data.organizationId);
+    if (sports.error) dbError(sports.error);
+    const allowedSports = new Set((sports.data ?? []).map((s) => s.sport));
+    if (data.rows.some((r) => r.sport && !allowedSports.has(r.sport))) throw new Error("Choose a sport purchased by this club.");
+    const ready = Object.values(clubScheduleErrors(data.rows as ClubScheduleRow[])).every((e) => e.length === 0);
+    const result = await draft.rpc("club_save_schedule_review", { p_org: data.organizationId, p_user: context.userId,
+      p_file: data.fileName, p_rows: data.rows as unknown as Json, p_ready: ready });
+    if (result.error) dbError(result.error);
+    return { id: result.data, ready };
+  });
+
+// Calendar is a coach/day rollup: never return athlete identifiers or family data.
+export const getClubLessonCalendar = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input)).handler(async ({ data, context }) => {
+    const { base } = await authorized(context.supabase, context.userId, data.organizationId);
+    const coaches = await base.from("coach_profiles").select("id,first_name,last_name").eq("organization_id", data.organizationId);
+    if (coaches.error) dbError(coaches.error);
+    const ids = (coaches.data ?? []).map((c) => c.id);
+    if (!ids.length) return [];
+    const slots = await base.from("athlete_lesson_slots").select("coach_id,day_of_week,start_minute,end_minute,frequency").in("coach_id", ids);
+    if (slots.error) dbError(slots.error);
+    const groups = new Map<string, { coachId: string; coachName: string; day: number; frequency: string; lessons: number; minutes: number; first: number; last: number }>();
+    for (const slot of slots.data ?? []) {
+      const coach = coaches.data?.find((c) => c.id === slot.coach_id);
+      if (!coach) continue;
+      const key = `${coach.id}|${slot.day_of_week}|${slot.frequency}`;
+      const group = groups.get(key) ?? { coachId: coach.id, coachName: `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim(), day: slot.day_of_week, frequency: slot.frequency, lessons: 0, minutes: 0, first: slot.start_minute, last: slot.end_minute };
+      group.lessons++; group.minutes += slot.end_minute - slot.start_minute;
+      group.first = Math.min(group.first, slot.start_minute); group.last = Math.max(group.last, slot.end_minute);
+      groups.set(key, group);
+    }
+    return [...groups.values()].sort((a, b) => ((a.day + 6) % 7) - ((b.day + 6) % 7) || a.first - b.first);
+  });
