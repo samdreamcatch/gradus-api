@@ -8,6 +8,9 @@ import { PageTitle } from "@/components/page-title";
 import { Progress } from "@/components/ui/progress";
 import { AttentionRow, SectionLabel, StatTile, StatusTag } from "@/components/org-admin/trust-ui";
 import { sportDisplayLabel } from "@/lib/coach-sports";
+import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
+import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/org-admin/")({
   head: () => ({
@@ -28,7 +31,17 @@ const fmtWhen = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 function TrustCenter() {
-  const { orgId, orgName } = useOrgId();
+  const { orgId } = useOrgId();
+  const countFn = useServerFn(getClubNotificationCounts);
+  const counts = useQuery({
+    queryKey: ["club-notification-counts", orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return countFn({ data: { organizationId: orgId } });
+    },
+    enabled: !!orgId,
+    retry: false,
+  });
   const fn = useServerFn(getClubReadiness);
   const q = useQuery({
     queryKey: ["trust-center", orgId],
@@ -47,10 +60,11 @@ function TrustCenter() {
           <PageTitle>Home</PageTitle>
         </div>
         {r ? <StatusTag status={r.status} /> : null}
+        <Button variant="outline" asChild><Link to="/org-admin/notifications">Notifications{counts.data ? ` · ${counts.data.open} open` : ""}</Link></Button>
       </div>
 
       {q.isError ? (
-        <p role="alert" className="text-text-secondary">Could not load the club overview. {q.error.message}</p>
+        <p role="alert" className="text-text-secondary">Could not load the club overview. New club records become available after this draft is accepted.</p>
       ) : !r ? (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Loader2 className="size-4 animate-spin" /> Loading readiness…

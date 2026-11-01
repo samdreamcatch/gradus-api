@@ -6,7 +6,8 @@
   - [x] Add People seat/admin tables, guarded admin removal, and transactional coach invite acceptance.
   - [ ] Finish People role/invite/reallocation controls and saved views; new-data flow verification waits on draft acceptance. No live database changes or invite emails sent.
 - [ ] Gradus Club Stage 2: notifications, safeguarding evidence, aggregate-only Home and saved table views.
-  - [ ] Continue with persistent Notifications, private evidence notes, per-admin read state and aggregate-only Home; stage new storage for acceptance.
+  - [x] Build persistent Notifications, private append-only evidence notes, per-admin read state and aggregate-only Home notification counts; stage new storage for acceptance.
+  - [ ] Verify Notifications source refresh, read receipts and note save/readback after acceptance; new storage is unavailable in this draft. Weekly practice/development rollups, saved views, acknowledgement/seat-grace feed entries and approved nightly refresh remain unfinished.
 - [ ] Gradus Club Stage 3: versioned Library acknowledgements and existing-template reminders.
 - [ ] Gradus Club Stage 4: Coaches analytics and full coach profile pages.
 - [ ] Gradus Club Stage 5: club schedule import, matching, review and explicit invite sending.

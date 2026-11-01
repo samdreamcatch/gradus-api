@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/notifications")(
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(feedOptions()),
-  errorComponent: ({ error }) => <div className="p-8 space-y-4"><PageTitle>Notifications</PageTitle><p role="alert" className="text-text-secondary">{error.message}</p></div>,
+  errorComponent: () => <div className="p-8 space-y-4"><PageTitle>Notifications</PageTitle><p role="alert" className="text-text-secondary">Club notifications could not be loaded. New notification records become available after this draft is accepted.</p></div>,
   component: NotificationsPage,
 });
 const date = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
