@@ -84,13 +84,13 @@ function ClubSchedulePage() {
   }
   const exportReview = () => downloadCsv("club-schedule-review.csv", toCsv(["Coach", "Athlete", "Age", "Day", "Start", "Minutes", "Frequency", "Invite destination"], shown.map((r) => [r.coachName, `${r.firstName} ${r.lastName}`, r.age, IMPORT_DAYS.find((d) => d.value === r.dayOfWeek)?.long, r.startMinute === null ? null : formatTimeLabel(r.startMinute), r.lengthMinutes, r.frequency, inviteDestination(r)])));
 
-  return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+  return <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8 [&_button]:min-h-11">
     <div className="flex flex-wrap items-center justify-between gap-3"><PageTitle>Schedule</PageTitle><div className="flex flex-wrap gap-2">
       <Button variant="outline" onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}><Download className="size-4" />CSV template</Button>
       <Button onClick={() => fileRef.current?.click()}><Upload className="size-4" />Import CSV</Button>
       <input ref={fileRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" className="hidden" aria-label="Upload club schedule CSV" onChange={(e) => { const file = e.target.files?.[0]; if (file) void upload(file); e.target.value = ""; }} />
     </div></div>
-    <Tabs defaultValue="imports"><TabsList className="h-auto"><TabsTrigger value="imports" className="min-h-11 press-soft">Imports</TabsTrigger><TabsTrigger value="calendar" className="min-h-11 press-soft">Calendar</TabsTrigger></TabsList>
+    <Tabs defaultValue="imports" className="min-w-0"><TabsList className="h-auto"><TabsTrigger value="imports" className="min-h-11 press-soft">Imports</TabsTrigger><TabsTrigger value="calendar" className="min-h-11 press-soft">Calendar</TabsTrigger></TabsList>
       <TabsContent value="imports" className="space-y-6">
         {seats.isError && <p role="status" className="text-sm text-text-secondary">Seated-coach matching becomes available when this draft is accepted.</p>}
         <ol aria-label="Import progress" className="grid grid-cols-2 gap-2 border-y border-divider py-3 sm:grid-cols-4">{["Upload", "Match coaches", "Review rows", "Send invites"].map((label, i) => <li key={label} aria-current={step === i ? "step" : undefined} className={step === i ? "font-semibold text-text-primary" : "text-text-secondary"}><span className="mr-2 font-mono text-xs">{i + 1}</span>{label}</li>)}</ol>

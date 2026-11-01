@@ -28,6 +28,11 @@
   --color-popover-foreground: var(--foreground);
   --color-dialog: var(--dialog);
   --color-elevated: var(--elevated);
+  --color-divider: var(--divider);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
   --color-muted: var(--elevated);
   --color-muted-foreground: var(--text-secondary);
   --color-secondary: var(--elevated);
