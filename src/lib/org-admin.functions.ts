@@ -64,7 +64,7 @@ export const getOrgAdminContext = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const orgs = await loadAdminOrgs(supabase, context.userId);
-    return { organizations: orgs };
+    return { organizations: orgs, viewerId: context.userId };
   });
 
 /* ============================ Roster ============================ */

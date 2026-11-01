@@ -8,6 +8,6 @@ export const clubCoachesOptions = () => queryOptions({
     const org = context.organizations[0];
     if (!org) throw new Error("No club is available for this account.");
     const roster = await listOrgRoster({ data: { organizationId: org.id } });
-    return { org, coaches: roster.coaches };
+    return { org, coaches: roster.coaches, viewerId: context.viewerId };
   },
 });

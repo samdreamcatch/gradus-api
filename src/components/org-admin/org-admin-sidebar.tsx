@@ -50,12 +50,12 @@ const GROUPS: Group[] = [
   },
   {
     label: "Roster",
-    items: [{ to: "/org-admin/roster", label: "Coaches & invites", icon: Users }],
+    items: [{ to: "/org-admin/coaches", label: "Coaches", icon: Users }],
   },
   {
     label: "Content",
     items: [
-      { to: "/org-admin/resources", label: "Resource library", icon: BookOpen },
+      { to: "/org-admin/resources", label: "Library", icon: BookOpen },
       { to: "/org-admin/moves", label: "Move library", icon: Dumbbell },
       { to: "/org-admin/levels", label: "Levels", icon: Layers },
       { to: "/org-admin/templates", label: "Template plans", icon: FileText },

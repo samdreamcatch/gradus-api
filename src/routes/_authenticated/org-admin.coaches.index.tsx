@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/coaches/")({
 type SavedView = { name: string; search: string; sport: string; sort: string };
 
 function CoachesPage() {
-  const { data: { org, coaches } } = useSuspenseQuery(clubCoachesOptions());
+  const { data: { org, coaches, viewerId } } = useSuspenseQuery(clubCoachesOptions());
   const read = useServerFn(getClubCoachWeeks);
   const metrics = useQuery({ queryKey: ["club-coach-weeks", org.id], queryFn: () => read({ data: { organizationId: org.id } }), retry: false });
   const [period, setPeriod] = useState(weekStart());
@@ -44,7 +44,6 @@ function CoachesPage() {
   const [view, setView] = useState("default");
   const [saveOpen, setSaveOpen] = useState(false);
   const [viewName, setViewName] = useState("");
-  const viewerId = metrics.data?.viewerId;
   const storageKey = viewerId ? `gradus.club.views.${viewerId}.${org.id}.coaches` : null;
   useEffect(() => {
     if (!storageKey) return;
