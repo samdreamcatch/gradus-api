@@ -16,10 +16,7 @@ ALTER TABLE public.org_admins
   ADD COLUMN IF NOT EXISTS club_role text NOT NULL DEFAULT 'admin',
   ADD COLUMN IF NOT EXISTS club_title text;
 ALTER TABLE public.org_admins ADD CONSTRAINT org_admins_club_role_check CHECK (club_role IN ('owner', 'admin'));
--- Existing clubs keep their membership; earliest established admin becomes owner.
-UPDATE public.org_admins a SET club_role = 'owner'
-WHERE a.id IN (SELECT DISTINCT ON (organization_id) id FROM public.org_admins ORDER BY organization_id, created_at, id)
-AND NOT EXISTS (SELECT 1 FROM public.org_admins owner WHERE owner.organization_id = a.organization_id AND owner.club_role = 'owner');
+-- Existing admins retain their roles; Gradus staff must explicitly designate owners.
 UPDATE public.organizations o SET
   coach_seats = greatest(o.coach_seats,
     (SELECT count(*) FROM public.coach_profiles c WHERE c.organization_id = o.id)
@@ -83,9 +80,9 @@ BEGIN
       ORDER BY seat_no DESC LIMIT (OLD.coach_seats - NEW.coach_seats));
   END IF;
   INSERT INTO public.org_seats (organization_id, seat_no)
-    SELECT NEW.id, n FROM generate_series(1, NEW.coach_seats) n
+    SELECT NEW.id, n FROM generate_series(1, NEW.coach_seats + coalesce((SELECT max(seat_no) FROM public.org_seats WHERE organization_id = NEW.id), 0)) n
     WHERE NOT EXISTS (SELECT 1 FROM public.org_seats WHERE organization_id = NEW.id AND seat_no = n)
-    AND (SELECT count(*) FROM public.org_seats WHERE organization_id = NEW.id) < NEW.coach_seats;
+    ORDER BY n LIMIT greatest(0, NEW.coach_seats - (SELECT count(*) FROM public.org_seats WHERE organization_id = NEW.id));
   RETURN NEW;
 END $$;
 CREATE TRIGGER club_seat_capacity AFTER INSERT OR UPDATE OF coach_seats, admin_seats, storefront_share_bps ON public.organizations
@@ -170,5 +167,15 @@ CREATE TRIGGER guard_club_admin_capacity BEFORE INSERT OR UPDATE OR DELETE ON pu
 CREATE POLICY "Club admin inserts require server" ON public.org_admins AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (false);
 CREATE POLICY "Club admin updates require server" ON public.org_admins AS RESTRICTIVE FOR UPDATE TO authenticated USING (false) WITH CHECK (false);
 CREATE POLICY "Club admin deletes require server" ON public.org_admins AS RESTRICTIVE FOR DELETE TO authenticated USING (false);
+
+CREATE FUNCTION public.club_remove_admin(p_org_id uuid, p_admin_id uuid) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  PERFORM id FROM public.organizations WHERE id = p_org_id FOR UPDATE;
+  DELETE FROM public.org_admins WHERE organization_id = p_org_id AND id = p_admin_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Club admin not found'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.club_remove_admin(uuid, uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.club_remove_admin(uuid, uuid) TO service_role;
 
 REVOKE ALL ON FUNCTION public.sync_club_seat_capacity(), public.sync_coach_club_seat(), public.reserve_club_invite_seat(), public.guard_club_admin_capacity() FROM PUBLIC, anon, authenticated;
