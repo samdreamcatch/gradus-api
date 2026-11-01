@@ -1,5 +1,6 @@
 
 ## Open
+- [ ] Continue Org admin draft: Schedule CSV upload, seated-coach matching, editable review, club-scoped review history and calendar; consolidate Library navigation. Invite delivery remains a separate acceptance-dependent step.
 - [x] Continue the Gradus Club plan: add Coaches directory/profile, per-admin device-saved coach views and aggregate-only Home practice strip; investigate remaining stage dependencies without activating emails or payments.
 - [x] Gradus Club redesign: reviewed uploaded PDF Settings/People layouts; preserve existing components and both themes.
 - [ ] Gradus Club Stage 1: seats, contract, independent admins, People seat controls and Settings (database changes apply on draft acceptance).
