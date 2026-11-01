@@ -3749,6 +3749,83 @@ export type Database = {
           },
         ]
       }
+      org_schedule_import_rows: {
+        Row: {
+          id: string
+          import_id: string
+          organization_id: string
+          review_row: Json
+          row_no: number
+        }
+        Insert: {
+          id?: string
+          import_id: string
+          organization_id: string
+          review_row: Json
+          row_no: number
+        }
+        Update: {
+          id?: string
+          import_id?: string
+          organization_id?: string
+          review_row?: Json
+          row_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_schedule_import_rows_import_id_organization_id_fkey"
+            columns: ["import_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "org_schedule_imports"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "org_schedule_import_rows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_schedule_imports: {
+        Row: {
+          counts: Json
+          created_at: string
+          file_name: string
+          id: string
+          organization_id: string
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          counts?: Json
+          created_at?: string
+          file_name: string
+          id?: string
+          organization_id: string
+          status?: string
+          uploaded_by: string
+        }
+        Update: {
+          counts?: Json
+          created_at?: string
+          file_name?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_schedule_imports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_seats: {
         Row: {
           coach_id: string | null
@@ -5261,6 +5338,16 @@ export type Database = {
       club_remove_admin: {
         Args: { p_admin_id: string; p_org_id: string }
         Returns: undefined
+      }
+      club_save_schedule_review: {
+        Args: {
+          p_file: string
+          p_org: string
+          p_ready: boolean
+          p_rows: Json
+          p_user: string
+        }
+        Returns: string
       }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
