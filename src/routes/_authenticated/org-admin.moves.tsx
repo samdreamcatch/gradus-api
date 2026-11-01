@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,6 +134,7 @@ function OrgMovesPage() {
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-5xl">
       <PageTitle>Move library</PageTitle>
+      <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
