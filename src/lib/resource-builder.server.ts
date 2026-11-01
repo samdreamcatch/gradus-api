@@ -4,7 +4,7 @@ import { z } from "zod";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { pdfSafe, wrapLines, type BuilderDraft } from "./resource-builder";
 
-const WRITER_MODEL = "claude-sonnet-4-5";
+const WRITER_MODEL = "claude-sonnet-5-5";
 
 const draftSchema = z.object({
   title: z.string().min(1).max(200),
