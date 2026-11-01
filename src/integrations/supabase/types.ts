@@ -4023,6 +4023,7 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          social_coach_name: string
           source: string
           source_competition_id: string | null
           status: string
@@ -4042,6 +4043,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          social_coach_name?: string
           source?: string
           source_competition_id?: string | null
           status?: string
@@ -4061,6 +4063,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          social_coach_name?: string
           source?: string
           source_competition_id?: string | null
           status?: string
@@ -4861,6 +4864,16 @@ export type Database = {
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
       admin_run_readonly_sql: { Args: { _sql: string }; Returns: Json }
+      admin_update_social_plan: {
+        Args: {
+          _coach_name: string
+          _moves: Json
+          _notes: string
+          _plan_id: string
+          _title: string
+        }
+        Returns: undefined
+      }
       analytics_apply_retention: { Args: never; Returns: number }
       analytics_area_report: {
         Args: { p_since: string }

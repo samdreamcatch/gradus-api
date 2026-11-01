@@ -176,6 +176,13 @@
       "when": 1793548264690,
       "tag": "0024_club_policy_requirements",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793548325233,
+      "tag": "0025_social_plan_editing",
+      "breakpoints": true
     }
   ]
 }
