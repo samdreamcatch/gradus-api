@@ -89,7 +89,11 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
         ].join("\n"),
       },
     ],
-  });
+    });
+  } catch (e) {
+    console.error("[resource-builder] Claude request failed", e);
+    throw new Error("The writing assistant couldn't be reached. Try again in a minute.");
+  }
   const call = res.content.find((c) => c.type === "tool_use");
   const parsed = draftSchema.safeParse(call && "input" in call ? call.input : null);
   if (!parsed.success)
