@@ -60,11 +60,18 @@ function TrustCenter() {
           <PageTitle>Home</PageTitle>
         </div>
         {r ? <StatusTag status={r.status} /> : null}
-        <Button variant="outline" asChild><Link to="/org-admin/notifications">Notifications{counts.data ? ` · ${counts.data.open} open` : ""}</Link></Button>
+        <Button variant="outline" asChild>
+          <Link to="/org-admin/notifications">
+            Notifications{counts.data ? ` · ${counts.data.open} open` : ""}
+          </Link>
+        </Button>
       </div>
 
       {q.isError ? (
-        <p role="alert" className="text-text-secondary">Could not load the club overview. New club records become available after this draft is accepted.</p>
+        <p role="alert" className="text-text-secondary">
+          Could not load the club overview. New club records become available after this draft is
+          accepted.
+        </p>
       ) : !r ? (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Loader2 className="size-4 animate-spin" /> Loading readiness…

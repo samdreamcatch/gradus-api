@@ -96,7 +96,9 @@ export function OrgAdminSidebar() {
           <Eyebrow size="small" tone="accent-ink">
             Club
           </Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">{orgName || "Gradus Club"}</p>
+          <p className="font-display text-h3 text-text-primary leading-tight">
+            {orgName || "Gradus Club"}
+          </p>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -113,7 +115,13 @@ export function OrgAdminSidebar() {
                         <Link to={item.to as never}>
                           <Icon className="size-4" />
                           <span>{item.label}</span>
-                          {item.to === "/org-admin/notifications" && counts.data && counts.data.unread > 0 && <span className="ml-auto font-mono text-xs">{counts.data.unread}</span>}
+                          {item.to === "/org-admin/notifications" &&
+                            counts.data &&
+                            counts.data.unread > 0 && (
+                              <span className="ml-auto font-mono text-xs">
+                                {counts.data.unread}
+                              </span>
+                            )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
