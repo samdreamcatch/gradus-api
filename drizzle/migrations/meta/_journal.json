@@ -183,6 +183,13 @@
       "when": 1793548325233,
       "tag": "0025_social_plan_editing",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793548417293,
+      "tag": "0026_gradus_club_seats",
+      "breakpoints": true
     }
   ]
 }

@@ -3314,6 +3314,8 @@ export type Database = {
       }
       org_admins: {
         Row: {
+          club_role: string
+          club_title: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -3321,6 +3323,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          club_role?: string
+          club_title?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3328,6 +3332,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          club_role?: string
+          club_title?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3555,6 +3561,64 @@ export type Database = {
           },
         ]
       }
+      org_seats: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          filled_at: string | null
+          grace_until: string | null
+          id: string
+          organization_id: string
+          released_at: string | null
+          reserved_invite_id: string | null
+          seat_no: number
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          filled_at?: string | null
+          grace_until?: string | null
+          id?: string
+          organization_id: string
+          released_at?: string | null
+          reserved_invite_id?: string | null
+          seat_no: number
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          filled_at?: string | null
+          grace_until?: string | null
+          id?: string
+          organization_id?: string
+          released_at?: string | null
+          reserved_invite_id?: string | null
+          seat_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_seats_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_seats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_seats_reserved_invite_id_fkey"
+            columns: ["reserved_invite_id"]
+            isOneToOne: false
+            referencedRelation: "org_coach_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invite_codes: {
         Row: {
           active: boolean
@@ -3658,8 +3722,14 @@ export type Database = {
       organizations: {
         Row: {
           active: boolean
+          admin_seats: number
           city: string | null
+          coach_seats: number
           content_version: number
+          contract_ends_on: string | null
+          contract_file_url: string | null
+          contract_signed_on: string | null
+          contract_starts_on: string | null
           created_at: string
           id: string
           is_listed: boolean
@@ -3668,12 +3738,20 @@ export type Database = {
           notes: string | null
           region: string | null
           slug: string
+          storefront_enabled: boolean
+          storefront_share_bps: number
           updated_at: string
         }
         Insert: {
           active?: boolean
+          admin_seats?: number
           city?: string | null
+          coach_seats?: number
           content_version?: number
+          contract_ends_on?: string | null
+          contract_file_url?: string | null
+          contract_signed_on?: string | null
+          contract_starts_on?: string | null
           created_at?: string
           id?: string
           is_listed?: boolean
@@ -3682,12 +3760,20 @@ export type Database = {
           notes?: string | null
           region?: string | null
           slug: string
+          storefront_enabled?: boolean
+          storefront_share_bps?: number
           updated_at?: string
         }
         Update: {
           active?: boolean
+          admin_seats?: number
           city?: string | null
+          coach_seats?: number
           content_version?: number
+          contract_ends_on?: string | null
+          contract_file_url?: string | null
+          contract_signed_on?: string | null
+          contract_starts_on?: string | null
           created_at?: string
           id?: string
           is_listed?: boolean
@@ -3696,6 +3782,8 @@ export type Database = {
           notes?: string | null
           region?: string | null
           slug?: string
+          storefront_enabled?: boolean
+          storefront_share_bps?: number
           updated_at?: string
         }
         Relationships: []
@@ -4977,6 +5065,14 @@ export type Database = {
       can_view_shared_coach_plan: {
         Args: { _athlete_id: string; _owner_coach_id: string }
         Returns: boolean
+      }
+      club_accept_coach_invite: {
+        Args: { p_code: string; p_user_id: string }
+        Returns: string
+      }
+      club_remove_admin: {
+        Args: { p_admin_id: string; p_org_id: string }
+        Returns: undefined
       }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
