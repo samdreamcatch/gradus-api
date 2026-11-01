@@ -71,12 +71,13 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
       max_tokens: 4000,
       system:
         "You write clear, practical one-to-four page handouts for youth and adult sports clubs. " +
+        "Always reply by calling the submit_document tool exactly once. " +
         "Write in plain, warm, direct language for the named audience. No markdown symbols other than '- ' list items. " +
         "Do not invent phone numbers, addresses, prices, dates or named people; write [placeholder] where the club must fill a fact in. " +
         "For safety, medical or legal topics, keep guidance general and tell readers to follow their governing body and a qualified professional. " +
         PROMPT_INJECTION_GUARD,
       tools: [tool],
-      tool_choice: { type: "tool", name: "submit_document" },
+      tool_choice: { type: "auto" },
       messages: [
         {
           role: "user",
