@@ -101,9 +101,15 @@ export const listOrgRoster = createServerFn({ method: "POST" })
     const userIds = (coaches.data ?? []).map((c) => c.user_id);
     const [levels, clubLevels] = await Promise.all([
       coachIds.length
-        ? supabaseAdmin.from("coach_levels").select("coach_id, sport, level_key, practice_hours_per_week").in("coach_id", coachIds)
+        ? supabaseAdmin
+            .from("coach_levels")
+            .select("coach_id, sport, level_key, practice_hours_per_week")
+            .in("coach_id", coachIds)
         : Promise.resolve({ data: [], error: null }),
-      supabaseAdmin.from("org_levels").select("sport, level_key, label").eq("organization_id", data.organizationId),
+      supabaseAdmin
+        .from("org_levels")
+        .select("sport, level_key, label")
+        .eq("organization_id", data.organizationId),
     ]);
     if (levels.error) dbError(levels.error);
     if (clubLevels.error) dbError(clubLevels.error);
@@ -151,14 +157,20 @@ export const listOrgRoster = createServerFn({ method: "POST" })
         parentCount: parentSetByCoach.get(c.id)?.size ?? 0,
         adultAthleteCount: adultByCoach.get(c.id) ?? 0,
         joinedAt: c.created_at,
-        levels: (levels.data ?? []).filter((l) => l.coach_id === c.id).map((l) => ({
-          sport: l.sport,
-          key: l.level_key,
-          label: (clubLevels.data ?? []).find((cl) => cl.sport === l.sport && cl.level_key === l.level_key)?.label
-            ?? SPORTS.find((s) => s.key === l.sport)?.levels.find((sl) => sl.key === l.level_key)?.label
-            ?? l.level_key,
-          practiceHours: Number(l.practice_hours_per_week),
-        })),
+        levels: (levels.data ?? [])
+          .filter((l) => l.coach_id === c.id)
+          .map((l) => ({
+            sport: l.sport,
+            key: l.level_key,
+            label:
+              (clubLevels.data ?? []).find(
+                (cl) => cl.sport === l.sport && cl.level_key === l.level_key,
+              )?.label ??
+              SPORTS.find((s) => s.key === l.sport)?.levels.find((sl) => sl.key === l.level_key)
+                ?.label ??
+              l.level_key,
+            practiceHours: Number(l.practice_hours_per_week),
+          })),
       })),
     };
   });
@@ -463,12 +475,18 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
     type InviteDatabase = Omit<Database, "public"> & {
       public: Omit<Database["public"], "Functions"> & {
         Functions: Database["public"]["Functions"] & {
-          club_accept_coach_invite: { Args: { p_code: string; p_user_id: string }; Returns: string };
+          club_accept_coach_invite: {
+            Args: { p_code: string; p_user_id: string };
+            Returns: string;
+          };
         };
       };
     };
     const admin = supabaseAdmin as unknown as SupabaseClient<InviteDatabase>;
-    const accepted = await admin.rpc("club_accept_coach_invite", { p_code: data.code, p_user_id: context.userId });
+    const accepted = await admin.rpc("club_accept_coach_invite", {
+      p_code: data.code,
+      p_user_id: context.userId,
+    });
     if (accepted.error) dbError(accepted.error);
 
     return { ok: true, organizationId: invite.data.organization_id };

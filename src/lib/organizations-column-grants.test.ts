@@ -19,7 +19,12 @@ const migrations = readdirSync(migrationsDir)
   .filter((f) => f.endsWith(".sql"))
   .sort();
 const read = (file: string) => readFileSync(`${migrationsDir}/${file}`, "utf8");
-const clubSeatMigration = readFileSync(root(".lovable/drafts/drft_01m5b6k187e5xtbpq5bedgd90d/migrations/20261101020000_gradus_club_seats.sql"), "utf8");
+const clubSeatMigration = readFileSync(
+  root(
+    ".lovable/drafts/drft_01m5b6k187e5xtbpq5bedgd90d/migrations/20261101020000_gradus_club_seats.sql",
+  ),
+  "utf8",
+);
 
 /** SQL without comments, split into statements, whitespace collapsed. */
 function statements(sql: string): string[] {
@@ -58,11 +63,18 @@ function addedColumns(stmt: string): string[] {
 describe("organizations column grants (admin notes)", () => {
   it("staged club contract columns all receive authenticated column grants", () => {
     const stmts = statements(clubSeatMigration);
-    const grants = new Set(stmts.flatMap((stmt) => {
-      const columns = selectGrant(stmt);
-      return Array.isArray(columns) ? columns : [];
-    }));
-    for (const column of ["coach_seats", "admin_seats", "storefront_share_bps", "contract_signed_on"]) {
+    const grants = new Set(
+      stmts.flatMap((stmt) => {
+        const columns = selectGrant(stmt);
+        return Array.isArray(columns) ? columns : [];
+      }),
+    );
+    for (const column of [
+      "coach_seats",
+      "admin_seats",
+      "storefront_share_bps",
+      "contract_signed_on",
+    ]) {
       expect(stmts.flatMap(addedColumns)).toContain(column);
     }
     expect(stmts.flatMap(addedColumns).filter((column) => !grants.has(column))).toEqual([]);
