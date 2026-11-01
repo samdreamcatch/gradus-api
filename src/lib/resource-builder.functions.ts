@@ -39,7 +39,7 @@ export const writeClubResourceDraft = createServerFn({ method: "POST" })
       .object({
         organizationId: z.string().uuid(),
         sport: z.string().min(1).max(64),
-        audience: z.enum(["coaches", "parents", "athletes", "everyone"]),
+        audiences: z.array(z.enum(["coaches", "parents", "athletes"])).min(1).max(3),
         title: z.string().trim().min(1).max(200),
         brief: z.string().trim().min(10).max(3000),
       })
@@ -57,7 +57,7 @@ export const writeClubResourceDraft = createServerFn({ method: "POST" })
     return writeResourceDraft({
       club: org.name,
       sport: sportDisplayLabel(data.sport),
-      audience: data.audience,
+      audience: [...new Set(data.audiences)].join(", "),
       title: data.title,
       brief: data.brief,
     });
