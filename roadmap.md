@@ -38,4 +38,4 @@
 - [x] Org admin Stage 2: template plans (build, CSV import, send by sport/level)
 - [~] Club custom levels in coaches' level pickers — SKIPPED by decision (Mariah, Nov 1 2026); club levels stay admin-side defaults only
 - [x] Stage 3: branded PDF resource builder (Library → Builder)
-- [ ] Resource builder AI writing: Anthropic key needs a workspace ID (or a workspace-scoped key) — blocked on Mariah
+- [x] Resource builder AI writing: Anthropic workspace ID added; writing verified
