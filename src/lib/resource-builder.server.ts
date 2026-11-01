@@ -67,28 +67,28 @@ export async function writeResourceDraft(input: WriteInput): Promise<BuilderDraf
   let res: Anthropic.Message;
   try {
     res = await client.messages.create({
-    model: WRITER_MODEL,
-    max_tokens: 4000,
-    system:
-      "You write clear, practical one-to-four page handouts for youth and adult sports clubs. " +
-      "Write in plain, warm, direct language for the named audience. No markdown symbols other than '- ' list items. " +
-      "Do not invent phone numbers, addresses, prices, dates or named people; write [placeholder] where the club must fill a fact in. " +
-      "For safety, medical or legal topics, keep guidance general and tell readers to follow their governing body and a qualified professional. " +
-      PROMPT_INJECTION_GUARD,
-    tools: [tool],
-    tool_choice: { type: "tool", name: "submit_document" },
-    messages: [
-      {
-        role: "user",
-        content: [
-          `Club: ${sanitizeUserContent(input.club, 120)}`,
-          `Sport: ${input.sport}`,
-          `Audience: ${input.audience}`,
-          wrapUntrusted("working_title", sanitizeUserContent(input.title, 200)),
-          wrapUntrusted("brief", sanitizeUserContent(input.brief, 3000)),
-        ].join("\n"),
-      },
-    ],
+      model: WRITER_MODEL,
+      max_tokens: 4000,
+      system:
+        "You write clear, practical one-to-four page handouts for youth and adult sports clubs. " +
+        "Write in plain, warm, direct language for the named audience. No markdown symbols other than '- ' list items. " +
+        "Do not invent phone numbers, addresses, prices, dates or named people; write [placeholder] where the club must fill a fact in. " +
+        "For safety, medical or legal topics, keep guidance general and tell readers to follow their governing body and a qualified professional. " +
+        PROMPT_INJECTION_GUARD,
+      tools: [tool],
+      tool_choice: { type: "tool", name: "submit_document" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            `Club: ${sanitizeUserContent(input.club, 120)}`,
+            `Sport: ${input.sport}`,
+            `Audience: ${input.audience}`,
+            wrapUntrusted("working_title", sanitizeUserContent(input.title, 200)),
+            wrapUntrusted("brief", sanitizeUserContent(input.brief, 3000)),
+          ].join("\n"),
+        },
+      ],
     });
   } catch (e) {
     console.error("[resource-builder] Claude request failed", e);
