@@ -1156,6 +1156,101 @@ export type Database = {
         }
         Relationships: []
       }
+      club_notification_reads: {
+        Row: {
+          notification_id: string
+          organization_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          notification_id: string
+          organization_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          notification_id?: string
+          organization_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "club_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_notification_reads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_notifications: {
+        Row: {
+          about: string
+          coach: string | null
+          go_to: string
+          id: string
+          kind: string
+          opened_at: string
+          organization_id: string
+          resolution: string | null
+          resolved_at: string | null
+          source_id: string
+          source_table: string
+          status: string
+          subject: string
+          title: string
+        }
+        Insert: {
+          about: string
+          coach?: string | null
+          go_to: string
+          id?: string
+          kind: string
+          opened_at?: string
+          organization_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          source_id: string
+          source_table: string
+          status: string
+          subject: string
+          title: string
+        }
+        Update: {
+          about?: string
+          coach?: string | null
+          go_to?: string
+          id?: string
+          kind?: string
+          opened_at?: string
+          organization_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          source_id?: string
+          source_table?: string
+          status?: string
+          subject?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_policy_versions: {
         Row: {
           audiences: string[]
@@ -1266,6 +1361,48 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      club_safeguarding_notes: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          notification_id: string
+          organization_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          notification_id: string
+          organization_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          notification_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_safeguarding_notes_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "club_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_safeguarding_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_athlete_practice_targets: {
         Row: {
@@ -5256,6 +5393,10 @@ export type Database = {
           _window_seconds: number
         }
         Returns: number
+      }
+      refresh_club_notifications: {
+        Args: { p_org_id: string }
+        Returns: undefined
       }
       release_idempotency_key: {
         Args: { _key: string; _user_id: string }
