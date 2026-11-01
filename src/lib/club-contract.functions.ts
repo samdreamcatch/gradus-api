@@ -189,7 +189,10 @@ export const removeClubAdmin = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orgInput.extend({ adminId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const admin = await authorizedClient(context.supabase, context.userId, data.organizationId);
-    const result = await admin.rpc("club_remove_admin", { p_org_id: data.organizationId, p_admin_id: data.adminId });
+    const result = await admin.rpc("club_remove_admin", {
+      p_org_id: data.organizationId,
+      p_admin_id: data.adminId,
+    });
     if (result.error) dbError(result.error);
     return { ok: true };
   });
