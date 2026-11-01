@@ -11,6 +11,8 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import { getClubCoachWeeks } from "@/lib/club-coaches.functions";
+import { weekStart, sumCoachWeeks, targetPercent } from "@/lib/club-coach-metrics";
 
 export const Route = createFileRoute("/_authenticated/org-admin/")({
   head: () => ({
@@ -32,6 +34,18 @@ const fmtWhen = (iso: string) =>
 
 function TrustCenter() {
   const { orgId } = useOrgId();
+  const weeksFn = useServerFn(getClubCoachWeeks);
+  const weeks = useQuery({
+    queryKey: ["club-coach-weeks", orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return weeksFn({ data: { organizationId: orgId } });
+    },
+    enabled: !!orgId,
+    retry: false,
+  });
+  const currentWeeks = (weeks.data?.weeks ?? []).filter((w) => w.week_start === weekStart());
+  const practice = sumCoachWeeks(currentWeeks);
   const countFn = useServerFn(getClubNotificationCounts);
   const counts = useQuery({
     queryKey: ["club-notification-counts", orgId],
@@ -66,6 +80,19 @@ function TrustCenter() {
           </Link>
         </Button>
       </div>
+
+      <section className="border-y border-divider py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-h3">Practice · this week</h2>
+          <Button variant="outline" asChild><Link to="/org-admin/coaches">Coaches</Link></Button>
+        </div>
+        {weeks.isError ? <p role="alert" className="mt-3 text-sm text-text-secondary">Weekly practice records become available after this draft is accepted.</p> :
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div><p className="text-sm text-text-secondary">Practice / target minutes</p><p className="font-display text-h2">{weeks.data ? Math.round(practice.practice).toLocaleString() : "—"} / {weeks.data && practice.target !== null ? Math.round(practice.target).toLocaleString() : "—"}</p></div>
+            <div><p className="text-sm text-text-secondary">Of recorded target</p><p className="font-display text-h2">{weeks.data && targetPercent(practice.practice, practice.target) !== null ? `${targetPercent(practice.practice, practice.target)}%` : "—"}</p></div>
+            <div><p className="text-sm text-text-secondary">Sessions this week</p><p className="font-display text-h2">{weeks.data ? practice.sessions.toLocaleString() : "—"}</p></div>
+          </div>}
+      </section>
 
       {q.isError ? (
         <p role="alert" className="text-text-secondary">
