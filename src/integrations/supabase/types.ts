@@ -1156,6 +1156,117 @@ export type Database = {
         }
         Relationships: []
       }
+      club_policy_versions: {
+        Row: {
+          audiences: string[]
+          external_url: string | null
+          organization_id: string
+          required_at: string
+          resource_id: string
+          storage_path: string | null
+          title: string
+          version: number
+        }
+        Insert: {
+          audiences: string[]
+          external_url?: string | null
+          organization_id: string
+          required_at: string
+          resource_id: string
+          storage_path?: string | null
+          title: string
+          version: number
+        }
+        Update: {
+          audiences?: string[]
+          external_url?: string | null
+          organization_id?: string
+          required_at?: string
+          resource_id?: string
+          storage_path?: string | null
+          title?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      club_resource_ack_requirements: {
+        Row: {
+          audiences: string[]
+          organization_id: string
+          required_at: string
+          resource_id: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          audiences?: string[]
+          organization_id: string
+          required_at?: string
+          resource_id: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          audiences?: string[]
+          organization_id?: string
+          required_at?: string
+          resource_id?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_resource_ack_requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_resource_ack_requirements_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_resource_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          acted_for_athlete_id: string | null
+          id: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id?: string
+          resource_id?: string
+          role?: string
+          signer_name?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       coach_athlete_practice_targets: {
         Row: {
           athlete_id: string
@@ -3988,6 +4099,83 @@ export type Database = {
           },
         ]
       }
+      policy_pack_items: {
+        Row: {
+          pack_id: string
+          resource_id: string
+        }
+        Insert: {
+          pack_id: string
+          resource_id: string
+        }
+        Update: {
+          pack_id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_pack_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "policy_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_pack_items_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_packs: {
+        Row: {
+          archived_at: string | null
+          category: string
+          created_at: string
+          due_at: string | null
+          id: string
+          name: string
+          organization_id: string
+          renew_months: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          renew_months?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          renew_months?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_packs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_nudges_sent: {
         Row: {
           athlete_id: string
@@ -4979,6 +5167,16 @@ export type Database = {
         }[]
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
+      set_club_policy_requirement: {
+        Args: {
+          p_actor: string
+          p_again: boolean
+          p_audiences: string[]
+          p_org: string
+          p_resource: string
+        }
+        Returns: number
+      }
       shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }
       team_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
