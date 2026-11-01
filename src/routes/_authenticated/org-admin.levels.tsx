@@ -23,7 +23,13 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 import { listOrgLevels, saveOrgLevels } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/levels")({
-  head: () => ({ meta: [{ title: "Levels · Organization Admin · Gradus" }] }),
+  head: () => ({ meta: [
+    { title: "Levels · Gradus Club" },
+    { name: "description", content: "Club sport levels and coach practice expectations." },
+    { property: "og:title", content: "Levels · Gradus Club" },
+    { property: "og:description", content: "Club sport levels and coach practice expectations." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrgLevelsPage,
 });
 

@@ -49,7 +49,13 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/moves")({
-  head: () => ({ meta: [{ title: "Move library · Organization Admin · Gradus" }] }),
+  head: () => ({ meta: [
+    { title: "Moves · Gradus Club" },
+    { name: "description", content: "Club move library and sport-specific coaching content." },
+    { property: "og:title", content: "Moves · Gradus Club" },
+    { property: "og:description", content: "Club move library and sport-specific coaching content." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrgMovesPage,
 });
 
