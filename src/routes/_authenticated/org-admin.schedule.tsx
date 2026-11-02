@@ -22,7 +22,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { TableHeader, TableBody, TableHead, TableRow, TableCell, TableFooter } from "@/components/ui/table";
 import { CLUB_SCHEDULE_TEMPLATE, parseClubSchedule, clubScheduleErrors, inviteDestination, type ClubScheduleRow } from "@/lib/club-schedule";
 import { IMPORT_DAYS, IMPORT_FREQUENCIES, formatTimeLabel, minutesToHHMM, hhmmToMinutes } from "@/lib/schedule-import";
-import { getClubScheduleSeats, getClubScheduleHistory, getClubScheduleReview, saveClubScheduleReview, getClubLessonCalendar } from "@/lib/club-schedule.functions";
+import { getClubScheduleSeats, getClubScheduleHistory, getClubScheduleReview, saveClubScheduleReview, getClubLessonCalendar, sendClubLessonInvites } from "@/lib/club-schedule.functions";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { ClubLesson } from "@/lib/club-lesson-calendar";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { sportDisplayLabel } from "@/lib/coach-sports";
@@ -78,7 +80,37 @@ function ClubSchedulePage() {
   const lessons = allLessons.filter((r) => `${r.studentName} ${r.guardianName} ${r.coachName} ${r.contactEmail ?? ""}`.toLowerCase().includes(lessonSearch.toLowerCase())
     && (sp.coach === "all" || r.coachId === sp.coach) && (sp.invite === "all" || r.invitationStatus === sp.invite));
   const activeFilters = (sp.coach !== "all" ? 1 : 0) + (sp.invite !== "all" ? 1 : 0) + (lessonSearch ? 1 : 0);
-  const recurrence = (r: ClubLesson) => `${IMPORT_FREQUENCIES.find((f) => f.value === r.frequency)?.label ?? r.frequency}${r.weeksOfMonth.length ? ` · Weeks ${r.weeksOfMonth.join(", ")}` : ""}`;
+  const inviteable = [...new Map(lessons.filter((l) => l.canInvite).map((l) => [l.athleteId, l])).values()];
+  const sendFn = useServerFn(sendClubLessonInvites);
+  const [sending, setSending] = useState(false);
+  const [confirmSend, setConfirmSend] = useState<string[] | null>(null);
+  async function sendInvites(ids: string[]) {
+    setSending(true);
+    try {
+      const res = await sendFn({ data: { organizationId: org.id, athleteIds: ids } });
+      await qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] });
+      toast.success(`${res.sent} invite${res.sent === 1 ? "" : "s"} queued${res.skipped ? ` · ${res.skipped} skipped (already joined, paused or no email)` : ""}.`);
+      setConfirmSend(null); setSelectedLesson(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not send invites."); }
+    finally { setSending(false); }
+  }
+  const dayName = (d: number) => IMPORT_DAYS.find((x) => x.value === d)?.long ?? "";
+  const lessonColumns: ClubColumn<ClubLesson>[] = [
+    { key: "student", label: "Student", render: (r) => r.studentName, sortValue: (r) => r.studentName },
+    { key: "guardian", label: "Guardian", render: (r) => r.guardianName, sortValue: (r) => r.guardianName, className: "min-w-36 whitespace-normal" },
+    { key: "coach", label: "Coach", render: (r) => r.coachName, sortValue: (r) => r.coachName, groupValue: (r) => r.coachName },
+    { key: "day", label: "Day", render: (r) => dayName(r.day), sortValue: (r) => (r.day + 6) % 7, groupValue: (r) => dayName(r.day) },
+    { key: "time", label: "Time", render: (r) => <span className="font-mono text-xs">{formatTimeLabel(r.start)}–{formatTimeLabel(r.end)}</span>, sortValue: (r) => r.start, className: "whitespace-nowrap" },
+    { key: "minutes", label: "Min", align: "right", render: (r) => r.minutes, sortValue: (r) => r.minutes, footer: (rows) => rows.reduce((n, r) => n + r.minutes, 0) },
+    { key: "every", label: "Every", render: (r) => recurrence(r), groupValue: (r) => recurrence(r), className: "whitespace-normal" },
+    { key: "recipient", label: "Invite to", render: (r) => r.recipient, groupValue: (r) => r.recipient },
+    { key: "email", label: "Contact email", render: (r) => r.contactEmail ?? <span className="text-text-tertiary">Not recorded</span>, sortValue: (r) => r.contactEmail, className: "min-w-48 break-all whitespace-normal" },
+    { key: "invite", label: "Invitation", render: (r) => <StatusDot status={r.invitationStatus === "Contact missing" ? "attention" : r.invitationStatus === "Connected" ? "healthy" : "informational"} label={r.invitationStatus} />, sortValue: (r) => r.invitationStatus, groupValue: (r) => r.invitationStatus, className: "min-w-48" },
+    { key: "invitedAt", label: "Invited", render: (r) => r.invitedAt?.slice(0, 10) ?? "—", sortValue: (r) => r.invitedAt, className: "font-mono text-xs whitespace-nowrap", defaultHidden: true },
+    { key: "schedule", label: "Schedule", render: (r) => r.scheduleStatus, groupValue: (r) => r.scheduleStatus, defaultHidden: true },
+  ];
+  const lessonGrid = useClubGrid("schedule-lessons", lessonColumns, lessons);
+  function recurrence(r: ClubLesson) { return `${IMPORT_FREQUENCIES.find((f) => f.value === r.frequency)?.label ?? r.frequency}${r.weeksOfMonth.length ? ` · Weeks ${r.weeksOfMonth.join(", ")}` : ""}`; }
   const fileRef = useRef<HTMLInputElement>(null);
   const seatedCoaches = coaches.filter((c) => seats.data?.some((s) => s.coach_id === c.coachId));
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))];
@@ -134,7 +166,7 @@ function ClubSchedulePage() {
           {step >= 2 && <section className="space-y-3"><div className="flex flex-wrap items-center gap-3"><Input aria-label="Search schedule rows" placeholder="Search names or emails" value={search} onChange={(e) => setSearch(e.target.value)} className="sm:w-72" /><Button variant={filter === "all" ? "secondary" : "outline"} onClick={() => setFilter("all")}>All · {rows.length}</Button><Button variant={filter === "attention" ? "secondary" : "outline"} onClick={() => setFilter("attention")}>Needs decision · {decisions}</Button><Button variant="ghost" onClick={() => { setSearch(""); setFilter("all"); }}>Clear</Button><Button variant="ghost" onClick={() => setStep(1)}>Match coaches</Button></div>
             <ClubTable><TableHeader><TableRow>{["Athlete as written", "Coach", "Age", "Day / start", "Min", "Invite goes to", "Status", "Edit"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{shown.map((r) => <TableRow key={r.id}><TableCell className="min-w-40">{r.firstName} {r.lastName}</TableCell><TableCell>{coaches.find((c) => c.coachId === r.coachId)?.firstName ?? r.coachName}</TableCell><TableCell className="font-mono text-right">{r.age ?? "—"}</TableCell><TableCell className="whitespace-nowrap">{IMPORT_DAYS.find((d) => d.value === r.dayOfWeek)?.short ?? "—"} · {r.startMinute === null ? "—" : formatTimeLabel(r.startMinute)}</TableCell><TableCell className="font-mono text-right">{r.lengthMinutes ?? "—"}</TableCell><TableCell className="min-w-40">{inviteDestination(r)}</TableCell><TableCell className="min-w-48"><StatusDot status={issues[r.id]?.length ? "attention" : "informational"} label={issues[r.id]?.[0] ?? "Ready for matching"} /></TableCell><TableCell><Button variant="ghost" size="icon" className="size-11" aria-label={`Edit ${r.firstName} ${r.lastName}`} onClick={() => setEditing({ ...r })}><Pencil className="size-4" /></Button></TableCell></TableRow>)}{!shown.length && <TableRow><TableCell colSpan={8} className="py-8 text-center">No matching lessons.</TableCell></TableRow>}</TableBody><TableFooter><TableRow><TableCell colSpan={4}>Review total · {shown.length} lessons</TableCell><TableCell className="font-mono text-right">{shown.reduce((n, r) => n + (r.lengthMinutes ?? 0), 0)}</TableCell><TableCell colSpan={3} /></TableRow></TableFooter></ClubTable>
             {step === 2 && <Button disabled={decisions > 0} onClick={() => setStep(3)}>Continue to invites</Button>}
-            {step === 3 && <div className="space-y-3 border-t border-divider pt-4"><h2 className="font-display text-h3">Invitations not sent</h2><p className="text-sm text-text-secondary">Existing-athlete matching and invitation delivery are not connected yet. This review has not added lessons or sent emails.</p><Button variant="outline" onClick={() => setStep(2)}>Back to review</Button></div>}
+            {step === 3 && <div className="space-y-3 border-t border-divider pt-4"><h2 className="font-display text-h3">Invitations not sent</h2><p className="text-sm text-text-secondary">This review has not added lessons or sent emails. Once a coach adds these students to their roster, send family invites from the Lessons tab.</p><Button variant="outline" onClick={() => setStep(2)}>Back to review</Button></div>}
           </section>}
         </>}
         <section className="space-y-3"><h2 className="font-display text-h3">Past imports</h2>{history.isError ? <p className="text-sm text-text-secondary">Import history becomes available when this draft is accepted.</p> : <ClubTable><TableHeader><TableRow>{["Imported", "File", "Status", "Open"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{history.data?.map((record) => <TableRow key={record.id}><TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell><TableCell>{record.file_name}</TableCell><TableCell><StatusDot status="informational" label={record.status === "ready" ? "Review ready · not sent" : "In review"} /></TableCell><TableCell><Button variant="ghost" disabled={busy} onClick={() => openReview(record.id, record.file_name)}>Open</Button></TableCell></TableRow>)}{!history.data?.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-text-secondary">No saved imports.</TableCell></TableRow>}</TableBody></ClubTable>}</section>
@@ -157,22 +189,12 @@ function ClubSchedulePage() {
           <FilterPill className="w-auto min-w-40" aria-label="Filter by coach" value={sp.coach} onValueChange={(v) => setSp({ coach: v || "all" })} options={[{ value: "all", label: "All coaches" }, ...lessonCoaches.map(([id, name]) => ({ value: id, label: name }))]} />
           <FilterPill className="w-auto min-w-44" aria-label="Filter by invitation status" value={sp.invite} onValueChange={(v) => setSp({ invite: v || "all" })} options={[{ value: "all", label: "Any invite status" }, ...inviteStatuses.map((v) => ({ value: v, label: v }))]} />
           {activeFilters > 0 && <Button variant="ghost" size="sm" onClick={() => { setLessonSearch(""); setSp({ coach: "all", invite: "all" }); }}>Clear · {activeFilters}</Button>}
+          {view === "grid" && <><span className="mx-1 h-6 w-px bg-divider" aria-hidden />{lessonGrid.menu}</>}
+          <Button size="sm" className="ml-auto" disabled={!inviteable.length || sending} onClick={() => setConfirmSend(inviteable.map((l) => l.athleteId))}><Send className="size-3.5" />Send invites · {inviteable.length}</Button>
           {view === "calendar" && !!lessonCoaches.length && <div className="ml-auto flex flex-wrap gap-1.5">{lessonCoaches.map(([id, name]) => <span key={id} className="rounded-sm border-l-[3px] px-1.5 py-0.5 text-[11px]" style={coachTone(id, coachIds)}>{name}</span>)}</div>}
         </div>
         {view === "calendar" && !calendar.isError && <LessonCalendar lessons={lessons} coachIds={coachIds} mode={range} date={calDate} onModeChange={(m) => setSp({ range: m })} onDateChange={(d) => setSp({ date: d })} onOpen={setSelectedLesson} />}
-        {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : view === "grid" && <ClubTable>
-          <TableHeader><TableRow>{["Student", "Guardian", "Coach", "Day / time", "Every", "Invite contact", "Status", "Details"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{lessons.map((r) => <TableRow key={r.id} className="cursor-pointer" onClick={() => setSelectedLesson(r)}>
-            <TableCell className="min-w-36">{r.studentName}</TableCell>
-            <TableCell className="min-w-36 whitespace-normal">{r.guardianName}</TableCell>
-            <TableCell className="min-w-36">{r.coachName}</TableCell>
-            <TableCell className="min-w-40 whitespace-nowrap"><div>{IMPORT_DAYS.find((d) => d.value === r.day)?.long}</div><div className="font-mono text-xs">{formatTimeLabel(r.start)}–{formatTimeLabel(r.end)} · {r.minutes} min</div></TableCell>
-            <TableCell className="min-w-32 whitespace-normal">{recurrence(r)}</TableCell>
-            <TableCell className="min-w-48"><div className="text-xs text-text-secondary">{r.recipient}</div><div className="break-all whitespace-normal">{r.contactEmail ?? "Not recorded"}</div></TableCell>
-            <TableCell className="min-w-48"><div className="text-xs text-text-secondary">{r.scheduleStatus}</div><StatusDot status={r.invitationStatus === "Contact missing" ? "attention" : "informational"} label={r.invitationStatus} /></TableCell>
-            <TableCell><Button variant="ghost" size="icon" className="size-11" aria-label={`Lesson details for ${r.studentName}`} onClick={() => setSelectedLesson(r)}><Eye className="size-4" /></Button></TableCell>
-          </TableRow>)}{!lessons.length && <TableRow><TableCell colSpan={8} className="py-8 text-center text-text-secondary">{calendar.isPending ? "Loading lessons…" : lessonSearch ? "No matching lessons." : "No recurring lessons."}</TableCell></TableRow>}</TableBody>
-        </ClubTable>}
+        {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : view === "grid" && <ClubDataGrid grid={lessonGrid} rowKey={(r) => r.id} onRowClick={setSelectedLesson} rowLabel={(r) => `lesson for ${r.studentName}`} filtered={activeFilters > 0} onClear={() => { setLessonSearch(""); setSp({ coach: "all", invite: "all" }); }} empty={calendar.isPending ? "Loading lessons…" : "No recurring lessons."} />}
       </TabsContent>
     </Tabs>
     <Sheet open={!!selectedLesson} onOpenChange={(open) => { if (!open) setSelectedLesson(null); }}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Lesson details</SheetTitle><SheetDescription>{selectedLesson?.studentName}</SheetDescription></SheetHeader>{selectedLesson && <dl className="mt-6 space-y-4">{[
@@ -181,7 +203,9 @@ function ClubSchedulePage() {
       ["Duration", `${selectedLesson.minutes} minutes`], ["Recurrence", recurrence(selectedLesson)], ["Starts on", selectedLesson.startsOn ?? "Not recorded"],
       ["Schedule", selectedLesson.scheduleStatus], ["Invite recipient", selectedLesson.recipient], ["Contact email", selectedLesson.contactEmail ?? "Not recorded"],
       ["Invitation", selectedLesson.invitationStatus], ["Invite recorded at", selectedLesson.invitedAt ? new Date(selectedLesson.invitedAt).toLocaleString() : "Not recorded"],
-    ].map(([label, value]) => <div key={label} className="border-b border-divider pb-3"><dt className="text-xs text-text-secondary">{label}</dt><dd className="break-words">{value}</dd></div>)}</dl>}</SheetContent></Sheet>
+    ].map(([label, value]) => <div key={label} className="border-b border-divider pb-3"><dt className="text-xs text-text-secondary">{label}</dt><dd className="break-words">{value}</dd></div>)}</dl>}
+      {selectedLesson?.canInvite && <Button className="mt-6 w-full" disabled={sending} onClick={() => setConfirmSend([selectedLesson.athleteId])}><Send className="size-4" />{selectedLesson.invitedAt ? "Resend invite" : "Send invite"} to {selectedLesson.contactEmail}</Button>}</SheetContent></Sheet>
+    <AlertDialog open={!!confirmSend} onOpenChange={(o) => { if (!o && !sending) setConfirmSend(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Send {confirmSend?.length ?? 0} family invite{confirmSend?.length === 1 ? "" : "s"}?</AlertDialogTitle><AlertDialogDescription>Each family gets the usual Gradus invite email from their coach, with a link to join. Students who already joined, are paused, or have no email are skipped.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={sending}>Cancel</AlertDialogCancel><AlertDialogAction disabled={sending} onClick={(e) => { e.preventDefault(); if (confirmSend) void sendInvites(confirmSend); }}>{sending ? "Sending…" : "Send invites"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     <Sheet open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Edit lesson</SheetTitle><SheetDescription>{fileName}</SheetDescription></SheetHeader>{editing && <div className="mt-6 space-y-4">
       {([ ["First name", "firstName"], ["Last name", "lastName"], ["Parent email", "guardianEmail"], ["Adult athlete email", "athleteEmail"] ] as const).map(([label, key]) => <div key={key} className="space-y-1"><Label htmlFor={`lesson-${key}`}>{label}</Label><Input id={`lesson-${key}`} type={key.includes("Email") ? "email" : "text"} value={editing[key]} onChange={(e) => setEditing({ ...editing, [key]: e.target.value })} /></div>)}
       <div className="space-y-1"><Label htmlFor="lesson-age">Age</Label><Input id="lesson-age" type="number" min={0} max={120} value={editing.age ?? ""} onChange={(e) => setEditing({ ...editing, age: e.target.value === "" ? null : Number(e.target.value) })} /></div>
