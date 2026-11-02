@@ -22,7 +22,11 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { Tag } from "@/components/ui/tag";
-import { ClubGridToolbar, ClubGridCount, ClubEmptyRow } from "@/components/org-admin/club-grid-toolbar";
+import {
+  ClubGridToolbar,
+  ClubGridCount,
+  ClubEmptyRow,
+} from "@/components/org-admin/club-grid-toolbar";
 import {
   Sheet,
   SheetContent,
@@ -141,7 +145,10 @@ function PeoplePage() {
           onSearchChange={setSearch}
           searchLabel="Search coaches"
           activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)}
-          onClear={() => { setSearch(""); setSport("all"); }}
+          onClear={() => {
+            setSearch("");
+            setSport("all");
+          }}
         >
           <FilterPill
             aria-label="Sport"
@@ -173,38 +180,70 @@ function PeoplePage() {
             <TableRow key={c.coachId} className="cursor-pointer" onClick={() => setSelected(c)}>
               <TableCell className="min-w-44">
                 <span className="flex items-center gap-2">
-                  <span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-accent/20 font-mono text-[10px] font-semibold text-accent-ink">
+                  <span
+                    aria-hidden
+                    className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-accent/20 font-mono text-[10px] font-semibold text-accent-ink"
+                  >
                     {(c.firstName?.[0] ?? "") + (c.lastName?.[0] ?? "")}
                   </span>
-                  <button type="button" className="min-h-0! truncate font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setSelected(c); }}>
+                  <button
+                    type="button"
+                    className="min-h-0! truncate font-medium text-text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(c);
+                    }}
+                  >
                     {c.firstName} {c.lastName}
                   </button>
                   <ChevronRight className="ml-auto size-4 text-text-tertiary" aria-hidden />
                 </span>
               </TableCell>
-              <TableCell className="min-w-48 text-text-secondary">{c.email ?? "No email on file"}</TableCell>
+              <TableCell className="min-w-48 text-text-secondary">
+                {c.email ?? "No email on file"}
+              </TableCell>
               <TableCell className="min-w-40">
                 <span className="flex flex-wrap gap-1">
-                  {[...new Set(c.levels.map((l) => l.sport))].map((s) => <Tag key={s} tone="muted">{sportDisplayLabel(s)}</Tag>)}
+                  {[...new Set(c.levels.map((l) => l.sport))].map((s) => (
+                    <Tag key={s} tone="muted">
+                      {sportDisplayLabel(s)}
+                    </Tag>
+                  ))}
                   {!c.levels.length && <span className="text-text-tertiary">Not set</span>}
                 </span>
               </TableCell>
               <TableCell className="text-right font-mono tabular-nums">{c.levels.length}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">{c.athleteCount}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">{c.parentCount}</TableCell>
-              <TableCell className="whitespace-nowrap font-mono text-xs">{c.joinedAt?.slice(0, 10) ?? "—"}</TableCell>
+              <TableCell className="whitespace-nowrap font-mono text-xs">
+                {c.joinedAt?.slice(0, 10) ?? "—"}
+              </TableCell>
             </TableRow>
           ))}
           {!filtered.length && (
-            <ClubEmptyRow colSpan={7} filtered={!!coaches.length} empty="No coaches have joined this club yet." onClear={() => { setSearch(""); setSport("all"); }} />
+            <ClubEmptyRow
+              colSpan={7}
+              filtered={!!coaches.length}
+              empty="No coaches have joined this club yet."
+              onClear={() => {
+                setSearch("");
+                setSport("all");
+              }}
+            />
           )}
         </TableBody>
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>{filtered.length} coaches</TableCell>
-            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.levels.length, 0)}</TableCell>
-            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.athleteCount, 0)}</TableCell>
-            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.parentCount, 0)}</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">
+              {filtered.reduce((n, c) => n + c.levels.length, 0)}
+            </TableCell>
+            <TableCell className="text-right font-mono tabular-nums">
+              {filtered.reduce((n, c) => n + c.athleteCount, 0)}
+            </TableCell>
+            <TableCell className="text-right font-mono tabular-nums">
+              {filtered.reduce((n, c) => n + c.parentCount, 0)}
+            </TableCell>
             <TableCell />
           </TableRow>
         </TableFooter>

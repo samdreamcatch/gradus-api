@@ -52,13 +52,19 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/moves")({
-  head: () => ({ meta: [
-    { title: "Moves · Gradus Club" },
-    { name: "description", content: "Club move library and sport-specific coaching content." },
-    { property: "og:title", content: "Moves · Gradus Club" },
-    { property: "og:description", content: "Club move library and sport-specific coaching content." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Moves · Gradus Club" },
+      { name: "description", content: "Club move library and sport-specific coaching content." },
+      { property: "og:title", content: "Moves · Gradus Club" },
+      {
+        property: "og:description",
+        content: "Club move library and sport-specific coaching content.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgMovesPage,
 });
 
@@ -149,7 +155,11 @@ function OrgMovesPage() {
             searchLabel="Search moves"
             activeFilters={search ? 1 : 0}
             onClear={() => setSearch("")}
-            end={<Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><Upload /> Bulk upload (CSV)</Button>}
+            end={
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Upload /> Bulk upload (CSV)
+              </Button>
+            }
           >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
             <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
@@ -378,7 +388,9 @@ function EditMoveSheet({
           ))}
           {(["cue", "why", "description"] as const).map((k) => (
             <div key={k} className="space-y-1.5">
-              <Label htmlFor={`mv-${k}`}>{k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}</Label>
+              <Label htmlFor={`mv-${k}`}>
+                {k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}
+              </Label>
               <Textarea
                 id={`mv-${k}`}
                 rows={2}
@@ -394,9 +406,7 @@ function EditMoveSheet({
             </Button>
             <Button
               disabled={!f.name.trim() || !f.category.trim() || !Number.isFinite(num) || num < 0}
-              onClick={() =>
-                onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })
-              }
+              onClick={() => onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })}
             >
               Save
             </Button>
@@ -450,7 +460,9 @@ function BulkEditSheet({
             <Checkbox checked={setTarget} onCheckedChange={(v) => setSetTarget(v === true)} />
             Change default target
           </label>
-          {setTarget && <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />}
+          {setTarget && (
+            <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>
               Cancel
@@ -541,7 +553,9 @@ function ImportSheet({
     setBusy(true);
     try {
       const r = await importFn({ data: { organizationId: orgId, moves: rows } });
-      toast.success(`${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`);
+      toast.success(
+        `${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`,
+      );
       onDone();
       onOpenChange(false);
     } catch (e) {

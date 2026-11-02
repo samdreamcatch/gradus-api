@@ -175,7 +175,10 @@ function NotificationsPage() {
         onSearchChange={setSearch}
         searchLabel="Search notifications"
         activeFilters={(search ? 1 : 0) + (filter !== "all" ? 1 : 0)}
-        onClear={() => { setSearch(""); setFilter("all"); }}
+        onClear={() => {
+          setSearch("");
+          setFilter("all");
+        }}
       />
       <ClubStatusLegend />
       <section className="space-y-3">

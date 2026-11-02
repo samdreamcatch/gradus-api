@@ -26,13 +26,16 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 import { listOrgLevels, saveOrgLevels } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/levels")({
-  head: () => ({ meta: [
-    { title: "Levels · Gradus Club" },
-    { name: "description", content: "Club sport levels and coach practice expectations." },
-    { property: "og:title", content: "Levels · Gradus Club" },
-    { property: "og:description", content: "Club sport levels and coach practice expectations." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Levels · Gradus Club" },
+      { name: "description", content: "Club sport levels and coach practice expectations." },
+      { property: "og:title", content: "Levels · Gradus Club" },
+      { property: "og:description", content: "Club sport levels and coach practice expectations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgLevelsPage,
 });
 
@@ -125,8 +128,8 @@ function OrgLevelsPage() {
             <CardHeader>
               <CardTitle>{sportDisplayLabel(sport)}</CardTitle>
               <p className="text-sm text-text-secondary">
-                Coaches in your club start with these practice hours. A coach can still change
-                their own.
+                Coaches in your club start with these practice hours. A coach can still change their
+                own.
               </p>
             </CardHeader>
             <CardContent className="p-0">
@@ -141,7 +144,10 @@ function OrgLevelsPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => (
-                    <TableRow key={r.levelKey ?? `new-${i}`} className={r.archived ? "opacity-60" : undefined}>
+                    <TableRow
+                      key={r.levelKey ?? `new-${i}`}
+                      className={r.archived ? "opacity-60" : undefined}
+                    >
                       <TableCell>
                         <div className="flex">
                           <Button
@@ -196,7 +202,10 @@ function OrgLevelsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setRows((xs) => [...xs, { label: "", hours: "3", isCustom: true, archived: false }])
+                    setRows((xs) => [
+                      ...xs,
+                      { label: "", hours: "3", isCustom: true, archived: false },
+                    ])
                   }
                 >
                   <Plus /> Add club level

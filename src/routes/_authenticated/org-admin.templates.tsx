@@ -144,10 +144,21 @@ function OrgTemplatesPage() {
       ) : (
         <>
           <ClubGridToolbar
-            end={<>
-              <Button variant="outline" size="sm" className="press" onClick={() => setImportOpen(true)}><Upload className="size-4" /> Import CSV</Button>
-              <Button size="sm" className="press" onClick={() => setEditing("new")}><Plus className="size-4" /> New template</Button>
-            </>}
+            end={
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="press"
+                  onClick={() => setImportOpen(true)}
+                >
+                  <Upload className="size-4" /> Import CSV
+                </Button>
+                <Button size="sm" className="press" onClick={() => setEditing("new")}>
+                  <Plus className="size-4" /> New template
+                </Button>
+              </>
+            }
           >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
             <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
