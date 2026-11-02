@@ -45,9 +45,9 @@
 - [x] Step 1: Schedule Grid/Calendar (week + month), coach/invite filters, linkable views, record panel
 - [x] Step 2: People and Resources (incl. Gallery) on shared grid toolbar
 - [x] Step 3: Policies, Notifications, Moves, Levels, Templates on shared toolbar + ClubTable
-- [ ] Later: column show/hide, sort menu, and grouping controls (needs your call on priority)
+- [x] Column show/hide, sort menu, grouping controls
 - [x] Diagnose failing Bun CI runs on main (stale lesson-reminder test fake)
 - [x] Club grid: Fields / Sort / Group controls (shared), Schedule lessons + Roster converted
 - [x] Club panel follows device light/dark
 - [x] Lesson invite sending wired (reuses family invite email); NOT test-sent per Mariah (all club data is demo)
-- [ ] Convert People, Moves, Templates, Resources, Policies, Notifications, Levels to shared grid; row side panels on Resources/Moves/Templates
+- [x] Shared grid on People, Moves, Templates, Resources, Policies, Notifications; row click opens side panel on Resources/Moves/Templates. Levels keeps manual order (reordering conflicts with sorting)
