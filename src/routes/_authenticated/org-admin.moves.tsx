@@ -140,7 +140,7 @@ function OrgMovesPage() {
   const sel = Array.from(selected);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
       <PageTitle>Move library</PageTitle>
       <ClubLibraryNav />
       {q.isPending ? (

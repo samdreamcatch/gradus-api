@@ -134,7 +134,7 @@ function OrgTemplatesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
       <PageTitle>Template plans</PageTitle>
       <ClubLibraryNav />
       {q.isPending ? (
