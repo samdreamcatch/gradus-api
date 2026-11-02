@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -9,8 +9,8 @@ import { weekStart, targetPercent, sumCoachWeeks } from "@/lib/club-coach-metric
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { PageTitle } from "@/components/page-title";
-import { ClubTable } from "@/components/org-admin/club-table";
-import { TableHeader, TableBody, TableHead, TableRow, TableCell, TableFooter } from "@/components/ui/table";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { ClubGridToolbar, ClubGridCount } from "@/components/org-admin/club-grid-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FilterPill } from "@/components/ui/filter-pill";
@@ -30,6 +30,23 @@ export const Route = createFileRoute("/_authenticated/org-admin/coaches/")({
   component: CoachesPage,
 });
 
+type CoachRow = { coach: { coachId: string; firstName: string; lastName: string; levels: { sport: string }[] }; stats?: { students: number | null; practice_min: number | null; target_min: number | null; sessions: number | null } };
+const mono = "font-mono tabular-nums";
+const fmt = (value: number | null | undefined) => value == null ? "—" : Math.round(Number(value)).toLocaleString();
+const pctOf = (s: CoachRow["stats"]) => s ? targetPercent(Number(s.practice_min), Number(s.target_min)) : null;
+const sportsOf = (r: CoachRow) => [...new Set(r.coach.levels.map((l) => sportDisplayLabel(l.sport)))];
+const allStats = (rows: CoachRow[]) => rows.length > 0 && rows.every((r) => r.stats);
+const totalsOf = (rows: CoachRow[]) => sumCoachWeeks(rows.flatMap((r) => r.stats ? [r.stats as never] : []));
+const COLUMNS: ClubColumn<CoachRow>[] = [
+  { key: "coach", label: "Coach", className: "min-w-48 font-medium", render: (r) => `${r.coach.firstName} ${r.coach.lastName}`.trim() || "Coach profile", sortValue: (r) => `${r.coach.lastName} ${r.coach.firstName}`.toLowerCase() },
+  { key: "sports", label: "Sports", render: (r) => sportsOf(r).join(", ") || "Not set", sortValue: (r) => sportsOf(r).join(", "), groupValue: (r) => sportsOf(r)[0] ?? "Not set" },
+  { key: "students", label: "Students", align: "right", className: mono, render: (r) => fmt(r.stats?.students), sortValue: (r) => r.stats?.students ?? null, footer: (rows) => allStats(rows) ? fmt(totalsOf(rows).students) : "—" },
+  { key: "practice", label: "Practice min", align: "right", className: mono, render: (r) => fmt(r.stats?.practice_min), sortValue: (r) => r.stats?.practice_min ?? null, footer: (rows) => allStats(rows) ? fmt(totalsOf(rows).practice) : "—" },
+  { key: "target", label: "Target min", align: "right", className: mono, render: (r) => fmt(r.stats?.target_min), sortValue: (r) => r.stats?.target_min ?? null, footer: (rows) => allStats(rows) ? fmt(totalsOf(rows).target) : "—" },
+  { key: "pct", label: "% of target", align: "right", className: mono, render: (r) => { const v = pctOf(r.stats); return v == null ? "—" : `${v}%`; }, sortValue: (r) => pctOf(r.stats), footer: (rows) => { const t = totalsOf(rows); const v = allStats(rows) ? targetPercent(t.practice, t.target) : null; return v == null ? "—" : `${v}%`; } },
+  { key: "sessions", label: "Sessions / wk", align: "right", className: mono, render: (r) => fmt(r.stats?.sessions), sortValue: (r) => r.stats?.sessions ?? null, footer: (rows) => allStats(rows) ? fmt(totalsOf(rows).sessions) : "—" },
+];
+
 type SavedView = { name: string; search: string; sport: string; sort: string };
 
 function CoachesPage() {
@@ -39,7 +56,7 @@ function CoachesPage() {
   const [period, setPeriod] = useState(weekStart());
   const [search, setSearch] = useState("");
   const [sport, setSport] = useState("all");
-  const [sort, setSort] = useState("name");
+  const sort = "name";
   const [views, setViews] = useState<SavedView[]>([]);
   const [view, setView] = useState("default");
   const [saveOpen, setSaveOpen] = useState(false);
@@ -56,17 +73,16 @@ function CoachesPage() {
   const weeks = metrics.data?.weeks ?? [];
   const periods = [...new Set([weekStart(), ...weeks.map((w) => w.week_start)])].sort().reverse();
   const rows = coaches.filter((c) => `${c.firstName} ${c.lastName} ${c.email ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()) && (sport === "all" || c.levels.some((l) => l.sport === sport)))
-    .map((coach) => ({ coach, stats: weeks.find((w) => w.coach_id === coach.coachId && w.week_start === period) }))
-    .sort((a, b) => sort === "practice" ? Number(b.stats?.practice_min ?? -1) - Number(a.stats?.practice_min ?? -1) : `${a.coach.lastName} ${a.coach.firstName}`.localeCompare(`${b.coach.lastName} ${b.coach.firstName}`));
-  const totals = sumCoachWeeks(rows.flatMap((r) => r.stats ? [r.stats] : []));
-  const num = (value: number | null | undefined) => value == null ? "—" : Math.round(value).toLocaleString();
+    .map((coach) => ({ coach, stats: weeks.find((w) => w.coach_id === coach.coachId && w.week_start === period) }));
+  const grid = useClubGrid<CoachRow>("coaching", COLUMNS, rows as CoachRow[]);
+  const navigate = useNavigate();
   function exportRows() {
     downloadCsv("club-coaches.csv", toCsv(["Coach", "Sports", "Week (UTC)", "Students", "Practice minutes", "Target minutes", "% of target", "Sessions"], rows.map(({ coach: c, stats: s }) => [`${c.firstName} ${c.lastName}`, [...new Set(c.levels.map((l) => sportDisplayLabel(l.sport)))].join("; "), period, s?.students, s?.practice_min, s?.target_min, s ? targetPercent(s.practice_min, s.target_min) : null, s?.sessions])));
   }
   function chooseView(value: string) {
     setView(value);
     const saved = views.find((v) => v.name === value);
-    setSearch(saved?.search ?? ""); setSport(saved?.sport ?? "all"); setSort(saved?.sort ?? "name");
+    setSearch(saved?.search ?? ""); setSport(saved?.sport ?? "all");
   }
   function saveView() {
     if (!storageKey || !viewName.trim()) return;
@@ -75,28 +91,21 @@ function CoachesPage() {
     catch { toast.error("Could not save this view on this device."); }
   }
   return <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
-    <div className="flex flex-wrap items-center justify-between gap-3"><PageTitle>Coaches</PageTitle><div className="flex gap-2"><Button variant="outline" onClick={exportRows} disabled={!rows.length}><Download className="size-4" />Export CSV</Button><Button asChild><Link to="/org-admin/roster">Invite a coach</Link></Button></div></div>
-    <div className="flex flex-wrap items-center gap-3">
-      <Input aria-label="Search coaches" placeholder="Search coaches" value={search} onChange={(e) => setSearch(e.target.value)} className="sm:w-64" />
-      <FilterPill aria-label="Period" value={period} onValueChange={setPeriod} options={periods.map((p) => ({ value: p, label: `Week of ${p}` }))} className="w-auto min-w-44" />
-      <FilterPill aria-label="Sport" value={sport} onValueChange={setSport} options={[{ value: "all", label: "All sports" }, ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) }))]} className="w-auto min-w-40" />
-      <FilterPill aria-label="Sort" value={sort} onValueChange={setSort} options={[{ value: "name", label: "Name" }, { value: "practice", label: "Practice minutes" }]} className="w-auto min-w-40" />
-      <FilterPill aria-label="Saved view" value={view} onValueChange={chooseView} options={[{ value: "default", label: "View: Default" }, ...views.map((v) => ({ value: v.name, label: `View: ${v.name}` }))]} className="w-auto min-w-40" />
-      <Button variant="outline" disabled={!storageKey} onClick={() => setSaveOpen(true)}>Save view</Button>
+    <div className="flex flex-wrap items-end justify-between gap-4"><PageTitle subtitle={org.name}>Coaching</PageTitle><div className="flex gap-2"><Button variant="outline" size="sm" onClick={exportRows} disabled={!rows.length}><Download className="size-4" />Export</Button><Button asChild size="sm"><Link to="/org-admin/roster">Invite a coach</Link></Button></div></div>
+    <div className="space-y-2">
+      <ClubGridToolbar search={search} onSearchChange={setSearch} searchLabel="Search coaches" activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)} onClear={() => { setSearch(""); setSport("all"); }}>
+        <FilterPill aria-label="Period" value={period} onValueChange={setPeriod} options={periods.map((p) => ({ value: p, label: `Week of ${p}` }))} className="w-auto min-w-44" />
+        <FilterPill aria-label="Sport" value={sport} onValueChange={setSport} options={[{ value: "all", label: "All sports" }, ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) }))]} className="w-auto min-w-40" />
+        <FilterPill aria-label="Saved view" value={view} onValueChange={chooseView} options={[{ value: "default", label: "View: Default" }, ...views.map((v) => ({ value: v.name, label: `View: ${v.name}` }))]} className="w-auto min-w-40" />
+        <Button variant="ghost" size="sm" className="press-soft" disabled={!storageKey} onClick={() => setSaveOpen(true)}>Save view</Button>
+        <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+        {grid.menu}
+      </ClubGridToolbar>
+      <ClubGridCount shown={rows.length} total={coaches.length} noun="coaches" />
     </div>
-    {(search || sport !== "all") && <div className="flex flex-wrap gap-2">{search && <Button size="sm" variant="outline" onClick={() => setSearch("")}>{search} ×</Button>}{sport !== "all" && <Button size="sm" variant="outline" onClick={() => setSport("all")}>{sportDisplayLabel(sport)} ×</Button>}<Button size="sm" variant="ghost" onClick={() => { setSearch(""); setSport("all"); }}>Clear</Button></div>}
     {metrics.isError && <p role="alert" className="text-sm text-text-secondary">Weekly practice records become available after this draft is accepted.</p>}
-    <section className="space-y-3"><h2 className="font-display text-h3">All coaches · {rows.length}</h2>
-      <ClubTable><TableHeader><TableRow>{["Coach", "Sports", "Students", "Practice min", "Target min", "% of target", "Sessions / wk", "Open"].map((h, i) => <TableHead key={h} className={i > 1 && i < 7 ? "text-right" : ""}>{h}</TableHead>)}</TableRow></TableHeader>
-      <TableBody>{rows.map(({ coach: c, stats: s }) => <TableRow key={c.coachId}>
-        <TableCell className="min-w-48"><Button variant="link" asChild className="min-h-11 p-0 text-text-primary"><Link to="/org-admin/coaches/$coachId" params={{ coachId: c.coachId }}>{`${c.firstName} ${c.lastName}`.trim() || "Coach profile"}</Link></Button></TableCell>
-        <TableCell>{[...new Set(c.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || "Not set"}</TableCell>
-        <TableCell className="text-right font-mono tabular-nums">{num(s?.students)}</TableCell><TableCell className="text-right font-mono tabular-nums">{num(s?.practice_min)}</TableCell><TableCell className="text-right font-mono tabular-nums">{num(s?.target_min)}</TableCell><TableCell className="text-right font-mono tabular-nums">{s && targetPercent(s.practice_min, s.target_min) !== null ? `${targetPercent(s.practice_min, s.target_min)}%` : "—"}</TableCell><TableCell className="text-right font-mono tabular-nums">{num(s?.sessions)}</TableCell>
-        <TableCell><Button variant="ghost" asChild><Link to="/org-admin/coaches/$coachId" params={{ coachId: c.coachId }}>Open</Link></Button></TableCell>
-      </TableRow>)}{!rows.length && <TableRow><TableCell colSpan={8} className="py-8 text-center text-text-secondary">No matching coaches.</TableCell></TableRow>}</TableBody>
-      <TableFooter><TableRow><TableCell colSpan={2}>Club · coach totals</TableCell><TableCell className="text-right font-mono">{rows.every((r) => r.stats) ? num(totals.students) : "—"}</TableCell><TableCell className="text-right font-mono">{rows.every((r) => r.stats) ? num(totals.practice) : "—"}</TableCell><TableCell className="text-right font-mono">{rows.every((r) => r.stats) ? num(totals.target) : "—"}</TableCell><TableCell className="text-right font-mono">{rows.every((r) => r.stats) && targetPercent(totals.practice, totals.target) !== null ? `${targetPercent(totals.practice, totals.target)}%` : "—"}</TableCell><TableCell className="text-right font-mono">{rows.every((r) => r.stats) ? num(totals.sessions) : "—"}</TableCell><TableCell /></TableRow></TableFooter></ClubTable>
-      <p className="text-xs text-text-secondary">Weeks use UTC. Targets are recorded coach expectations. A dash means no recorded value.</p>
-    </section>
+    <ClubDataGrid grid={grid} rowKey={(r) => r.coach.coachId} onRowClick={(r) => navigate({ to: "/org-admin/coaches/$coachId", params: { coachId: r.coach.coachId } })} rowLabel={(r) => `${r.coach.firstName} ${r.coach.lastName}`} filtered={!!coaches.length} onClear={() => { setSearch(""); setSport("all"); }} empty="No coaches have joined this club yet." showFooter />
+    <p className="text-xs text-text-secondary">Weeks use UTC. Targets are recorded coach expectations. A dash means no recorded value. Click a coach to open their profile.</p>
     <Sheet open={saveOpen} onOpenChange={setSaveOpen}><SheetContent><SheetHeader><SheetTitle>Save view</SheetTitle><SheetDescription>Coaches</SheetDescription></SheetHeader><div className="mt-6 space-y-3"><Label htmlFor="club-view-name">View name</Label><Input id="club-view-name" value={viewName} maxLength={60} onChange={(e) => setViewName(e.target.value)} /><Button onClick={saveView} disabled={!viewName.trim() || viewName.trim() === "default"}>Save</Button></div></SheetContent></Sheet>
   </div>;
 }
