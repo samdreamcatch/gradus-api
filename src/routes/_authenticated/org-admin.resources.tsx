@@ -250,6 +250,12 @@ function OrgResourcesPage() {
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
+            {view === "grid" && (
+              <>
+                <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+                {grid.menu}
+              </>
+            )}
           </ClubGridToolbar>
           <ClubGridCount shown={shown.length} total={rows.length} noun="resources" />
           {view === "gallery" ? (
