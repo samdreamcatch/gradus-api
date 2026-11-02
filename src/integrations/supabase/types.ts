@@ -3404,6 +3404,59 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          athlete_id: string | null
+          body: string | null
+          count: number
+          created_at: string
+          group_key: string | null
+          id: string
+          read_at: string | null
+          route: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          athlete_id?: string | null
+          body?: string | null
+          count?: number
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          read_at?: string | null
+          route?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          athlete_id?: string | null
+          body?: string | null
+          count?: number
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          read_at?: string | null
+          route?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_admin_actions: {
         Row: {
           action: string
@@ -5738,6 +5791,19 @@ export type Database = {
           _window_seconds: number
         }
         Returns: number
+      }
+      record_notifications: {
+        Args: {
+          p_actor_user_id?: string
+          p_athlete_id?: string
+          p_body?: string
+          p_group_key?: string
+          p_route?: string
+          p_title: string
+          p_type: string
+          p_user_ids: string[]
+        }
+        Returns: undefined
       }
       refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined }
       refresh_club_notifications: {
