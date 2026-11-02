@@ -16,6 +16,12 @@ describe("Club lesson calendar", () => {
     expect(buildClubLessons({ ...input, links: [] })).toEqual([]);
     expect(buildClubLessons({ ...input, coaches: [] })).toEqual([]);
   });
+  it("offers an invite only to active, unclaimed students with an email", () => {
+    expect(buildClubLessons(input)[0]?.canInvite).toBe(true);
+    expect(buildClubLessons({ ...input, students: [{ ...student, guardian_claimed_at: "2026-11-01T00:00:00Z" }] })[0]?.canInvite).toBe(false);
+    expect(buildClubLessons({ ...input, students: [{ ...student, guardian_email: null }] })[0]?.canInvite).toBe(false);
+    expect(buildClubLessons({ ...input, students: [{ ...student, account_state: "paused" }] })[0]?.canInvite).toBe(false);
+  });
   it("does not infer successful email delivery from a recorded invitation date", () => {
     expect(buildClubLessons({ ...input, students: [{ ...student, guardian_invited_at: "2026-11-01T00:00:00Z" }] })[0]?.invitationStatus).toBe("Invite recorded · unclaimed");
   });
