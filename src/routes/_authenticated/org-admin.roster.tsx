@@ -12,12 +12,26 @@ import {
   revokeOrgCoachInvite,
   resendOrgCoachInvite,
 } from "@/lib/org-admin.functions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { PageTitle } from "@/components/page-title";
+import { Plus } from "lucide-react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ClubGridToolbar, ClubGridCount } from "@/components/org-admin/club-grid-toolbar";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { StatusDot } from "@/components/org-admin/status-dot";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/_authenticated/org-admin/roster")({
   component: OrgRosterPage,
@@ -50,6 +64,17 @@ function OrgRosterPage() {
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [removing, setRemoving] = useState<Coach | null>(null);
+  const [search, setSearch] = useState("");
+  const mobile = useIsMobile();
+  const q = search.trim().toLowerCase();
+  const coaches = (rosterQ.data?.coaches ?? []).filter((c) =>
+    `${c.firstName} ${c.lastName} ${c.email ?? ""}`.toLowerCase().includes(q),
+  );
+  const invites = (invitesQ.data?.invites ?? []).filter((i) =>
+    `${i.code} ${i.email ?? ""} ${i.phone ?? ""} ${i.status}`.toLowerCase().includes(q),
+  );
 
   const createInvite = useMutation({
     mutationFn: () => createInviteFn({ data: { organizationId: orgId!, email, phone } }),
@@ -59,6 +84,7 @@ function OrgRosterPage() {
       );
       setEmail("");
       setPhone("");
+      setInviting(false);
       qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -81,136 +107,167 @@ function OrgRosterPage() {
   const removeCoach = useMutation({
     mutationFn: (coachId: string) => removeFn({ data: { organizationId: orgId!, coachId } }),
     onSuccess: () => {
-      toast.success("Coach removed from org");
+      toast.success("Coach removed from the club");
+      setRemoving(null);
       qc.invalidateQueries({ queryKey: ["org-roster", orgId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const coachGrid = useClubGrid<Coach>("roster-coaches", coachColumns(setRemoving), coaches);
+  const inviteGrid = useClubGrid<Invite>(
+    "roster-invites",
+    inviteColumns({
+      resend: (id) => resendInvite.mutate(id),
+      revoke: (id) => revokeInvite.mutate(id),
+      busy: resendInvite.isPending || revokeInvite.isPending,
+    }),
+    invites,
+  );
 
   if (!orgId) return <div className="p-6 text-text-secondary">Loading…</div>;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-5xl">
-      <PageTitle>{`${orgName} — Roster`}</PageTitle>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite a coach</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="inv-email">Email (optional)</Label>
-              <Input
-                id="inv-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="coach@example.com"
-              />
-            </div>
-            <div>
-              <Label htmlFor="inv-phone">Phone (optional)</Label>
-              <Input
-                id="inv-phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1 555 555 5555"
-              />
-            </div>
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <PageTitle>{`${orgName} — Roster`}</PageTitle>
+        <Button onClick={() => setInviting(true)} className="press">
+          <Plus className="size-4" />
+          Invite a coach
+        </Button>
+      </div>
+      <ClubGridToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchLabel="Search coaches and invites"
+        activeFilters={search ? 1 : 0}
+        onClear={() => setSearch("")}
+      >
+        <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+        {coachGrid.menu}
+      </ClubGridToolbar>
+      <section className="space-y-2">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-display text-h3">Coaches</h2>
+          <ClubGridCount shown={coaches.length} total={rosterQ.data?.coaches.length ?? 0} noun="coaches" />
+        </div>
+        <ClubDataGrid
+          grid={coachGrid}
+          rowKey={(c) => c.coachId}
+          filtered={!!search}
+          onClear={() => setSearch("")}
+          empty={rosterQ.isPending ? "Loading coaches…" : "No coaches yet."}
+          showFooter
+        />
+      </section>
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-h3">Coach invites</h2>
+          <div className="flex items-center gap-2">
+            {inviteGrid.menu}
+            <ClubGridCount shown={invites.length} total={invitesQ.data?.invites.length ?? 0} noun="invites" />
           </div>
-          <Button
-            onClick={() => createInvite.mutate()}
-            disabled={createInvite.isPending || (!email && !phone)}
-          >
-            {createInvite.isPending ? "Creating…" : "Create invite"}
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+        <ClubDataGrid
+          grid={inviteGrid}
+          rowKey={(i) => i.id}
+          filtered={!!search}
+          onClear={() => setSearch("")}
+          empty="No invites yet."
+        />
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending invites</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(invitesQ.data?.invites ?? []).length === 0 ? (
-            <p className="text-sm text-text-secondary">No invites yet.</p>
-          ) : (
-            <div className="divide-y divide-divider">
-              {invitesQ.data!.invites.map((inv) => (
-                <div key={inv.id} className="flex items-center justify-between py-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-mono">{inv.code}</p>
-                    <p className="text-text-secondary truncate">{inv.email ?? inv.phone ?? "—"}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{inv.status}</Badge>
-                    {inv.status === "pending" && inv.email && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={resendInvite.isPending}
-                        onClick={() => resendInvite.mutate(inv.id)}
-                      >
-                        Resend
-                      </Button>
-                    )}
-                    {inv.status === "pending" && (
-                      <Button variant="ghost" size="sm" onClick={() => revokeInvite.mutate(inv.id)}>
-                        Revoke
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+      <Sheet open={inviting} onOpenChange={setInviting}>
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={mobile ? "paper-surface max-h-[90dvh] overflow-y-auto p-6" : "w-full overflow-y-auto p-6 sm:max-w-md"}
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2">Invite a coach</SheetTitle>
+            <SheetDescription>They get an 8-character code to join {orgName}. Add an email to send it for you.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="inv-email">Email</Label>
+              <Input id="inv-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="coach@example.com" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="space-y-1">
+              <Label htmlFor="inv-phone">Phone (optional)</Label>
+              <Input id="inv-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 555 5555" />
+            </div>
+            <Button
+              className="w-full press"
+              onClick={() => createInvite.mutate()}
+              disabled={createInvite.isPending || (!email && !phone)}
+            >
+              {createInvite.isPending ? "Creating…" : "Create invite"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Coaches ({rosterQ.data?.coaches.length ?? 0})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(rosterQ.data?.coaches ?? []).length === 0 ? (
-            <p className="text-sm text-text-secondary">No coaches yet.</p>
-          ) : (
-            <div className="divide-y divide-divider">
-              {rosterQ.data!.coaches.map((c) => (
-                <div
-                  key={c.coachId}
-                  className="flex items-center justify-between py-3 text-sm gap-3"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium">
-                      {c.firstName} {c.lastName}
-                    </p>
-                    <p className="text-text-secondary truncate">{c.email ?? "—"}</p>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-4 text-text-secondary shrink-0">
-                    <span>{c.athleteCount} athletes</span>
-                    <span>{c.parentCount} parents</span>
-                    <span>{c.adultAthleteCount} adult</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm(`Remove ${c.firstName} ${c.lastName} from ${orgName}?`)) {
-                        removeCoach.mutate(c.coachId);
-                      }
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <AlertDialog open={!!removing} onOpenChange={(o) => { if (!o && !removeCoach.isPending) setRemoving(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {removing?.firstName} {removing?.lastName} from {orgName}?</AlertDialogTitle>
+            <AlertDialogDescription>Their seat opens up for someone new. Their own Gradus account stays as it is.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeCoach.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removeCoach.isPending}
+              onClick={(e) => { e.preventDefault(); if (removing) removeCoach.mutate(removing.coachId); }}
+            >
+              {removeCoach.isPending ? "Removing…" : "Remove coach"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+}
+
+type Coach = Awaited<ReturnType<typeof listOrgRoster>>["coaches"][number];
+type Invite = Awaited<ReturnType<typeof listOrgCoachInvites>>["invites"][number];
+
+const sum = (rows: Coach[], k: "athleteCount" | "parentCount" | "adultAthleteCount") =>
+  rows.reduce((n, r) => n + (r[k] ?? 0), 0);
+
+function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
+  return [
+    { key: "name", label: "Coach", render: (c) => `${c.firstName} ${c.lastName}`, sortValue: (c) => `${c.firstName} ${c.lastName}` },
+    { key: "email", label: "Email", render: (c) => c.email ?? <span className="text-text-tertiary">No email</span>, sortValue: (c) => c.email, className: "min-w-48 text-text-secondary" },
+    { key: "athletes", label: "Athletes", align: "right", render: (c) => c.athleteCount, sortValue: (c) => c.athleteCount, footer: (r) => sum(r, "athleteCount") },
+    { key: "parents", label: "Parents", align: "right", render: (c) => c.parentCount, sortValue: (c) => c.parentCount, footer: (r) => sum(r, "parentCount") },
+    { key: "adults", label: "Adult athletes", align: "right", render: (c) => c.adultAthleteCount, sortValue: (c) => c.adultAthleteCount, footer: (r) => sum(r, "adultAthleteCount") },
+    {
+      key: "action", label: "Action",
+      render: (c) => (
+        <Button variant="link" size="sm" className="text-text-primary" onClick={(e) => { e.stopPropagation(); onRemove(c); }}>
+          Remove
+        </Button>
+      ),
+    },
+  ];
+}
+
+function inviteColumns(a: { resend: (id: string) => void; revoke: (id: string) => void; busy: boolean }): ClubColumn<Invite>[] {
+  return [
+    { key: "code", label: "Code", render: (i) => <span className="font-mono">{i.code}</span>, sortValue: (i) => i.code },
+    { key: "contact", label: "Sent to", render: (i) => i.email ?? i.phone ?? "—", sortValue: (i) => i.email ?? i.phone },
+    {
+      key: "status", label: "Status",
+      render: (i) => <StatusDot status={i.status === "pending" ? "informational" : i.status === "accepted" ? "healthy" : "attention"} label={i.status} />,
+      sortValue: (i) => i.status, groupValue: (i) => i.status,
+    },
+    {
+      key: "actions", label: "Actions",
+      render: (i) =>
+        i.status === "pending" ? (
+          <span className="flex gap-1">
+            {i.email && <Button variant="link" size="sm" className="text-text-primary" disabled={a.busy} onClick={() => a.resend(i.id)}>Resend</Button>}
+            <Button variant="link" size="sm" className="text-text-primary" disabled={a.busy} onClick={() => a.revoke(i.id)}>Revoke</Button>
+          </span>
+        ) : null,
+    },
+  ];
 }
