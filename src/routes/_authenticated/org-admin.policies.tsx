@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ClubTable } from "@/components/org-admin/club-table";
-import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubGridToolbar, ClubGroupRow } from "@/components/org-admin/club-grid-toolbar";
+import { useClubGrid } from "@/components/org-admin/club-data-grid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -136,6 +137,29 @@ function Policies() {
     return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [docs, matrix.data, role]);
 
+  type Person = (typeof people)[number];
+  const signed = (p: Person) => docs.filter((d) => p.cells[d.resourceId]).length;
+  const grid = useClubGrid<Person>(
+    "policies-matrix",
+    [
+      { key: "name", label: "Person", sortValue: (p) => p.name, render: (p) => p.name },
+      {
+        key: "role",
+        label: "Role",
+        sortValue: (p) => p.role,
+        groupValue: (p) => ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role,
+        render: (p) => p.role,
+      },
+      {
+        key: "signed",
+        label: "Signed",
+        sortValue: (p) => signed(p),
+        groupValue: (p) => (signed(p) === docs.length ? "All signed" : "Missing a signature"),
+        render: (p) => signed(p),
+      },
+    ],
+    people,
+  );
   const remind = useMutation({
     mutationFn: (resourceId: string) => remindFn({ data: { organizationId: orgId!, resourceId } }),
     onSuccess: (r) =>
@@ -251,6 +275,8 @@ function Policies() {
                 { value: "athlete", label: "Athletes" },
               ]}
             />
+            <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+            {grid.menu}
           </ClubGridToolbar>
         </div>
 
@@ -310,17 +336,31 @@ function Policies() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {people.map((p) => (
-                  <TableRow key={p.key} className="text-xs">
-                    <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
-                    <TableCell className="py-2 text-text-secondary">{ROLE_LABEL[p.role]}</TableCell>
-                    {docs.map((d) => (
-                      <TableCell key={d.resourceId} className="py-2">
-                        <Cell value={p.cells[d.resourceId]} dueAt={dueFor(d.resourceId)} />
+                {(grid.groups ?? [{ label: "", rows: grid.rows }]).flatMap((g) => [
+                  ...(g.label
+                    ? [
+                        <ClubGroupRow
+                          key={`g-${g.label}`}
+                          label={g.label}
+                          count={g.rows.length}
+                          colSpan={docs.length + 2}
+                        />,
+                      ]
+                    : []),
+                  ...g.rows.map((p) => (
+                    <TableRow key={p.key} className="text-xs">
+                      <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
+                      <TableCell className="py-2 text-text-secondary">
+                        {ROLE_LABEL[p.role]}
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
+                      {docs.map((d) => (
+                        <TableCell key={d.resourceId} className="py-2">
+                          <Cell value={p.cells[d.resourceId]} dueAt={dueFor(d.resourceId)} />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  )),
+                ])}
               </TableBody>
             </ClubTable>
           </div>

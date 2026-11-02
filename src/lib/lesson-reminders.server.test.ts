@@ -86,6 +86,25 @@ function fakeDb(opts: {
 
     return {
       select: () => makeQuery(rowsFor()),
+      delete: () => {
+        const filters: [string, unknown][] = [];
+        const chain = {
+          eq: (col: string, val: unknown) => {
+            filters.push([col, val]);
+            return chain;
+          },
+          then: (resolve: (v: { error: null }) => void) => {
+            if (name === "lesson_reminders_sent") {
+              for (let i = sent.length - 1; i >= 0; i -= 1) {
+                const row = sent[i] as unknown as Record<string, unknown>;
+                if (filters.every(([c, v]) => row[c] === v)) sent.splice(i, 1);
+              }
+            }
+            resolve({ error: null });
+          },
+        };
+        return chain;
+      },
       upsert: (
         payload: Record<string, unknown>[],
         _opts: { onConflict: string; ignoreDuplicates: boolean },

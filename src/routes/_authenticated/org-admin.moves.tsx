@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -111,13 +112,70 @@ function OrgMovesPage() {
         (!s || m.name.toLowerCase().includes(s) || m.category.toLowerCase().includes(s)),
     );
   }, [q.data, sport, search, showArchived]);
-  const groups = useMemo(() => {
-    const g = new Map<string, OrgMoveRow[]>();
-    for (const m of rows) g.set(m.category, [...(g.get(m.category) ?? []), m]);
-    return Array.from(g.entries());
-  }, [rows]);
 
   useEffect(() => setSelected(new Set()), [sport]);
+  const columns: ClubColumn<OrgMoveRow>[] = [
+    {
+      key: "name",
+      label: "Move",
+      sortValue: (m) => m.name,
+      className: "min-w-56",
+      render: (m) => (
+        <span className="flex items-start gap-3">
+          <span onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              aria-label={`Select ${m.name}`}
+              checked={selected.has(m.key)}
+              onCheckedChange={(v) => toggle(m.key, v === true)}
+            />
+          </span>
+          <span className={m.archived ? "opacity-60" : undefined}>
+            <span className="block">{m.name}</span>
+            {m.cue && (
+              <span className="block text-xs font-normal text-text-secondary">{m.cue}</span>
+            )}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "category",
+      label: "Category",
+      sortValue: (m) => m.category,
+      groupValue: (m) => m.category,
+      render: (m) => m.category,
+    },
+    {
+      key: "target",
+      label: "Target",
+      sortValue: (m) => m.defaultTargetValue,
+      className: "whitespace-nowrap text-text-secondary",
+      render: (m) => `${m.defaultTargetValue} ${m.defaultTargetKind}`,
+    },
+    {
+      key: "source",
+      label: "From",
+      sortValue: (m) => m.source,
+      groupValue: (m) => (m.source === "club" ? "Club" : "Gradus"),
+      render: (m) => (
+        <span className="flex flex-wrap gap-1">
+          <Tag tone={m.source === "club" ? "accent" : "muted"}>
+            {m.source === "club" ? "Club" : "Gradus"}
+          </Tag>
+          {m.edited && <Tag tone="muted">Edited</Tag>}
+          {m.archived && <Tag tone="muted">Archived</Tag>}
+        </span>
+      ),
+    },
+    {
+      key: "description",
+      label: "Description",
+      defaultHidden: true,
+      className: "min-w-64 whitespace-normal text-text-secondary",
+      render: (m) => m.description || "—",
+    },
+  ];
+  const grid = useClubGrid("moves", columns, rows, { group: "category" });
 
   const update = useMutation({
     mutationFn: (v: { keys: string[]; patch: Patch }) =>
@@ -166,6 +224,8 @@ function OrgMovesPage() {
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
+            <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+            {grid.menu}
           </ClubGridToolbar>
 
           {sel.length > 0 && (
@@ -190,68 +250,15 @@ function OrgMovesPage() {
             </div>
           )}
 
-          {groups.length === 0 && (
-            <Card>
-              <CardContent className="p-6 text-sm text-text-secondary">No moves match.</CardContent>
-            </Card>
-          )}
-          {groups.map(([category, list]) => (
-            <Card key={category}>
-              <CardContent className="p-0">
-                <ClubTable>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">
-                        <Checkbox
-                          aria-label={`Select all in ${category}`}
-                          checked={list.every((m) => selected.has(m.key))}
-                          onCheckedChange={(v) => list.forEach((m) => toggle(m.key, v === true))}
-                        />
-                      </TableHead>
-                      <TableHead>{category}</TableHead>
-                      <TableHead>Target</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead className="text-right" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {list.map((m) => (
-                      <TableRow key={m.key} className={m.archived ? "opacity-60" : undefined}>
-                        <TableCell>
-                          <Checkbox
-                            aria-label={`Select ${m.name}`}
-                            checked={selected.has(m.key)}
-                            onCheckedChange={(v) => toggle(m.key, v === true)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium text-text-primary">{m.name}</div>
-                          {m.cue && <div className="text-xs text-text-secondary">{m.cue}</div>}
-                        </TableCell>
-                        <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                          {m.defaultTargetValue} {m.defaultTargetKind}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <Tag tone={m.source === "club" ? "accent" : "muted"}>
-                              {m.source === "club" ? "Club" : "Gradus"}
-                            </Tag>
-                            {m.edited && <Tag tone="muted">Edited</Tag>}
-                            {m.archived && <Tag tone="muted">Archived</Tag>}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => setEditing(m)}>
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </ClubTable>
-              </CardContent>
-            </Card>
-          ))}
+          <ClubDataGrid
+            grid={grid}
+            rowKey={(m) => m.key}
+            onRowClick={setEditing}
+            rowLabel={(m) => m.name}
+            filtered={!!search || !showArchived}
+            onClear={() => setSearch("")}
+            empty="No moves for this sport yet."
+          />
         </>
       )}
 

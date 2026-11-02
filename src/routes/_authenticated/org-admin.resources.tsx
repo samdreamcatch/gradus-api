@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Plus, Upload, Table2, LayoutGrid, FileText } from "lucide-react";
 import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import {
   ClubGridToolbar,
   ClubGridCount,
@@ -131,6 +132,114 @@ function OrgResourcesPage() {
   const shown = rows.filter((r) =>
     `${r.title} ${r.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
+  const columns: ClubColumn<OrgResourceRow>[] = [
+    {
+      key: "title",
+      label: "Title",
+      sortValue: (r) => r.title,
+      className: "min-w-64 whitespace-normal",
+      render: (r) => (
+        <div className={r.archived ? "opacity-60" : undefined}>
+          {" "}
+          <div className="font-medium text-text-primary">{r.title}</div>
+          {r.description && (
+            <div className="text-xs text-text-secondary line-clamp-2">{r.description}</div>
+          )}
+          {r.reviewState !== "released" && (
+            <div className="text-xs text-text-tertiary mt-1">
+              {r.reviewState === "held"
+                ? "Gradus is reviewing this PDF before members see it."
+                : "Checking the file…"}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "source",
+      label: "From",
+      sortValue: (r) => r.source,
+      groupValue: (r) => (r.source === "club" ? "Club" : "Gradus"),
+      render: (r) => (
+        <>
+          {" "}
+          <div className="flex flex-wrap gap-1">
+            <Tag tone={r.source === "club" ? "accent" : "muted"}>
+              {r.source === "club" ? "Club" : "Gradus"}
+            </Tag>
+            {r.edited && <Tag tone="muted">Edited</Tag>}
+            {r.archived && <Tag tone="muted">Archived</Tag>}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "ack",
+      label: "Acknowledgement",
+      sortValue: (r) => r.ack?.done ?? null,
+      groupValue: (r) => (r.ack ? "Required" : "Not required"),
+      className: "text-text-secondary",
+      render: (r) => (
+        <span onClick={(e) => e.stopPropagation()}>
+          {" "}
+          {r.ack ? (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              {r.ack.done} of {r.ack.total} acknowledged
+            </Button>
+          ) : (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              Not required
+            </Button>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "review",
+      label: "Review",
+      defaultHidden: true,
+      groupValue: (r) => r.reviewState,
+      sortValue: (r) => r.reviewState,
+      render: (r) => r.reviewState,
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      className: "whitespace-nowrap",
+      render: (r) => (
+        <span className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          {" "}
+          <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
+            Edit
+          </Button>
+          {r.archived ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => archive.mutate({ row: r, archived: false })}
+            >
+              Restore
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>
+              Archive
+            </Button>
+          )}
+        </span>
+      ),
+    },
+  ];
+  const grid = useClubGrid("resources", columns, shown);
   const refresh = () => {
     for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"])
       qc.invalidateQueries({ queryKey: [key, orgId] });
@@ -186,6 +295,12 @@ function OrgResourcesPage() {
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
+            {view === "grid" && (
+              <>
+                <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+                {grid.menu}
+              </>
+            )}
           </ClubGridToolbar>
           <ClubGridCount shown={shown.length} total={rows.length} noun="resources" />
           {view === "gallery" ? (
@@ -259,93 +374,15 @@ function OrgResourcesPage() {
               )}
             </div>
           ) : (
-            <ClubTable>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>Acknowledgement</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shown.length === 0 && (
-                  <ClubEmptyRow
-                    colSpan={4}
-                    filtered={!!search}
-                    empty={`No resources for ${sportDisplayLabel(sport)} yet.`}
-                    onClear={() => setSearch("")}
-                  />
-                )}
-                {shown.map((r) => (
-                  <TableRow key={r.id} className={r.archived ? "opacity-60" : undefined}>
-                    <TableCell>
-                      <div className="font-medium text-text-primary">{r.title}</div>
-                      {r.description && (
-                        <div className="text-xs text-text-secondary line-clamp-2">
-                          {r.description}
-                        </div>
-                      )}
-                      {r.reviewState !== "released" && (
-                        <div className="text-xs text-text-tertiary mt-1">
-                          {r.reviewState === "held"
-                            ? "Gradus is reviewing this PDF before members see it."
-                            : "Checking the file…"}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        <Tag tone={r.source === "club" ? "accent" : "muted"}>
-                          {r.source === "club" ? "Club" : "Gradus"}
-                        </Tag>
-                        {r.edited && <Tag tone="muted">Edited</Tag>}
-                        {r.archived && <Tag tone="muted">Archived</Tag>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-text-secondary">
-                      {r.ack ? (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          disabled={r.archived || r.reviewState !== "released"}
-                          onClick={() => setAckFor(r)}
-                        >
-                          {r.ack.done} of {r.ack.total} acknowledged
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          disabled={r.archived || r.reviewState !== "released"}
-                          onClick={() => setAckFor(r)}
-                        >
-                          Not required
-                        </Button>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right space-x-1 whitespace-nowrap">
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
-                        Edit
-                      </Button>
-                      {r.archived ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => archive.mutate({ row: r, archived: false })}
-                        >
-                          Restore
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>
-                          Archive
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </ClubTable>
+            <ClubDataGrid
+              grid={grid}
+              rowKey={(r) => r.id}
+              onRowClick={setEditing}
+              rowLabel={(r) => r.title}
+              filtered={!!search}
+              onClear={() => setSearch("")}
+              empty={`No resources for ${sportDisplayLabel(sport)} yet.`}
+            />
           )}
         </>
       )}
