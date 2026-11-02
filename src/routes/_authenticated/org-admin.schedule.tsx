@@ -1,8 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
+import { LessonCalendar, coachTone } from "@/components/org-admin/lesson-calendar";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { toIso } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
@@ -28,6 +33,14 @@ export const Route = createFileRoute("/_authenticated/org-admin/schedule")({
     { property: "og:title", content: "Schedule · Gradus Club" }, { property: "og:description", content: "Review club lesson schedules and match seated coaches before invitations." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
+  validateSearch: zodValidator(z.object({
+    tab: fallback(z.string(), "imports").default("imports"),
+    view: fallback(z.string(), "grid").default("grid"),
+    range: fallback(z.string(), "week").default("week"),
+    date: fallback(z.string(), "").default(""),
+    coach: fallback(z.string(), "all").default("all"),
+    invite: fallback(z.string(), "all").default("all"),
+  })),
   loader: ({ context }) => context.queryClient.ensureQueryData(clubCoachesOptions()),
   component: ClubSchedulePage,
 });
@@ -52,7 +65,19 @@ function ClubSchedulePage() {
   const [busy, setBusy] = useState(false);
   const [lessonSearch, setLessonSearch] = useState("");
   const [selectedLesson, setSelectedLesson] = useState<ClubLesson | null>(null);
-  const lessons = (calendar.data ?? []).filter((r) => `${r.studentName} ${r.guardianName} ${r.coachName} ${r.contactEmail ?? ""}`.toLowerCase().includes(lessonSearch.toLowerCase()));
+  const sp = Route.useSearch();
+  const navigate = useNavigate({ from: "/org-admin/schedule" });
+  const setSp = (patch: Partial<typeof sp>) => navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+  const view = sp.view === "calendar" ? "calendar" : "grid";
+  const range = sp.range === "month" ? "month" : "week";
+  const calDate = /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : toIso(new Date());
+  const allLessons = calendar.data ?? [];
+  const lessonCoaches = [...new Map(allLessons.map((l) => [l.coachId, l.coachName])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const coachIds = lessonCoaches.map(([id]) => id);
+  const inviteStatuses = [...new Set(allLessons.map((l) => l.invitationStatus))].sort();
+  const lessons = allLessons.filter((r) => `${r.studentName} ${r.guardianName} ${r.coachName} ${r.contactEmail ?? ""}`.toLowerCase().includes(lessonSearch.toLowerCase())
+    && (sp.coach === "all" || r.coachId === sp.coach) && (sp.invite === "all" || r.invitationStatus === sp.invite));
+  const activeFilters = (sp.coach !== "all" ? 1 : 0) + (sp.invite !== "all" ? 1 : 0) + (lessonSearch ? 1 : 0);
   const recurrence = (r: ClubLesson) => `${IMPORT_FREQUENCIES.find((f) => f.value === r.frequency)?.label ?? r.frequency}${r.weeksOfMonth.length ? ` · Weeks ${r.weeksOfMonth.join(", ")}` : ""}`;
   const fileRef = useRef<HTMLInputElement>(null);
   const seatedCoaches = coaches.filter((c) => seats.data?.some((s) => s.coach_id === c.coachId));
@@ -95,7 +120,7 @@ function ClubSchedulePage() {
       <Button onClick={() => fileRef.current?.click()}><Upload className="size-4" />Import CSV</Button>
       <input ref={fileRef} type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" className="hidden" aria-label="Upload club schedule CSV" onChange={(e) => { const file = e.target.files?.[0]; if (file) void upload(file); e.target.value = ""; }} />
     </div></div>
-    <Tabs defaultValue="imports" className="min-w-0"><TabsList className="h-auto"><TabsTrigger value="imports" className="min-h-11 press-soft">Imports</TabsTrigger><TabsTrigger value="calendar" className="min-h-11 press-soft">Calendar</TabsTrigger></TabsList>
+    <Tabs value={sp.tab === "calendar" ? "calendar" : "imports"} onValueChange={(v) => setSp({ tab: v })} className="min-w-0"><TabsList className="h-auto"><TabsTrigger value="imports" className="min-h-11 press-soft">Imports</TabsTrigger><TabsTrigger value="calendar" className="min-h-11 press-soft">Lessons</TabsTrigger></TabsList>
       <TabsContent value="imports" className="space-y-6">
         {seats.isError && <p role="status" className="text-sm text-text-secondary">Seated-coach matching becomes available when this draft is accepted.</p>}
         <ol aria-label="Import progress" className="grid grid-cols-2 gap-2 border-y border-divider py-3 sm:grid-cols-4">{["Upload", "Match coaches", "Review rows", "Send invites"].map((label, i) => <li key={label} aria-current={step === i ? "step" : undefined} className={step === i ? "font-semibold text-text-primary" : "text-text-secondary"}><span className="mr-2 font-mono text-xs">{i + 1}</span>{label}</li>)}</ol>
@@ -115,17 +140,29 @@ function ClubSchedulePage() {
         <section className="space-y-3"><h2 className="font-display text-h3">Past imports</h2>{history.isError ? <p className="text-sm text-text-secondary">Import history becomes available when this draft is accepted.</p> : <ClubTable><TableHeader><TableRow>{["Imported", "File", "Status", "Open"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{history.data?.map((record) => <TableRow key={record.id}><TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell><TableCell>{record.file_name}</TableCell><TableCell><StatusDot status="informational" label={record.status === "ready" ? "Review ready · not sent" : "In review"} /></TableCell><TableCell><Button variant="ghost" disabled={busy} onClick={() => openReview(record.id, record.file_name)}>Open</Button></TableCell></TableRow>)}{!history.data?.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-text-secondary">No saved imports.</TableCell></TableRow>}</TableBody></ClubTable>}</section>
       </TabsContent>
       <TabsContent value="calendar" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-h3">Recurring lessons · {lessons.length}</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="font-display text-h3">Recurring lessons <span className="font-mono text-sm text-text-secondary tabular-nums">{lessons.length}{lessons.length !== allLessons.length ? ` of ${allLessons.length}` : ""} records</span></h2>
           <Button variant="outline" disabled={!lessons.length} onClick={() => downloadCsv("club-lesson-calendar.csv", toCsv(
             ["Student", "Guardian", "Coach", "Day", "Start", "End", "Minutes", "Frequency", "Starts on", "Weeks of month", "Invite recipient", "Contact email", "Schedule status", "Invitation status", "Invite recorded at"],
             lessons.map((r) => [r.studentName, r.guardianName, r.coachName, IMPORT_DAYS.find((d) => d.value === r.day)?.long, formatTimeLabel(r.start), formatTimeLabel(r.end), r.minutes, r.frequency, r.startsOn, r.weeksOfMonth.join(", "), r.recipient, r.contactEmail, r.scheduleStatus, r.invitationStatus, r.invitedAt])
           ))}><Download className="size-4" />Export CSV</Button>
         </div>
-        <Input aria-label="Search recurring lessons" placeholder="Search student, guardian, coach or email" value={lessonSearch} onChange={(e) => setLessonSearch(e.target.value)} className="sm:max-w-sm" />
-        {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : <ClubTable>
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-divider bg-elevated px-2 py-2">
+          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setSp({ view: v })} aria-label="Lesson view">
+            <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3"><Table2 className="size-4" />Grid</ToggleGroupItem>
+            <ToggleGroupItem value="calendar" className="press-soft gap-1.5 px-3"><CalendarDays className="size-4" />Calendar</ToggleGroupItem>
+          </ToggleGroup>
+          <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+          <Input aria-label="Search recurring lessons" placeholder="Search student, guardian, coach or email" value={lessonSearch} onChange={(e) => setLessonSearch(e.target.value)} className="h-9 sm:w-72" />
+          <FilterPill className="w-auto min-w-40" aria-label="Filter by coach" value={sp.coach} onValueChange={(v) => setSp({ coach: v || "all" })} options={[{ value: "all", label: "All coaches" }, ...lessonCoaches.map(([id, name]) => ({ value: id, label: name }))]} />
+          <FilterPill className="w-auto min-w-44" aria-label="Filter by invitation status" value={sp.invite} onValueChange={(v) => setSp({ invite: v || "all" })} options={[{ value: "all", label: "Any invite status" }, ...inviteStatuses.map((v) => ({ value: v, label: v }))]} />
+          {activeFilters > 0 && <Button variant="ghost" size="sm" onClick={() => { setLessonSearch(""); setSp({ coach: "all", invite: "all" }); }}>Clear · {activeFilters}</Button>}
+          {view === "calendar" && !!lessonCoaches.length && <div className="ml-auto flex flex-wrap gap-1.5">{lessonCoaches.map(([id, name]) => <span key={id} className="rounded-sm border-l-[3px] px-1.5 py-0.5 text-[11px]" style={coachTone(id, coachIds)}>{name}</span>)}</div>}
+        </div>
+        {view === "calendar" && !calendar.isError && <LessonCalendar lessons={lessons} coachIds={coachIds} mode={range} date={calDate} onModeChange={(m) => setSp({ range: m })} onDateChange={(d) => setSp({ date: d })} onOpen={setSelectedLesson} />}
+        {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : view === "grid" && <ClubTable>
           <TableHeader><TableRow>{["Student", "Guardian", "Coach", "Day / time", "Every", "Invite contact", "Status", "Details"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{lessons.map((r) => <TableRow key={r.id}>
+          <TableBody>{lessons.map((r) => <TableRow key={r.id} className="cursor-pointer" onClick={() => setSelectedLesson(r)}>
             <TableCell className="min-w-36">{r.studentName}</TableCell>
             <TableCell className="min-w-36 whitespace-normal">{r.guardianName}</TableCell>
             <TableCell className="min-w-36">{r.coachName}</TableCell>
