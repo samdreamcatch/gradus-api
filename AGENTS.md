@@ -1,0 +1,20 @@
+
+- Club Trust Center readiness rules live in pure `src/lib/trust-center.ts` (unit-tested); `trust-center.server.ts` only gathers inputs, so the scoring stays testable and consistent.
+- DEV tools use the shared, tested preview-host predicate for main and numbered draft previews; published domains stay excluded to avoid exposing the account switcher there.
+- Club policies use club-scoped requirement and append-only evidence tables, with local draft schema types instead of editing generated clients; this isolates shared Gradus documents and retains legacy sign-offs.
+- Policy deadlines come from one pure helper shared through the matrix and overview, and PDF evidence generation stays server-only; this keeps status calculations consistent and private evidence off the client import chain.
+- People reuses the authorized club roster and policy matrix; coach policy attribution is pure and tested, and policy failures never imply a coach is signed off.
+- Admin social-plan updates use an admin-authorized transactional RPC and preserve share tokens; attribution uses draft-local schema extensions, never generated-client edits.
+- Clipboard operations use a selection fallback and expose a selectable link when copying is denied, never report false success.
+- Gradus Club contract reads use draft-local schema types and privileged clients only after caller authorization; database triggers enforce seat capacity across web/native membership writers so entry paths cannot bypass seat limits.
+- Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.
+- Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
+- App notification inbox storage is separate from club notifications, uses plain user UUIDs and server-only writes, and allows owners only read, clear, or read-state updates; this prevents client-authored alerts and auth-schema foreign-key coupling.
+- Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
+- Club schedule review uses separate org-scoped import storage and a transactional save; parsing, matching, and saving never create lessons or send invitations, so delivery remains an explicit later action.
+- Club Schedule returns one row per recurring lesson from club-authorized coaches and current coach/student links; family contacts stay exclusive to the operational Schedule view, and recorded invitation timestamps never imply email delivery.
+- Club content pages share Library navigation while preserving their existing URLs, so acknowledgement, move, level, and template workflows stay accessible without duplicate screens.
+- Club template plans live in org-scoped service-role tables; sending copies them into each matching coach's own templates and records a deployment, so resending never overwrites a coach's edits. Matching rules are pure and tested in `src/lib/org-templates.ts`.
+- The club resource builder writes drafts with Claude via ANTHROPIC_API_KEY and renders PDFs server-side with pdf-lib built-in fonts (text passed through pdfSafe); finished PDFs go through the normal club resource save so the picture check still applies.
+- Club admin grids use `useClubGrid`/`ClubDataGrid` (pure sort/group rules in `src/lib/club-grid.ts`, device-saved view settings) inside `ClubGridToolbar`; the club panel always follows the device light/dark setting.
+- Club admin database pages share `ClubGridToolbar` (view switch, search, filters, clear count) and `ClubTable`; calendar placement of recurring lessons is pure and tested in `club-lesson-calendar.ts`, so every page filters and reads the same way.

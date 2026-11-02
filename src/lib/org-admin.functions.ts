@@ -64,7 +64,7 @@ export const getOrgAdminContext = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = context.supabase as Client;
     const orgs = await loadAdminOrgs(supabase, context.userId);
-    return { organizations: orgs };
+    return { organizations: orgs, viewerId: context.userId };
   });
 
 /* ============================ Roster ============================ */
@@ -79,6 +79,7 @@ export type RosterCoach = {
   parentCount: number;
   adultAthleteCount: number;
   joinedAt: string | null;
+  levels: { sport: string; key: string; label: string; practiceHours: number }[];
 };
 
 export const listOrgRoster = createServerFn({ method: "POST" })
@@ -98,6 +99,21 @@ export const listOrgRoster = createServerFn({ method: "POST" })
 
     const coachIds = (coaches.data ?? []).map((c) => c.id);
     const userIds = (coaches.data ?? []).map((c) => c.user_id);
+    const [levels, clubLevels] = await Promise.all([
+      coachIds.length
+        ? supabaseAdmin
+            .from("coach_levels")
+            .select("coach_id, sport, level_key, practice_hours_per_week")
+            .in("coach_id", coachIds)
+        : Promise.resolve({ data: [], error: null }),
+      supabaseAdmin
+        .from("org_levels")
+        .select("sport, level_key, label")
+        .eq("organization_id", data.organizationId),
+    ]);
+    if (levels.error) dbError(levels.error);
+    if (clubLevels.error) dbError(clubLevels.error);
+    const { SPORTS } = await import("./coach-sports");
 
     // Athlete + parent counts per coach
     const links = await supabaseAdmin
@@ -117,7 +133,7 @@ export const listOrgRoster = createServerFn({ method: "POST" })
       }
       if (a.parent_id) {
         if (!parentSetByCoach.has(l.coach_id)) parentSetByCoach.set(l.coach_id, new Set());
-        parentSetByCoach.get(l.coach_id)!.add(a.parent_id);
+        parentSetByCoach.get(l.coach_id)?.add(a.parent_id);
       }
     }
 
@@ -141,6 +157,20 @@ export const listOrgRoster = createServerFn({ method: "POST" })
         parentCount: parentSetByCoach.get(c.id)?.size ?? 0,
         adultAthleteCount: adultByCoach.get(c.id) ?? 0,
         joinedAt: c.created_at,
+        levels: (levels.data ?? [])
+          .filter((l) => l.coach_id === c.id)
+          .map((l) => ({
+            sport: l.sport,
+            key: l.level_key,
+            label:
+              (clubLevels.data ?? []).find(
+                (cl) => cl.sport === l.sport && cl.level_key === l.level_key,
+              )?.label ??
+              SPORTS.find((s) => s.key === l.sport)?.levels.find((sl) => sl.key === l.level_key)
+                ?.label ??
+              l.level_key,
+            practiceHours: Number(l.practice_hours_per_week),
+          })),
       })),
     };
   });
@@ -283,7 +313,8 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
     const code = generateInviteCode();
     const token = generateToken();
 
-    const { data: row, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("org_coach_invites")
       .insert({
         organization_id: data.organizationId,
@@ -441,32 +472,22 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
     if (coach.error) dbError(coach.error);
     if (!coach.data) throw new Error("Coach profile missing — finish coach signup first");
 
-    const upd = await supabaseAdmin
-      .from("coach_profiles")
-      .update({
-        organization_id: invite.data.organization_id,
-        entitlement: "club_covered",
-      })
-      .eq("id", coach.data.id);
-    if (upd.error) dbError(upd.error);
-
-    const markAccepted = await supabaseAdmin
-      .from("org_coach_invites")
-      .update({
-        status: "accepted",
-        accepted_at: new Date().toISOString(),
-        accepted_user_id: context.userId,
-      })
-      .eq("id", invite.data.id);
-    if (markAccepted.error) dbError(markAccepted.error);
-
-    await supabaseAdmin.from("org_admin_actions").insert({
-      actor_user_id: context.userId,
-      organization_id: invite.data.organization_id,
-      target_coach_id: coach.data.id,
-      action: "coach.joined_via_invite",
-      payload: { inviteId: invite.data.id },
+    type InviteDatabase = Omit<Database, "public"> & {
+      public: Omit<Database["public"], "Functions"> & {
+        Functions: Database["public"]["Functions"] & {
+          club_accept_coach_invite: {
+            Args: { p_code: string; p_user_id: string };
+            Returns: string;
+          };
+        };
+      };
+    };
+    const admin = supabaseAdmin as unknown as SupabaseClient<InviteDatabase>;
+    const accepted = await admin.rpc("club_accept_coach_invite", {
+      p_code: data.code,
+      p_user_id: context.userId,
     });
+    if (accepted.error) dbError(accepted.error);
 
     return { ok: true, organizationId: invite.data.organization_id };
   });

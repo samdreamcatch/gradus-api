@@ -1,8 +1,6 @@
-// DEV-ONLY. The entire DevTools tree is gated behind
-// `import.meta.env.DEV` at the mount site in __root.tsx, so this file and
-// everything it imports tree-shakes out of production builds.
+// Preview-only: the mount gates this account switcher by hostname.
 import { useEffect, useState } from "react";
-import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Wrench, LogIn, RotateCcw, Check, Ticket } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,7 +45,6 @@ async function detectRole(userId: string): Promise<DevRole | null> {
 }
 
 export function DevTools() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -58,7 +55,6 @@ export function DevTools() {
     role: null,
   });
 
-  const hideOnAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -181,19 +177,17 @@ export function DevTools() {
 
   const steps = ONBOARDING_STEPS[stepRole] ?? [];
 
-  if (hideOnAdmin) return null;
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button
+        <Button
           type="button"
           aria-label="Open DevTools"
-          className="fixed left-2 top-2 z-[100] flex h-7 items-center gap-1.5 rounded-full bg-attention px-3 text-[10px] font-bold uppercase tracking-widest text-[#0c2340] shadow-card transition hover:bg-attention/90"
+          className="fixed left-2 top-2 z-[100] h-7 gap-1.5 rounded-full px-3 text-[10px] font-bold uppercase tracking-widest shadow-card"
         >
           <Wrench className="size-3" />
           DEV
-        </button>
+        </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-md [&>button]:z-20">
         <ScrollArea className="h-full">

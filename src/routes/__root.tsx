@@ -20,7 +20,11 @@ import { initNativeShell } from "@/lib/native";
 import { BiometricGate } from "@/components/native/biometric-gate";
 import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
 import { installErrorReporter, reportError } from "@/lib/client-error-reporter";
-import { installChunkErrorRecovery, isModuleLoadError, recoverFromStaleChunks } from "@/pwa/chunk-recovery";
+import {
+  installChunkErrorRecovery,
+  isModuleLoadError,
+  recoverFromStaleChunks,
+} from "@/pwa/chunk-recovery";
 import { PRE_HYDRATION_SNAPSHOT_SCRIPT } from "@/lib/hydration-diagnostics";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 
@@ -148,7 +152,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('gradus-theme')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=location.pathname.indexOf('/org-admin')===0?'system':(localStorage.getItem('gradus-theme')||'system');var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
@@ -227,4 +231,3 @@ function AuthSync() {
   }, [router, queryClient]);
   return null;
 }
-

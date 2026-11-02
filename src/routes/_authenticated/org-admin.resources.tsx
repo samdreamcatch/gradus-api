@@ -3,9 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload } from "lucide-react";
+import { Loader2, Plus, Upload, Table2, LayoutGrid, FileText } from "lucide-react";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { ClubBulkBar, useClubSelection } from "@/components/org-admin/club-bulk-bar";
+import {
+  ClubGridToolbar,
+  ClubGridCount,
+  ClubEmptyRow,
+} from "@/components/org-admin/club-grid-toolbar";
 import { supabase } from "@/integrations/supabase/client";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +65,19 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/resources")({
-  head: () => ({ meta: [{ title: "Resource library · Organization Admin · Gradus" }] }),
+  head: () => ({
+    meta: [
+      { title: "Resource library · Organization Admin · Gradus" },
+      { name: "description", content: "Club resources and required document acknowledgements." },
+      { property: "og:title", content: "Resource library · Organization Admin · Gradus" },
+      {
+        property: "og:description",
+        content: "Club resources and required document acknowledgements.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgResourcesPage,
 });
 
@@ -95,10 +116,13 @@ function OrgResourcesPage() {
     if (!sport && sports.length) setSport(sports[0]);
   }, [sports, sport]);
   const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useState("grid");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<OrgResourceRow | "new" | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [ackFor, setAckFor] = useState<OrgResourceRow | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<OrgResourceRow | null>(null);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
 
   const rows = useMemo(
     () =>
@@ -107,7 +131,157 @@ function OrgResourcesPage() {
       ),
     [q.data, sport, showArchived],
   );
-  const refresh = () => qc.invalidateQueries({ queryKey: ["org-resources", orgId] });
+  const shown = rows.filter((r) =>
+    `${r.title} ${r.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+  const selection = useClubSelection<OrgResourceRow>(
+    (r) => r.id,
+    (r) => r.title,
+  );
+  const { clear: clearSelection } = selection;
+  useEffect(() => clearSelection(), [sport, view, clearSelection]);
+  const picked = selection.pick(shown);
+  const bulkArchive = useMutation({
+    mutationFn: (archived: boolean) =>
+      archiveFn({
+        data: { organizationId: orgId!, resourceIds: picked.map((r) => r.id), archived },
+      }),
+    onSuccess: (_r, archived) => {
+      toast.success(`${picked.length} ${archived ? "archived" : "restored"}`);
+      selection.clear();
+      refresh();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save"),
+  });
+  function exportSelected() {
+    downloadCsv(
+      "club-resources.csv",
+      toCsv(
+        ["Title", "Sport", "From", "Archived", "Acknowledged", "Description"],
+        picked.map((r) => [
+          r.title,
+          sportDisplayLabel(r.sport),
+          r.source === "club" ? "Club" : "Gradus",
+          r.archived ? "Yes" : "No",
+          r.ack ? `${r.ack.done}/${r.ack.total}` : "Not required",
+          r.description ?? "",
+        ]),
+      ),
+    );
+  }
+  const columns: ClubColumn<OrgResourceRow>[] = [
+    selection.column,
+    {
+      key: "title",
+      label: "Title",
+      sortValue: (r) => r.title,
+      className: "min-w-64 whitespace-normal",
+      render: (r) => (
+        <div className={r.archived ? "opacity-60" : undefined}>
+          {" "}
+          <div className="font-medium text-text-primary">{r.title}</div>
+          {r.description && (
+            <div className="text-xs text-text-secondary line-clamp-2">{r.description}</div>
+          )}
+          {r.reviewState !== "released" && (
+            <div className="text-xs text-text-tertiary mt-1">
+              {r.reviewState === "held"
+                ? "Gradus is reviewing this PDF before members see it."
+                : "Checking the file…"}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "source",
+      label: "From",
+      sortValue: (r) => r.source,
+      groupValue: (r) => (r.source === "club" ? "Club" : "Gradus"),
+      render: (r) => (
+        <>
+          {" "}
+          <div className="flex flex-wrap gap-1">
+            <Tag tone={r.source === "club" ? "accent" : "muted"}>
+              {r.source === "club" ? "Club" : "Gradus"}
+            </Tag>
+            {r.edited && <Tag tone="muted">Edited</Tag>}
+            {r.archived && <Tag tone="muted">Archived</Tag>}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "ack",
+      label: "Acknowledgement",
+      sortValue: (r) => r.ack?.done ?? null,
+      groupValue: (r) => (r.ack ? "Required" : "Not required"),
+      className: "text-text-secondary",
+      render: (r) => (
+        <span onClick={(e) => e.stopPropagation()}>
+          {" "}
+          {r.ack ? (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              {r.ack.done} of {r.ack.total} acknowledged
+            </Button>
+          ) : (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              Not required
+            </Button>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "review",
+      label: "Review",
+      defaultHidden: true,
+      groupValue: (r) => r.reviewState,
+      sortValue: (r) => r.reviewState,
+      render: (r) => r.reviewState,
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      className: "whitespace-nowrap",
+      render: (r) => (
+        <span className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          {" "}
+          <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
+            Edit
+          </Button>
+          {r.archived ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => archive.mutate({ row: r, archived: false })}
+            >
+              Restore
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>
+              Archive
+            </Button>
+          )}
+        </span>
+      ),
+    },
+  ];
+  const grid = useClubGrid("resources", columns, shown);
+  const refresh = () => {
+    for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"])
+      qc.invalidateQueries({ queryKey: [key, orgId] });
+  };
 
   const archive = useMutation({
     mutationFn: (v: { row: OrgResourceRow; archived: boolean }) =>
@@ -122,89 +296,92 @@ function OrgResourcesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
-      <PageTitle subtitle="What your coaches, parents and athletes see, per sport">
-        Resource library
-      </PageTitle>
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
+      <PageTitle>Resource library</PageTitle>
+      <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <ClubGridToolbar
+            views={[
+              { value: "grid", label: "Grid", icon: <Table2 className="size-4" /> },
+              { value: "gallery", label: "Gallery", icon: <LayoutGrid className="size-4" /> },
+            ]}
+            view={view}
+            onViewChange={setView}
+            search={search}
+            onSearchChange={setSearch}
+            searchLabel="Search resources"
+            activeFilters={search ? 1 : 0}
+            onClear={() => setSearch("")}
+            end={
+              <>
+                <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+                  <Upload /> Bulk upload
+                </Button>
+                <Button size="sm" onClick={() => setEditing("new")}>
+                  <Plus /> Add resource
+                </Button>
+              </>
+            }
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-              <Upload /> Bulk upload
-            </Button>
-            <Button size="sm" onClick={() => setEditing("new")}>
-              <Plus /> Add resource
-            </Button>
-          </div>
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>From</TableHead>
-                    <TableHead>Acknowledgement</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-sm text-text-secondary">
-                        No resources for {sportDisplayLabel(sport)} yet.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {rows.map((r) => (
-                    <TableRow key={r.id} className={r.archived ? "opacity-60" : undefined}>
-                      <TableCell>
-                        <div className="font-medium text-text-primary">{r.title}</div>
+            {view === "grid" && (
+              <>
+                <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+                {grid.menu}
+              </>
+            )}
+          </ClubGridToolbar>
+          <ClubGridCount shown={shown.length} total={rows.length} noun="resources" />
+          {view === "gallery" ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.map((r) => (
+                <Card key={r.id} className={r.archived ? "opacity-60" : undefined}>
+                  <CardContent className="flex h-full flex-col gap-3 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md bg-accent/15 text-accent-ink">
+                        <FileText className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-text-primary">{r.title}</p>
                         {r.description && (
-                          <div className="text-xs text-text-secondary line-clamp-2">
+                          <p className="line-clamp-2 text-xs text-text-secondary">
                             {r.description}
-                          </div>
+                          </p>
                         )}
-                        {r.reviewState !== "released" && (
-                          <div className="text-xs text-text-tertiary mt-1">
-                            {r.reviewState === "held"
-                              ? "Gradus is reviewing this PDF before members see it."
-                              : "Checking the file…"}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          <Tag tone={r.source === "club" ? "accent" : "muted"}>
-                            {r.source === "club" ? "Club" : "Gradus"}
-                          </Tag>
-                          {r.edited && <Tag tone="muted">Edited</Tag>}
-                          {r.archived && <Tag tone="muted">Archived</Tag>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-text-secondary">
-                        {r.source !== "club" ? (
-                          "—"
-                        ) : r.ack ? (
-                          <button className="press underline" onClick={() => setAckFor(r)}>
-                            {r.ack.done} of {r.ack.total} acknowledged
-                          </button>
-                        ) : (
-                          <button className="press underline" onClick={() => setAckFor(r)}>
-                            Not required
-                          </button>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right space-x-1 whitespace-nowrap">
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Tag tone={r.source === "club" ? "accent" : "muted"}>
+                        {r.source === "club" ? "Club" : "Gradus"}
+                      </Tag>
+                      {r.edited && <Tag tone="muted">Edited</Tag>}
+                      {r.archived && <Tag tone="muted">Archived</Tag>}
+                      {r.reviewState !== "released" && (
+                        <Tag tone="muted">
+                          {r.reviewState === "held" ? "In Gradus review" : "Checking"}
+                        </Tag>
+                      )}
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-2 border-t border-divider pt-2">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="px-0"
+                        disabled={r.archived || r.reviewState !== "released"}
+                        onClick={() => setAckFor(r)}
+                      >
+                        {r.ack ? `${r.ack.done} of ${r.ack.total} acknowledged` : "Not required"}
+                      </Button>
+                      <span className="flex gap-1">
                         <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
                           Edit
                         </Button>
@@ -221,13 +398,58 @@ function OrgResourcesPage() {
                             Archive
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {!shown.length && (
+                <p className="col-span-full py-10 text-center text-sm text-text-secondary">
+                  {search
+                    ? "No resources match this search."
+                    : `No resources for ${sportDisplayLabel(sport)} yet.`}
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <ClubBulkBar
+                count={picked.length}
+                total={shown.length}
+                onSelectAll={() => selection.selectAll(shown)}
+                onClear={selection.clear}
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkArchive.isPending || !picked.some((r) => !r.archived)}
+                  onClick={() => setBulkArchiveOpen(true)}
+                >
+                  Archive
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkArchive.isPending || !picked.some((r) => r.archived)}
+                  onClick={() => bulkArchive.mutate(false)}
+                >
+                  Restore
+                </Button>
+                <Button size="sm" variant="outline" onClick={exportSelected}>
+                  Export CSV
+                </Button>
+              </ClubBulkBar>
+              <ClubDataGrid
+                grid={grid}
+                rowKey={(r) => r.id}
+                onRowClick={setEditing}
+                rowLabel={(r) => r.title}
+                filtered={!!search}
+                onClear={() => setSearch("")}
+                empty={`No resources for ${sportDisplayLabel(sport)} yet.`}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -253,13 +475,34 @@ function OrgResourcesPage() {
         </>
       )}
 
+      <AlertDialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {picked.length} resources?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be hidden from your club. You can restore them any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                bulkArchive.mutate(true);
+                setBulkArchiveOpen(false);
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={!!archiveTarget} onOpenChange={(o) => !o && setArchiveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive this resource?</AlertDialogTitle>
             <AlertDialogDescription>
-              Coaches, parents and athletes in your club won't see "{archiveTarget?.title}"
-              anymore. You can restore it any time.
+              Coaches, parents and athletes in your club won't see "{archiveTarget?.title}" anymore.
+              You can restore it any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -366,8 +609,8 @@ function EditResourceSheet({
           <SheetTitle>{isNew ? "Add resource" : "Edit resource"}</SheetTitle>
           {isGradus && (
             <SheetDescription>
-              This is a Gradus document. Your edits to the title and description show only for
-              your club.
+              This is a Gradus document. Your edits to the title and description show only for your
+              club.
             </SheetDescription>
           )}
         </SheetHeader>
@@ -434,11 +677,7 @@ function EditResourceSheet({
             </Button>
             <Button
               onClick={submit}
-              disabled={
-                busy ||
-                !title.trim() ||
-                (isNew && (kind === "pdf" ? !file : !url.trim()))
-              }
+              disabled={busy || !title.trim() || (isNew && (kind === "pdf" ? !file : !url.trim()))}
             >
               {busy ? "Saving…" : "Save"}
             </Button>
@@ -513,7 +752,9 @@ function BulkUploadSheet({
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Bulk upload</SheetTitle>
-          <SheetDescription>Pick several PDFs, then choose a title and sport for each.</SheetDescription>
+          <SheetDescription>
+            Pick several PDFs, then choose a title and sport for each.
+          </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
           <Input
@@ -539,7 +780,9 @@ function BulkUploadSheet({
               <Input
                 value={it.title}
                 onChange={(e) =>
-                  setItems((xs) => xs.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))
+                  setItems((xs) =>
+                    xs.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
+                  )
                 }
               />
               <SportSelect
@@ -581,8 +824,11 @@ function AckSheet({
   const remindFn = useServerFn(remindOutstandingAcks);
   const qc = useQueryClient();
   const q = useQuery({
-    queryKey: ["org-ack", row?.id],
-    queryFn: () => statusFn({ data: { organizationId: orgId, resourceId: row!.id } }),
+    queryKey: ["org-ack", orgId, row?.id],
+    queryFn: () => {
+      if (!row) throw new Error("Select a document");
+      return statusFn({ data: { organizationId: orgId, resourceId: row.id } });
+    },
     enabled: !!row,
   });
   const [audiences, setAudiences] = useState<string[]>([]);
@@ -593,25 +839,30 @@ function AckSheet({
   }, [q.data]);
 
   const save = useMutation({
-    mutationFn: () =>
-      setFn({
+    mutationFn: () => {
+      if (!row) throw new Error("Select a document");
+      return setFn({
         data: {
           organizationId: orgId,
-          resourceId: row!.id,
+          resourceId: row.id,
           audiences: audiences as ("coach" | "parent" | "athlete")[],
           askAgain,
           notify: true,
         },
-      }),
+      });
+    },
     onSuccess: (r) => {
       toast.success(r.notified ? `Saved. Notified ${r.notified} people.` : "Saved");
-      qc.invalidateQueries({ queryKey: ["org-ack", row?.id] });
+      qc.invalidateQueries({ queryKey: ["org-ack", orgId, row?.id] });
       onSaved();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save"),
   });
   const remind = useMutation({
-    mutationFn: () => remindFn({ data: { organizationId: orgId, resourceId: row!.id } }),
+    mutationFn: () => {
+      if (!row) throw new Error("Select a document");
+      return remindFn({ data: { organizationId: orgId, resourceId: row.id } });
+    },
     onSuccess: (r) => toast.success(`Reminded ${r.notified} people`),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't send"),
   });

@@ -3,12 +3,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Sparkles, Pencil, Copy, Save, X } from "lucide-react";
+import { copyText } from "@/lib/copy-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -19,17 +28,37 @@ import {
 import { SPORTS } from "@/lib/coach-sports";
 import {
   adminDraftSocialPlan,
+  adminDraftSocialPlanFromResult,
   adminCreateSocialPlan,
   adminListSocialPlans,
   adminDeleteSocialPlan,
+  adminGetSocialPlan,
+  adminUpdateSocialPlan,
+  adminImproveSocialPlanMoves,
   type SocialPlanMoveInput,
 } from "@/lib/social-plans.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/social-plans")({
+  head: () => ({
+    meta: [
+      { title: "Social plans — Gradus Admin" },
+      {
+        name: "description",
+        content: "Create and edit Gradus shared practice plans and coach attribution.",
+      },
+      { property: "og:title", content: "Social plans — Gradus Admin" },
+      { property: "og:description", content: "Manage Gradus shared practice plans." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SocialPlansPage,
 });
 
 const SITE_ORIGIN = "https://gradus.training";
+
+const DEFAULT_IMPROVE_PROMPT =
+  "Make every move clearer and more coachable: tighten the how-to, sharpen the cue, and explain why it matters for this sport and level.";
 
 const emptyMove = (): SocialPlanMoveInput => ({
   name: "",
@@ -45,6 +74,8 @@ function SocialPlansPage() {
   const createFn = useServerFn(adminCreateSocialPlan);
   const listFn = useServerFn(adminListSocialPlans);
   const deleteFn = useServerFn(adminDeleteSocialPlan);
+  const getFn = useServerFn(adminGetSocialPlan);
+  const updateFn = useServerFn(adminUpdateSocialPlan);
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -58,9 +89,43 @@ function SocialPlansPage() {
   const [moveCount, setMoveCount] = useState(4);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
+  const [coachName, setCoachName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
   const [moves, setMoves] = useState<SocialPlanMoveInput[]>([emptyMove()]);
   const [drafting, setDrafting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [resultFile, setResultFile] = useState<File | null>(null);
+  const [resultText, setResultText] = useState("");
+  const draftFromResultFn = useServerFn(adminDraftSocialPlanFromResult);
+  const improveFn = useServerFn(adminImproveSocialPlanMoves);
+  const [improveOpen, setImproveOpen] = useState(false);
+  const [improvePrompt, setImprovePrompt] = useState(DEFAULT_IMPROVE_PROMPT);
+  const [improving, setImproving] = useState(false);
+  const [previousMoves, setPreviousMoves] = useState<SocialPlanMoveInput[] | null>(null);
+
+  const improveMoves = async () => {
+    const valid = moves.filter((m) => m.name.trim());
+    if (valid.length === 0) {
+      toast.error("Add at least one move with a name first.");
+      return;
+    }
+    setImproving(true);
+    try {
+      const res = await improveFn({
+        data: { sport: sportLabel, level, title, notes, prompt: improvePrompt, moves: valid },
+      });
+      setPreviousMoves(moves);
+      setMoves(res.moves);
+      setImproveOpen(false);
+      toast.success("Moves improved. Review, then save.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not improve the moves.");
+    } finally {
+      setImproving(false);
+    }
+  };
 
   const sportObj = SPORTS.find((s) => s.key === sport);
   const sportLabel = sportObj?.label ?? sport;
@@ -70,11 +135,37 @@ function SocialPlansPage() {
     setMoves((prev) => prev.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
 
   const copy = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
+    setShareUrl(url);
+    if (await copyText(url)) {
       toast.success("Share link copied", { description: url });
-    } catch {
-      toast.success("Share link", { description: url });
+    } else {
+      toast.error("Copy is blocked by your browser. Select the share link to copy it.");
+    }
+  };
+
+  const resetEditor = () => {
+    setEditingId(null);
+    setTitle("");
+    setNotes("");
+    setCoachName("");
+    setMoves([emptyMove()]);
+  };
+
+  const handleEdit = async (planId: string) => {
+    setLoadingId(planId);
+    try {
+      const plan = await getFn({ data: { planId } });
+      setEditingId(planId);
+      setTitle(plan.title);
+      setNotes(plan.notes);
+      setCoachName(plan.coachName);
+      setMoves(plan.moves);
+      document.getElementById("plan-editor")?.scrollIntoView({ block: "start" });
+      document.getElementById("plan-title")?.focus({ preventScroll: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not open the plan");
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -100,6 +191,35 @@ function SocialPlansPage() {
     }
   };
 
+  const handleDraftFromResult = async () => {
+    if (resultFile && resultFile.size > 10 * 1024 * 1024) {
+      toast.error("That file is over 10 MB");
+      return;
+    }
+    setDrafting(true);
+    try {
+      const fileDataUrl = resultFile
+        ? await new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result));
+            r.onerror = () => reject(new Error("Could not read the file"));
+            r.readAsDataURL(resultFile);
+          })
+        : undefined;
+      const res = await draftFromResultFn({
+        data: { sport: sportLabel, text: resultText.trim(), fileDataUrl, moveCount },
+      });
+      setTitle(res.title);
+      setNotes(res.notes);
+      setMoves(res.moves);
+      toast.success("Draft ready — edit anything before you publish");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not draft the plan");
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const handleCreate = async () => {
     const clean = moves.filter((m) => m.name.trim());
     if (!title.trim() || clean.length === 0) {
@@ -108,11 +228,18 @@ function SocialPlansPage() {
     }
     setSaving(true);
     try {
-      const res = await createFn({ data: { title: title.trim(), notes, moves: clean } });
-      await copy(`${SITE_ORIGIN}/p/${res.token}`);
-      setTitle("");
-      setNotes("");
-      setMoves([emptyMove()]);
+      if (editingId) {
+        await updateFn({
+          data: { planId: editingId, title: title.trim(), notes, coachName, moves: clean },
+        });
+        toast.success("Plan updated");
+      } else {
+        const res = await createFn({
+          data: { title: title.trim(), notes, coachName, moves: clean },
+        });
+        await copy(`${SITE_ORIGIN}/p/${res.token}`);
+      }
+      resetEditor();
       setFocus("");
       await qc.invalidateQueries({ queryKey: ["admin-social-plans"] });
     } catch (err) {
@@ -125,6 +252,7 @@ function SocialPlansPage() {
   const handleDelete = async (planId: string) => {
     try {
       await deleteFn({ data: { planId } });
+      if (editingId === planId) resetEditor();
       await qc.invalidateQueries({ queryKey: ["admin-social-plans"] });
       toast.success("Plan deleted");
     } catch (err) {
@@ -213,7 +341,12 @@ function SocialPlansPage() {
             />
           </div>
           <div className="flex items-end">
-            <Button type="button" onClick={handleDraft} disabled={drafting} className="w-full">
+            <Button
+              type="button"
+              onClick={handleDraft}
+              disabled={drafting || saving || Boolean(editingId)}
+              className="w-full"
+            >
               <Sparkles className="size-4" />
               {drafting ? "Drafting…" : "Draft with AI"}
             </Button>
@@ -222,7 +355,61 @@ function SocialPlansPage() {
       </section>
 
       <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
-        <h2 className="font-display text-h3 text-text-primary">2. Edit the plan</h2>
+        <h2 className="font-display text-h3 text-text-primary">
+          Or draft from a competition result
+        </h2>
+        <div className="space-y-1.5">
+          <Label htmlFor="result-file">Result image or PDF</Label>
+          <Input
+            id="result-file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={(e) => setResultFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="result-text">Or paste the result text</Label>
+          <Textarea
+            id="result-text"
+            value={resultText}
+            onChange={(e) => setResultText(e.target.value)}
+            rows={4}
+            maxLength={20000}
+            placeholder="Paste a protocol, score sheet, or results summary"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={handleDraftFromResult}
+          disabled={drafting || saving || Boolean(editingId) || (!resultFile && !resultText.trim())}
+        >
+          <Sparkles className="size-4" />
+          {drafting ? "Reading result…" : `Draft ${sportLabel} plan from result`}
+        </Button>
+      </section>
+
+      <section id="plan-editor" className="rounded-2xl border border-divider bg-card p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-h3 text-text-primary">
+            {editingId ? "Edit published plan" : "2. Edit the plan"}
+          </h2>
+          {editingId ? (
+            <Button variant="ghost" size="sm" onClick={resetEditor} disabled={saving}>
+              <X className="size-4" />
+              Cancel
+            </Button>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="coach-name">Coach name</Label>
+          <Input
+            id="coach-name"
+            value={coachName}
+            onChange={(e) => setCoachName(e.target.value)}
+            maxLength={120}
+            placeholder="A Gradus coach"
+          />
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="plan-title">Title</Label>
           <Input
@@ -243,6 +430,70 @@ function SocialPlansPage() {
             maxLength={1000}
           />
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Eyebrow size="small" tone="tertiary" weight="normal" tracking="wide">
+            Moves
+          </Eyebrow>
+          <div className="flex gap-2">
+            {previousMoves && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="press"
+                onClick={() => {
+                  setMoves(previousMoves);
+                  setPreviousMoves(null);
+                }}
+              >
+                Undo
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="press"
+              onClick={() => setImproveOpen(true)}
+            >
+              <Sparkles className="size-4" />
+              Improve moves with AI
+            </Button>
+          </div>
+        </div>
+        <Sheet open={improveOpen} onOpenChange={setImproveOpen}>
+          <SheetContent side="bottom" className="paper-surface">
+            <SheetHeader>
+              <SheetTitle>Improve every move</SheetTitle>
+              <SheetDescription>
+                AI rewrites each move using your instructions. Nothing saves until you save the
+                plan.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="px-4">
+              <Textarea
+                aria-label="Instructions for AI"
+                value={improvePrompt}
+                onChange={(e) => setImprovePrompt(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="field-sizing-content min-h-24"
+              />
+            </div>
+            <SheetFooter>
+              <Button
+                type="button"
+                className="press"
+                onClick={improveMoves}
+                disabled={improving || !improvePrompt.trim()}
+              >
+                <Sparkles className="size-4" />
+                {improving ? "Improving…" : "Improve"}
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
 
         <div className="space-y-4">
           {moves.map((m, i) => (
@@ -274,21 +525,26 @@ function SocialPlansPage() {
                 placeholder="How to do it"
                 rows={2}
                 maxLength={600}
+                className="field-sizing-content min-h-16 resize-y"
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  value={m.cue}
-                  onChange={(e) => patchMove(i, { cue: e.target.value })}
-                  placeholder="Coaching cue"
-                  maxLength={300}
-                />
-                <Input
-                  value={m.why}
-                  onChange={(e) => patchMove(i, { why: e.target.value })}
-                  placeholder="Why it matters"
-                  maxLength={300}
-                />
-              </div>
+              <Textarea
+                value={m.cue}
+                onChange={(e) => patchMove(i, { cue: e.target.value })}
+                placeholder="Coaching cue"
+                aria-label="Coaching cue"
+                rows={2}
+                maxLength={300}
+                className="field-sizing-content min-h-16 resize-y"
+              />
+              <Textarea
+                value={m.why}
+                onChange={(e) => patchMove(i, { why: e.target.value })}
+                placeholder="Why it matters"
+                aria-label="Why it matters"
+                rows={2}
+                maxLength={300}
+                className="field-sizing-content min-h-16 resize-y"
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Select
                   value={m.targetKind}
@@ -329,10 +585,23 @@ function SocialPlansPage() {
 
         <div className="pt-2">
           <Button type="button" onClick={handleCreate} disabled={saving}>
-            {saving ? "Publishing…" : "Publish & copy share link"}
+            <Save className="size-4" />
+            {saving ? "Saving…" : editingId ? "Save changes" : "Publish & copy share link"}
           </Button>
         </div>
       </section>
+
+      {shareUrl ? (
+        <div className="space-y-2">
+          <Label htmlFor="share-url">Share link</Label>
+          <div className="flex gap-2">
+            <Input id="share-url" value={shareUrl} readOnly onFocus={(e) => e.target.select()} />
+            <Button variant="secondary" onClick={() => copy(shareUrl)} aria-label="Copy share link">
+              <Copy className="size-4" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <section className="rounded-2xl border border-divider bg-card p-5">
         <h2 className="font-display text-h3 text-text-primary mb-3">
@@ -359,8 +628,19 @@ function SocialPlansPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
+                    disabled={saving || loadingId !== null}
+                    onClick={() => handleEdit(p.id)}
+                  >
+                    <Pencil className="size-4" />
+                    {loadingId === p.id ? "Opening…" : "Edit"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => copy(`${SITE_ORIGIN}/p/${p.shareToken}`)}
                   >
+                    <Copy className="size-4" />
                     Copy share link
                   </Button>
                   <Button

@@ -13,6 +13,13 @@
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SPORTS } from "./coach-sports";
 import { dbError } from "./db-error";
+import { policyClient } from "./club-policy-schema";
+import {
+  appliesToSelf,
+  isClubPolicyResource,
+  matchesPolicyAcknowledgement,
+  policyDeadline,
+} from "./club-policy";
 
 export type Admin = typeof supabaseAdmin;
 export type AckAudience = "coach" | "parent" | "athlete";
@@ -230,9 +237,7 @@ export async function mergeClubLibrary<T extends MergeableResource>(
     const o = byId.get(r.id);
     if (o?.archived_at) continue;
     merged.push(
-      o
-        ? { ...r, title: o.title ?? r.title, description: o.description ?? r.description }
-        : r,
+      o ? { ...r, title: o.title ?? r.title, description: o.description ?? r.description } : r,
     );
   }
   const club = (clubRows.data ?? [])
@@ -259,19 +264,16 @@ export async function callerCanOpenClubResource(
   const m = await resolveMembership(admin, userId);
   const orgIds = new Set([...(m?.orgIds ?? []), ...(await adminOrgIds(admin, userId))]);
   if (!orgIds.size) return false;
-  const { data, error } = await admin
-    .from("resources")
-    .select("organization_id, is_org_template, coach_id")
-    .eq("id", resourceId)
-    .maybeSingle();
-  if (error) dbError(error);
-  return !!(
-    data &&
-    data.is_org_template &&
-    !data.coach_id &&
-    data.organization_id &&
-    orgIds.has(data.organization_id)
-  );
+  for (const orgId of orgIds) {
+    try {
+      await loadPolicyResource(admin, orgId, resourceId);
+      return true;
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== "Document is not available for this club")
+        throw error;
+    }
+  }
+  return false;
 }
 
 async function adminOrgIds(admin: Admin, userId: string): Promise<string[]> {
@@ -492,7 +494,10 @@ export async function ackRoster(
     : { data: [], error: null };
   if (athletes.error) dbError(athletes.error);
   const guardians = athleteIds.length
-    ? await admin.from("athlete_guardians").select("athlete_id, parent_id").in("athlete_id", athleteIds)
+    ? await admin
+        .from("athlete_guardians")
+        .select("athlete_id, parent_id")
+        .in("athlete_id", athleteIds)
     : { data: [], error: null };
   if (guardians.error) dbError(guardians.error);
   const parentIds = Array.from(
@@ -509,15 +514,18 @@ export async function ackRoster(
     : { data: [], error: null };
   if (parents.error) dbError(parents.error);
 
-  const acks = await admin
-    .from("resource_acknowledgements")
+  const acks = await policyClient(admin)
+    .from("club_resource_acknowledgements")
     .select("user_id, acted_for_athlete_id, acknowledged_at, signer_name")
     .eq("resource_id", resourceId)
+    .eq("organization_id", orgId)
     .eq("version", version);
   if (acks.error) dbError(acks.error);
   const ackFor = (userId: string | null, athleteId: string | null) =>
     (acks.data ?? []).find((a) =>
-      athleteId ? a.acted_for_athlete_id === athleteId : a.user_id === userId && !a.acted_for_athlete_id,
+      athleteId
+        ? a.acted_for_athlete_id === athleteId
+        : a.user_id === userId && !a.acted_for_athlete_id,
     );
   const full = (p: { first_name: string | null; last_name: string | null }) =>
     `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim();
@@ -618,10 +626,12 @@ export async function outstandingUserIds(admin: Admin, signers: AckSigner[]): Pr
 
 export type PendingAck = {
   resourceId: string;
+  organizationId: string;
   version: number;
   title: string;
   description: string;
   orgName: string;
+  dueAt: string | null;
   /** Null: the caller signs for themself. */
   forAthleteId: string | null;
   forAthleteName: string | null;
@@ -631,52 +641,67 @@ export type PendingAck = {
 export async function pendingAcksFor(admin: Admin, m: Membership): Promise<PendingAck[]> {
   const orgIds = Array.from(new Set([...m.orgIds, ...m.minorAthletes.flatMap((a) => a.orgIds)]));
   if (!orgIds.length) return [];
-  const reqs = await admin
-    .from("resource_ack_requirements")
-    .select("resource_id, organization_id, audiences, version, resources!inner(title, description, review_state), organizations!inner(name)")
+  const reqs = await policyClient(admin)
+    .from("club_resource_ack_requirements")
+    .select(
+      "resource_id, organization_id, audiences, version, resources!inner(title, description, review_state), organizations!inner(name)",
+    )
     .in("organization_id", orgIds);
   if (reqs.error) dbError(reqs.error);
   const archived = await admin
     .from("org_resource_overrides")
-    .select("resource_id")
+    .select("resource_id, organization_id")
     .in("organization_id", orgIds)
     .not("archived_at", "is", null);
   if (archived.error) dbError(archived.error);
-  const archivedIds = new Set((archived.data ?? []).map((r) => r.resource_id));
+  const archivedIds = new Set(
+    (archived.data ?? []).map((r) => `${r.organization_id}:${r.resource_id}`),
+  );
   const ids = (reqs.data ?? []).map((r) => r.resource_id);
   const acks = ids.length
-    ? await admin
-        .from("resource_acknowledgements")
-        .select("resource_id, version, user_id, acted_for_athlete_id")
+    ? await policyClient(admin)
+        .from("club_resource_acknowledgements")
+        .select("organization_id, resource_id, version, user_id, acted_for_athlete_id")
         .in("resource_id", ids)
     : { data: [], error: null };
   if (acks.error) dbError(acks.error);
 
+  const { clubDeadlinePacks } = await import("./trust-center.server");
+  const deadlines = new Map(
+    await Promise.all(orgIds.map(async (id) => [id, await clubDeadlinePacks(admin, id)] as const)),
+  );
   const out: PendingAck[] = [];
   for (const r of reqs.data ?? []) {
-    if (archivedIds.has(r.resource_id)) continue;
-    const res = r.resources as unknown as { title: string; description: string | null; review_state: string };
+    if (archivedIds.has(`${r.organization_id}:${r.resource_id}`)) continue;
+    const res = r.resources as unknown as {
+      title: string;
+      description: string | null;
+      review_state: string;
+    };
     if (res.review_state !== "released") continue;
     const org = r.organizations as unknown as { name: string };
     const aud = (r.audiences ?? []) as AckAudience[];
     const base = {
       resourceId: r.resource_id,
+      organizationId: r.organization_id,
       version: r.version,
       title: res.title,
       description: res.description ?? "",
       orgName: org.name,
+      dueAt: policyDeadline(r.resource_id, deadlines.get(r.organization_id) ?? []),
     };
     const done = (athleteId: string | null) =>
-      (acks.data ?? []).some(
-        (a) =>
-          a.resource_id === r.resource_id &&
-          a.version === r.version &&
-          (athleteId ? a.acted_for_athlete_id === athleteId : a.user_id === m.userId && !a.acted_for_athlete_id),
+      (acks.data ?? []).some((ack) =>
+        matchesPolicyAcknowledgement(ack, {
+          organizationId: r.organization_id,
+          resourceId: r.resource_id,
+          version: r.version,
+          userId: m.userId,
+          forAthleteId: athleteId,
+        }),
       );
     const selfApplies =
-      m.orgIds.includes(r.organization_id) &&
-      aud.includes(m.role) &&
-      !(m.role === "athlete" && m.isMinor);
+      m.orgIds.includes(r.organization_id) && appliesToSelf(m.role, m.isMinor, aud);
     if (selfApplies && !done(null)) out.push({ ...base, forAthleteId: null, forAthleteName: null });
     if (m.role === "parent" && aud.includes("athlete")) {
       for (const a of m.minorAthletes) {
@@ -687,4 +712,29 @@ export async function pendingAcksFor(admin: Admin, m: Membership): Promise<Pendi
     }
   }
   return out;
+}
+
+/** Validate shared library eligibility as well as club ownership before privileged access. */
+export async function loadPolicyResource(admin: Admin, orgId: string, resourceId: string) {
+  const row = await admin
+    .from("resources")
+    .select(
+      "id, title, sport, organization_id, is_org_template, coach_id, published, review_state, kind, storage_path, external_url",
+    )
+    .eq("id", resourceId)
+    .maybeSingle();
+  if (row.error) dbError(row.error);
+  const res = row.data;
+  const sports = await orgSports(admin, orgId);
+  const archived = await admin
+    .from("org_resource_overrides")
+    .select("archived_at")
+    .eq("organization_id", orgId)
+    .eq("resource_id", resourceId)
+    .maybeSingle();
+  if (archived.error) dbError(archived.error);
+  if (!res || !isClubPolicyResource(res, orgId, sports, !!archived.data?.archived_at)) {
+    throw new Error("Document is not available for this club");
+  }
+  return res;
 }

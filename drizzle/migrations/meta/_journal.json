@@ -162,6 +162,83 @@
       "when": 1793241758702,
       "tag": "0022_goals_history_coach_role",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793548249432,
+      "tag": "0023_policy_packs",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793548264690,
+      "tag": "0024_club_policy_requirements",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793548325233,
+      "tag": "0025_social_plan_editing",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793548417293,
+      "tag": "0026_gradus_club_seats",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793548479676,
+      "tag": "0027_club_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793548533730,
+      "tag": "0028_club_coach_week_stats",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793548586714,
+      "tag": "0029_club_schedule_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793562084396,
+      "tag": "0030_org_template_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793567889759,
+      "tag": "0031_org_pdf_branding",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793633971673,
+      "tag": "0032_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793637657483,
+      "tag": "0033_notifications_collapse_key",
+      "breakpoints": true
     }
   ]
 }

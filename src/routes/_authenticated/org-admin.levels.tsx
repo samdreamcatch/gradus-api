@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Loader2, Plus } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +26,16 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 import { listOrgLevels, saveOrgLevels } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/levels")({
-  head: () => ({ meta: [{ title: "Levels · Organization Admin · Gradus" }] }),
+  head: () => ({
+    meta: [
+      { title: "Levels · Gradus Club" },
+      { name: "description", content: "Club sport levels and coach practice expectations." },
+      { property: "og:title", content: "Levels · Gradus Club" },
+      { property: "og:description", content: "Club sport levels and coach practice expectations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgLevelsPage,
 });
 
@@ -101,24 +113,27 @@ function OrgLevelsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-4xl">
-      <PageTitle subtitle="Level ladders and weekly practice expectations">Levels</PageTitle>
+      <PageTitle>Levels</PageTitle>
+      <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
         <NoSportsCard />
       ) : (
         <>
-          <SportFilter sports={sports} value={sport} onChange={setSport} />
+          <ClubGridToolbar>
+            <SportFilter sports={sports} value={sport} onChange={setSport} />
+          </ClubGridToolbar>
           <Card>
             <CardHeader>
               <CardTitle>{sportDisplayLabel(sport)}</CardTitle>
               <p className="text-sm text-text-secondary">
-                Coaches in your club start with these practice hours. A coach can still change
-                their own.
+                Coaches in your club start with these practice hours. A coach can still change their
+                own.
               </p>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
+              <ClubTable>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16" />
@@ -129,7 +144,10 @@ function OrgLevelsPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r, i) => (
-                    <TableRow key={r.levelKey ?? `new-${i}`} className={r.archived ? "opacity-60" : undefined}>
+                    <TableRow
+                      key={r.levelKey ?? `new-${i}`}
+                      className={r.archived ? "opacity-60" : undefined}
+                    >
                       <TableCell>
                         <div className="flex">
                           <Button
@@ -178,13 +196,16 @@ function OrgLevelsPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </ClubTable>
               <div className="flex items-center gap-2 border-t border-divider p-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    setRows((xs) => [...xs, { label: "", hours: "3", isCustom: true, archived: false }])
+                    setRows((xs) => [
+                      ...xs,
+                      { label: "", hours: "3", isCustom: true, archived: false },
+                    ])
                   }
                 >
                   <Plus /> Add club level

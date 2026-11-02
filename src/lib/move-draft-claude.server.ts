@@ -52,7 +52,13 @@ export function claudeFromEnv(): ClaudeMessages | null {
   // No SDK retries: the Gemini fallback is the retry, and a hung search must
   // not hold the request. Each call passes its own timeout from the draft's
   // deadline; this is only the ceiling.
-  return new Anthropic({ apiKey, timeout: 20_000, maxRetries: 0 });
+  const workspace = process.env.ANTHROPIC_WORKSPACE_ID;
+  return new Anthropic({
+    apiKey,
+    timeout: 20_000,
+    maxRetries: 0,
+    defaultHeaders: workspace ? { "anthropic-workspace-id": workspace } : undefined,
+  });
 }
 
 const submitInput = z.object({

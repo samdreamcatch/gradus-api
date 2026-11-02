@@ -2,10 +2,11 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Users,
   BookOpen,
-  Dumbbell,
-  FileText,
   CalendarDays,
   Settings,
+  ShieldCheck,
+  Store,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -20,36 +21,42 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { useOrgId } from "./org-shared";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 
-type Item = { to: string; label: string; icon: LucideIcon };
-type Group = { label: string; items: Item[] };
+type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
+type Group = { label: string; items: Item[]; soon?: string[] };
 
-const GROUPS: Group[] = [
-  {
-    label: "Roster",
-    items: [{ to: "/org-admin/roster", label: "Coaches & invites", icon: Users }],
-  },
-  {
-    label: "Content",
-    items: [
-      { to: "/org-admin/resources", label: "Resource library", icon: BookOpen },
-      { to: "/org-admin/moves", label: "Move library", icon: Dumbbell },
-      { to: "/org-admin/templates", label: "Template plans", icon: FileText },
-    ],
-  },
-  {
-    label: "Schedule",
-    items: [{ to: "/org-admin/calendar", label: "Club calendar", icon: CalendarDays }],
-  },
-  {
-    label: "Settings",
-    items: [{ to: "/org-admin/settings", label: "Organization", icon: Settings }],
-  },
-];
+const GROUPS: Group[] = [{ label: "Club", items: [
+  { to: "/org-admin", label: "Home", icon: ShieldCheck, exact: true },
+  { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
+  { to: "/org-admin/coaches", label: "Coaching", icon: Users },
+  { to: "/org-admin/people", label: "People", icon: Users },
+  { to: "/org-admin/resources", label: "Library", icon: BookOpen },
+  { to: "/org-admin/schedule", label: "Schedule", icon: CalendarDays },
+  { to: "/org-admin/settings", label: "Settings", icon: Settings },
+] }];
 
 export function OrgAdminSidebar() {
+  const { orgId, orgName } = useOrgId();
+  const countFn = useServerFn(getClubNotificationCounts);
+  const counts = useQuery({
+    queryKey: ["club-notification-counts", orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return countFn({ data: { organizationId: orgId } });
+    },
+    enabled: !!orgId,
+    retry: false,
+    staleTime: 60_000,
+  });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isActive = (to: string) => pathname === to || pathname.startsWith(to + "/");
+  const isActive = (i: Item) =>
+    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
+      ? pathname === i.to || pathname === i.to + "/"
+      : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
     <Sidebar collapsible="icon">
@@ -58,7 +65,9 @@ export function OrgAdminSidebar() {
           <Eyebrow size="small" tone="accent-ink">
             Club
           </Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">Organization Admin</p>
+          <p className="font-display text-h3 text-text-primary leading-tight">
+            {orgName || "Gradus Club"}
+          </p>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -69,18 +78,33 @@ export function OrgAdminSidebar() {
               <SidebarMenu>
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = isActive(item.to);
                   return (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                        <Link to={item.to as any}>
+                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1"><Store className="size-4" /><span>Storefront</span><span className="ml-auto text-xs">Not connected</span></SidebarMenuButton>}
+                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label}>
+                        <Link to={item.to as never}>
                           <Icon className="size-4" />
                           <span>{item.label}</span>
+                          {item.to === "/org-admin/notifications" &&
+                            counts.data &&
+                            counts.data.unread > 0 && (
+                              <span className="ml-auto font-mono text-xs">
+                                {counts.data.unread}
+                              </span>
+                            )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
                 })}
+                {group.soon?.map((label) => (
+                  <SidebarMenuItem key={label}>
+                    <div className="flex items-center justify-between px-2 py-1.5 text-sm text-text-tertiary group-data-[collapsible=icon]:hidden">
+                      <span>{label}</span>
+                      <span className="font-mono text-nano uppercase">Soon</span>
+                    </div>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

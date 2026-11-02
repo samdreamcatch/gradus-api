@@ -5,6 +5,35 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
+import { isAdminSocialPlan } from "./social-plan-rules";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+// Draft-local schema extension; generated database types remain untouched.
+type SocialDatabase = Omit<Database, "public"> & {
+  public: Omit<Database["public"], "Tables" | "Functions"> & {
+    Tables: Omit<Database["public"]["Tables"], "plans"> & {
+      plans: Omit<Database["public"]["Tables"]["plans"], "Row" | "Insert" | "Update"> & {
+        Row: Database["public"]["Tables"]["plans"]["Row"] & { social_coach_name: string };
+        Insert: Database["public"]["Tables"]["plans"]["Insert"] & { social_coach_name?: string };
+        Update: Database["public"]["Tables"]["plans"]["Update"] & { social_coach_name?: string };
+      };
+    };
+    Functions: Database["public"]["Functions"] & {
+      admin_update_social_plan: {
+        Args: {
+          _plan_id: string;
+          _title: string;
+          _notes: string;
+          _coach_name: string;
+          _moves: Json;
+        };
+        Returns: undefined;
+      };
+    };
+  };
+};
+const socialClient = (client: unknown) => client as SupabaseClient<SocialDatabase>;
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -97,6 +126,129 @@ Be specific to ${sport}. Never invent medical claims.`;
     }
   });
 
+const RESULT_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+
+/** AI first draft of a shareable plan from a competition result (image, PDF, or pasted text). */
+export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(60),
+        text: z.string().max(20000).optional().default(""),
+        fileDataUrl: z
+          .string()
+          .max(14_000_000)
+          .refine((v) => v.startsWith("data:"), "Upload an image or PDF")
+          .optional(),
+        moveCount: z.number().int().min(2).max(8).default(4),
+      })
+      .refine((v) => v.text.trim() || v.fileDataUrl, "Add a result file or paste the result text")
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+
+    let file: { bytes: Uint8Array; mediaType: string } | null = null;
+    if (data.fileDataUrl) {
+      const m = /^data:([^;,]+);base64,(.*)$/s.exec(data.fileDataUrl);
+      const mediaType = m?.[1]?.toLowerCase() ?? "";
+      if (!m || !(RESULT_FILE_TYPES as readonly string[]).includes(mediaType)) {
+        throw new Error("Upload a JPG, PNG, WebP, or PDF.");
+      }
+      const encoded = m[2];
+      if (!encoded) throw new Error("Upload a valid image or PDF.");
+      file = { bytes: Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)), mediaType };
+    }
+
+    const sport = sanitizeUserContent(data.sport, 60);
+    const prompt = `${PROMPT_INJECTION_GUARD}
+
+You are a ${sport} coach. Below is a competition result (judges' protocol, score sheet, or results text) — attached as a file and/or pasted. Write a practice plan that will be shared publicly by Gradus as an example of turning results into training.
+
+Write exactly ${data.moveCount} practice moves that target exactly what the result shows lost points or value (e.g. negative GOE, underrotations, falls, low components, missed shots, slow splits). Do not invent problems the result does not show. Never include any athlete's name, club, or other identifying detail — refer to "the athlete".
+For each move give:
+- name: short and specific (max 6 words)
+- description: 1-2 sentences on how to practise it
+- cue: one short cue the athlete can repeat
+- why: one sentence tying it to the result (name the element or component)
+- targetKind: "reps" or "mins"
+- targetValue: a realistic number
+
+Also write a plan title (max 8 words, no emoji, no names) and a 1-2 sentence intro note summarising the takeaway.
+
+Respond with ONLY a JSON object with EXACTLY these top-level keys:
+- "title": string
+- "notes": string
+- "moves": array of objects, each with exactly "name", "description", "cue", "why" (strings), "targetKind" ("reps" or "mins"), "targetValue" (number)
+${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}` : ""}`;
+
+    const lenientMove = z.object({
+      name: z
+        .string()
+        .min(1)
+        .transform((s) => s.slice(0, 120)),
+      description: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 600)),
+      cue: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 300)),
+      why: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 300)),
+      targetKind: z.preprocess(
+        (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
+        z.enum(["reps", "mins"]),
+      ),
+      targetValue: z.preprocess((v) => {
+        const n = Math.round(Number(v));
+        return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
+      }, z.number()),
+    });
+    const schema = z.object({
+      title: z
+        .string()
+        .min(1)
+        .transform((s) => s.slice(0, 120)),
+      notes: z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, 600)),
+      moves: z
+        .array(lenientMove)
+        .min(1)
+        .transform((a) => a.slice(0, 8)),
+    });
+
+    const content: any[] = [{ type: "text", text: prompt }];
+    if (file) {
+      content.push(
+        file.mediaType === "application/pdf"
+          ? { type: "file", data: file.bytes, mediaType: file.mediaType }
+          : { type: "image", image: file.bytes, mediaType: file.mediaType },
+      );
+    }
+
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-3.8-flash"),
+        schema,
+        messages: [{ role: "user", content }],
+      });
+      return object;
+    } catch (err) {
+      console.error("[social-plans result draft]", err);
+      throw new Error("Could not read that result. Try a clearer image or paste the text.");
+    }
+  });
+
 /** Create a shareable Gradus plan (not assigned to any athlete) and mint its share link. */
 export const adminCreateSocialPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -105,6 +257,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
       .object({
         title: z.string().min(1).max(140),
         notes: z.string().max(1000).default(""),
+        coachName: z.string().max(120).default(""),
         moves: z.array(moveSchema).min(1).max(12),
       })
       .parse(input),
@@ -117,7 +270,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
     crypto.getRandomValues(buf);
     const token = Array.from(buf, (b) => b.toString(36).padStart(2, "0")).join("");
 
-    const ins = await supabaseAdmin
+    const ins = await socialClient(supabaseAdmin)
       .from("plans")
       .insert({
         kind: "template",
@@ -127,6 +280,7 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
         athlete_id: null,
         title: data.title.trim(),
         notes: data.notes.trim(),
+        social_coach_name: data.coachName.trim(),
         share_token: token,
         shared_at: new Date().toISOString(),
       })
@@ -134,7 +288,8 @@ export const adminCreateSocialPlan = createServerFn({ method: "POST" })
       .single();
     if (ins.error) dbError(ins.error);
 
-    const planId = ins.data!.id;
+    if (!ins.data) throw new Error("Could not create the plan.");
+    const planId = ins.data.id;
     const rows = data.moves.map((m, i) => ({
       plan_id: planId,
       position: i + 1,
@@ -205,12 +360,12 @@ export const adminDeleteSocialPlan = createServerFn({ method: "POST" })
 
     const plan = await supabaseAdmin
       .from("plans")
-      .select("id, kind, source, coach_id, athlete_id")
+      .select("id, kind, source, coach_id, athlete_id, share_token")
       .eq("id", data.planId)
       .maybeSingle();
     if (plan.error) dbError(plan.error);
     if (!plan.data) throw new Error("Plan not found.");
-    if (plan.data.kind !== "template" || plan.data.coach_id || plan.data.athlete_id) {
+    if (!isAdminSocialPlan(plan.data)) {
       throw new Error("Only admin-created social plans can be deleted here.");
     }
 
@@ -218,4 +373,189 @@ export const adminDeleteSocialPlan = createServerFn({ method: "POST" })
     const del = await supabaseAdmin.from("plans").delete().eq("id", data.planId);
     if (del.error) dbError(del.error);
     return { ok: true };
+  });
+
+export const adminGetSocialPlan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ planId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const baseCols = "id, title, notes, kind, source, coach_id, athlete_id, share_token";
+    let plan = await socialClient(supabaseAdmin)
+      .from("plans")
+      .select(`${baseCols}, social_coach_name`)
+      .eq("id", data.planId)
+      .maybeSingle();
+    // Coach-name column may not exist until the staged update is applied.
+    if (plan.error?.code === "42703") {
+      const fallback = await supabaseAdmin
+        .from("plans")
+        .select(baseCols)
+        .eq("id", data.planId)
+        .maybeSingle();
+      plan = {
+        ...fallback,
+        data: fallback.data ? { ...fallback.data, social_coach_name: "" } : null,
+      } as typeof plan;
+    }
+    if (plan.error) dbError(plan.error);
+    if (!plan.data || !isAdminSocialPlan(plan.data)) throw new Error("Plan not found.");
+    const moves = await supabaseAdmin
+      .from("plan_moves")
+      .select("name, description, cue, why, target_kind, target_value")
+      .eq("plan_id", data.planId)
+      .order("position");
+    if (moves.error) dbError(moves.error);
+    return {
+      title: plan.data.title,
+      notes: plan.data.notes,
+      coachName: plan.data.social_coach_name ?? "",
+      token: plan.data.share_token,
+      moves: (moves.data ?? []).map((m) =>
+        moveSchema.parse({
+          name: m.name,
+          description: m.description ?? "",
+          cue: m.cue ?? "",
+          why: m.why ?? "",
+          targetKind: m.target_kind,
+          targetValue: m.target_value,
+        }),
+      ),
+    };
+  });
+
+export const adminUpdateSocialPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        title: z.string().trim().min(1).max(140),
+        notes: z.string().max(1000),
+        coachName: z.string().trim().max(120),
+        moves: z.array(moveSchema).min(1).max(12),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { error } = await socialClient(context.supabase).rpc("admin_update_social_plan", {
+      _plan_id: data.planId,
+      _title: data.title,
+      _notes: data.notes,
+      _coach_name: data.coachName,
+      _moves: data.moves,
+    });
+    if (!error) return { ok: true };
+    // The staged update function may not exist yet; save directly instead.
+    if (error.code !== "PGRST202") dbError(error);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const existing = await supabaseAdmin
+      .from("plans")
+      .select("id, kind, source, coach_id, athlete_id, share_token")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (existing.error) dbError(existing.error);
+    if (!existing.data || !isAdminSocialPlan(existing.data)) throw new Error("Plan not found.");
+    const upd = await supabaseAdmin
+      .from("plans")
+      .update({ title: data.title.trim(), notes: data.notes.trim() })
+      .eq("id", data.planId);
+    if (upd.error) dbError(upd.error);
+    // Best effort: only succeeds once the coach-name column exists.
+    await socialClient(supabaseAdmin)
+      .from("plans")
+      .update({ social_coach_name: data.coachName.trim() })
+      .eq("id", data.planId);
+    const del = await supabaseAdmin.from("plan_moves").delete().eq("plan_id", data.planId);
+    if (del.error) dbError(del.error);
+    const ins = await supabaseAdmin.from("plan_moves").insert(
+      data.moves.map((m, i) => ({
+        plan_id: data.planId,
+        position: i + 1,
+        name: m.name.trim(),
+        description: m.description.trim(),
+        cue: m.cue.trim(),
+        why: m.why.trim(),
+        target_kind: m.targetKind,
+        target_value: m.targetValue,
+      })),
+    );
+    if (ins.error) dbError(ins.error);
+    return { ok: true };
+  });
+
+/** AI rewrite of every move in a social plan, following an admin prompt. */
+export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        sport: z.string().min(1).max(60),
+        level: z.string().max(60).default(""),
+        title: z.string().max(140).default(""),
+        notes: z.string().max(1000).default(""),
+        prompt: z.string().trim().min(1).max(1000),
+        moves: z.array(moveSchema).min(1).max(12),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const clip = (n: number) =>
+      z
+        .string()
+        .default("")
+        .transform((s) => s.slice(0, n));
+    const schema = z.object({
+      moves: z
+        .array(
+          z.object({
+            name: z
+              .string()
+              .min(1)
+              .transform((s) => s.slice(0, 120)),
+            description: clip(600),
+            cue: clip(300),
+            why: clip(300),
+            targetKind: z.preprocess(
+              (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
+              z.enum(["reps", "mins"]),
+            ),
+            targetValue: z.preprocess((v) => {
+              const n = Math.round(Number(v));
+              return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
+            }, z.number()),
+          }),
+        )
+        .min(1)
+        .transform((a) => a.slice(0, 12)),
+    });
+    const prompt = [
+      `You are an expert ${data.sport} coach improving a shareable practice plan${data.level ? ` for level ${data.level}` : ""}.`,
+      data.title ? `Plan title: ${data.title}` : "",
+      data.notes ? `Intro note: ${data.notes}` : "",
+      `Instruction from the editor: ${data.prompt}`,
+      "Rewrite every move following that instruction. Keep the same number and order of moves unless the instruction says otherwise (max 12). Never include athlete names.",
+      'Limits: name ≤120 chars, description ≤600, cue ≤300, why ≤300. targetKind is "reps" or "mins"; targetValue is a number 1–600.',
+      'Respond with ONLY a JSON object: {"moves":[{"name","description","cue","why","targetKind","targetValue"}]}.',
+      `Current moves (JSON): ${JSON.stringify(data.moves)}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-3.8-flash"),
+        schema,
+        prompt,
+      });
+      return { moves: object.moves as SocialPlanMoveInput[] };
+    } catch (err) {
+      console.error("[social-plans improve]", err);
+      throw new Error("Could not improve the moves. Please try again.");
+    }
   });

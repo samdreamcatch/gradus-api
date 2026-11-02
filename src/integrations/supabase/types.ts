@@ -1156,6 +1156,254 @@ export type Database = {
         }
         Relationships: []
       }
+      club_notification_reads: {
+        Row: {
+          notification_id: string
+          organization_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          notification_id: string
+          organization_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          notification_id?: string
+          organization_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "club_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_notification_reads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_notifications: {
+        Row: {
+          about: string
+          coach: string | null
+          go_to: string
+          id: string
+          kind: string
+          opened_at: string
+          organization_id: string
+          resolution: string | null
+          resolved_at: string | null
+          source_id: string
+          source_table: string
+          status: string
+          subject: string
+          title: string
+        }
+        Insert: {
+          about: string
+          coach?: string | null
+          go_to: string
+          id?: string
+          kind: string
+          opened_at?: string
+          organization_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          source_id: string
+          source_table: string
+          status: string
+          subject: string
+          title: string
+        }
+        Update: {
+          about?: string
+          coach?: string | null
+          go_to?: string
+          id?: string
+          kind?: string
+          opened_at?: string
+          organization_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          source_id?: string
+          source_table?: string
+          status?: string
+          subject?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_policy_versions: {
+        Row: {
+          audiences: string[]
+          external_url: string | null
+          organization_id: string
+          required_at: string
+          resource_id: string
+          storage_path: string | null
+          title: string
+          version: number
+        }
+        Insert: {
+          audiences: string[]
+          external_url?: string | null
+          organization_id: string
+          required_at: string
+          resource_id: string
+          storage_path?: string | null
+          title: string
+          version: number
+        }
+        Update: {
+          audiences?: string[]
+          external_url?: string | null
+          organization_id?: string
+          required_at?: string
+          resource_id?: string
+          storage_path?: string | null
+          title?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      club_resource_ack_requirements: {
+        Row: {
+          audiences: string[]
+          organization_id: string
+          required_at: string
+          resource_id: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          audiences?: string[]
+          organization_id: string
+          required_at?: string
+          resource_id: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          audiences?: string[]
+          organization_id?: string
+          required_at?: string
+          resource_id?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_resource_ack_requirements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_resource_ack_requirements_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_resource_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          acted_for_athlete_id: string | null
+          id: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id: string
+          resource_id: string
+          role: string
+          signer_name?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          acknowledged_at?: string
+          acted_for_athlete_id?: string | null
+          id?: string
+          organization_id?: string
+          resource_id?: string
+          role?: string
+          signer_name?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      club_safeguarding_notes: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          notification_id: string
+          organization_id: string
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          notification_id: string
+          organization_id: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          notification_id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_safeguarding_notes_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "club_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_safeguarding_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_athlete_practice_targets: {
         Row: {
           athlete_id: string
@@ -3156,6 +3404,62 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_user_id: string | null
+          athlete_id: string | null
+          body: string | null
+          collapse_key: string | null
+          count: number
+          created_at: string
+          group_key: string | null
+          id: string
+          read_at: string | null
+          route: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          athlete_id?: string | null
+          body?: string | null
+          collapse_key?: string | null
+          count?: number
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          read_at?: string | null
+          route?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          athlete_id?: string | null
+          body?: string | null
+          collapse_key?: string | null
+          count?: number
+          created_at?: string
+          group_key?: string | null
+          id?: string
+          read_at?: string | null
+          route?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_admin_actions: {
         Row: {
           action: string
@@ -3203,6 +3507,8 @@ export type Database = {
       }
       org_admins: {
         Row: {
+          club_role: string
+          club_title: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -3210,6 +3516,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          club_role?: string
+          club_title?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3217,6 +3525,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          club_role?: string
+          club_title?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3282,6 +3592,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_coach_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_coach_week_stats: {
+        Row: {
+          coach_id: string
+          computed_at: string
+          minors: number | null
+          organization_id: string
+          practice_min: number
+          sessions: number
+          students: number | null
+          target_min: number | null
+          week_start: string
+        }
+        Insert: {
+          coach_id: string
+          computed_at?: string
+          minors?: number | null
+          organization_id: string
+          practice_min?: number
+          sessions?: number
+          students?: number | null
+          target_min?: number | null
+          week_start: string
+        }
+        Update: {
+          coach_id?: string
+          computed_at?: string
+          minors?: number | null
+          organization_id?: string
+          practice_min?: number
+          sessions?: number
+          students?: number | null
+          target_min?: number | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_coach_week_stats_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_coach_week_stats_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3399,6 +3760,50 @@ export type Database = {
           },
         ]
       }
+      org_pdf_branding: {
+        Row: {
+          body_font: string
+          footer_text: string
+          header_text: string
+          heading_font: string
+          logo_path: string | null
+          organization_id: string
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+        }
+        Insert: {
+          body_font?: string
+          footer_text?: string
+          header_text?: string
+          heading_font?: string
+          logo_path?: string | null
+          organization_id: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Update: {
+          body_font?: string
+          footer_text?: string
+          header_text?: string
+          heading_font?: string
+          logo_path?: string | null
+          organization_id?: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_pdf_branding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_resource_overrides: {
         Row: {
           archived_at: string | null
@@ -3440,6 +3845,304 @@ export type Database = {
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_schedule_import_rows: {
+        Row: {
+          id: string
+          import_id: string
+          organization_id: string
+          review_row: Json
+          row_no: number
+        }
+        Insert: {
+          id?: string
+          import_id: string
+          organization_id: string
+          review_row: Json
+          row_no: number
+        }
+        Update: {
+          id?: string
+          import_id?: string
+          organization_id?: string
+          review_row?: Json
+          row_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_schedule_import_rows_import_id_organization_id_fkey"
+            columns: ["import_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "org_schedule_imports"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "org_schedule_import_rows_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_schedule_imports: {
+        Row: {
+          counts: Json
+          created_at: string
+          file_name: string
+          id: string
+          organization_id: string
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          counts?: Json
+          created_at?: string
+          file_name: string
+          id?: string
+          organization_id: string
+          status?: string
+          uploaded_by: string
+        }
+        Update: {
+          counts?: Json
+          created_at?: string
+          file_name?: string
+          id?: string
+          organization_id?: string
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_schedule_imports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_seats: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          filled_at: string | null
+          grace_until: string | null
+          id: string
+          organization_id: string
+          released_at: string | null
+          reserved_invite_id: string | null
+          seat_no: number
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          filled_at?: string | null
+          grace_until?: string | null
+          id?: string
+          organization_id: string
+          released_at?: string | null
+          reserved_invite_id?: string | null
+          seat_no: number
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          filled_at?: string | null
+          grace_until?: string | null
+          id?: string
+          organization_id?: string
+          released_at?: string | null
+          reserved_invite_id?: string | null
+          seat_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_seats_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_seats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_seats_reserved_invite_id_fkey"
+            columns: ["reserved_invite_id"]
+            isOneToOne: false
+            referencedRelation: "org_coach_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_template_deployments: {
+        Row: {
+          coach_id: string
+          deployed_at: string
+          deployed_by: string | null
+          id: string
+          organization_id: string
+          plan_id: string | null
+          template_id: string
+        }
+        Insert: {
+          coach_id: string
+          deployed_at?: string
+          deployed_by?: string | null
+          id?: string
+          organization_id: string
+          plan_id?: string | null
+          template_id: string
+        }
+        Update: {
+          coach_id?: string
+          deployed_at?: string
+          deployed_by?: string | null
+          id?: string
+          organization_id?: string
+          plan_id?: string | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_deployments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_deployments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "org_template_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_template_plan_moves: {
+        Row: {
+          cue: string
+          description: string
+          id: string
+          move_id: string | null
+          name: string
+          organization_id: string
+          position: number
+          target_kind: string
+          target_value: number
+          template_id: string
+          why: string
+        }
+        Insert: {
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name: string
+          organization_id: string
+          position?: number
+          target_kind?: string
+          target_value?: number
+          template_id: string
+          why?: string
+        }
+        Update: {
+          cue?: string
+          description?: string
+          id?: string
+          move_id?: string | null
+          name?: string
+          organization_id?: string
+          position?: number
+          target_kind?: string
+          target_value?: number
+          template_id?: string
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_plan_moves_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_template_plan_moves_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "org_template_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_template_plans: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level_keys: string[]
+          notes: string
+          organization_id: string
+          sport: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_keys?: string[]
+          notes?: string
+          organization_id: string
+          sport: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_keys?: string[]
+          notes?: string
+          organization_id?: string
+          sport?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_template_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3547,8 +4250,14 @@ export type Database = {
       organizations: {
         Row: {
           active: boolean
+          admin_seats: number
           city: string | null
+          coach_seats: number
           content_version: number
+          contract_ends_on: string | null
+          contract_file_url: string | null
+          contract_signed_on: string | null
+          contract_starts_on: string | null
           created_at: string
           id: string
           is_listed: boolean
@@ -3557,12 +4266,20 @@ export type Database = {
           notes: string | null
           region: string | null
           slug: string
+          storefront_enabled: boolean
+          storefront_share_bps: number
           updated_at: string
         }
         Insert: {
           active?: boolean
+          admin_seats?: number
           city?: string | null
+          coach_seats?: number
           content_version?: number
+          contract_ends_on?: string | null
+          contract_file_url?: string | null
+          contract_signed_on?: string | null
+          contract_starts_on?: string | null
           created_at?: string
           id?: string
           is_listed?: boolean
@@ -3571,12 +4288,20 @@ export type Database = {
           notes?: string | null
           region?: string | null
           slug: string
+          storefront_enabled?: boolean
+          storefront_share_bps?: number
           updated_at?: string
         }
         Update: {
           active?: boolean
+          admin_seats?: number
           city?: string | null
+          coach_seats?: number
           content_version?: number
+          contract_ends_on?: string | null
+          contract_file_url?: string | null
+          contract_signed_on?: string | null
+          contract_starts_on?: string | null
           created_at?: string
           id?: string
           is_listed?: boolean
@@ -3585,6 +4310,8 @@ export type Database = {
           notes?: string | null
           region?: string | null
           slug?: string
+          storefront_enabled?: boolean
+          storefront_share_bps?: number
           updated_at?: string
         }
         Relationships: []
@@ -3912,6 +4639,7 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          social_coach_name: string
           source: string
           source_competition_id: string | null
           status: string
@@ -3931,6 +4659,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          social_coach_name?: string
           source?: string
           source_competition_id?: string | null
           status?: string
@@ -3950,6 +4679,7 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          social_coach_name?: string
           source?: string
           source_competition_id?: string | null
           status?: string
@@ -3984,6 +4714,83 @@ export type Database = {
             columns: ["source_competition_id"]
             isOneToOne: false
             referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_pack_items: {
+        Row: {
+          pack_id: string
+          resource_id: string
+        }
+        Insert: {
+          pack_id: string
+          resource_id: string
+        }
+        Update: {
+          pack_id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_pack_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "policy_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "policy_pack_items_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_packs: {
+        Row: {
+          archived_at: string | null
+          category: string
+          created_at: string
+          due_at: string | null
+          id: string
+          name: string
+          organization_id: string
+          renew_months: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          renew_months?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          renew_months?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_packs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4673,6 +5480,16 @@ export type Database = {
     Functions: {
       activate_plan: { Args: { _plan_id: string }; Returns: undefined }
       admin_run_readonly_sql: { Args: { _sql: string }; Returns: Json }
+      admin_update_social_plan: {
+        Args: {
+          _coach_name: string
+          _moves: Json
+          _notes: string
+          _plan_id: string
+          _title: string
+        }
+        Returns: undefined
+      }
       analytics_apply_retention: { Args: never; Returns: number }
       analytics_area_report: {
         Args: { p_since: string }
@@ -4776,6 +5593,24 @@ export type Database = {
       can_view_shared_coach_plan: {
         Args: { _athlete_id: string; _owner_coach_id: string }
         Returns: boolean
+      }
+      club_accept_coach_invite: {
+        Args: { p_code: string; p_user_id: string }
+        Returns: string
+      }
+      club_remove_admin: {
+        Args: { p_admin_id: string; p_org_id: string }
+        Returns: undefined
+      }
+      club_save_schedule_review: {
+        Args: {
+          p_file: string
+          p_org: string
+          p_ready: boolean
+          p_rows: Json
+          p_user: string
+        }
+        Returns: string
       }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {
@@ -4960,6 +5795,25 @@ export type Database = {
         }
         Returns: number
       }
+      record_notifications: {
+        Args: {
+          p_actor_user_id?: string
+          p_athlete_id?: string
+          p_body?: string
+          p_collapse_key?: string
+          p_group_key?: string
+          p_route?: string
+          p_title: string
+          p_type: string
+          p_user_ids: string[]
+        }
+        Returns: undefined
+      }
+      refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined }
+      refresh_club_notifications: {
+        Args: { p_org_id: string }
+        Returns: undefined
+      }
       release_idempotency_key: {
         Args: { _key: string; _user_id: string }
         Returns: undefined
@@ -4979,6 +5833,16 @@ export type Database = {
         }[]
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
+      set_club_policy_requirement: {
+        Args: {
+          p_actor: string
+          p_again: boolean
+          p_audiences: string[]
+          p_org: string
+          p_resource: string
+        }
+        Returns: number
+      }
       shares_athlete_window: { Args: { _athlete_id: string }; Returns: boolean }
       team_plan_active: { Args: { _athlete_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { ClubContractEditor } from "@/components/org-admin/club-contract-editor";
 import {
   Sheet,
   SheetContent,
@@ -40,6 +41,13 @@ type OrgRow = {
 };
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
+  head: () => ({ meta: [
+    { title: "Organizations · Gradus Admin" },
+    { name: "description", content: "Manage Gradus club accounts, contracts and organization details." },
+    { property: "og:title", content: "Organizations · Gradus Admin" },
+    { property: "og:description", content: "Manage Gradus club accounts, contracts and organization details." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrganizationsPage,
 });
 
@@ -94,6 +102,7 @@ function OrgsTab() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editingOrg, setEditingOrg] = useState<OrgRow | null>(null);
+  const [contractOrg, setContractOrg] = useState<OrgRow | null>(null);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -351,6 +360,7 @@ function OrgsTab() {
                         <div className="line-clamp-1 text-xs text-text-tertiary">{o.notes}</div>
                       )}
                       <div className="text-[11px] text-text-tertiary">/{o.slug}</div>
+                      <Button variant="link" className="min-h-11 text-text-primary" onClick={() => setContractOrg(o as OrgRow)}>Contract</Button>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -419,6 +429,12 @@ function OrgsTab() {
           await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
         }}
       />
+      <Sheet open={!!contractOrg} onOpenChange={(open) => { if (!open) setContractOrg(null); }}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          <SheetHeader><SheetTitle>{contractOrg?.name} · Contract</SheetTitle><SheetDescription>Contracted seats and club terms</SheetDescription></SheetHeader>
+          {contractOrg && <Suspense fallback={<p className="py-6 text-text-secondary">Loading contract…</p>}><ClubContractEditor key={contractOrg.id} organizationId={contractOrg.id} /></Suspense>}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

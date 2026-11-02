@@ -2,6 +2,18 @@ import { describe, expect, it } from "bun:test";
 import { createNameMask, nameSpellingKey, unmaskStrings } from "./ai-names";
 
 describe("createNameMask", () => {
+  it("keeps common sentence-start instructions distinct from nearby roster names", () => {
+    for (const [firstName, word] of [["Mike", "Make"], ["Jake", "Take"], ["Kate", "Take"], ["Dave", "Have"], ["Theo", "Then"], ["Luke", "Like"], ["Jack", "Back"], ["Nate", "Note"], ["Lana", "Land"]]) {
+      const m = createNameMask([{ role: "ATHLETE", firstName, lastName: null }], { fuzzy: true });
+      const transcript = `${firstName} needs spins. ${word} sure he keeps his arms in.`;
+      const masked = m.mask(transcript);
+      expect(masked).toBe(`[ATHLETE] needs spins. ${word} sure he keeps his arms in.`);
+      expect(m.unmask(masked)).toBe(transcript);
+      expect(m.mask(`${word} again.`)).toBe(`${word} again.`);
+      expect(m.mask(`${word.toLowerCase()} again.`)).toBe(`${word.toLowerCase()} again.`);
+    }
+  });
+
   const names = createNameMask([
     { role: "ATHLETE", firstName: "Sarah", lastName: "Kim" },
     { role: "PARENT", firstName: "Will", lastName: "Kim" },

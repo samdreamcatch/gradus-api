@@ -28,6 +28,11 @@
   --color-popover-foreground: var(--foreground);
   --color-dialog: var(--dialog);
   --color-elevated: var(--elevated);
+  --color-divider: var(--divider);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
   --color-muted: var(--elevated);
   --color-muted-foreground: var(--text-secondary);
   --color-secondary: var(--elevated);
@@ -67,12 +72,21 @@
   --color-attention-wash: var(--attention-wash);
   --color-attention-ink: var(--attention-ink);
   --color-attention-foreground: var(--attention-foreground);
+  --color-club-healthy: var(--pen-tennis-ink);
 
   /* Surface simulations — see `:root` note. */
   --color-surface-athlete-screen: var(--surface-athlete-screen);
   --color-surface-email-client: var(--surface-email-client);
   --color-surface-code-block: var(--surface-code-block);
   --color-surface-code-block-foreground: var(--surface-code-block-foreground);
+}
+
+.club-table tbody tr {
+  background-color: transparent;
+}
+
+.club-table tbody tr:nth-child(even) {
+  background-color: color-mix(in oklab, var(--elevated) 50%, transparent);
 }
 
 :root {

@@ -216,6 +216,22 @@ describe("slotWithRetries", () => {
 });
 
 describe("buildDraft — no roster names reach the model (App Review 5.1.2(i))", () => {
+  it("keeps Make and Take as instructions without introducing another athlete", async () => {
+    const draft = await buildDraft({
+      mode: "create", transcript: "Mike needs spins. Make sure he keeps his arms in. Take time on entries.",
+      athletes: [{ id: "mike", name: "Mike Reed" }, { id: "jake", name: "Jake Brook" }], library: [],
+    }, {
+      attempt: async (ctx) => {
+        expect(ctx.transcript).toBe("[ATHLETE] needs spins. Make sure he keeps his arms in. Take time on entries.");
+        expect(ctx.transcript).not.toContain("[ATHLETE 2]");
+        return { title: null, athleteName: "[ATHLETE]", athleteQuote: "[ATHLETE]", moves: [], leftover: "Make sure he keeps his arms in. Take time on entries." } as unknown as Slots;
+      },
+      cleanup: async () => "Make sure he keeps his arms in. Take time on entries.",
+    });
+    expect(draft.athleteId).toBe("mike");
+    expect(draft.notes).toBe("Make sure he keeps his arms in. Take time on entries.");
+  });
+
   it("masks roster names in the transcript and plan, matches the athlete here, and restores names", async () => {
     let seenByModel = "";
     let notesPrompt = "";

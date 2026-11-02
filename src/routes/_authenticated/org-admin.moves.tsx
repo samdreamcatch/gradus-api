@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
 import { PageTitle } from "@/components/page-title";
+import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +53,19 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/moves")({
-  head: () => ({ meta: [{ title: "Move library · Organization Admin · Gradus" }] }),
+  head: () => ({
+    meta: [
+      { title: "Moves · Gradus Club" },
+      { name: "description", content: "Club move library and sport-specific coaching content." },
+      { property: "og:title", content: "Moves · Gradus Club" },
+      {
+        property: "og:description",
+        content: "Club move library and sport-specific coaching content.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgMovesPage,
 });
 
@@ -96,13 +112,70 @@ function OrgMovesPage() {
         (!s || m.name.toLowerCase().includes(s) || m.category.toLowerCase().includes(s)),
     );
   }, [q.data, sport, search, showArchived]);
-  const groups = useMemo(() => {
-    const g = new Map<string, OrgMoveRow[]>();
-    for (const m of rows) g.set(m.category, [...(g.get(m.category) ?? []), m]);
-    return Array.from(g.entries());
-  }, [rows]);
 
   useEffect(() => setSelected(new Set()), [sport]);
+  const columns: ClubColumn<OrgMoveRow>[] = [
+    {
+      key: "name",
+      label: "Move",
+      sortValue: (m) => m.name,
+      className: "min-w-56",
+      render: (m) => (
+        <span className="flex items-start gap-3">
+          <span onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              aria-label={`Select ${m.name}`}
+              checked={selected.has(m.key)}
+              onCheckedChange={(v) => toggle(m.key, v === true)}
+            />
+          </span>
+          <span className={m.archived ? "opacity-60" : undefined}>
+            <span className="block">{m.name}</span>
+            {m.cue && (
+              <span className="block text-xs font-normal text-text-secondary">{m.cue}</span>
+            )}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "category",
+      label: "Category",
+      sortValue: (m) => m.category,
+      groupValue: (m) => m.category,
+      render: (m) => m.category,
+    },
+    {
+      key: "target",
+      label: "Target",
+      sortValue: (m) => m.defaultTargetValue,
+      className: "whitespace-nowrap text-text-secondary",
+      render: (m) => `${m.defaultTargetValue} ${m.defaultTargetKind}`,
+    },
+    {
+      key: "source",
+      label: "From",
+      sortValue: (m) => m.source,
+      groupValue: (m) => (m.source === "club" ? "Club" : "Gradus"),
+      render: (m) => (
+        <span className="flex flex-wrap gap-1">
+          <Tag tone={m.source === "club" ? "accent" : "muted"}>
+            {m.source === "club" ? "Club" : "Gradus"}
+          </Tag>
+          {m.edited && <Tag tone="muted">Edited</Tag>}
+          {m.archived && <Tag tone="muted">Archived</Tag>}
+        </span>
+      ),
+    },
+    {
+      key: "description",
+      label: "Description",
+      defaultHidden: true,
+      className: "min-w-64 whitespace-normal text-text-secondary",
+      render: (m) => m.description || "—",
+    },
+  ];
+  const grid = useClubGrid("moves", columns, rows, { group: "category" });
 
   const update = useMutation({
     mutationFn: (v: { keys: string[]; patch: Patch }) =>
@@ -125,31 +198,35 @@ function OrgMovesPage() {
   const sel = Array.from(selected);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
-      <PageTitle subtitle="Default moves your coaches get, per sport">Move library</PageTitle>
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
+      <PageTitle>Move library</PageTitle>
+      <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
       ) : !sports.length ? (
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <ClubGridToolbar
+            search={search}
+            onSearchChange={setSearch}
+            searchLabel="Search moves"
+            activeFilters={search ? 1 : 0}
+            onClear={() => setSearch("")}
+            end={
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Upload /> Bulk upload (CSV)
+              </Button>
+            }
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <Input
-              className="h-8 w-56"
-              placeholder="Search moves"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <Upload /> Bulk upload (CSV)
-            </Button>
-          </div>
+            <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+            {grid.menu}
+          </ClubGridToolbar>
 
           {sel.length > 0 && (
             <div className="sticky top-14 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent bg-popover p-2 shadow-card">
@@ -173,68 +250,15 @@ function OrgMovesPage() {
             </div>
           )}
 
-          {groups.length === 0 && (
-            <Card>
-              <CardContent className="p-6 text-sm text-text-secondary">No moves match.</CardContent>
-            </Card>
-          )}
-          {groups.map(([category, list]) => (
-            <Card key={category}>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10">
-                        <Checkbox
-                          aria-label={`Select all in ${category}`}
-                          checked={list.every((m) => selected.has(m.key))}
-                          onCheckedChange={(v) => list.forEach((m) => toggle(m.key, v === true))}
-                        />
-                      </TableHead>
-                      <TableHead>{category}</TableHead>
-                      <TableHead>Target</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead className="text-right" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {list.map((m) => (
-                      <TableRow key={m.key} className={m.archived ? "opacity-60" : undefined}>
-                        <TableCell>
-                          <Checkbox
-                            aria-label={`Select ${m.name}`}
-                            checked={selected.has(m.key)}
-                            onCheckedChange={(v) => toggle(m.key, v === true)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium text-text-primary">{m.name}</div>
-                          {m.cue && <div className="text-xs text-text-secondary">{m.cue}</div>}
-                        </TableCell>
-                        <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                          {m.defaultTargetValue} {m.defaultTargetKind}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            <Tag tone={m.source === "club" ? "accent" : "muted"}>
-                              {m.source === "club" ? "Club" : "Gradus"}
-                            </Tag>
-                            {m.edited && <Tag tone="muted">Edited</Tag>}
-                            {m.archived && <Tag tone="muted">Archived</Tag>}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => setEditing(m)}>
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ))}
+          <ClubDataGrid
+            grid={grid}
+            rowKey={(m) => m.key}
+            onRowClick={setEditing}
+            rowLabel={(m) => m.name}
+            filtered={!!search || !showArchived}
+            onClear={() => setSearch("")}
+            empty="No moves for this sport yet."
+          />
         </>
       )}
 
@@ -371,7 +395,9 @@ function EditMoveSheet({
           ))}
           {(["cue", "why", "description"] as const).map((k) => (
             <div key={k} className="space-y-1.5">
-              <Label htmlFor={`mv-${k}`}>{k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}</Label>
+              <Label htmlFor={`mv-${k}`}>
+                {k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}
+              </Label>
               <Textarea
                 id={`mv-${k}`}
                 rows={2}
@@ -387,9 +413,7 @@ function EditMoveSheet({
             </Button>
             <Button
               disabled={!f.name.trim() || !f.category.trim() || !Number.isFinite(num) || num < 0}
-              onClick={() =>
-                onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })
-              }
+              onClick={() => onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })}
             >
               Save
             </Button>
@@ -443,7 +467,9 @@ function BulkEditSheet({
             <Checkbox checked={setTarget} onCheckedChange={(v) => setSetTarget(v === true)} />
             Change default target
           </label>
-          {setTarget && <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />}
+          {setTarget && (
+            <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>
               Cancel
@@ -534,7 +560,9 @@ function ImportSheet({
     setBusy(true);
     try {
       const r = await importFn({ data: { organizationId: orgId, moves: rows } });
-      toast.success(`${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`);
+      toast.success(
+        `${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`,
+      );
       onDone();
       onOpenChange(false);
     } catch (e) {
@@ -565,7 +593,7 @@ function ImportSheet({
             </div>
           )}
           {rows.length > 0 && (
-            <Table>
+            <ClubTable>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -584,7 +612,7 @@ function ImportSheet({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ClubTable>
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
