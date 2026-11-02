@@ -1,7 +1,7 @@
 export type CalendarSlot = { id: string; athlete_id: string; coach_id: string | null; day_of_week: number; start_minute: number; end_minute: number; frequency: string; starts_on: string | null; weeks_of_month: number[] };
 export type CalendarStudent = { id: string; first_name: string; last_name: string; parent_id: string | null; self_managed: boolean; user_id: string | null; account_state: string; guardian_first_name: string | null; guardian_last_name: string | null; guardian_email: string | null; guardian_invited_at: string | null; guardian_claimed_at: string | null; invite_recipient: string | null };
 export type ClubLesson = {
-  id: string; coachId: string; coachName: string; studentName: string; guardianName: string;
+  id: string; athleteId: string; canInvite: boolean; coachId: string; coachName: string; studentName: string; guardianName: string;
   contactEmail: string | null; recipient: string; invitationStatus: string; invitedAt: string | null;
   day: number; start: number; end: number; minutes: number; frequency: string;
   startsOn: string | null; weeksOfMonth: number[]; scheduleStatus: string;
@@ -28,7 +28,8 @@ export function buildClubLessons(input: {
     const connected = !!student.guardian_claimed_at || !!student.parent_id || (student.self_managed && !!student.user_id);
     const contactEmail = student.guardian_email?.trim() || null;
     return [{
-      id: slot.id, coachId: coach.id, coachName: [coach.first_name, coach.last_name].filter(Boolean).join(" "),
+      id: slot.id, athleteId: student.id, canInvite: !connected && !!contactEmail && student.account_state === "active",
+      coachId: coach.id, coachName: [coach.first_name, coach.last_name].filter(Boolean).join(" "),
       studentName: [student.first_name, student.last_name].filter(Boolean).join(" "), guardianName: adult ? "Not required" : guardianName || "Not recorded",
       contactEmail, recipient: adult ? "Student" : "Guardian",
       invitationStatus: connected ? "Connected" : student.guardian_invited_at ? "Invite recorded · unclaimed" : contactEmail ? "Not invited" : "Contact missing",
