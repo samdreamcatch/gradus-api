@@ -3409,6 +3409,7 @@ export type Database = {
           actor_user_id: string | null
           athlete_id: string | null
           body: string | null
+          collapse_key: string | null
           count: number
           created_at: string
           group_key: string | null
@@ -3423,6 +3424,7 @@ export type Database = {
           actor_user_id?: string | null
           athlete_id?: string | null
           body?: string | null
+          collapse_key?: string | null
           count?: number
           created_at?: string
           group_key?: string | null
@@ -3437,6 +3439,7 @@ export type Database = {
           actor_user_id?: string | null
           athlete_id?: string | null
           body?: string | null
+          collapse_key?: string | null
           count?: number
           created_at?: string
           group_key?: string | null
@@ -5797,6 +5800,7 @@ export type Database = {
           p_actor_user_id?: string
           p_athlete_id?: string
           p_body?: string
+          p_collapse_key?: string
           p_group_key?: string
           p_route?: string
           p_title: string
