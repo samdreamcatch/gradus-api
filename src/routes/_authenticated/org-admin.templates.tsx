@@ -4,7 +4,6 @@ import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { ClubBulkBar, useClubSelection } from "@/components/org-admin/club-bulk-bar";
-import { downloadCsv, toCsv } from "@/lib/csv";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -121,7 +120,10 @@ function OrgTemplatesPage() {
   const rows = (q.data?.templates ?? []).filter(
     (t) => t.sport === sport && (showArchived || !t.archived),
   );
-  const selection = useClubSelection<OrgTemplateRow>((t) => t.id, (t) => t.title);
+  const selection = useClubSelection<OrgTemplateRow>(
+    (t) => t.id,
+    (t) => t.title,
+  );
   const { clear: clearSelection } = selection;
   useEffect(() => clearSelection(), [sport, clearSelection]);
   const picked = selection.pick(rows);
@@ -136,7 +138,9 @@ function OrgTemplatesPage() {
           const r = await deployFn({ data: { organizationId: orgId!, id: t.id } });
           sent += r.sent;
         } else if (t.archived !== (action === "archive")) {
-          await archiveFn({ data: { organizationId: orgId!, id: t.id, archived: action === "archive" } });
+          await archiveFn({
+            data: { organizationId: orgId!, id: t.id, archived: action === "archive" },
+          });
         }
       }
       return { action, sent };
@@ -162,7 +166,14 @@ function OrgTemplatesPage() {
       "club-templates.csv",
       toCsv(
         ["Template", "Sport", "Levels", "Moves", "Sent", "Status"],
-        picked.map((t) => [t.title, t.sport, t.levelKeys.map(levelLabel).join("; "), t.moves?.length ?? null, `${t.deployedCount}/${t.eligibleCount}`, t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent"]),
+        picked.map((t) => [
+          t.title,
+          t.sport,
+          t.levelKeys.map(levelLabel).join("; "),
+          t.moves?.length ?? null,
+          `${t.deployedCount}/${t.eligibleCount}`,
+          t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent",
+        ]),
       ),
     );
   }
@@ -298,11 +309,42 @@ function OrgTemplatesPage() {
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
             {grid.menu}
           </ClubGridToolbar>
-          <ClubBulkBar count={picked.length} total={rows.length} onSelectAll={() => selection.selectAll(rows)} onClear={selection.clear}>
-            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !sendable.length} onClick={() => setBulkConfirm("send")}>Send to coaches</Button>
-            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !picked.some((t) => !t.archived)} onClick={() => setBulkConfirm("archive")}>Archive</Button>
-            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !picked.some((t) => t.archived)} onClick={() => bulk.mutate("restore")}>Restore</Button>
-            <Button size="sm" variant="outline" className="press" onClick={exportSelected}>Export CSV</Button>
+          <ClubBulkBar
+            count={picked.length}
+            total={rows.length}
+            onSelectAll={() => selection.selectAll(rows)}
+            onClear={selection.clear}
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              className="press"
+              disabled={bulk.isPending || !sendable.length}
+              onClick={() => setBulkConfirm("send")}
+            >
+              Send to coaches
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="press"
+              disabled={bulk.isPending || !picked.some((t) => !t.archived)}
+              onClick={() => setBulkConfirm("archive")}
+            >
+              Archive
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="press"
+              disabled={bulk.isPending || !picked.some((t) => t.archived)}
+              onClick={() => bulk.mutate("restore")}
+            >
+              Restore
+            </Button>
+            <Button size="sm" variant="outline" className="press" onClick={exportSelected}>
+              Export CSV
+            </Button>
           </ClubBulkBar>
           <ClubDataGrid
             grid={grid}
@@ -319,7 +361,9 @@ function OrgTemplatesPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkConfirm === "send" ? `Send ${sendable.length} templates to coaches?` : `Archive ${picked.length} templates?`}
+              {bulkConfirm === "send"
+                ? `Send ${sendable.length} templates to coaches?`
+                : `Archive ${picked.length} templates?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {bulkConfirm === "send"
@@ -329,7 +373,12 @@ function OrgTemplatesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (bulkConfirm) bulk.mutate(bulkConfirm); setBulkConfirm(null); }}>
+            <AlertDialogAction
+              onClick={() => {
+                if (bulkConfirm) bulk.mutate(bulkConfirm);
+                setBulkConfirm(null);
+              }}
+            >
               {bulkConfirm === "send" ? "Send" : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
