@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import type { ClubColumn } from "@/components/org-admin/club-data-grid";
@@ -27,10 +27,11 @@ export function useClubSelection<T>(rowKey: (row: T) => string, label: (row: T) 
       </span>
     ),
   };
+  const clear = useCallback(() => setSelected(new Set()), []);
   return {
     selected,
     column,
-    clear: () => setSelected(new Set()),
+    clear,
     selectAll: (rows: T[]) => setSelected(new Set(rows.map(rowKey))),
     pick: (rows: T[]) => rows.filter((r) => selected.has(rowKey(r))),
   };
