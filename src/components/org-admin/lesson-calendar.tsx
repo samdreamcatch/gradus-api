@@ -1,3 +1,4 @@
+import type React from "react";
 import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -6,16 +7,10 @@ import { formatTimeLabel } from "@/lib/schedule-import";
 import { cn } from "@/lib/utils";
 
 // Literal classes so Tailwind can see them; washes keep the page calm while telling coaches apart.
-const COACH_TONES = [
-  "bg-pen-pool-wash text-pen-pool-ink border-pen-pool",
-  "bg-pen-tennis-wash text-pen-tennis-ink border-pen-tennis",
-  "bg-pen-iris-wash text-pen-iris-ink border-pen-iris",
-  "bg-pen-orange-wash text-pen-orange-ink border-pen-orange",
-  "bg-pen-pink-wash text-pen-pink-ink border-pen-pink",
-];
-export function coachTone(coachId: string, coachIds: string[]) {
-  const i = Math.max(0, coachIds.indexOf(coachId));
-  return COACH_TONES[i % COACH_TONES.length]!;
+const COACH_PENS = ["pool", "tennis", "iris", "orange", "pink"];
+export function coachTone(coachId: string, coachIds: string[]): React.CSSProperties {
+  const pen = COACH_PENS[Math.max(0, coachIds.indexOf(coachId)) % COACH_PENS.length];
+  return { background: `var(--pen-${pen}-wash)`, color: `var(--pen-${pen}-ink)`, borderLeftColor: `var(--pen-${pen})` };
 }
 
 const HOUR_PX = 56;
@@ -73,8 +68,8 @@ function WeekGrid({ days, today, lessons, coachIds, onOpen }: { days: string[]; 
         {hours.map((h, i) => <div key={h} className="absolute inset-x-0 border-t border-divider/60" style={{ top: i * HOUR_PX }} />)}
         {layoutOverlaps(dayLessons).map(({ lesson: l, col, cols }) => <button key={l.id} type="button" onClick={() => onOpen(l)}
           aria-label={`${l.studentName} with ${l.coachName}, ${formatTimeLabel(l.start)} to ${formatTimeLabel(l.end)}`}
-          className={cn("press absolute overflow-hidden rounded-sm border-l-4 px-1.5 py-1 text-left text-xs leading-tight shadow-sm", coachTone(l.coachId, coachIds))}
-          style={{ top: ((l.start - firstHour * 60) / 60) * HOUR_PX + 1, height: Math.max(22, (l.minutes / 60) * HOUR_PX - 2), left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)` }}>
+          className={cn("press absolute overflow-hidden rounded-sm border-l-4 px-1.5 py-1 text-left text-xs leading-tight shadow-sm")}
+          style={{ ...coachTone(l.coachId, coachIds), top: ((l.start - firstHour * 60) / 60) * HOUR_PX + 1, height: Math.max(22, (l.minutes / 60) * HOUR_PX - 2), left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)` }}>
           <div className="flex items-center gap-1 font-semibold">{needsAttention(l) && <AlertCircle className="size-3 shrink-0 text-destructive" aria-label={l.invitationStatus} />}<span className="truncate">{l.studentName}</span></div>
           <div className="truncate font-mono text-[10px] opacity-80">{formatTimeLabel(l.start)} · {l.coachName}</div>
         </button>)}
@@ -95,7 +90,7 @@ function MonthGrid({ days, month, today, lessons, coachIds, onOpen, onPickDay }:
           className={cn("press-soft mb-1 inline-flex size-6 items-center justify-center rounded-pill font-mono text-xs tabular-nums", iso === today && "bg-accent text-accent-foreground")}>{fmtDay(iso, { day: "numeric" })}</button>
         <div className="space-y-0.5">
           {dayLessons.slice(0, MAX).map((l) => <button key={l.id} type="button" onClick={() => onOpen(l)}
-            className={cn("press flex w-full items-center gap-1 truncate rounded-sm border-l-[3px] px-1 py-0.5 text-left text-[11px]", coachTone(l.coachId, coachIds))}>
+            className={cn("press flex w-full items-center gap-1 truncate rounded-sm border-l-[3px] px-1 py-0.5 text-left text-[11px]")} style={coachTone(l.coachId, coachIds)}>
             {needsAttention(l) && <AlertCircle className="size-3 shrink-0 text-destructive" aria-label={l.invitationStatus} />}
             <span className="font-mono opacity-80">{formatTimeLabel(l.start)}</span><span className="truncate font-semibold">{l.studentName}</span>
           </button>)}

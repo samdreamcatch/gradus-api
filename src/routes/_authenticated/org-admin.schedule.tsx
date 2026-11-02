@@ -154,10 +154,10 @@ function ClubSchedulePage() {
           </ToggleGroup>
           <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
           <Input aria-label="Search recurring lessons" placeholder="Search student, guardian, coach or email" value={lessonSearch} onChange={(e) => setLessonSearch(e.target.value)} className="h-9 sm:w-72" />
-          <FilterPill aria-label="Filter by coach" value={sp.coach} onValueChange={(v) => setSp({ coach: v || "all" })} options={[{ value: "all", label: "All coaches" }, ...lessonCoaches.map(([id, name]) => ({ value: id, label: name }))]} />
-          <FilterPill aria-label="Filter by invitation status" value={sp.invite} onValueChange={(v) => setSp({ invite: v || "all" })} options={[{ value: "all", label: "Any invite status" }, ...inviteStatuses.map((v) => ({ value: v, label: v }))]} />
+          <FilterPill className="w-auto min-w-40" aria-label="Filter by coach" value={sp.coach} onValueChange={(v) => setSp({ coach: v || "all" })} options={[{ value: "all", label: "All coaches" }, ...lessonCoaches.map(([id, name]) => ({ value: id, label: name }))]} />
+          <FilterPill className="w-auto min-w-44" aria-label="Filter by invitation status" value={sp.invite} onValueChange={(v) => setSp({ invite: v || "all" })} options={[{ value: "all", label: "Any invite status" }, ...inviteStatuses.map((v) => ({ value: v, label: v }))]} />
           {activeFilters > 0 && <Button variant="ghost" size="sm" onClick={() => { setLessonSearch(""); setSp({ coach: "all", invite: "all" }); }}>Clear · {activeFilters}</Button>}
-          {view === "calendar" && !!lessonCoaches.length && <div className="ml-auto flex flex-wrap gap-1.5">{lessonCoaches.map(([id, name]) => <span key={id} className={`rounded-sm border-l-[3px] px-1.5 py-0.5 text-[11px] ${coachTone(id, coachIds)}`}>{name}</span>)}</div>}
+          {view === "calendar" && !!lessonCoaches.length && <div className="ml-auto flex flex-wrap gap-1.5">{lessonCoaches.map(([id, name]) => <span key={id} className="rounded-sm border-l-[3px] px-1.5 py-0.5 text-[11px]" style={coachTone(id, coachIds)}>{name}</span>)}</div>}
         </div>
         {view === "calendar" && !calendar.isError && <LessonCalendar lessons={lessons} coachIds={coachIds} mode={range} date={calDate} onModeChange={(m) => setSp({ range: m })} onDateChange={(d) => setSp({ date: d })} onOpen={setSelectedLesson} />}
         {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : view === "grid" && <ClubTable>
