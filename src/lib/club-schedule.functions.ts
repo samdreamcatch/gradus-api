@@ -116,17 +116,17 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" }).middlewa
 export const sendClubLessonInvites = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => orgInput.extend({ athleteIds: z.array(z.string().uuid()).min(1).max(200) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { base } = await authorized(context.supabase, context.userId, data.organizationId);
+    const { base: admin } = await authorized(context.supabase, context.userId, data.organizationId);
     const { newGuardianToken, sendGuardianInvite } = await import("./guardian.server");
-    const coaches = await base.from("coach_profiles").select("id,first_name,last_name").eq("organization_id", data.organizationId);
+    const coaches = await admin.from("coach_profiles").select("id,first_name,last_name").eq("organization_id", data.organizationId);
     if (coaches.error) dbError(coaches.error);
     const coachById = new Map((coaches.data ?? []).map((c) => [c.id, [c.first_name, c.last_name].filter(Boolean).join(" ")]));
     if (!coachById.size) return { sent: 0, skipped: data.athleteIds.length };
     const ids = [...new Set(data.athleteIds)];
-    const links = await base.from("coach_athletes").select("coach_id,athlete_id").in("coach_id", [...coachById.keys()]).in("athlete_id", ids);
+    const links = await admin.from("coach_athletes").select("coach_id,athlete_id").in("coach_id", [...coachById.keys()]).in("athlete_id", ids);
     if (links.error) dbError(links.error);
     const coachFor = new Map((links.data ?? []).map((l) => [l.athlete_id, l.coach_id]));
-    const students = await base.from("athletes")
+    const students = await admin.from("athletes")
       .select("id,first_name,last_name,parent_id,guardian_email,guardian_claim_token,guardian_claimed_at,invite_recipient,account_state")
       .in("id", ids.filter((id) => coachFor.has(id)));
     if (students.error) dbError(students.error);
@@ -135,7 +135,7 @@ export const sendClubLessonInvites = createServerFn({ method: "POST" }).middlewa
       const email = s.guardian_email?.trim();
       if (!email || s.parent_id || s.guardian_claimed_at || s.account_state !== "active") continue;
       const token = s.guardian_claim_token ?? newGuardianToken();
-      const upd = await base.from("athletes").update({ guardian_claim_token: token, guardian_invited_at: new Date().toISOString() }).eq("id", s.id);
+      const upd = await admin.from("athletes").update({ guardian_claim_token: token, guardian_invited_at: new Date().toISOString() }).eq("id", s.id);
       if (upd.error) dbError(upd.error);
       await sendGuardianInvite({
         to: email, athleteName: [s.first_name, s.last_name].filter(Boolean).join(" "),
