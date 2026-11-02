@@ -50,10 +50,12 @@
     "border": "divider",
     "card": "card",
     "card-foreground": "foreground",
+    "club-healthy": "pen-tennis-ink",
     "destructive": "destructive-ink",
     "destructive-fill": "destructive",
     "destructive-foreground": "destructive-foreground",
     "dialog": "dialog",
+    "divider": "divider",
     "elevated": "elevated",
     "foreground": "foreground",
     "input": "divider",
@@ -80,7 +82,11 @@
     "surface-athlete-screen": "surface-athlete-screen",
     "surface-code-block": "surface-code-block",
     "surface-code-block-foreground": "surface-code-block-foreground",
-    "surface-email-client": "surface-email-client"
+    "surface-email-client": "surface-email-client",
+    "text-disabled": "text-disabled",
+    "text-primary": "text-primary",
+    "text-secondary": "text-secondary",
+    "text-tertiary": "text-tertiary"
   },
   "colors": {
     "accent": {

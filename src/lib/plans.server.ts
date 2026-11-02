@@ -741,6 +741,7 @@ export async function setPlanStatus(
           title: wasDraft ? "New plan" : "Plan activated",
           body: `${planTitle} is ready to practice.`,
           collapseId: `plan:${id}`,
+          athleteId,
         });
       });
     }

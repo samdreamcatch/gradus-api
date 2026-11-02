@@ -182,6 +182,10 @@ import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
 import { Route as ApiV1MessagesUnreadTotalRouteImport } from './routes/api/v1/messages/unread-total'
 import { Route as ApiV1MetaClientPolicyRouteImport } from './routes/api/v1/meta/client-policy'
 import { Route as ApiV1MetaConfigRouteImport } from './routes/api/v1/meta/config'
+import { Route as ApiV1NotificationsIndexRouteImport } from './routes/api/v1/notifications/index'
+import { Route as ApiV1NotificationsIdRouteImport } from './routes/api/v1/notifications/$id'
+import { Route as ApiV1NotificationsReadRouteImport } from './routes/api/v1/notifications/read'
+import { Route as ApiV1NotificationsUnreadCountRouteImport } from './routes/api/v1/notifications/unread-count'
 import { Route as ApiV1OrgsClaimCodeRouteImport } from './routes/api/v1/orgs/claim-code'
 import { Route as ApiV1OrgsJoinRouteImport } from './routes/api/v1/orgs/join'
 import { Route as ApiV1OrgsLeadRouteImport } from './routes/api/v1/orgs/lead'
@@ -1319,6 +1323,27 @@ const ApiV1MetaConfigRoute = ApiV1MetaConfigRouteImport.update({
   path: '/api/v1/meta/config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1NotificationsIndexRoute = ApiV1NotificationsIndexRouteImport.update({
+  id: '/api/v1/notifications/',
+  path: '/api/v1/notifications/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1NotificationsIdRoute = ApiV1NotificationsIdRouteImport.update({
+  id: '/api/v1/notifications/$id',
+  path: '/api/v1/notifications/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1NotificationsReadRoute = ApiV1NotificationsReadRouteImport.update({
+  id: '/api/v1/notifications/read',
+  path: '/api/v1/notifications/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1NotificationsUnreadCountRoute =
+  ApiV1NotificationsUnreadCountRouteImport.update({
+    id: '/api/v1/notifications/unread-count',
+    path: '/api/v1/notifications/unread-count',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1OrgsClaimCodeRoute = ApiV1OrgsClaimCodeRouteImport.update({
   id: '/api/v1/orgs/claim-code',
   path: '/api/v1/orgs/claim-code',
@@ -2497,6 +2522,9 @@ export interface FileRoutesByFullPath {
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/notifications/$id': typeof ApiV1NotificationsIdRoute
+  '/api/v1/notifications/read': typeof ApiV1NotificationsReadRoute
+  '/api/v1/notifications/unread-count': typeof ApiV1NotificationsUnreadCountRoute
   '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
   '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
   '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
@@ -2539,6 +2567,7 @@ export interface FileRoutesByFullPath {
   '/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/devices/': typeof ApiV1DevicesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
+  '/api/v1/notifications/': typeof ApiV1NotificationsIndexRoute
   '/api/v1/recaps/': typeof ApiV1RecapsIndexRoute
   '/api/v1/resources/': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
@@ -2847,6 +2876,9 @@ export interface FileRoutesByTo {
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/notifications/$id': typeof ApiV1NotificationsIdRoute
+  '/api/v1/notifications/read': typeof ApiV1NotificationsReadRoute
+  '/api/v1/notifications/unread-count': typeof ApiV1NotificationsUnreadCountRoute
   '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
   '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
   '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
@@ -2889,6 +2921,7 @@ export interface FileRoutesByTo {
   '/parent/resources': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/devices': typeof ApiV1DevicesIndexRoute
   '/api/v1/me': typeof ApiV1MeIndexRoute
+  '/api/v1/notifications': typeof ApiV1NotificationsIndexRoute
   '/api/v1/recaps': typeof ApiV1RecapsIndexRoute
   '/api/v1/resources': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms': typeof ApiV1RoomsIndexRoute
@@ -3205,6 +3238,9 @@ export interface FileRoutesById {
   '/api/v1/messages/unread-total': typeof ApiV1MessagesUnreadTotalRoute
   '/api/v1/meta/client-policy': typeof ApiV1MetaClientPolicyRoute
   '/api/v1/meta/config': typeof ApiV1MetaConfigRoute
+  '/api/v1/notifications/$id': typeof ApiV1NotificationsIdRoute
+  '/api/v1/notifications/read': typeof ApiV1NotificationsReadRoute
+  '/api/v1/notifications/unread-count': typeof ApiV1NotificationsUnreadCountRoute
   '/api/v1/orgs/claim-code': typeof ApiV1OrgsClaimCodeRoute
   '/api/v1/orgs/join': typeof ApiV1OrgsJoinRoute
   '/api/v1/orgs/lead': typeof ApiV1OrgsLeadRoute
@@ -3247,6 +3283,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/resources/': typeof AuthenticatedParentResourcesIndexRoute
   '/api/v1/devices/': typeof ApiV1DevicesIndexRoute
   '/api/v1/me/': typeof ApiV1MeIndexRoute
+  '/api/v1/notifications/': typeof ApiV1NotificationsIndexRoute
   '/api/v1/recaps/': typeof ApiV1RecapsIndexRoute
   '/api/v1/resources/': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
@@ -3563,6 +3600,9 @@ export interface FileRouteTypes {
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/notifications/$id'
+    | '/api/v1/notifications/read'
+    | '/api/v1/notifications/unread-count'
     | '/api/v1/orgs/claim-code'
     | '/api/v1/orgs/join'
     | '/api/v1/orgs/lead'
@@ -3605,6 +3645,7 @@ export interface FileRouteTypes {
     | '/parent/resources/'
     | '/api/v1/devices/'
     | '/api/v1/me/'
+    | '/api/v1/notifications/'
     | '/api/v1/recaps/'
     | '/api/v1/resources/'
     | '/api/v1/rooms/'
@@ -3913,6 +3954,9 @@ export interface FileRouteTypes {
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/notifications/$id'
+    | '/api/v1/notifications/read'
+    | '/api/v1/notifications/unread-count'
     | '/api/v1/orgs/claim-code'
     | '/api/v1/orgs/join'
     | '/api/v1/orgs/lead'
@@ -3955,6 +3999,7 @@ export interface FileRouteTypes {
     | '/parent/resources'
     | '/api/v1/devices'
     | '/api/v1/me'
+    | '/api/v1/notifications'
     | '/api/v1/recaps'
     | '/api/v1/resources'
     | '/api/v1/rooms'
@@ -4270,6 +4315,9 @@ export interface FileRouteTypes {
     | '/api/v1/messages/unread-total'
     | '/api/v1/meta/client-policy'
     | '/api/v1/meta/config'
+    | '/api/v1/notifications/$id'
+    | '/api/v1/notifications/read'
+    | '/api/v1/notifications/unread-count'
     | '/api/v1/orgs/claim-code'
     | '/api/v1/orgs/join'
     | '/api/v1/orgs/lead'
@@ -4312,6 +4360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/resources/'
     | '/api/v1/devices/'
     | '/api/v1/me/'
+    | '/api/v1/notifications/'
     | '/api/v1/recaps/'
     | '/api/v1/resources/'
     | '/api/v1/rooms/'
@@ -4550,6 +4599,9 @@ export interface RootRouteChildren {
   ApiV1MessagesUnreadTotalRoute: typeof ApiV1MessagesUnreadTotalRoute
   ApiV1MetaClientPolicyRoute: typeof ApiV1MetaClientPolicyRoute
   ApiV1MetaConfigRoute: typeof ApiV1MetaConfigRoute
+  ApiV1NotificationsIdRoute: typeof ApiV1NotificationsIdRoute
+  ApiV1NotificationsReadRoute: typeof ApiV1NotificationsReadRoute
+  ApiV1NotificationsUnreadCountRoute: typeof ApiV1NotificationsUnreadCountRoute
   ApiV1OrgsClaimCodeRoute: typeof ApiV1OrgsClaimCodeRoute
   ApiV1OrgsJoinRoute: typeof ApiV1OrgsJoinRoute
   ApiV1OrgsLeadRoute: typeof ApiV1OrgsLeadRoute
@@ -4580,6 +4632,7 @@ export interface RootRouteChildren {
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiV1DevicesIndexRoute: typeof ApiV1DevicesIndexRoute
   ApiV1MeIndexRoute: typeof ApiV1MeIndexRoute
+  ApiV1NotificationsIndexRoute: typeof ApiV1NotificationsIndexRoute
   ApiV1RecapsIndexRoute: typeof ApiV1RecapsIndexRoute
   ApiV1ResourcesIndexRoute: typeof ApiV1ResourcesIndexRoute
   ApiV1RoomsIndexRoute: typeof ApiV1RoomsIndexRoute
@@ -5947,6 +6000,34 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/meta/config'
       fullPath: '/api/v1/meta/config'
       preLoaderRoute: typeof ApiV1MetaConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/notifications/': {
+      id: '/api/v1/notifications/'
+      path: '/api/v1/notifications'
+      fullPath: '/api/v1/notifications/'
+      preLoaderRoute: typeof ApiV1NotificationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/notifications/$id': {
+      id: '/api/v1/notifications/$id'
+      path: '/api/v1/notifications/$id'
+      fullPath: '/api/v1/notifications/$id'
+      preLoaderRoute: typeof ApiV1NotificationsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/notifications/read': {
+      id: '/api/v1/notifications/read'
+      path: '/api/v1/notifications/read'
+      fullPath: '/api/v1/notifications/read'
+      preLoaderRoute: typeof ApiV1NotificationsReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/notifications/unread-count': {
+      id: '/api/v1/notifications/unread-count'
+      path: '/api/v1/notifications/unread-count'
+      fullPath: '/api/v1/notifications/unread-count'
+      preLoaderRoute: typeof ApiV1NotificationsUnreadCountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/orgs/claim-code': {
@@ -7602,6 +7683,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1MessagesUnreadTotalRoute: ApiV1MessagesUnreadTotalRoute,
   ApiV1MetaClientPolicyRoute: ApiV1MetaClientPolicyRoute,
   ApiV1MetaConfigRoute: ApiV1MetaConfigRoute,
+  ApiV1NotificationsIdRoute: ApiV1NotificationsIdRoute,
+  ApiV1NotificationsReadRoute: ApiV1NotificationsReadRoute,
+  ApiV1NotificationsUnreadCountRoute: ApiV1NotificationsUnreadCountRoute,
   ApiV1OrgsClaimCodeRoute: ApiV1OrgsClaimCodeRoute,
   ApiV1OrgsJoinRoute: ApiV1OrgsJoinRoute,
   ApiV1OrgsLeadRoute: ApiV1OrgsLeadRoute,
@@ -7632,6 +7716,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiV1DevicesIndexRoute: ApiV1DevicesIndexRoute,
   ApiV1MeIndexRoute: ApiV1MeIndexRoute,
+  ApiV1NotificationsIndexRoute: ApiV1NotificationsIndexRoute,
   ApiV1RecapsIndexRoute: ApiV1RecapsIndexRoute,
   ApiV1ResourcesIndexRoute: ApiV1ResourcesIndexRoute,
   ApiV1RoomsIndexRoute: ApiV1RoomsIndexRoute,

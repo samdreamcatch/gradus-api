@@ -1414,11 +1414,10 @@ export async function sendMessage(
     const recipients = await withoutBlocked(supabaseAdmin, userId, Array.from(ids));
     if (recipients.length === 0) return;
     const sender = participants.find((p) => p.userId === userId);
-    await notifyUsers(
-      supabaseAdmin,
-      recipients,
-      newMessagePush(room.id, role, sender, data.kind === "text" ? data : { kind: "voice" }),
-    );
+    await notifyUsers(supabaseAdmin, recipients, {
+      ...newMessagePush(room.id, role, sender, data.kind === "text" ? data : { kind: "voice" }),
+      actorUserId: userId,
+    });
 
     // Bump the container's updated_at so list ordering reflects activity.
     if (room.kind === "athlete") {
