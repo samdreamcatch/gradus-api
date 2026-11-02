@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -116,7 +118,9 @@ function OrgLevelsPage() {
         <NoSportsCard />
       ) : (
         <>
-          <SportFilter sports={sports} value={sport} onChange={setSport} />
+          <ClubGridToolbar>
+            <SportFilter sports={sports} value={sport} onChange={setSport} />
+          </ClubGridToolbar>
           <Card>
             <CardHeader>
               <CardTitle>{sportDisplayLabel(sport)}</CardTitle>
@@ -126,7 +130,7 @@ function OrgLevelsPage() {
               </p>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
+              <ClubTable>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16" />
@@ -186,7 +190,7 @@ function OrgLevelsPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </ClubTable>
               <div className="flex items-center gap-2 border-t border-divider p-3">
                 <Button
                   variant="outline"

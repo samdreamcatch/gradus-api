@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -141,23 +143,20 @@ function OrgMovesPage() {
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <ClubGridToolbar
+            search={search}
+            onSearchChange={setSearch}
+            searchLabel="Search moves"
+            activeFilters={search ? 1 : 0}
+            onClear={() => setSearch("")}
+            end={<Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><Upload /> Bulk upload (CSV)</Button>}
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <Input
-              className="h-8 w-56"
-              placeholder="Search moves"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <Upload /> Bulk upload (CSV)
-            </Button>
-          </div>
+          </ClubGridToolbar>
 
           {sel.length > 0 && (
             <div className="sticky top-14 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent bg-popover p-2 shadow-card">
@@ -189,7 +188,7 @@ function OrgMovesPage() {
           {groups.map(([category, list]) => (
             <Card key={category}>
               <CardContent className="p-0">
-                <Table>
+                <ClubTable>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">
@@ -239,7 +238,7 @@ function OrgMovesPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </ClubTable>
               </CardContent>
             </Card>
           ))}
@@ -573,7 +572,7 @@ function ImportSheet({
             </div>
           )}
           {rows.length > 0 && (
-            <Table>
+            <ClubTable>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -592,7 +591,7 @@ function ImportSheet({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ClubTable>
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
