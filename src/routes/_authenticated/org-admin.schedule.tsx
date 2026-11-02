@@ -120,7 +120,7 @@ function ClubSchedulePage() {
           <Button variant="outline" disabled={!lessons.length} onClick={() => downloadCsv("club-lesson-calendar.csv", toCsv(
             ["Student", "Guardian", "Coach", "Day", "Start", "End", "Minutes", "Frequency", "Starts on", "Weeks of month", "Invite recipient", "Contact email", "Schedule status", "Invitation status", "Invite recorded at"],
             lessons.map((r) => [r.studentName, r.guardianName, r.coachName, IMPORT_DAYS.find((d) => d.value === r.day)?.long, formatTimeLabel(r.start), formatTimeLabel(r.end), r.minutes, r.frequency, r.startsOn, r.weeksOfMonth.join(", "), r.recipient, r.contactEmail, r.scheduleStatus, r.invitationStatus, r.invitedAt])
-          )))}><Download className="size-4" />Export CSV</Button>
+          ))}><Download className="size-4" />Export CSV</Button>
         </div>
         <Input aria-label="Search recurring lessons" placeholder="Search student, guardian, coach or email" value={lessonSearch} onChange={(e) => setLessonSearch(e.target.value)} className="sm:max-w-sm" />
         {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : <ClubTable>
