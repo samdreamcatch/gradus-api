@@ -43,5 +43,6 @@
 
 ## Club admin Airtable-style once-over
 - [x] Step 1: Schedule Grid/Calendar (week + month), coach/invite filters, linkable views, record panel
-- [ ] Step 2: People/Roster and Resources (incl. Gallery) on shared grid toolbar
-- [ ] Step 3: Policies, Notifications, Moves, Levels, Templates
+- [x] Step 2: People and Resources (incl. Gallery) on shared grid toolbar
+- [x] Step 3: Policies, Notifications, Moves, Levels, Templates on shared toolbar + ClubTable
+- [ ] Later: column show/hide, sort menu, and grouping controls (needs your call on priority)

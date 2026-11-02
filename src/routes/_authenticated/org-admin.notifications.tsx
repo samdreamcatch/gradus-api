@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import {
   queryOptions,
   useSuspenseQuery,
@@ -169,26 +170,16 @@ function NotificationsPage() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-3 items-center">
-        <Input
-          className="w-full sm:w-80"
-          aria-label="Search notifications"
-          placeholder="Search notifications"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {(search || filter !== "all") && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setSearch("");
-              setFilter("all");
-            }}
-          >
-            Clear filters
-          </Button>
-        )}
-      </div>
+      <ClubGridToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchLabel="Search notifications"
+        activeFilters={(search ? 1 : 0) + (filter !== "all" ? 1 : 0)}
+        onClear={() => {
+          setSearch("");
+          setFilter("all");
+        }}
+      />
       <ClubStatusLegend />
       <section className="space-y-3">
         <h2 className="font-display text-h3">All notifications</h2>

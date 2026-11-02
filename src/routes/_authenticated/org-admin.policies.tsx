@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -219,7 +221,10 @@ function Policies() {
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectionLabel>Sign-off records</SectionLabel>
-          <div className="flex flex-wrap gap-2">
+          <ClubGridToolbar
+            activeFilters={(search.doc ? 1 : 0) + (role !== "all" ? 1 : 0)}
+            onClear={() => navigate({ search: (p) => ({ ...p, doc: undefined, role: undefined }) })}
+          >
             <FilterPill
               aria-label="Document"
               className="w-auto min-w-48"
@@ -246,7 +251,7 @@ function Policies() {
                 { value: "athlete", label: "Athletes" },
               ]}
             />
-          </div>
+          </ClubGridToolbar>
         </div>
 
         {matrix.isLoading ? (
@@ -260,7 +265,7 @@ function Policies() {
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-divider bg-card">
-            <Table>
+            <ClubTable>
               <TableHeader className="sticky top-0 bg-card">
                 <TableRow>
                   <TableHead className="min-w-48">Person</TableHead>
@@ -317,7 +322,7 @@ function Policies() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ClubTable>
           </div>
         )}
       </section>

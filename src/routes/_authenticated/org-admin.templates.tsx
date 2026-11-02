@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -132,7 +134,7 @@ function OrgTemplatesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
       <PageTitle>Template plans</PageTitle>
       <ClubLibraryNav />
       {q.isPending ? (
@@ -141,20 +143,28 @@ function OrgTemplatesPage() {
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <ClubGridToolbar
+            end={
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="press"
+                  onClick={() => setImportOpen(true)}
+                >
+                  <Upload className="size-4" /> Import CSV
+                </Button>
+                <Button size="sm" className="press" onClick={() => setEditing("new")}>
+                  <Plus className="size-4" /> New template
+                </Button>
+              </>
+            }
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={setShowArchived} /> Show archived
             </label>
-            <div className="ml-auto flex gap-2">
-              <Button variant="outline" className="press" onClick={() => setImportOpen(true)}>
-                <Upload className="size-4" /> Import CSV
-              </Button>
-              <Button className="press" onClick={() => setEditing("new")}>
-                <Plus className="size-4" /> New template
-              </Button>
-            </div>
-          </div>
+          </ClubGridToolbar>
           {rows.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-sm text-text-secondary">
@@ -163,7 +173,7 @@ function OrgTemplatesPage() {
             </Card>
           ) : (
             <Card className="overflow-hidden">
-              <Table>
+              <ClubTable>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Template</TableHead>
@@ -215,7 +225,7 @@ function OrgTemplatesPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </ClubTable>
             </Card>
           )}
         </>
@@ -545,7 +555,7 @@ function ImportSheet({
                   </CardContent>
                 </Card>
               )}
-              <Table>
+              <ClubTable>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Template</TableHead>
@@ -562,7 +572,7 @@ function ImportSheet({
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </ClubTable>
               <Button
                 className="w-full press"
                 disabled={!parsed.templates.length || save.isPending}

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -50,13 +52,19 @@ import {
 } from "@/lib/org-content.functions";
 
 export const Route = createFileRoute("/_authenticated/org-admin/moves")({
-  head: () => ({ meta: [
-    { title: "Moves · Gradus Club" },
-    { name: "description", content: "Club move library and sport-specific coaching content." },
-    { property: "og:title", content: "Moves · Gradus Club" },
-    { property: "og:description", content: "Club move library and sport-specific coaching content." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Moves · Gradus Club" },
+      { name: "description", content: "Club move library and sport-specific coaching content." },
+      { property: "og:title", content: "Moves · Gradus Club" },
+      {
+        property: "og:description",
+        content: "Club move library and sport-specific coaching content.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgMovesPage,
 });
 
@@ -132,7 +140,7 @@ function OrgMovesPage() {
   const sel = Array.from(selected);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-5xl">
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
       <PageTitle>Move library</PageTitle>
       <ClubLibraryNav />
       {q.isPending ? (
@@ -141,23 +149,24 @@ function OrgMovesPage() {
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <ClubGridToolbar
+            search={search}
+            onSearchChange={setSearch}
+            searchLabel="Search moves"
+            activeFilters={search ? 1 : 0}
+            onClear={() => setSearch("")}
+            end={
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <Upload /> Bulk upload (CSV)
+              </Button>
+            }
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <Input
-              className="h-8 w-56"
-              placeholder="Search moves"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <Upload /> Bulk upload (CSV)
-            </Button>
-          </div>
+          </ClubGridToolbar>
 
           {sel.length > 0 && (
             <div className="sticky top-14 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent bg-popover p-2 shadow-card">
@@ -189,7 +198,7 @@ function OrgMovesPage() {
           {groups.map(([category, list]) => (
             <Card key={category}>
               <CardContent className="p-0">
-                <Table>
+                <ClubTable>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">
@@ -239,7 +248,7 @@ function OrgMovesPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </ClubTable>
               </CardContent>
             </Card>
           ))}
@@ -379,7 +388,9 @@ function EditMoveSheet({
           ))}
           {(["cue", "why", "description"] as const).map((k) => (
             <div key={k} className="space-y-1.5">
-              <Label htmlFor={`mv-${k}`}>{k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}</Label>
+              <Label htmlFor={`mv-${k}`}>
+                {k === "cue" ? "Cue" : k === "why" ? "Why" : "Description"}
+              </Label>
               <Textarea
                 id={`mv-${k}`}
                 rows={2}
@@ -395,9 +406,7 @@ function EditMoveSheet({
             </Button>
             <Button
               disabled={!f.name.trim() || !f.category.trim() || !Number.isFinite(num) || num < 0}
-              onClick={() =>
-                onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })
-              }
+              onClick={() => onSave({ ...f, defaultTargetKind: kind, defaultTargetValue: num })}
             >
               Save
             </Button>
@@ -451,7 +460,9 @@ function BulkEditSheet({
             <Checkbox checked={setTarget} onCheckedChange={(v) => setSetTarget(v === true)} />
             Change default target
           </label>
-          {setTarget && <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />}
+          {setTarget && (
+            <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>
               Cancel
@@ -542,7 +553,9 @@ function ImportSheet({
     setBusy(true);
     try {
       const r = await importFn({ data: { organizationId: orgId, moves: rows } });
-      toast.success(`${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`);
+      toast.success(
+        `${r.created} added, ${r.updated} updated${r.skipped ? `, ${r.skipped} skipped` : ""}`,
+      );
       onDone();
       onOpenChange(false);
     } catch (e) {
@@ -573,7 +586,7 @@ function ImportSheet({
             </div>
           )}
           {rows.length > 0 && (
-            <Table>
+            <ClubTable>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -592,7 +605,7 @@ function ImportSheet({
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+            </ClubTable>
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
