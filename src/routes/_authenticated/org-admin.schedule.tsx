@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil } from "lucide-react";
+import { Download, Upload, Pencil, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
@@ -18,6 +18,7 @@ import { TableHeader, TableBody, TableHead, TableRow, TableCell, TableFooter } f
 import { CLUB_SCHEDULE_TEMPLATE, parseClubSchedule, clubScheduleErrors, inviteDestination, type ClubScheduleRow } from "@/lib/club-schedule";
 import { IMPORT_DAYS, IMPORT_FREQUENCIES, formatTimeLabel, minutesToHHMM, hhmmToMinutes } from "@/lib/schedule-import";
 import { getClubScheduleSeats, getClubScheduleHistory, getClubScheduleReview, saveClubScheduleReview, getClubLessonCalendar } from "@/lib/club-schedule.functions";
+import type { ClubLesson } from "@/lib/club-lesson-calendar";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 
@@ -49,6 +50,10 @@ function ClubSchedulePage() {
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState<ClubScheduleRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const [lessonSearch, setLessonSearch] = useState("");
+  const [selectedLesson, setSelectedLesson] = useState<ClubLesson | null>(null);
+  const lessons = (calendar.data ?? []).filter((r) => `${r.studentName} ${r.guardianName} ${r.coachName} ${r.contactEmail ?? ""}`.toLowerCase().includes(lessonSearch.toLowerCase()));
+  const recurrence = (r: ClubLesson) => `${IMPORT_FREQUENCIES.find((f) => f.value === r.frequency)?.label ?? r.frequency}${r.weeksOfMonth.length ? ` · Weeks ${r.weeksOfMonth.join(", ")}` : ""}`;
   const fileRef = useRef<HTMLInputElement>(null);
   const seatedCoaches = coaches.filter((c) => seats.data?.some((s) => s.coach_id === c.coachId));
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))];
@@ -109,8 +114,37 @@ function ClubSchedulePage() {
         </>}
         <section className="space-y-3"><h2 className="font-display text-h3">Past imports</h2>{history.isError ? <p className="text-sm text-text-secondary">Import history becomes available when this draft is accepted.</p> : <ClubTable><TableHeader><TableRow>{["Imported", "File", "Status", "Open"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{history.data?.map((record) => <TableRow key={record.id}><TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell><TableCell>{record.file_name}</TableCell><TableCell><StatusDot status="informational" label={record.status === "ready" ? "Review ready · not sent" : "In review"} /></TableCell><TableCell><Button variant="ghost" disabled={busy} onClick={() => openReview(record.id, record.file_name)}>Open</Button></TableCell></TableRow>)}{!history.data?.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-text-secondary">No saved imports.</TableCell></TableRow>}</TableBody></ClubTable>}</section>
       </TabsContent>
-      <TabsContent value="calendar" className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-h3">Recurring lessons</h2><Button variant="outline" disabled={!calendar.data?.length} onClick={() => downloadCsv("club-lesson-calendar.csv", toCsv(["Coach", "Day", "Frequency", "Lessons", "Minutes", "First start", "Last end"], (calendar.data ?? []).map((r) => [r.coachName, IMPORT_DAYS.find((d) => d.value === r.day)?.long, r.frequency, r.lessons, r.minutes, formatTimeLabel(r.first), formatTimeLabel(r.last)])))}><Download className="size-4" />Export CSV</Button></div>{calendar.isError ? <p role="alert">Could not load the club calendar.</p> : <ClubTable><TableHeader><TableRow>{["Coach", "Day", "Every", "Lessons", "Minutes", "First start", "Last end"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{calendar.data?.map((r) => <TableRow key={`${r.coachId}-${r.day}-${r.frequency}`}><TableCell>{r.coachName}</TableCell><TableCell>{IMPORT_DAYS.find((d) => d.value === r.day)?.long}</TableCell><TableCell>{IMPORT_FREQUENCIES.find((f) => f.value === r.frequency)?.label ?? r.frequency}</TableCell><TableCell className="font-mono text-right">{r.lessons}</TableCell><TableCell className="font-mono text-right">{r.minutes}</TableCell><TableCell>{formatTimeLabel(r.first)}</TableCell><TableCell>{formatTimeLabel(r.last)}</TableCell></TableRow>)}{!calendar.data?.length && <TableRow><TableCell colSpan={7} className="py-8 text-center text-text-secondary">{calendar.isPending ? "Loading lessons…" : "No recurring lessons."}</TableCell></TableRow>}</TableBody></ClubTable>}</TabsContent>
+      <TabsContent value="calendar" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-h3">Recurring lessons · {lessons.length}</h2>
+          <Button variant="outline" disabled={!lessons.length} onClick={() => downloadCsv("club-lesson-calendar.csv", toCsv(
+            ["Student", "Guardian", "Coach", "Day", "Start", "End", "Minutes", "Frequency", "Starts on", "Weeks of month", "Invite recipient", "Contact email", "Schedule status", "Invitation status", "Invite recorded at"],
+            lessons.map((r) => [r.studentName, r.guardianName, r.coachName, IMPORT_DAYS.find((d) => d.value === r.day)?.long, formatTimeLabel(r.start), formatTimeLabel(r.end), r.minutes, r.frequency, r.startsOn, r.weeksOfMonth.join(", "), r.recipient, r.contactEmail, r.scheduleStatus, r.invitationStatus, r.invitedAt])
+          ))}><Download className="size-4" />Export CSV</Button>
+        </div>
+        <Input aria-label="Search recurring lessons" placeholder="Search student, guardian, coach or email" value={lessonSearch} onChange={(e) => setLessonSearch(e.target.value)} className="sm:max-w-sm" />
+        {calendar.isError ? <p role="alert">Could not load the club calendar.</p> : <ClubTable>
+          <TableHeader><TableRow>{["Student", "Guardian", "Coach", "Day / time", "Every", "Invite contact", "Status", "Details"].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{lessons.map((r) => <TableRow key={r.id}>
+            <TableCell className="min-w-36">{r.studentName}</TableCell>
+            <TableCell className="min-w-36 whitespace-normal">{r.guardianName}</TableCell>
+            <TableCell className="min-w-36">{r.coachName}</TableCell>
+            <TableCell className="min-w-40 whitespace-nowrap"><div>{IMPORT_DAYS.find((d) => d.value === r.day)?.long}</div><div className="font-mono text-xs">{formatTimeLabel(r.start)}–{formatTimeLabel(r.end)} · {r.minutes} min</div></TableCell>
+            <TableCell className="min-w-32 whitespace-normal">{recurrence(r)}</TableCell>
+            <TableCell className="min-w-48"><div className="text-xs text-text-secondary">{r.recipient}</div><div className="break-all whitespace-normal">{r.contactEmail ?? "Not recorded"}</div></TableCell>
+            <TableCell className="min-w-48"><div className="text-xs text-text-secondary">{r.scheduleStatus}</div><StatusDot status={r.invitationStatus === "Contact missing" ? "attention" : "informational"} label={r.invitationStatus} /></TableCell>
+            <TableCell><Button variant="ghost" size="icon" className="size-11" aria-label={`Lesson details for ${r.studentName}`} onClick={() => setSelectedLesson(r)}><Eye className="size-4" /></Button></TableCell>
+          </TableRow>)}{!lessons.length && <TableRow><TableCell colSpan={8} className="py-8 text-center text-text-secondary">{calendar.isPending ? "Loading lessons…" : lessonSearch ? "No matching lessons." : "No recurring lessons."}</TableCell></TableRow>}</TableBody>
+        </ClubTable>}
+      </TabsContent>
     </Tabs>
+    <Sheet open={!!selectedLesson} onOpenChange={(open) => { if (!open) setSelectedLesson(null); }}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Lesson details</SheetTitle><SheetDescription>{selectedLesson?.studentName}</SheetDescription></SheetHeader>{selectedLesson && <dl className="mt-6 space-y-4">{[
+      ["Student", selectedLesson.studentName], ["Guardian", selectedLesson.guardianName], ["Coach", selectedLesson.coachName],
+      ["Day", IMPORT_DAYS.find((d) => d.value === selectedLesson.day)?.long], ["Start", formatTimeLabel(selectedLesson.start)], ["End", formatTimeLabel(selectedLesson.end)],
+      ["Duration", `${selectedLesson.minutes} minutes`], ["Recurrence", recurrence(selectedLesson)], ["Starts on", selectedLesson.startsOn ?? "Not recorded"],
+      ["Schedule", selectedLesson.scheduleStatus], ["Invite recipient", selectedLesson.recipient], ["Contact email", selectedLesson.contactEmail ?? "Not recorded"],
+      ["Invitation", selectedLesson.invitationStatus], ["Invite recorded at", selectedLesson.invitedAt ? new Date(selectedLesson.invitedAt).toLocaleString() : "Not recorded"],
+    ].map(([label, value]) => <div key={label} className="border-b border-divider pb-3"><dt className="text-xs text-text-secondary">{label}</dt><dd className="break-words">{value}</dd></div>)}</dl>}</SheetContent></Sheet>
     <Sheet open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Edit lesson</SheetTitle><SheetDescription>{fileName}</SheetDescription></SheetHeader>{editing && <div className="mt-6 space-y-4">
       {([ ["First name", "firstName"], ["Last name", "lastName"], ["Parent email", "guardianEmail"], ["Adult athlete email", "athleteEmail"] ] as const).map(([label, key]) => <div key={key} className="space-y-1"><Label htmlFor={`lesson-${key}`}>{label}</Label><Input id={`lesson-${key}`} type={key.includes("Email") ? "email" : "text"} value={editing[key]} onChange={(e) => setEditing({ ...editing, [key]: e.target.value })} /></div>)}
       <div className="space-y-1"><Label htmlFor="lesson-age">Age</Label><Input id="lesson-age" type="number" min={0} max={120} value={editing.age ?? ""} onChange={(e) => setEditing({ ...editing, age: e.target.value === "" ? null : Number(e.target.value) })} /></div>

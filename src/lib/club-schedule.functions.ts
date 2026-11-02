@@ -5,6 +5,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
 import { clubScheduleErrors, type ClubScheduleRow } from "./club-schedule";
+import { buildClubLessons } from "./club-lesson-calendar";
 
 type ImportRecord = { id: string; file_name: string; status: string; counts: Json; created_at: string; organization_id: string; uploaded_by: string };
 type Table<R> = { Row: R; Insert: never; Update: never; Relationships: [] };
@@ -74,7 +75,7 @@ export const saveClubScheduleReview = createServerFn({ method: "POST" }).middlew
     return { id: result.data, ready };
   });
 
-// Calendar is a coach/day rollup: never return athlete identifiers or family data.
+// Operational club schedule only; family contacts must never enter Home/Coaching rollups.
 export const getClubLessonCalendar = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => orgInput.parse(input)).handler(async ({ data, context }) => {
     const { base } = await authorized(context.supabase, context.userId, data.organizationId);
@@ -82,17 +83,28 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" }).middlewa
     if (coaches.error) dbError(coaches.error);
     const ids = (coaches.data ?? []).map((c) => c.id);
     if (!ids.length) return [];
-    const slots = await base.from("athlete_lesson_slots").select("coach_id,day_of_week,start_minute,end_minute,frequency").in("coach_id", ids);
+    const links = await base.from("coach_athletes").select("coach_id,athlete_id").in("coach_id", ids);
+    if (links.error) dbError(links.error);
+    const athleteIds = [...new Set((links.data ?? []).map((l) => l.athlete_id))];
+    if (!athleteIds.length) return [];
+    const [slots, students, guardians] = await Promise.all([
+      base.from("athlete_lesson_slots").select("id,athlete_id,coach_id,day_of_week,start_minute,end_minute,frequency,starts_on,weeks_of_month").in("coach_id", ids).in("athlete_id", athleteIds),
+      base.from("athletes").select("id,first_name,last_name,parent_id,self_managed,user_id,account_state,guardian_first_name,guardian_last_name,guardian_email,guardian_invited_at,guardian_claimed_at,invite_recipient").in("id", athleteIds),
+      base.from("athlete_guardians").select("athlete_id,parent_profiles(first_name,last_name)").in("athlete_id", athleteIds),
+    ]);
     if (slots.error) dbError(slots.error);
-    const groups = new Map<string, { coachId: string; coachName: string; day: number; frequency: string; lessons: number; minutes: number; first: number; last: number }>();
-    for (const slot of slots.data ?? []) {
-      const coach = coaches.data?.find((c) => c.id === slot.coach_id);
-      if (!coach) continue;
-      const key = `${coach.id}|${slot.day_of_week}|${slot.frequency}`;
-      const group = groups.get(key) ?? { coachId: coach.id, coachName: `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim(), day: slot.day_of_week, frequency: slot.frequency, lessons: 0, minutes: 0, first: slot.start_minute, last: slot.end_minute };
-      group.lessons++; group.minutes += slot.end_minute - slot.start_minute;
-      group.first = Math.min(group.first, slot.start_minute); group.last = Math.max(group.last, slot.end_minute);
-      groups.set(key, group);
-    }
-    return [...groups.values()].sort((a, b) => ((a.day + 6) % 7) - ((b.day + 6) % 7) || a.first - b.first);
+    if (students.error) dbError(students.error);
+    if (guardians.error) dbError(guardians.error);
+    const parentIds = [...new Set((students.data ?? []).flatMap((s) => s.parent_id ? [s.parent_id] : []))];
+    const parents = parentIds.length ? await base.from("parent_profiles").select("id,first_name,last_name").in("id", parentIds) : { data: [], error: null };
+    if (parents.error) dbError(parents.error);
+    return buildClubLessons({ slots: slots.data ?? [], students: students.data ?? [], coaches: coaches.data ?? [], links: links.data ?? [],
+      guardians: [
+        ...(guardians.data ?? []).map((g) => ({ athlete_id: g.athlete_id, name: [g.parent_profiles?.first_name, g.parent_profiles?.last_name].filter(Boolean).join(" ") })),
+        ...(students.data ?? []).flatMap((s) => {
+          const parent = parents.data?.find((p) => p.id === s.parent_id);
+          return parent ? [{ athlete_id: s.id, name: [parent.first_name, parent.last_name].filter(Boolean).join(" ") }] : [];
+        }),
+      ],
+    });
   });

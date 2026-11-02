@@ -1,5 +1,6 @@
 
 ## Open
+- [x] Replace club calendar coach/day summaries with individual lessons, recorded student/guardian contacts, and accurate schedule/invite tracking; nine lessons and details verified as club admin, ten tests pass. Missing contacts are explicit; club invite delivery remains the separate Stage 5 integration below.
 - [x] Review two monitoring findings: coach starting-level attribution evidence is absent in this draft, marked stale without edits; fixed voice Make/Take/Have/Note collisions while retaining existing protections and name masking. 54 regression tests pass; lint zero errors and automatic checks build OK.
 - [x] Continue Org admin draft: build Schedule CSV upload, seated-coach matching, editable review, club-scoped review history and aggregate calendar; consolidate Library navigation. Authorized upload/unmatched-coach blocking and real recurring calendar verified; 62 tests pass, lint zero errors. Storage and seated matching await acceptance; no invites sent.
 - [x] Continue the Gradus Club plan: add Coaches directory/profile, per-admin device-saved coach views and aggregate-only Home practice strip; investigate remaining stage dependencies without activating emails or payments.
