@@ -1,0 +1,22 @@
+import { z } from "zod";
+
+/** One listing (src/lib/marketplace-plans.server.ts `MarketplacePlanDTO`). */
+export const marketplacePlanSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: z.enum(["plan", "template"]),
+  moveCount: z.number(),
+  /** USD; 0 is free. */
+  price: z.number(),
+  updatedAt: z.string(),
+  coach: z.object({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+  }),
+});
+
+export const marketplacePlansPageSchema = z.object({
+  items: z.array(marketplacePlanSchema),
+  nextCursor: z.string().nullable(),
+});

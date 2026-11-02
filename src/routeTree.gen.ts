@@ -279,6 +279,7 @@ import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/inv
 import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
 import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api/v1/live-activities/tokens/index'
 import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
+import { Route as ApiV1MarketplacePlansIndexRouteImport } from './routes/api/v1/marketplace/plans/index'
 import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
 import { Route as ApiV1MessagesIdReactionRouteImport } from './routes/api/v1/messages/$id/reaction'
@@ -1853,6 +1854,12 @@ const ApiV1LiveActivitiesTokensTokenRoute =
     path: '/api/v1/live-activities/tokens/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1MarketplacePlansIndexRoute =
+  ApiV1MarketplacePlansIndexRouteImport.update({
+    id: '/api/v1/marketplace/plans/',
+    path: '/api/v1/marketplace/plans/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1MeCelebrationsIndexRoute =
   ApiV1MeCelebrationsIndexRouteImport.update({
     id: '/api/v1/me/celebrations/',
@@ -2658,6 +2665,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
+  '/api/v1/marketplace/plans/': typeof ApiV1MarketplacePlansIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -3012,6 +3020,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/wrap-ups': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens': typeof ApiV1LiveActivitiesTokensIndexRoute
+  '/api/v1/marketplace/plans': typeof ApiV1MarketplacePlansIndexRoute
   '/api/v1/me/celebrations': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team': typeof ApiV1ParentTeamIndexRoute
@@ -3374,6 +3383,7 @@ export interface FileRoutesById {
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
+  '/api/v1/marketplace/plans/': typeof ApiV1MarketplacePlansIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -3736,6 +3746,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
     | '/api/v1/live-activities/tokens/'
+    | '/api/v1/marketplace/plans/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -4090,6 +4101,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/wrap-ups'
     | '/api/v1/guardian/claim'
     | '/api/v1/live-activities/tokens'
+    | '/api/v1/marketplace/plans'
     | '/api/v1/me/celebrations'
     | '/api/v1/parent/athletes'
     | '/api/v1/parent/team'
@@ -4451,6 +4463,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
     | '/api/v1/live-activities/tokens/'
+    | '/api/v1/marketplace/plans/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -4723,6 +4736,7 @@ export interface RootRouteChildren {
   ApiV1CoachWrapUpsIndexRoute: typeof ApiV1CoachWrapUpsIndexRoute
   ApiV1GuardianClaimIndexRoute: typeof ApiV1GuardianClaimIndexRoute
   ApiV1LiveActivitiesTokensIndexRoute: typeof ApiV1LiveActivitiesTokensIndexRoute
+  ApiV1MarketplacePlansIndexRoute: typeof ApiV1MarketplacePlansIndexRoute
   ApiV1MeCelebrationsIndexRoute: typeof ApiV1MeCelebrationsIndexRoute
   ApiV1ParentAthletesIndexRoute: typeof ApiV1ParentAthletesIndexRoute
   ApiV1ParentTeamIndexRoute: typeof ApiV1ParentTeamIndexRoute
@@ -6681,6 +6695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1LiveActivitiesTokensTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/marketplace/plans/': {
+      id: '/api/v1/marketplace/plans/'
+      path: '/api/v1/marketplace/plans'
+      fullPath: '/api/v1/marketplace/plans/'
+      preLoaderRoute: typeof ApiV1MarketplacePlansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/me/celebrations/': {
       id: '/api/v1/me/celebrations/'
       path: '/api/v1/me/celebrations'
@@ -7811,6 +7832,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachWrapUpsIndexRoute: ApiV1CoachWrapUpsIndexRoute,
   ApiV1GuardianClaimIndexRoute: ApiV1GuardianClaimIndexRoute,
   ApiV1LiveActivitiesTokensIndexRoute: ApiV1LiveActivitiesTokensIndexRoute,
+  ApiV1MarketplacePlansIndexRoute: ApiV1MarketplacePlansIndexRoute,
   ApiV1MeCelebrationsIndexRoute: ApiV1MeCelebrationsIndexRoute,
   ApiV1ParentAthletesIndexRoute: ApiV1ParentAthletesIndexRoute,
   ApiV1ParentTeamIndexRoute: ApiV1ParentTeamIndexRoute,

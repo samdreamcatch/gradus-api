@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { getPlanMarketplaceFields } from "./plan-marketplace-fields.server";
 import { getAthletePlan } from "./athlete-plans.server";
 import { ATHLETE_SOURCE, getAuthoredPlanDetail } from "./athlete-authoring.server";
 import { getParentPlan } from "./parent-plans.server";
@@ -59,6 +60,10 @@ export interface RoleAwarePlanDetailDTO {
   authorFirstName?: string | null;
   /** "plan" or "moves": what the athlete rates after practice. Optional on the wire. */
   feedbackScope?: string;
+  /** Marketplace price in USD (0 is free); in the coach's view only. Optional on the wire. */
+  price?: number;
+  /** The plan's image URL (plan-marketplace-fields.server.ts); for the owning coach only. */
+  media?: string | null;
 }
 
 /**
@@ -123,6 +128,7 @@ export async function getPlanForViewer(
       }
       throw err;
     }
+    const marketplace = await getPlanMarketplaceFields(ctx.supabase, plan.id);
     // A rostered coach reading a plan the athlete wrote (read-only): say so.
     let source: string | undefined;
     let authorFirstName: string | null | undefined;
@@ -162,6 +168,9 @@ export async function getPlanForViewer(
       sessionsTotal: plan.sessionsTotal,
       feedbackScope: plan.feedbackScope,
       ...(source ? { source, authorFirstName } : {}),
+      ...(marketplace ? { price: marketplace.price } : {}),
+      // Only the owner can load the image (the plan-media storage policies).
+      ...(marketplace && plan.isOwner ? { media: marketplace.media } : {}),
     };
   }
 

@@ -13,6 +13,13 @@ import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import {
+  assertPlanMediaOwned,
+  getPlanMarketplaceFields,
+  planMediaInput,
+  planPriceInput,
+  setPlanMarketplaceFields,
+} from "./plan-marketplace-fields.server";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-events.server";
 
@@ -448,6 +455,10 @@ export const savePlanInput = z.object({
   kind: z.enum(["plan", "template"]),
   athleteId: z.string().uuid().nullable().optional(),
   moves: z.array(savePlanMoveInput).max(200),
+  /** Marketplace price in USD (0 is free); absent leaves it as it is. */
+  price: planPriceInput.optional(),
+  /** The plan's image (see plan-marketplace-fields.server.ts); null removes it. */
+  media: planMediaInput.nullable().optional(),
 });
 
 /** Whole-plan write: the row plus a full replacement of its moves. Creates when `id` is absent. */
@@ -462,6 +473,7 @@ export async function savePlan(
   if (data.kind === "plan" && !data.athleteId) {
     throw unprocessable("Assign plan to an athlete or save it as a template.");
   }
+  if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
 
   const planRow = {
     coach_id: coachId,
@@ -493,6 +505,7 @@ export async function savePlan(
     if (error) planWriteError(error);
     planId = inserted.id;
   }
+  await setPlanMarketplaceFields(supabase, planId!, data);
 
   // Replace plan_moves
   const { error: delErr } = await supabase.from("plan_moves").delete().eq("plan_id", planId);
@@ -847,6 +860,10 @@ export const createPlanInput = z.object({
   fromPlanId: z.string().uuid().optional(),
   fromTemplateId: z.string().uuid().optional(),
   title: z.string().min(1).max(160).optional(),
+  /** Marketplace price in USD (0 is free); a copy keeps its source's price unless this is sent. */
+  price: planPriceInput.optional(),
+  /** The plan's image (see plan-marketplace-fields.server.ts); a copy never takes its source's. */
+  media: planMediaInput.nullable().optional(),
 });
 
 /** A new draft (or benched template), optionally cloned from one of the coach's plans or templates. */
@@ -859,8 +876,10 @@ export async function createPlan(
   if (data.kind === "plan" && data.athleteId) {
     await assertAthleteOnRoster(supabase, coachId, data.athleteId);
   }
+  if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
 
   const sourceId = data.fromPlanId ?? data.fromTemplateId;
+  let price = data.price;
   let title = data.title ?? "Untitled plan";
   let notes = "";
   let feedbackScope: FeedbackScope = "plan";
@@ -888,6 +907,8 @@ export async function createPlan(
     notes = src.notes;
     // A copy asks for the same feedback as the plan or template it came from.
     if (src.feedback_scope === "moves") feedbackScope = "moves";
+    // The image stays with the source: it lives in that plan's plan-media folder.
+    price ??= (await getPlanMarketplaceFields(supabase, sourceId))?.price;
     const { data: srcMoves, error: mErr } = await supabase
       .from("plan_moves")
       .select("position, move_id, name, description, cue, why, target_kind, target_value")
@@ -911,6 +932,7 @@ export async function createPlan(
     .select("id")
     .single();
   if (insErr) planWriteError(insErr);
+  await setPlanMarketplaceFields(supabase, inserted.id, { price, media: data.media });
 
   if (sourceMoves.length) {
     const rows = sourceMoves.map((m, i) => ({
@@ -993,6 +1015,10 @@ export const updatePlanPatch = z.object({
   kind: z.enum(["plan", "template"]).optional(),
   athleteId: z.string().uuid().nullable().optional(),
   feedbackScope: z.enum(["plan", "moves"]).optional(),
+  /** Marketplace price in USD (0 is free). */
+  price: planPriceInput.optional(),
+  /** The plan's image (see plan-marketplace-fields.server.ts); null removes it. */
+  media: planMediaInput.nullable().optional(),
 });
 
 /**
@@ -1009,6 +1035,7 @@ export async function updatePlan(
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
   await assertPlanOwned(supabase, id, coachId);
+  if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
 
   // Load current row so we can keep the kind/status/athlete combination
   // valid per the plans_kind_athlete_chk constraint.
@@ -1034,6 +1061,8 @@ export async function updatePlan(
     if (data.athleteId) await assertAthleteOnRoster(supabase, coachId, data.athleteId);
     const nextTitle = data.title ?? current.title ?? "Untitled plan";
     const nextNotes = data.notes ?? current.notes ?? "";
+    // The fork keeps the price; the image stays with the original's plan-media folder.
+    const price = data.price ?? (await getPlanMarketplaceFields(supabase, id))?.price;
     const { data: inserted, error: insErr } = await supabase
       .from("plans")
       .insert({
@@ -1048,6 +1077,7 @@ export async function updatePlan(
       .select("id")
       .single();
     if (insErr) planWriteError(insErr);
+    await setPlanMarketplaceFields(supabase, inserted.id, { price, media: data.media });
 
     const { data: srcMoves, error: mErr } = await supabase
       .from("plan_moves")
@@ -1117,6 +1147,7 @@ export async function updatePlan(
 
   const { error } = await supabase.from("plans").update(patch).eq("id", id).eq("coach_id", coachId);
   if (error) planWriteError(error);
+  await setPlanMarketplaceFields(supabase, id, data);
 
   return { ok: true };
 }

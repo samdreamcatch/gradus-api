@@ -172,6 +172,7 @@ import "../src/routes/api/v1/notifications/index";
 import "../src/routes/api/v1/notifications/unread-count";
 import "../src/routes/api/v1/notifications/read";
 import "../src/routes/api/v1/notifications/$id";
+import "../src/routes/api/v1/marketplace/plans/index";
 import "../src/routes/api/v1/live-activities/tokens/index";
 import "../src/routes/api/v1/live-activities/tokens/$token";
 import "../src/routes/api/v1/resources/index";

@@ -120,6 +120,10 @@ export const planDetailSchema = z.object({
   // "plan" (one rating for the session) or "moves" (a rating per move; the
   // session's rating is their average). Optional for older clients and servers.
   feedbackScope: z.string().optional(),
+  // Marketplace price in USD (0 is free), in the coach's view; the plan's image
+  // URL for the owning coach only. Optional for older clients and servers.
+  price: z.number().optional(),
+  media: z.string().nullable().optional(),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
 export const planIdSchema = z.object({ id: z.string() });
