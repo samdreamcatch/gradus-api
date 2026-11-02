@@ -48,7 +48,10 @@ export function sortRows<T>(
 export type RowGroup<T> = { label: string; rows: T[] };
 
 /** Groups in first-seen order after sorting; blank labels collect under "None". */
-export function groupRows<T>(rows: T[], labelOf: (row: T) => string | null | undefined): RowGroup<T>[] {
+export function groupRows<T>(
+  rows: T[],
+  labelOf: (row: T) => string | null | undefined,
+): RowGroup<T>[] {
   const map = new Map<string, T[]>();
   for (const row of rows) {
     const label = labelOf(row)?.trim() || "None";

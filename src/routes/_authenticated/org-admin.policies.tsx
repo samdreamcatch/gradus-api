@@ -338,18 +338,27 @@ function Policies() {
               <TableBody>
                 {(grid.groups ?? [{ label: "", rows: grid.rows }]).flatMap((g) => [
                   ...(g.label
-                    ? [<ClubGroupRow key={`g-${g.label}`} label={g.label} count={g.rows.length} colSpan={docs.length + 2} />]
+                    ? [
+                        <ClubGroupRow
+                          key={`g-${g.label}`}
+                          label={g.label}
+                          count={g.rows.length}
+                          colSpan={docs.length + 2}
+                        />,
+                      ]
                     : []),
                   ...g.rows.map((p) => (
-                  <TableRow key={p.key} className="text-xs">
-                    <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
-                    <TableCell className="py-2 text-text-secondary">{ROLE_LABEL[p.role]}</TableCell>
-                    {docs.map((d) => (
-                      <TableCell key={d.resourceId} className="py-2">
-                        <Cell value={p.cells[d.resourceId]} dueAt={dueFor(d.resourceId)} />
+                    <TableRow key={p.key} className="text-xs">
+                      <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
+                      <TableCell className="py-2 text-text-secondary">
+                        {ROLE_LABEL[p.role]}
                       </TableCell>
-                    ))}
-                  </TableRow>
+                      {docs.map((d) => (
+                        <TableCell key={d.resourceId} className="py-2">
+                          <Cell value={p.cells[d.resourceId]} dueAt={dueFor(d.resourceId)} />
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   )),
                 ])}
               </TableBody>

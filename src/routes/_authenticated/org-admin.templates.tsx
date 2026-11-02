@@ -130,11 +130,19 @@ function OrgTemplatesPage() {
       key: "levels",
       label: "Levels",
       className: "text-text-secondary",
-      sortValue: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
-      groupValue: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
+      sortValue: (t) =>
+        t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels",
+      groupValue: (t) =>
+        t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels",
       render: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
     },
-    { key: "moves", label: "Moves", align: "right", sortValue: (t) => t.moves.length, render: (t) => t.moves.length },
+    {
+      key: "moves",
+      label: "Moves",
+      align: "right",
+      sortValue: (t) => t.moves.length,
+      render: (t) => t.moves.length,
+    },
     {
       key: "coaches",
       label: "Coaches sent",

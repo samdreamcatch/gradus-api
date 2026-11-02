@@ -91,7 +91,9 @@ export function useClubGrid<T>(
   const groupCol = prefs.group ? byKey.get(prefs.group) : undefined;
   const groups = groupCol?.groupValue ? groupRows(sorted, groupCol.groupValue) : null;
   const changed =
-    prefs.hidden.join() !== defaults.hidden.join() || !!prefs.sort || prefs.group !== defaults.group;
+    prefs.hidden.join() !== defaults.hidden.join() ||
+    !!prefs.sort ||
+    prefs.group !== defaults.group;
 
   const menu = (
     <div className="flex items-center gap-1">
@@ -286,7 +288,9 @@ export function ClubDataGrid<T>({
               return (
                 <TableHead
                   key={c.key}
-                  aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : undefined}
+                  aria-sort={
+                    active === "asc" ? "ascending" : active === "desc" ? "descending" : undefined
+                  }
                   className={cn(
                     "whitespace-nowrap",
                     c.align === "right" && "text-right",
@@ -322,12 +326,22 @@ export function ClubDataGrid<T>({
         <TableBody>
           {grid.groups
             ? grid.groups.flatMap((g) => [
-                <ClubGroupRow key={`g-${g.label}`} label={g.label} count={g.rows.length} colSpan={cols.length} />,
+                <ClubGroupRow
+                  key={`g-${g.label}`}
+                  label={g.label}
+                  count={g.rows.length}
+                  colSpan={cols.length}
+                />,
                 ...g.rows.map(renderRow),
               ])
             : grid.rows.map(renderRow)}
           {!grid.rows.length && (
-            <ClubEmptyRow colSpan={cols.length} filtered={filtered} empty={empty} onClear={onClear} />
+            <ClubEmptyRow
+              colSpan={cols.length}
+              filtered={filtered}
+              empty={empty}
+              onClear={onClear}
+            />
           )}
         </TableBody>
         {showFooter && grid.rows.length > 0 && (

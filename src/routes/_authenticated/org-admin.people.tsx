@@ -235,10 +235,37 @@ const PEOPLE_COLUMNS: ClubColumn<RosterCoach>[] = [
       </span>
     ),
   },
-  { key: "levels", label: "Levels", align: "right", sortValue: (c) => c.levels.length, render: (c) => c.levels.length, footer: (r) => r.reduce((n, c) => n + c.levels.length, 0) },
-  { key: "athletes", label: "Athletes", align: "right", sortValue: (c) => c.athleteCount, render: (c) => c.athleteCount, footer: (r) => total(r, "athleteCount") },
-  { key: "parents", label: "Parents", align: "right", sortValue: (c) => c.parentCount, render: (c) => c.parentCount, footer: (r) => total(r, "parentCount") },
-  { key: "joined", label: "Joined", sortValue: (c) => c.joinedAt, className: "whitespace-nowrap font-mono text-xs", render: (c) => c.joinedAt?.slice(0, 10) ?? "—" },
+  {
+    key: "levels",
+    label: "Levels",
+    align: "right",
+    sortValue: (c) => c.levels.length,
+    render: (c) => c.levels.length,
+    footer: (r) => r.reduce((n, c) => n + c.levels.length, 0),
+  },
+  {
+    key: "athletes",
+    label: "Athletes",
+    align: "right",
+    sortValue: (c) => c.athleteCount,
+    render: (c) => c.athleteCount,
+    footer: (r) => total(r, "athleteCount"),
+  },
+  {
+    key: "parents",
+    label: "Parents",
+    align: "right",
+    sortValue: (c) => c.parentCount,
+    render: (c) => c.parentCount,
+    footer: (r) => total(r, "parentCount"),
+  },
+  {
+    key: "joined",
+    label: "Joined",
+    sortValue: (c) => c.joinedAt,
+    className: "whitespace-nowrap font-mono text-xs",
+    render: (c) => c.joinedAt?.slice(0, 10) ?? "—",
+  },
 ];
 
 function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {

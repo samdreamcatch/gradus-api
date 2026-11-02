@@ -17,7 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageTitle } from "@/components/page-title";
 import { Plus } from "lucide-react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -148,7 +154,11 @@ function OrgRosterPage() {
       <section className="space-y-2">
         <div className="flex items-baseline justify-between">
           <h2 className="font-display text-h3">Coaches</h2>
-          <ClubGridCount shown={coaches.length} total={rosterQ.data?.coaches.length ?? 0} noun="coaches" />
+          <ClubGridCount
+            shown={coaches.length}
+            total={rosterQ.data?.coaches.length ?? 0}
+            noun="coaches"
+          />
         </div>
         <ClubDataGrid
           grid={coachGrid}
@@ -164,7 +174,11 @@ function OrgRosterPage() {
           <h2 className="font-display text-h3">Coach invites</h2>
           <div className="flex items-center gap-2">
             {inviteGrid.menu}
-            <ClubGridCount shown={invites.length} total={invitesQ.data?.invites.length ?? 0} noun="invites" />
+            <ClubGridCount
+              shown={invites.length}
+              total={invitesQ.data?.invites.length ?? 0}
+              noun="invites"
+            />
           </div>
         </div>
         <ClubDataGrid
@@ -179,20 +193,38 @@ function OrgRosterPage() {
       <Sheet open={inviting} onOpenChange={setInviting}>
         <SheetContent
           side={mobile ? "bottom" : "right"}
-          className={mobile ? "paper-surface max-h-[90dvh] overflow-y-auto p-6" : "w-full overflow-y-auto p-6 sm:max-w-md"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6"
+              : "w-full overflow-y-auto p-6 sm:max-w-md"
+          }
         >
           <SheetHeader>
             <SheetTitle className="font-display text-h2">Invite a coach</SheetTitle>
-            <SheetDescription>They get an 8-character code to join {orgName}. Add an email to send it for you.</SheetDescription>
+            <SheetDescription>
+              They get an 8-character code to join {orgName}. Add an email to send it for you.
+            </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
             <div className="space-y-1">
               <Label htmlFor="inv-email">Email</Label>
-              <Input id="inv-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="coach@example.com" />
+              <Input
+                id="inv-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="coach@example.com"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="inv-phone">Phone (optional)</Label>
-              <Input id="inv-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 555 5555" />
+              <Input
+                id="inv-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 555 555 5555"
+              />
             </div>
             <Button
               className="w-full press"
@@ -205,17 +237,29 @@ function OrgRosterPage() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!removing} onOpenChange={(o) => { if (!o && !removeCoach.isPending) setRemoving(null); }}>
+      <AlertDialog
+        open={!!removing}
+        onOpenChange={(o) => {
+          if (!o && !removeCoach.isPending) setRemoving(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {removing?.firstName} {removing?.lastName} from {orgName}?</AlertDialogTitle>
-            <AlertDialogDescription>Their seat opens up for someone new. Their own Gradus account stays as it is.</AlertDialogDescription>
+            <AlertDialogTitle>
+              Remove {removing?.firstName} {removing?.lastName} from {orgName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Their seat opens up for someone new. Their own Gradus account stays as it is.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={removeCoach.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={removeCoach.isPending}
-              onClick={(e) => { e.preventDefault(); if (removing) removeCoach.mutate(removing.coachId); }}
+              onClick={(e) => {
+                e.preventDefault();
+                if (removing) removeCoach.mutate(removing.coachId);
+              }}
             >
               {removeCoach.isPending ? "Removing…" : "Remove coach"}
             </AlertDialogAction>
@@ -234,15 +278,56 @@ const sum = (rows: Coach[], k: "athleteCount" | "parentCount" | "adultAthleteCou
 
 function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
   return [
-    { key: "name", label: "Coach", render: (c) => `${c.firstName} ${c.lastName}`, sortValue: (c) => `${c.firstName} ${c.lastName}` },
-    { key: "email", label: "Email", render: (c) => c.email ?? <span className="text-text-tertiary">No email</span>, sortValue: (c) => c.email, className: "min-w-48 text-text-secondary" },
-    { key: "athletes", label: "Athletes", align: "right", render: (c) => c.athleteCount, sortValue: (c) => c.athleteCount, footer: (r) => sum(r, "athleteCount") },
-    { key: "parents", label: "Parents", align: "right", render: (c) => c.parentCount, sortValue: (c) => c.parentCount, footer: (r) => sum(r, "parentCount") },
-    { key: "adults", label: "Adult athletes", align: "right", render: (c) => c.adultAthleteCount, sortValue: (c) => c.adultAthleteCount, footer: (r) => sum(r, "adultAthleteCount") },
     {
-      key: "action", label: "Action",
+      key: "name",
+      label: "Coach",
+      render: (c) => `${c.firstName} ${c.lastName}`,
+      sortValue: (c) => `${c.firstName} ${c.lastName}`,
+    },
+    {
+      key: "email",
+      label: "Email",
+      render: (c) => c.email ?? <span className="text-text-tertiary">No email</span>,
+      sortValue: (c) => c.email,
+      className: "min-w-48 text-text-secondary",
+    },
+    {
+      key: "athletes",
+      label: "Athletes",
+      align: "right",
+      render: (c) => c.athleteCount,
+      sortValue: (c) => c.athleteCount,
+      footer: (r) => sum(r, "athleteCount"),
+    },
+    {
+      key: "parents",
+      label: "Parents",
+      align: "right",
+      render: (c) => c.parentCount,
+      sortValue: (c) => c.parentCount,
+      footer: (r) => sum(r, "parentCount"),
+    },
+    {
+      key: "adults",
+      label: "Adult athletes",
+      align: "right",
+      render: (c) => c.adultAthleteCount,
+      sortValue: (c) => c.adultAthleteCount,
+      footer: (r) => sum(r, "adultAthleteCount"),
+    },
+    {
+      key: "action",
+      label: "Action",
       render: (c) => (
-        <Button variant="link" size="sm" className="text-text-primary" onClick={(e) => { e.stopPropagation(); onRemove(c); }}>
+        <Button
+          variant="link"
+          size="sm"
+          className="text-text-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(c);
+          }}
+        >
           Remove
         </Button>
       ),
@@ -250,22 +335,68 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
   ];
 }
 
-function inviteColumns(a: { resend: (id: string) => void; revoke: (id: string) => void; busy: boolean }): ClubColumn<Invite>[] {
+function inviteColumns(a: {
+  resend: (id: string) => void;
+  revoke: (id: string) => void;
+  busy: boolean;
+}): ClubColumn<Invite>[] {
   return [
-    { key: "code", label: "Code", render: (i) => <span className="font-mono">{i.code}</span>, sortValue: (i) => i.code },
-    { key: "contact", label: "Sent to", render: (i) => i.email ?? i.phone ?? "—", sortValue: (i) => i.email ?? i.phone },
     {
-      key: "status", label: "Status",
-      render: (i) => <StatusDot status={i.status === "pending" ? "informational" : i.status === "accepted" ? "healthy" : "attention"} label={i.status} />,
-      sortValue: (i) => i.status, groupValue: (i) => i.status,
+      key: "code",
+      label: "Code",
+      render: (i) => <span className="font-mono">{i.code}</span>,
+      sortValue: (i) => i.code,
     },
     {
-      key: "actions", label: "Actions",
+      key: "contact",
+      label: "Sent to",
+      render: (i) => i.email ?? i.phone ?? "—",
+      sortValue: (i) => i.email ?? i.phone,
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (i) => (
+        <StatusDot
+          status={
+            i.status === "pending"
+              ? "informational"
+              : i.status === "accepted"
+                ? "healthy"
+                : "attention"
+          }
+          label={i.status}
+        />
+      ),
+      sortValue: (i) => i.status,
+      groupValue: (i) => i.status,
+    },
+    {
+      key: "actions",
+      label: "Actions",
       render: (i) =>
         i.status === "pending" ? (
           <span className="flex gap-1">
-            {i.email && <Button variant="link" size="sm" className="text-text-primary" disabled={a.busy} onClick={() => a.resend(i.id)}>Resend</Button>}
-            <Button variant="link" size="sm" className="text-text-primary" disabled={a.busy} onClick={() => a.revoke(i.id)}>Revoke</Button>
+            {i.email && (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-text-primary"
+                disabled={a.busy}
+                onClick={() => a.resend(i.id)}
+              >
+                Resend
+              </Button>
+            )}
+            <Button
+              variant="link"
+              size="sm"
+              className="text-text-primary"
+              disabled={a.busy}
+              onClick={() => a.revoke(i.id)}
+            >
+              Revoke
+            </Button>
           </span>
         ) : null,
     },

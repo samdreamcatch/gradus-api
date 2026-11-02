@@ -133,66 +133,111 @@ function OrgResourcesPage() {
     `${r.title} ${r.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
   const columns: ClubColumn<OrgResourceRow>[] = [
-    { key: "title", label: "Title", sortValue: (r) => r.title, className: "min-w-64 whitespace-normal", render: (r) => (<div className={r.archived ? "opacity-60" : undefined}>                      <div className="font-medium text-text-primary">{r.title}</div>
-                      {r.description && (
-                        <div className="text-xs text-text-secondary line-clamp-2">
-                          {r.description}
-                        </div>
-                      )}
-                      {r.reviewState !== "released" && (
-                        <div className="text-xs text-text-tertiary mt-1">
-                          {r.reviewState === "held"
-                            ? "Gradus is reviewing this PDF before members see it."
-                            : "Checking the file…"}
-                        </div>
-                      )}
-                    </div>) },
-    { key: "source", label: "From", sortValue: (r) => r.source, groupValue: (r) => (r.source === "club" ? "Club" : "Gradus"), render: (r) => (<>                      <div className="flex flex-wrap gap-1">
-                        <Tag tone={r.source === "club" ? "accent" : "muted"}>
-                          {r.source === "club" ? "Club" : "Gradus"}
-                        </Tag>
-                        {r.edited && <Tag tone="muted">Edited</Tag>}
-                        {r.archived && <Tag tone="muted">Archived</Tag>}
-                      </div>
-                    </>) },
-    { key: "ack", label: "Acknowledgement", sortValue: (r) => r.ack?.done ?? null, groupValue: (r) => (r.ack ? "Required" : "Not required"), className: "text-text-secondary", render: (r) => (<span onClick={(e) => e.stopPropagation()}>                      {r.ack ? (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          disabled={r.archived || r.reviewState !== "released"}
-                          onClick={() => setAckFor(r)}
-                        >
-                          {r.ack.done} of {r.ack.total} acknowledged
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="link"
-                          size="sm"
-                          disabled={r.archived || r.reviewState !== "released"}
-                          onClick={() => setAckFor(r)}
-                        >
-                          Not required
-                        </Button>
-                      )}
-                    </span>) },
-    { key: "review", label: "Review", defaultHidden: true, groupValue: (r) => r.reviewState, sortValue: (r) => r.reviewState, render: (r) => r.reviewState },
-    { key: "actions", label: "Actions", className: "whitespace-nowrap", render: (r) => (<span className="flex gap-1" onClick={(e) => e.stopPropagation()}>                      <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
-                        Edit
-                      </Button>
-                      {r.archived ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => archive.mutate({ row: r, archived: false })}
-                        >
-                          Restore
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>
-                          Archive
-                        </Button>
-                      )}
-                    </span>) },
+    {
+      key: "title",
+      label: "Title",
+      sortValue: (r) => r.title,
+      className: "min-w-64 whitespace-normal",
+      render: (r) => (
+        <div className={r.archived ? "opacity-60" : undefined}>
+          {" "}
+          <div className="font-medium text-text-primary">{r.title}</div>
+          {r.description && (
+            <div className="text-xs text-text-secondary line-clamp-2">{r.description}</div>
+          )}
+          {r.reviewState !== "released" && (
+            <div className="text-xs text-text-tertiary mt-1">
+              {r.reviewState === "held"
+                ? "Gradus is reviewing this PDF before members see it."
+                : "Checking the file…"}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "source",
+      label: "From",
+      sortValue: (r) => r.source,
+      groupValue: (r) => (r.source === "club" ? "Club" : "Gradus"),
+      render: (r) => (
+        <>
+          {" "}
+          <div className="flex flex-wrap gap-1">
+            <Tag tone={r.source === "club" ? "accent" : "muted"}>
+              {r.source === "club" ? "Club" : "Gradus"}
+            </Tag>
+            {r.edited && <Tag tone="muted">Edited</Tag>}
+            {r.archived && <Tag tone="muted">Archived</Tag>}
+          </div>
+        </>
+      ),
+    },
+    {
+      key: "ack",
+      label: "Acknowledgement",
+      sortValue: (r) => r.ack?.done ?? null,
+      groupValue: (r) => (r.ack ? "Required" : "Not required"),
+      className: "text-text-secondary",
+      render: (r) => (
+        <span onClick={(e) => e.stopPropagation()}>
+          {" "}
+          {r.ack ? (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              {r.ack.done} of {r.ack.total} acknowledged
+            </Button>
+          ) : (
+            <Button
+              variant="link"
+              size="sm"
+              disabled={r.archived || r.reviewState !== "released"}
+              onClick={() => setAckFor(r)}
+            >
+              Not required
+            </Button>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "review",
+      label: "Review",
+      defaultHidden: true,
+      groupValue: (r) => r.reviewState,
+      sortValue: (r) => r.reviewState,
+      render: (r) => r.reviewState,
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      className: "whitespace-nowrap",
+      render: (r) => (
+        <span className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          {" "}
+          <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
+            Edit
+          </Button>
+          {r.archived ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => archive.mutate({ row: r, archived: false })}
+            >
+              Restore
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>
+              Archive
+            </Button>
+          )}
+        </span>
+      ),
+    },
   ];
   const grid = useClubGrid("resources", columns, shown);
   const refresh = () => {

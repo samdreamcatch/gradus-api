@@ -163,7 +163,12 @@ function NotificationsPage() {
       render: (i) => (
         <span>
           <span className="flex items-center gap-2">
-            {i.unread && <span className="size-1.5 shrink-0 rounded-full bg-text-primary" aria-label="Unread" />}
+            {i.unread && (
+              <span
+                className="size-1.5 shrink-0 rounded-full bg-text-primary"
+                aria-label="Unread"
+              />
+            )}
             {i.title}
           </span>
           {i.resolvedAt && (
@@ -174,9 +179,28 @@ function NotificationsPage() {
         </span>
       ),
     },
-    { key: "when", label: "When", sortValue: (i) => i.openedAt, className: "whitespace-nowrap font-mono text-xs", render: (i) => date(i.openedAt) },
-    { key: "about", label: "About", sortValue: (i) => i.about, groupValue: (i) => i.about, className: "capitalize", render: (i) => i.about },
-    { key: "subject", label: "Who / what", sortValue: (i) => i.subject, className: "min-w-40", render: (i) => i.subject },
+    {
+      key: "when",
+      label: "When",
+      sortValue: (i) => i.openedAt,
+      className: "whitespace-nowrap font-mono text-xs",
+      render: (i) => date(i.openedAt),
+    },
+    {
+      key: "about",
+      label: "About",
+      sortValue: (i) => i.about,
+      groupValue: (i) => i.about,
+      className: "capitalize",
+      render: (i) => i.about,
+    },
+    {
+      key: "subject",
+      label: "Who / what",
+      sortValue: (i) => i.subject,
+      className: "min-w-40",
+      render: (i) => i.subject,
+    },
     {
       key: "coach",
       label: "Coach",
@@ -184,7 +208,13 @@ function NotificationsPage() {
       groupValue: (i) => (i.kind === "report" ? "Withheld" : i.coach),
       render: (i) => (i.kind === "report" ? "Withheld" : (i.coach ?? "—")),
     },
-    { key: "status", label: "Status", sortValue: (i) => i.status, groupValue: (i) => i.status, render: (i) => <NotificationState item={i} /> },
+    {
+      key: "status",
+      label: "Status",
+      sortValue: (i) => i.status,
+      groupValue: (i) => i.status,
+      render: (i) => <NotificationState item={i} />,
+    },
     {
       key: "goto",
       label: "Go to",

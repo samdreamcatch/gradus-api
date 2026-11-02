@@ -11,8 +11,16 @@ const val = (r: R, k: string) => (k === "n" ? r.n : r.name);
 
 describe("club grid", () => {
   it("sorts numbers numerically and keeps blanks last in both directions", () => {
-    expect(sortRows(rows, { key: "n", dir: "asc" }, val).map((r) => r.name)).toEqual(["b", "c", "a"]);
-    expect(sortRows(rows, { key: "n", dir: "desc" }, val).map((r) => r.name)).toEqual(["c", "b", "a"]);
+    expect(sortRows(rows, { key: "n", dir: "asc" }, val).map((r) => r.name)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+    expect(sortRows(rows, { key: "n", dir: "desc" }, val).map((r) => r.name)).toEqual([
+      "c",
+      "b",
+      "a",
+    ]);
   });
 
   it("leaves order alone with no sort", () => {
@@ -20,7 +28,10 @@ describe("club grid", () => {
   });
 
   it("groups in order and puts blanks under None at the end", () => {
-    const g = groupRows([{ s: "" }, { s: "Tennis" }, { s: "Skating" }, { s: "Tennis" }], (r) => r.s);
+    const g = groupRows(
+      [{ s: "" }, { s: "Tennis" }, { s: "Skating" }, { s: "Tennis" }],
+      (r) => r.s,
+    );
     expect(g.map((x) => [x.label, x.rows.length])).toEqual([
       ["Tennis", 2],
       ["Skating", 1],
@@ -42,7 +53,11 @@ describe("club grid", () => {
 
   it("drops saved settings for columns that no longer exist", () => {
     const p = parsePrefs(
-      JSON.stringify({ hidden: ["gone", "email"], sort: { key: "gone", dir: "asc" }, group: "sport" }),
+      JSON.stringify({
+        hidden: ["gone", "email"],
+        sort: { key: "gone", dir: "asc" },
+        group: "sport",
+      }),
       ["name", "email"],
       [],
     );

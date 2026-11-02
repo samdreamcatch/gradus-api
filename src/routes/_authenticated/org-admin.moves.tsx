@@ -131,12 +131,20 @@ function OrgMovesPage() {
           </span>
           <span className={m.archived ? "opacity-60" : undefined}>
             <span className="block">{m.name}</span>
-            {m.cue && <span className="block text-xs font-normal text-text-secondary">{m.cue}</span>}
+            {m.cue && (
+              <span className="block text-xs font-normal text-text-secondary">{m.cue}</span>
+            )}
           </span>
         </span>
       ),
     },
-    { key: "category", label: "Category", sortValue: (m) => m.category, groupValue: (m) => m.category, render: (m) => m.category },
+    {
+      key: "category",
+      label: "Category",
+      sortValue: (m) => m.category,
+      groupValue: (m) => m.category,
+      render: (m) => m.category,
+    },
     {
       key: "target",
       label: "Target",
@@ -151,13 +159,21 @@ function OrgMovesPage() {
       groupValue: (m) => (m.source === "club" ? "Club" : "Gradus"),
       render: (m) => (
         <span className="flex flex-wrap gap-1">
-          <Tag tone={m.source === "club" ? "accent" : "muted"}>{m.source === "club" ? "Club" : "Gradus"}</Tag>
+          <Tag tone={m.source === "club" ? "accent" : "muted"}>
+            {m.source === "club" ? "Club" : "Gradus"}
+          </Tag>
           {m.edited && <Tag tone="muted">Edited</Tag>}
           {m.archived && <Tag tone="muted">Archived</Tag>}
         </span>
       ),
     },
-    { key: "description", label: "Description", defaultHidden: true, className: "min-w-64 whitespace-normal text-text-secondary", render: (m) => m.description || "—" },
+    {
+      key: "description",
+      label: "Description",
+      defaultHidden: true,
+      className: "min-w-64 whitespace-normal text-text-secondary",
+      render: (m) => m.description || "—",
+    },
   ];
   const grid = useClubGrid("moves", columns, rows, { group: "category" });
 
