@@ -40,3 +40,8 @@
 - [~] Club custom levels in coaches' level pickers — SKIPPED by decision (Mariah, Nov 1 2026); club levels stay admin-side defaults only
 - [x] Stage 3: branded PDF resource builder (Library → Builder)
 - [x] Resource builder AI writing: Anthropic workspace ID added; writing verified
+
+## Club admin Airtable-style once-over
+- [x] Step 1: Schedule Grid/Calendar (week + month), coach/invite filters, linkable views, record panel
+- [ ] Step 2: People/Roster and Resources (incl. Gallery) on shared grid toolbar
+- [ ] Step 3: Policies, Notifications, Moves, Levels, Templates
