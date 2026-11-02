@@ -46,4 +46,4 @@
 - [x] Step 2: People and Resources (incl. Gallery) on shared grid toolbar
 - [x] Step 3: Policies, Notifications, Moves, Levels, Templates on shared toolbar + ClubTable
 - [ ] Later: column show/hide, sort menu, and grouping controls (needs your call on priority)
-- [ ] Diagnose failing Bun CI runs on main
+- [x] Diagnose failing Bun CI runs on main (stale lesson-reminder test fake)
