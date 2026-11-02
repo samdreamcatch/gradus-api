@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -108,6 +109,70 @@ function OrgTemplatesPage() {
   const rows = (q.data?.templates ?? []).filter(
     (t) => t.sport === sport && (showArchived || !t.archived),
   );
+  const columns: ClubColumn<OrgTemplateRow>[] = [
+    {
+      key: "title",
+      label: "Template",
+      sortValue: (t) => t.title,
+      className: "min-w-56",
+      render: (t) => (
+        <span className={t.archived ? "opacity-60" : undefined}>
+          {t.title}
+          {t.archived && (
+            <Tag tone="muted" className="ml-2">
+              Archived
+            </Tag>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "levels",
+      label: "Levels",
+      className: "text-text-secondary",
+      sortValue: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
+      groupValue: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
+      render: (t) => (t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"),
+    },
+    { key: "moves", label: "Moves", align: "right", sortValue: (t) => t.moves.length, render: (t) => t.moves.length },
+    {
+      key: "coaches",
+      label: "Coaches sent",
+      align: "right",
+      sortValue: (t) => t.deployedCount,
+      render: (t) => `${t.deployedCount}/${t.eligibleCount}`,
+    },
+    {
+      key: "status",
+      label: "Status",
+      groupValue: (t) => (t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent"),
+      sortValue: (t) => (t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent"),
+      render: (t) => (t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent"),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      className: "whitespace-nowrap",
+      render: (t) => (
+        <span className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+          {!t.archived && (
+            <Button size="sm" className="press" onClick={() => setDeploying(t)}>
+              Send to coaches
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="press"
+            onClick={() => archive.mutate({ id: t.id, archived: !t.archived })}
+          >
+            {t.archived ? "Restore" : "Archive"}
+          </Button>
+        </span>
+      ),
+    },
+  ];
+  const grid = useClubGrid("templates", columns, rows);
   const refresh = () => qc.invalidateQueries({ queryKey: ["org-templates", orgId] });
 
   const archive = useMutation({
@@ -164,70 +229,17 @@ function OrgTemplatesPage() {
             <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={setShowArchived} /> Show archived
             </label>
+            <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+            {grid.menu}
           </ClubGridToolbar>
-          {rows.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-sm text-text-secondary">
-                No template plans for this sport yet.
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="overflow-hidden">
-              <ClubTable>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Template</TableHead>
-                    <TableHead>Levels</TableHead>
-                    <TableHead className="text-right">Moves</TableHead>
-                    <TableHead className="text-right">Coaches</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((t) => (
-                    <TableRow key={t.id} className={t.archived ? "opacity-60" : undefined}>
-                      <TableCell>
-                        <button
-                          type="button"
-                          className="text-left font-medium text-text-primary press-soft"
-                          onClick={() => setEditing(t)}
-                        >
-                          {t.title}
-                        </button>
-                        {t.archived && (
-                          <Tag tone="muted" className="ml-2">
-                            Archived
-                          </Tag>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-text-secondary">
-                        {t.levelKeys.length ? t.levelKeys.map(levelLabel).join(", ") : "All levels"}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">{t.moves.length}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {t.deployedCount}/{t.eligibleCount}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {!t.archived && (
-                          <Button size="sm" className="press" onClick={() => setDeploying(t)}>
-                            Send to coaches
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="press"
-                          onClick={() => archive.mutate({ id: t.id, archived: !t.archived })}
-                        >
-                          {t.archived ? "Restore" : "Archive"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </ClubTable>
-            </Card>
-          )}
+          <ClubDataGrid
+            grid={grid}
+            rowKey={(t) => t.id}
+            onRowClick={setEditing}
+            rowLabel={(t) => t.title}
+            filtered={false}
+            empty="No template plans for this sport yet."
+          />
         </>
       )}
 
