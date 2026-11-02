@@ -51,11 +51,17 @@ export type ClubColumn<T> = {
 const STORAGE_PREFIX = "gradus.club-grid.";
 
 /** Device-saved field visibility, sort and grouping for one club grid. */
-export function useClubGrid<T>(storageKey: string, columns: ClubColumn<T>[], rows: T[]) {
+export function useClubGrid<T>(
+  storageKey: string,
+  columns: ClubColumn<T>[],
+  rows: T[],
+  opts: { group?: string } = {},
+) {
   const keys = columns.map((c) => c.key);
   const groupable = columns.filter((c) => c.groupValue).map((c) => c.key);
   const defaults: GridPrefs = {
     ...EMPTY_PREFS,
+    group: opts.group ?? null,
     hidden: columns.filter((c) => c.defaultHidden).map((c) => c.key),
   };
   const [prefs, setPrefsState] = useState<GridPrefs>(defaults);
@@ -85,7 +91,7 @@ export function useClubGrid<T>(storageKey: string, columns: ClubColumn<T>[], row
   const groupCol = prefs.group ? byKey.get(prefs.group) : undefined;
   const groups = groupCol?.groupValue ? groupRows(sorted, groupCol.groupValue) : null;
   const changed =
-    prefs.hidden.join() !== defaults.hidden.join() || !!prefs.sort || !!prefs.group;
+    prefs.hidden.join() !== defaults.hidden.join() || !!prefs.sort || prefs.group !== defaults.group;
 
   const menu = (
     <div className="flex items-center gap-1">
