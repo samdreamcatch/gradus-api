@@ -15,6 +15,8 @@ const STORAGE_KEY = "gradus-theme";
 function applyTheme(theme: Theme): "light" | "dark" {
   if (typeof window === "undefined") return "light";
   const root = document.documentElement;
+  // The club admin panel always follows the device setting.
+  if (window.location.pathname.startsWith("/org-admin")) theme = "system";
   const prefersDark =
     theme === "system"
       ? window.matchMedia("(prefers-color-scheme: dark)").matches
