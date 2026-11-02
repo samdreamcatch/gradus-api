@@ -10,7 +10,6 @@ import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTitle } from "@/components/page-title";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +19,10 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  TableFooter,
 } from "@/components/ui/table";
+import { Tag } from "@/components/ui/tag";
+import { ClubGridToolbar, ClubGridCount, ClubEmptyRow } from "@/components/org-admin/club-grid-toolbar";
 import {
   Sheet,
   SheetContent,
@@ -133,78 +135,80 @@ function PeoplePage() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          aria-label="Search coaches"
-          placeholder="Search coaches"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-72"
-        />
-        <FilterPill
-          aria-label="Sport"
-          value={sport}
-          onValueChange={setSport}
-          className="w-auto min-w-40"
-          options={[
-            { value: "all", label: "All sports" },
-            ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
-          ]}
-        />
-        <span className="text-sm text-text-secondary">{filtered.length} coaches</span>
+      <div className="space-y-2">
+        <ClubGridToolbar
+          search={search}
+          onSearchChange={setSearch}
+          searchLabel="Search coaches"
+          activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)}
+          onClear={() => { setSearch(""); setSport("all"); }}
+        >
+          <FilterPill
+            aria-label="Sport"
+            value={sport}
+            onValueChange={setSport}
+            className="w-auto min-w-40"
+            options={[
+              { value: "all", label: "All sports" },
+              ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
+            ]}
+          />
+        </ClubGridToolbar>
+        <ClubGridCount shown={filtered.length} total={coaches.length} noun="coaches" />
       </div>
-      <Table>
+      <ClubTable>
         <TableHeader>
           <TableRow>
             <TableHead>Coach</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Sports</TableHead>
-            <TableHead>Levels</TableHead>
-            <TableHead>Athletes</TableHead>
-            <TableHead>
-              <span className="sr-only">Details</span>
-            </TableHead>
+            <TableHead className="text-right">Levels</TableHead>
+            <TableHead className="text-right">Athletes</TableHead>
+            <TableHead className="text-right">Parents</TableHead>
+            <TableHead>Joined</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((c) => (
-            <TableRow key={c.coachId}>
-              <TableCell className="min-w-48">
-                <Button
-                  variant="link"
-                  className="h-auto p-0 text-text-primary"
-                  onClick={() => setSelected(c)}
-                >
-                  {c.firstName} {c.lastName}
-                </Button>
-                <p className="text-xs text-text-secondary">{c.email ?? "No email on file"}</p>
+            <TableRow key={c.coachId} className="cursor-pointer" onClick={() => setSelected(c)}>
+              <TableCell className="min-w-44">
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-accent/20 font-mono text-[10px] font-semibold text-accent-ink">
+                    {(c.firstName?.[0] ?? "") + (c.lastName?.[0] ?? "")}
+                  </span>
+                  <button type="button" className="min-h-0! truncate font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setSelected(c); }}>
+                    {c.firstName} {c.lastName}
+                  </button>
+                  <ChevronRight className="ml-auto size-4 text-text-tertiary" aria-hidden />
+                </span>
               </TableCell>
+              <TableCell className="min-w-48 text-text-secondary">{c.email ?? "No email on file"}</TableCell>
               <TableCell className="min-w-40">
-                {[...new Set(c.levels.map((l) => l.sport))].map(sportDisplayLabel).join(", ") ||
-                  "Not set"}
+                <span className="flex flex-wrap gap-1">
+                  {[...new Set(c.levels.map((l) => l.sport))].map((s) => <Tag key={s} tone="muted">{sportDisplayLabel(s)}</Tag>)}
+                  {!c.levels.length && <span className="text-text-tertiary">Not set</span>}
+                </span>
               </TableCell>
-              <TableCell>{c.levels.length}</TableCell>
-              <TableCell>{c.athleteCount}</TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`View ${c.firstName} ${c.lastName}`}
-                  onClick={() => setSelected(c)}
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{c.levels.length}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{c.athleteCount}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums">{c.parentCount}</TableCell>
+              <TableCell className="whitespace-nowrap font-mono text-xs">{c.joinedAt?.slice(0, 10) ?? "—"}</TableCell>
             </TableRow>
           ))}
           {!filtered.length && (
-            <TableRow>
-              <TableCell colSpan={5} className="py-10 text-center text-text-secondary">
-                {coaches.length ? "No matching coaches." : "No coaches have joined this club yet."}
-              </TableCell>
-            </TableRow>
+            <ClubEmptyRow colSpan={7} filtered={!!coaches.length} empty="No coaches have joined this club yet." onClear={() => { setSearch(""); setSport("all"); }} />
           )}
         </TableBody>
-      </Table>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={3}>{filtered.length} coaches</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.levels.length, 0)}</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.athleteCount, 0)}</TableCell>
+            <TableCell className="text-right font-mono tabular-nums">{filtered.reduce((n, c) => n + c.parentCount, 0)}</TableCell>
+            <TableCell />
+          </TableRow>
+        </TableFooter>
+      </ClubTable>
       <ClubCapacity orgId={org.id} coaches={coaches} />
       <CoachSheet coach={selected} orgId={org.id} onClose={() => setSelected(null)} />
     </div>
