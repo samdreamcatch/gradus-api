@@ -40,7 +40,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { ClubStatusLegend, StatusDot } from "@/components/org-admin/status-dot";
 
 const feedOptions = () =>
@@ -153,6 +153,52 @@ function NotificationsPage() {
       ),
     );
   }
+  type Item = (typeof filtered)[number];
+  const columns: ClubColumn<Item>[] = [
+    {
+      key: "title",
+      label: "What happened",
+      sortValue: (i) => i.title,
+      className: "min-w-52 whitespace-normal",
+      render: (i) => (
+        <span>
+          <span className="flex items-center gap-2">
+            {i.unread && <span className="size-1.5 shrink-0 rounded-full bg-text-primary" aria-label="Unread" />}
+            {i.title}
+          </span>
+          {i.resolvedAt && (
+            <span className="block font-hand text-lg italic font-normal text-text-secondary">
+              Resolved {date(i.resolvedAt)}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    { key: "when", label: "When", sortValue: (i) => i.openedAt, className: "whitespace-nowrap font-mono text-xs", render: (i) => date(i.openedAt) },
+    { key: "about", label: "About", sortValue: (i) => i.about, groupValue: (i) => i.about, className: "capitalize", render: (i) => i.about },
+    { key: "subject", label: "Who / what", sortValue: (i) => i.subject, className: "min-w-40", render: (i) => i.subject },
+    {
+      key: "coach",
+      label: "Coach",
+      sortValue: (i) => (i.kind === "report" ? null : i.coach),
+      groupValue: (i) => (i.kind === "report" ? "Withheld" : i.coach),
+      render: (i) => (i.kind === "report" ? "Withheld" : (i.coach ?? "—")),
+    },
+    { key: "status", label: "Status", sortValue: (i) => i.status, groupValue: (i) => i.status, render: (i) => <NotificationState item={i} /> },
+    {
+      key: "goto",
+      label: "Go to",
+      render: (i) =>
+        i.goTo === "/org-admin/notifications" ? (
+          "—"
+        ) : (
+          <Button variant="link" asChild onClick={(e) => e.stopPropagation()}>
+            <Link to={i.goTo as "/org-admin/resources" | "/org-admin/roster"}>Open</Link>
+          </Button>
+        ),
+    },
+  ];
+  const grid = useClubGrid("notifications", columns, filtered);
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-8 md:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -179,7 +225,10 @@ function NotificationsPage() {
           setSearch("");
           setFilter("all");
         }}
-      />
+      >
+        <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+        {grid.menu}
+      </ClubGridToolbar>
       <ClubStatusLegend />
       <section className="space-y-3">
         <h2 className="font-display text-h3">All notifications</h2>
@@ -202,92 +251,22 @@ function NotificationsPage() {
             </Button>
           ))}
         </div>
-        <ClubTable>
-          <TableHeader>
-            <TableRow>
-              {[
-                "When",
-                "About",
-                "What happened",
-                "Who / what",
-                "Coach",
-                "Status",
-                "Go to",
-                "Action",
-              ].map((label) => (
-                <TableHead key={label}>{label}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="whitespace-nowrap font-mono text-xs">
-                  {date(item.openedAt)}
-                </TableCell>
-                <TableCell className="capitalize">{item.about}</TableCell>
-                <TableCell className="min-w-52">
-                  <Button
-                    variant="link"
-                    className="min-h-11 text-left text-text-primary"
-                    onClick={() => open(item)}
-                  >
-                    {item.unread && (
-                      <span
-                        className="size-1.5 rounded-full bg-text-primary shrink-0"
-                        aria-label="Unread"
-                      />
-                    )}
-                    {item.title}
-                  </Button>
-                  {item.resolvedAt && (
-                    <p className="font-hand text-lg italic text-text-secondary">
-                      Resolved {date(item.resolvedAt)}
-                    </p>
-                  )}
-                </TableCell>
-                <TableCell className="min-w-40">{item.subject}</TableCell>
-                <TableCell>{item.kind === "report" ? "Withheld" : (item.coach ?? "—")}</TableCell>
-                <TableCell>
-                  <NotificationState item={item} />
-                </TableCell>
-                <TableCell>
-                  {item.goTo === "/org-admin/notifications" ? (
-                    <Button variant="link" onClick={() => open(item)}>
-                      View status
-                    </Button>
-                  ) : (
-                    <Button variant="link" asChild>
-                      <Link to={item.goTo as "/org-admin/resources" | "/org-admin/roster"}>
-                        Open
-                      </Link>
-                    </Button>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button variant="outline" onClick={() => open(item)}>
-                    Note
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {!filtered.length && (
-              <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-text-secondary">
-                  {items.length ? "No matching notifications." : "No notifications."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={8}>
-                {totals.open} open · Average {totals.averageDays?.toFixed(1) ?? "—"} days open ·
-                Median {totals.medianDays?.toFixed(1) ?? "—"} days open
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </ClubTable>
+        <ClubDataGrid
+          grid={grid}
+          rowKey={(i) => i.id}
+          onRowClick={open}
+          rowLabel={(i) => i.title}
+          filtered={!!items.length}
+          onClear={() => {
+            setSearch("");
+            setFilter("all");
+          }}
+          empty="No notifications."
+        />
+        <p className="font-mono text-xs text-text-secondary">
+          {totals.open} open · Average {totals.averageDays?.toFixed(1) ?? "—"} days open · Median{" "}
+          {totals.medianDays?.toFixed(1) ?? "—"} days open
+        </p>
       </section>
       <Sheet
         open={!!selected}
