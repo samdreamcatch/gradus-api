@@ -3,6 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { ClubBulkBar, useClubSelection } from "@/components/org-admin/club-bulk-bar";
+import { downloadCsv, toCsv } from "@/lib/csv";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -109,7 +121,53 @@ function OrgTemplatesPage() {
   const rows = (q.data?.templates ?? []).filter(
     (t) => t.sport === sport && (showArchived || !t.archived),
   );
+  const selection = useClubSelection<OrgTemplateRow>((t) => t.id, (t) => t.title);
+  const { clear: clearSelection } = selection;
+  useEffect(() => clearSelection(), [sport, clearSelection]);
+  const picked = selection.pick(rows);
+  const [bulkConfirm, setBulkConfirm] = useState<"archive" | "send" | null>(null);
+  const sendable = picked.filter((t) => !t.archived && t.eligibleCount > t.deployedCount);
+  const bulk = useMutation({
+    mutationFn: async (action: "archive" | "restore" | "send") => {
+      let sent = 0;
+      for (const t of picked) {
+        if (action === "send") {
+          if (t.archived || t.eligibleCount <= t.deployedCount) continue;
+          const r = await deployFn({ data: { organizationId: orgId!, id: t.id } });
+          sent += r.sent;
+        } else if (t.archived !== (action === "archive")) {
+          await archiveFn({ data: { organizationId: orgId!, id: t.id, archived: action === "archive" } });
+        }
+      }
+      return { action, sent };
+    },
+    onSuccess: ({ action, sent }) => {
+      toast.success(
+        action === "send"
+          ? `Sent ${sent} cop${sent === 1 ? "y" : "ies"} to coaches`
+          : action === "archive"
+            ? "Templates archived"
+            : "Templates restored",
+      );
+      selection.clear();
+      refresh();
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Couldn't finish");
+      refresh();
+    },
+  });
+  function exportSelected() {
+    downloadCsv(
+      "club-templates.csv",
+      toCsv(
+        ["Template", "Sport", "Levels", "Moves", "Sent", "Status"],
+        picked.map((t) => [t.title, t.sport, t.levelKeys.map(levelLabel).join("; "), t.moves?.length ?? null, `${t.deployedCount}/${t.eligibleCount}`, t.archived ? "Archived" : t.deployedCount ? "Sent" : "Not sent"]),
+      ),
+    );
+  }
   const columns: ClubColumn<OrgTemplateRow>[] = [
+    selection.column,
     {
       key: "title",
       label: "Template",
@@ -240,6 +298,12 @@ function OrgTemplatesPage() {
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
             {grid.menu}
           </ClubGridToolbar>
+          <ClubBulkBar count={picked.length} total={rows.length} onSelectAll={() => selection.selectAll(rows)} onClear={selection.clear}>
+            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !sendable.length} onClick={() => setBulkConfirm("send")}>Send to coaches</Button>
+            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !picked.some((t) => !t.archived)} onClick={() => setBulkConfirm("archive")}>Archive</Button>
+            <Button size="sm" variant="outline" className="press" disabled={bulk.isPending || !picked.some((t) => t.archived)} onClick={() => bulk.mutate("restore")}>Restore</Button>
+            <Button size="sm" variant="outline" className="press" onClick={exportSelected}>Export CSV</Button>
+          </ClubBulkBar>
           <ClubDataGrid
             grid={grid}
             rowKey={(t) => t.id}
@@ -251,6 +315,26 @@ function OrgTemplatesPage() {
         </>
       )}
 
+      <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm === "send" ? `Send ${sendable.length} templates to coaches?` : `Archive ${picked.length} templates?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm === "send"
+                ? "Each matching coach gets a copy in their templates. Coaches who already have one keep their own version."
+                : "Archived templates stay in coaches' libraries if already sent. You can restore them any time."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (bulkConfirm) bulk.mutate(bulkConfirm); setBulkConfirm(null); }}>
+              {bulkConfirm === "send" ? "Send" : "Archive"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {editing && (
         <TemplateSheet
           orgId={orgId!}
