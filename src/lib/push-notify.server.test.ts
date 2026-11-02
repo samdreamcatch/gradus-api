@@ -15,10 +15,12 @@ type Row = Record<string, unknown>;
 /**
  * A row-store fake covering the query shapes this module issues:
  * `.select().eq()/.in()` chains (optionally `.maybeSingle()`), and
- * `.delete().in()`. Deletes are recorded so tests can assert pruning.
+ * `.delete().in()`. Deletes are recorded so tests can assert pruning, and
+ * `.rpc()` calls so tests can assert the inbox rows `notifyUsers` records.
  */
 function fakeAdmin(tables: Record<string, Row[]>) {
   const deleted: { table: string; col: string; vals: unknown[] }[] = [];
+  const rpcs: { fn: string; args: Record<string, unknown> }[] = [];
   const query = (rows: Row[]) => {
     const self = {
       eq: (col: string, val: unknown) => query(rows.filter((r) => r[col] === val)),
@@ -40,9 +42,13 @@ function fakeAdmin(tables: Record<string, Row[]>) {
         },
       }),
     }),
+    rpc: (fn: string, args: Record<string, unknown>) => {
+      rpcs.push({ fn, args });
+      return Promise.resolve({ data: null, error: null });
+    },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
-  return { admin, deleted };
+  return { admin, deleted, rpcs };
 }
 
 const config: ApnsConfig = {
@@ -229,6 +235,75 @@ describe("notifyUsers", () => {
         .skipped,
     ).toBe("no_tokens");
     expect(sent).toHaveLength(0);
+  });
+});
+
+describe("notifyUsers inbox", () => {
+  it("records an alert for every recipient, even with no device or APNs config", async () => {
+    const { admin, rpcs } = fakeAdmin({ device_tokens: [] });
+    const { send } = sendSpy(() => ({ ok: true, apnsId: null }));
+    await notifyUsers(
+      admin,
+      ["u1", "u2"],
+      {
+        type: "plan_assigned",
+        route: "plans/p1",
+        title: "New plan",
+        body: "Edges is ready to practice.",
+        collapseId: "plan:p1",
+        athleteId: "a1",
+      },
+      { config: null, send },
+    );
+    expect(rpcs).toEqual([
+      {
+        fn: "record_notifications",
+        args: {
+          p_user_ids: ["u1", "u2"],
+          p_type: "plan_assigned",
+          p_title: "New plan",
+          p_body: "Edges is ready to practice.",
+          p_route: "plans/p1",
+          p_group_key: null,
+          p_actor_user_id: null,
+          p_athlete_id: "a1",
+          p_collapse_key: "plan:p1",
+        },
+      },
+    ]);
+  });
+
+  it("folds room messages on the thread id and uses a bare body as the title", async () => {
+    const { admin, rpcs } = fakeAdmin({ device_tokens: [] });
+    await notifyUsers(
+      admin,
+      ["u1"],
+      { type: "message", route: "rooms/r1", body: "hi", threadId: "room:r1" },
+      { config: null },
+    );
+    expect(rpcs[0].args).toMatchObject({
+      p_title: "hi",
+      p_body: null,
+      p_group_key: "room:r1",
+      p_collapse_key: null,
+    });
+  });
+
+  it("keeps silent pushes and inbox: false alerts out of the inbox", async () => {
+    const { admin, rpcs } = fakeAdmin({ device_tokens: [] });
+    await notifyUsers(
+      admin,
+      ["u1"],
+      { type: "entitlement", route: "settings/plan", silent: true },
+      { config: null },
+    );
+    await notifyUsers(
+      admin,
+      ["u1"],
+      { type: "message", route: "rooms/r1", title: "Hi", inbox: false },
+      { config: null },
+    );
+    expect(rpcs).toHaveLength(0);
   });
 });
 

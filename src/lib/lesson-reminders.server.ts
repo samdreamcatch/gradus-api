@@ -356,7 +356,9 @@ export async function computeLessonReminders(
     const expiresInSeconds = WINDOW_MAX * 60;
     let occurrenceSent = 0;
     let transientFailures = 0;
-    if (coachUserId && coachTokens.length) {
+    // No token-count gate: `notifyUsers` records the inbox row even for a coach
+    // with push off, and skips APNs itself when there is no device.
+    if (coachUserId) {
       const r = await notifyUsers(
         admin,
         [coachUserId],
@@ -367,6 +369,7 @@ export async function computeLessonReminders(
           body: "See what they've been practicing since you last coached them.",
           collapseId: `${collapse}:coach`,
           expiresInSeconds,
+          athleteId: c.athleteId,
         },
         ctx.push,
       );

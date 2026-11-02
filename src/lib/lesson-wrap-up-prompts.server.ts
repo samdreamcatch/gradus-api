@@ -187,6 +187,7 @@ export async function computeLessonWrapUpPrompts(
         title: "Lesson wrap-up",
         body: `${name}'s lesson just ended. Edit, redeploy, or dismiss their plan.`,
         collapseId: `wrapup:${s.id}:${dateIso}`,
+        athleteId: s.athlete_id,
       },
       ctx.push,
     );

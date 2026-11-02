@@ -21,6 +21,7 @@ import {
   type ApnsPushType,
   type ApnsRequest,
 } from "./apns.server";
+import { recordNotifications } from "./notifications.server";
 import { teamPlanActive } from "./team.server";
 
 type Admin = SupabaseClient<Database>;
@@ -46,6 +47,12 @@ export type PushMessage = {
   silent?: boolean;
   /** How long APNs keeps trying while the phone is offline. Alerts default to a day; silent pushes to "once". */
   expiresInSeconds?: number;
+  /** Inbox only: who caused it (the coach who assigned a plan, the sender). */
+  actorUserId?: string;
+  /** Inbox only: the athlete it is about, so the row goes when the athlete does. */
+  athleteId?: string;
+  /** `false` keeps an alert out of the in-app inbox. Silent pushes never go in. */
+  inbox?: boolean;
 };
 
 /** Category for a message in a room: the apps add a text Reply action (decision #54). */
@@ -148,6 +155,21 @@ export async function notifyUsers(
   const ids = Array.from(new Set(Array.from(userIds).filter((id) => !!id)));
   const report: PushReport = { recipients: ids.length, tokens: 0, sent: 0, failed: 0, pruned: 0 };
   if (ids.length === 0) return { ...report, skipped: "no_recipients" };
+  // The inbox row comes first and doesn't depend on APNs config or tokens, so
+  // a user with push off still sees it in the app. Never throws.
+  const inboxTitle = message.title ?? message.body;
+  if (!message.silent && message.inbox !== false && inboxTitle) {
+    await recordNotifications(admin, ids, {
+      type: message.type,
+      title: inboxTitle,
+      body: message.title ? message.body : undefined,
+      route: message.route,
+      groupKey: message.threadId,
+      collapseKey: message.collapseId,
+      actorUserId: message.actorUserId,
+      athleteId: message.athleteId,
+    });
+  }
   try {
     return await notifyUsersUnguarded(admin, ids, message, deps, report);
   } catch (err) {
