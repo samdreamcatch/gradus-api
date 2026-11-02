@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Loader2, Plus, Upload, Table2, LayoutGrid, FileText } from "lucide-react";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
+import { ClubBulkBar, useClubSelection } from "@/components/org-admin/club-bulk-bar";
+import { downloadCsv, toCsv } from "@/lib/csv";
 import {
   ClubGridToolbar,
   ClubGridCount,
@@ -121,6 +123,7 @@ function OrgResourcesPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [ackFor, setAckFor] = useState<OrgResourceRow | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<OrgResourceRow | null>(null);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
 
   const rows = useMemo(
     () =>
@@ -132,7 +135,31 @@ function OrgResourcesPage() {
   const shown = rows.filter((r) =>
     `${r.title} ${r.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
+  const selection = useClubSelection<OrgResourceRow>((r) => r.id, (r) => r.title);
+  const { clear: clearSelection } = selection;
+  useEffect(() => clearSelection(), [sport, view, clearSelection]);
+  const picked = selection.pick(shown);
+  const bulkArchive = useMutation({
+    mutationFn: (archived: boolean) =>
+      archiveFn({ data: { organizationId: orgId!, resourceIds: picked.map((r) => r.id), archived } }),
+    onSuccess: (_r, archived) => {
+      toast.success(`${picked.length} ${archived ? "archived" : "restored"}`);
+      selection.clear();
+      refresh();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save"),
+  });
+  function exportSelected() {
+    downloadCsv(
+      "club-resources.csv",
+      toCsv(
+        ["Title", "Sport", "From", "Archived", "Acknowledged", "Description"],
+        picked.map((r) => [r.title, sportDisplayLabel(r.sport), r.source === "club" ? "Club" : "Gradus", r.archived ? "Yes" : "No", r.ack ? `${r.ack.done}/${r.ack.total}` : "Not required", r.description ?? ""]),
+      ),
+    );
+  }
   const columns: ClubColumn<OrgResourceRow>[] = [
+    selection.column,
     {
       key: "title",
       label: "Title",
@@ -374,6 +401,12 @@ function OrgResourcesPage() {
               )}
             </div>
           ) : (
+            <>
+            <ClubBulkBar count={picked.length} total={shown.length} onSelectAll={() => selection.selectAll(shown)} onClear={selection.clear}>
+              <Button size="sm" variant="outline" disabled={bulkArchive.isPending || !picked.some((r) => !r.archived)} onClick={() => setBulkArchiveOpen(true)}>Archive</Button>
+              <Button size="sm" variant="outline" disabled={bulkArchive.isPending || !picked.some((r) => r.archived)} onClick={() => bulkArchive.mutate(false)}>Restore</Button>
+              <Button size="sm" variant="outline" onClick={exportSelected}>Export CSV</Button>
+            </ClubBulkBar>
             <ClubDataGrid
               grid={grid}
               rowKey={(r) => r.id}
@@ -383,6 +416,7 @@ function OrgResourcesPage() {
               onClear={() => setSearch("")}
               empty={`No resources for ${sportDisplayLabel(sport)} yet.`}
             />
+            </>
           )}
         </>
       )}
@@ -409,6 +443,18 @@ function OrgResourcesPage() {
         </>
       )}
 
+      <AlertDialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {picked.length} resources?</AlertDialogTitle>
+            <AlertDialogDescription>They will be hidden from your club. You can restore them any time.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { bulkArchive.mutate(true); setBulkArchiveOpen(false); }}>Archive</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={!!archiveTarget} onOpenChange={(o) => !o && setArchiveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
