@@ -47,3 +47,7 @@
 - [x] Step 3: Policies, Notifications, Moves, Levels, Templates on shared toolbar + ClubTable
 - [ ] Later: column show/hide, sort menu, and grouping controls (needs your call on priority)
 - [x] Diagnose failing Bun CI runs on main (stale lesson-reminder test fake)
+- [x] Club grid: Fields / Sort / Group controls (shared), Schedule lessons + Roster converted
+- [x] Club panel follows device light/dark
+- [x] Lesson invite sending wired (reuses family invite email); NOT test-sent per Mariah (all club data is demo)
+- [ ] Convert People, Moves, Templates, Resources, Policies, Notifications, Levels to shared grid; row side panels on Resources/Moves/Templates
