@@ -112,11 +112,6 @@ function OrgMovesPage() {
         (!s || m.name.toLowerCase().includes(s) || m.category.toLowerCase().includes(s)),
     );
   }, [q.data, sport, search, showArchived]);
-  const groups = useMemo(() => {
-    const g = new Map<string, OrgMoveRow[]>();
-    for (const m of rows) g.set(m.category, [...(g.get(m.category) ?? []), m]);
-    return Array.from(g.entries());
-  }, [rows]);
 
   useEffect(() => setSelected(new Set()), [sport]);
   const columns: ClubColumn<OrgMoveRow>[] = [
