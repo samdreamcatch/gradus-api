@@ -20,3 +20,32 @@ describe("Club lesson calendar", () => {
     expect(buildClubLessons({ ...input, students: [{ ...student, guardian_invited_at: "2026-11-01T00:00:00Z" }] })[0]?.invitationStatus).toBe("Invite recorded · unclaimed");
   });
 });
+import { lessonOccursOn, monthGrid, weekDays } from "./club-lesson-calendar";
+describe("Club lesson calendar placement", () => {
+  const base = { day: 2, startsOn: null, weeksOfMonth: [] as number[] }; // Tuesday
+  it("weeks start on Monday", () => {
+    expect(weekDays("2026-11-05")[0]).toBe("2026-11-02");
+    expect(weekDays("2026-11-05")[6]).toBe("2026-11-08");
+  });
+  it("month grid covers six weeks starting the Monday before the 1st", () => {
+    const g = monthGrid("2026-11-20");
+    expect(g.length).toBe(42);
+    expect(g[0]).toBe("2026-10-26");
+  });
+  it("weekly lessons land on every matching weekday only", () => {
+    expect(lessonOccursOn({ ...base, frequency: "weekly" }, "2026-11-03")).toBe(true);
+    expect(lessonOccursOn({ ...base, frequency: "weekly" }, "2026-11-04")).toBe(false);
+  });
+  it("every-other-week lessons skip alternate weeks from their start date", () => {
+    const l = { ...base, frequency: "biweekly", startsOn: "2026-11-03" };
+    expect(lessonOccursOn(l, "2026-11-03")).toBe(true);
+    expect(lessonOccursOn(l, "2026-11-10")).toBe(false);
+    expect(lessonOccursOn(l, "2026-11-17")).toBe(true);
+    expect(lessonOccursOn(l, "2026-10-27")).toBe(false);
+  });
+  it("monthly lessons use the chosen week of the month", () => {
+    const l = { ...base, frequency: "monthly", weeksOfMonth: [2] };
+    expect(lessonOccursOn(l, "2026-11-10")).toBe(true);
+    expect(lessonOccursOn(l, "2026-11-03")).toBe(false);
+  });
+});

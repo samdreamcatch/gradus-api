@@ -38,3 +38,46 @@ export function buildClubLessons(input: {
     }];
   }).sort((a, b) => ((a.day + 6) % 7) - ((b.day + 6) % 7) || a.start - b.start || a.coachName.localeCompare(b.coachName));
 }
+
+// ---- Calendar placement (pure; dates are ISO yyyy-mm-dd, computed in UTC to avoid DST drift) ----
+const DAY_MS = 86_400_000;
+const toDate = (iso: string) => new Date(`${iso}T00:00:00Z`);
+export const toIso = (d: Date) => d.toISOString().slice(0, 10);
+export const addDays = (iso: string, n: number) => toIso(new Date(toDate(iso).getTime() + n * DAY_MS));
+
+/** Monday of the week containing `iso`. */
+export function weekStart(iso: string): string {
+  const d = toDate(iso);
+  return addDays(iso, -((d.getUTCDay() + 6) % 7));
+}
+export function weekDays(iso: string): string[] {
+  const start = weekStart(iso);
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+}
+/** Six Monday-first weeks covering the month of `iso`. */
+export function monthGrid(iso: string): string[] {
+  const first = `${iso.slice(0, 7)}-01`;
+  const start = weekStart(first);
+  return Array.from({ length: 42 }, (_, i) => addDays(start, i));
+}
+
+/** Whether a recurring lesson falls on a given date. Missing monthly weeks default to week 1 (monthly) or weeks 1 & 3 (twice a month). */
+export function lessonOccursOn(lesson: Pick<ClubLesson, "day" | "frequency" | "startsOn" | "weeksOfMonth">, iso: string): boolean {
+  const d = toDate(iso);
+  if (d.getUTCDay() !== lesson.day) return false;
+  const weekOfMonth = Math.ceil(d.getUTCDate() / 7);
+  switch (lesson.frequency) {
+    case "biweekly": {
+      if (!lesson.startsOn) return true;
+      const diff = Math.round((toDate(weekStart(iso)).getTime() - toDate(weekStart(lesson.startsOn)).getTime()) / (7 * DAY_MS));
+      return diff >= 0 && diff % 2 === 0;
+    }
+    case "twice_monthly": return (lesson.weeksOfMonth.length ? lesson.weeksOfMonth : [1, 3]).includes(weekOfMonth);
+    case "monthly": return (lesson.weeksOfMonth.length ? lesson.weeksOfMonth : [1]).includes(weekOfMonth);
+    default: return true;
+  }
+}
+
+export function lessonsOn<T extends Pick<ClubLesson, "day" | "frequency" | "startsOn" | "weeksOfMonth" | "start">>(lessons: T[], iso: string): T[] {
+  return lessons.filter((l) => lessonOccursOn(l, iso)).sort((a, b) => a.start - b.start);
+}
