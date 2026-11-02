@@ -52,4 +52,5 @@
 - [x] Lesson invite sending wired (reuses family invite email); NOT test-sent per Mariah (all club data is demo)
 - [x] Shared grid on People, Moves, Templates, Resources, Policies, Notifications; row click opens side panel on Resources/Moves/Templates. Levels keeps manual order (reordering conflicts with sorting)
 - [x] Coaching page on shared grid (Fields/Sort/Group, totals footer, row opens coach profile); verified as Buddy
-- [ ] Bulk-select action bar beyond Moves (Resources/Templates archive) — not started
+- [x] Bulk-select bar on Resources (archive/restore/export) and Templates (send/archive/restore/export); archive+restore round-trip verified, no sends
+- [x] Post-publish check: Home, Notifications, Coaching, Policies, People, Schedule imports load live data; notification read receipt saves
