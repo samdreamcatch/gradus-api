@@ -7,7 +7,7 @@ import { toIso } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye, Table2, CalendarDays } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send } from "lucide-react";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
