@@ -235,7 +235,6 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
               <TableHead>Status</TableHead>
               <TableHead>Sports</TableHead>
               <TableHead>Seat since</TableHead>
-              <TableHead>Grace ends</TableHead>
               <TableHead className="text-right">Students</TableHead>
             </TableRow>
           </TableHeader>
@@ -275,7 +274,6 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                       : "—"}
                   </TableCell>
                   <TableCell>{seat.filled_at?.slice(0, 10) ?? "—"}</TableCell>
-                  <TableCell>{seat.grace_until?.slice(0, 10) ?? "—"}</TableCell>
                   <TableCell className="font-mono text-right tabular-nums">
                     {coach?.athleteCount ?? "—"}
                   </TableCell>
