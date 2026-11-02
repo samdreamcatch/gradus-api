@@ -9,6 +9,7 @@
 - Gradus Club contract reads use draft-local schema types and privileged clients only after caller authorization; database triggers enforce seat capacity across web/native membership writers so entry paths cannot bypass seat limits.
 - Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.
 - Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
+- App notification inbox storage is separate from club notifications, uses plain user UUIDs and server-only writes, and allows owners only read, clear, or read-state updates; this prevents client-authored alerts and auth-schema foreign-key coupling.
 - Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
 - Club schedule review uses separate org-scoped import storage and a transactional save; parsing, matching, and saving never create lessons or send invitations, so delivery remains an explicit later action.
 - Club Schedule returns one row per recurring lesson from club-authorized coaches and current coach/student links; family contacts stay exclusive to the operational Schedule view, and recorded invitation timestamps never imply email delivery.
