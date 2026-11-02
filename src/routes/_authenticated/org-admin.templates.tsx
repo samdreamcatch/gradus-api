@@ -1,3 +1,4 @@
+import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ClubTable } from "@/components/org-admin/club-table";
