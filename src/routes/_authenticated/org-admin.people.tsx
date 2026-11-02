@@ -38,6 +38,7 @@ import { SectionLabel } from "@/components/org-admin/trust-ui";
 import { getClubContract, removeClubAdmin } from "@/lib/club-contract.functions";
 import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
 import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { StatusDot } from "@/components/org-admin/status-dot";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -97,6 +98,7 @@ function PeoplePage() {
         .includes(search.trim().toLowerCase()) &&
       (sport === "all" || c.levels.some((l) => l.sport === sport)),
   );
+  const grid = useClubGrid<RosterCoach>("people-coaches", PEOPLE_COLUMNS, filtered);
   function exportRoster() {
     const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const rows = [
@@ -160,99 +162,84 @@ function PeoplePage() {
               ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
             ]}
           />
+          <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
+          {grid.menu}
         </ClubGridToolbar>
         <ClubGridCount shown={filtered.length} total={coaches.length} noun="coaches" />
       </div>
-      <ClubTable>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Coach</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Sports</TableHead>
-            <TableHead className="text-right">Levels</TableHead>
-            <TableHead className="text-right">Athletes</TableHead>
-            <TableHead className="text-right">Parents</TableHead>
-            <TableHead>Joined</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtered.map((c) => (
-            <TableRow key={c.coachId} className="cursor-pointer" onClick={() => setSelected(c)}>
-              <TableCell className="min-w-44">
-                <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-accent/20 font-mono text-[10px] font-semibold text-accent-ink"
-                  >
-                    {(c.firstName?.[0] ?? "") + (c.lastName?.[0] ?? "")}
-                  </span>
-                  <button
-                    type="button"
-                    className="min-h-0! truncate font-medium text-text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelected(c);
-                    }}
-                  >
-                    {c.firstName} {c.lastName}
-                  </button>
-                  <ChevronRight className="ml-auto size-4 text-text-tertiary" aria-hidden />
-                </span>
-              </TableCell>
-              <TableCell className="min-w-48 text-text-secondary">
-                {c.email ?? "No email on file"}
-              </TableCell>
-              <TableCell className="min-w-40">
-                <span className="flex flex-wrap gap-1">
-                  {[...new Set(c.levels.map((l) => l.sport))].map((s) => (
-                    <Tag key={s} tone="muted">
-                      {sportDisplayLabel(s)}
-                    </Tag>
-                  ))}
-                  {!c.levels.length && <span className="text-text-tertiary">Not set</span>}
-                </span>
-              </TableCell>
-              <TableCell className="text-right font-mono tabular-nums">{c.levels.length}</TableCell>
-              <TableCell className="text-right font-mono tabular-nums">{c.athleteCount}</TableCell>
-              <TableCell className="text-right font-mono tabular-nums">{c.parentCount}</TableCell>
-              <TableCell className="whitespace-nowrap font-mono text-xs">
-                {c.joinedAt?.slice(0, 10) ?? "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-          {!filtered.length && (
-            <ClubEmptyRow
-              colSpan={7}
-              filtered={!!coaches.length}
-              empty="No coaches have joined this club yet."
-              onClear={() => {
-                setSearch("");
-                setSport("all");
-              }}
-            />
-          )}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={3}>{filtered.length} coaches</TableCell>
-            <TableCell className="text-right font-mono tabular-nums">
-              {filtered.reduce((n, c) => n + c.levels.length, 0)}
-            </TableCell>
-            <TableCell className="text-right font-mono tabular-nums">
-              {filtered.reduce((n, c) => n + c.athleteCount, 0)}
-            </TableCell>
-            <TableCell className="text-right font-mono tabular-nums">
-              {filtered.reduce((n, c) => n + c.parentCount, 0)}
-            </TableCell>
-            <TableCell />
-          </TableRow>
-        </TableFooter>
-      </ClubTable>
+      <ClubDataGrid
+        grid={grid}
+        rowKey={(c) => c.coachId}
+        onRowClick={setSelected}
+        rowLabel={(c) => `${c.firstName} ${c.lastName}`}
+        filtered={!!coaches.length}
+        onClear={() => {
+          setSearch("");
+          setSport("all");
+        }}
+        empty="No coaches have joined this club yet."
+        showFooter
+      />
       <ClubCapacity orgId={org.id} coaches={coaches} />
       <CoachSheet coach={selected} orgId={org.id} onClose={() => setSelected(null)} />
     </div>
   );
 }
+
+const coachSports = (c: RosterCoach) => [...new Set(c.levels.map((l) => l.sport))];
+const total = (rows: RosterCoach[], k: "athleteCount" | "parentCount") =>
+  rows.reduce((n, r) => n + r[k], 0);
+const PEOPLE_COLUMNS: ClubColumn<RosterCoach>[] = [
+  {
+    key: "coach",
+    label: "Coach",
+    sortValue: (c) => `${c.firstName} ${c.lastName}`,
+    className: "min-w-44",
+    render: (c) => (
+      <span className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="inline-flex size-6 shrink-0 items-center justify-center rounded-pill bg-accent/20 font-mono text-[10px] font-semibold text-accent-ink"
+        >
+          {(c.firstName?.[0] ?? "") + (c.lastName?.[0] ?? "")}
+        </span>
+        <span className="truncate">
+          {c.firstName} {c.lastName}
+        </span>
+        <ChevronRight className="ml-auto size-4 text-text-tertiary" aria-hidden />
+      </span>
+    ),
+    footer: (rows) => `${rows.length} coaches`,
+  },
+  {
+    key: "email",
+    label: "Email",
+    sortValue: (c) => c.email,
+    className: "min-w-48 text-text-secondary",
+    render: (c) => c.email ?? "No email on file",
+  },
+  {
+    key: "sports",
+    label: "Sports",
+    className: "min-w-40",
+    groupValue: (c) => (coachSports(c)[0] ? sportDisplayLabel(coachSports(c)[0]!) : null),
+    sortValue: (c) => coachSports(c).map(sportDisplayLabel).join(", "),
+    render: (c) => (
+      <span className="flex flex-wrap gap-1">
+        {coachSports(c).map((s) => (
+          <Tag key={s} tone="muted">
+            {sportDisplayLabel(s)}
+          </Tag>
+        ))}
+        {!c.levels.length && <span className="text-text-tertiary">Not set</span>}
+      </span>
+    ),
+  },
+  { key: "levels", label: "Levels", align: "right", sortValue: (c) => c.levels.length, render: (c) => c.levels.length, footer: (r) => r.reduce((n, c) => n + c.levels.length, 0) },
+  { key: "athletes", label: "Athletes", align: "right", sortValue: (c) => c.athleteCount, render: (c) => c.athleteCount, footer: (r) => total(r, "athleteCount") },
+  { key: "parents", label: "Parents", align: "right", sortValue: (c) => c.parentCount, render: (c) => c.parentCount, footer: (r) => total(r, "parentCount") },
+  { key: "joined", label: "Joined", sortValue: (c) => c.joinedAt, className: "whitespace-nowrap font-mono text-xs", render: (c) => c.joinedAt?.slice(0, 10) ?? "—" },
+];
 
 function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {
   const read = useServerFn(getClubContract);
