@@ -3,7 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, Upload } from "lucide-react";
+import { Loader2, Plus, Upload, Table2, LayoutGrid, FileText } from "lucide-react";
+import { ClubTable } from "@/components/org-admin/club-table";
+import { ClubGridToolbar, ClubGridCount, ClubEmptyRow } from "@/components/org-admin/club-grid-toolbar";
 import { supabase } from "@/integrations/supabase/client";
 import { PageTitle } from "@/components/page-title";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
@@ -108,6 +110,8 @@ function OrgResourcesPage() {
     if (!sport && sports.length) setSport(sports[0]);
   }, [sports, sport]);
   const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useState("grid");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<OrgResourceRow | "new" | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [ackFor, setAckFor] = useState<OrgResourceRow | null>(null);
@@ -120,6 +124,7 @@ function OrgResourcesPage() {
       ),
     [q.data, sport, showArchived],
   );
+  const shown = rows.filter((r) => `${r.title} ${r.description ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()));
   const refresh = () => {
     for (const key of ["org-resources", "policy-matrix", "trust-center", "policy-packs"])
       qc.invalidateQueries({ queryKey: [key, orgId] });
@@ -147,23 +152,63 @@ function OrgResourcesPage() {
         <NoSportsCard />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <ClubGridToolbar
+            views={[{ value: "grid", label: "Grid", icon: <Table2 className="size-4" /> }, { value: "gallery", label: "Gallery", icon: <LayoutGrid className="size-4" /> }]}
+            view={view}
+            onViewChange={setView}
+            search={search}
+            onSearchChange={setSearch}
+            searchLabel="Search resources"
+            activeFilters={search ? 1 : 0}
+            onClear={() => setSearch("")}
+            end={<>
+              <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}><Upload /> Bulk upload</Button>
+              <Button size="sm" onClick={() => setEditing("new")}><Plus /> Add resource</Button>
+            </>}
+          >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <label className="flex items-center gap-2 px-1 text-sm text-text-secondary">
               <Switch checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
               Show archived
             </label>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-              <Upload /> Bulk upload
-            </Button>
-            <Button size="sm" onClick={() => setEditing("new")}>
-              <Plus /> Add resource
-            </Button>
-          </div>
-          <Card>
-            <CardContent className="p-0">
-              <Table>
+          </ClubGridToolbar>
+          <ClubGridCount shown={shown.length} total={rows.length} noun="resources" />
+          {view === "gallery" ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.map((r) => (
+                <Card key={r.id} className={r.archived ? "opacity-60" : undefined}>
+                  <CardContent className="flex h-full flex-col gap-3 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-md bg-accent/15 text-accent-ink"><FileText className="size-5" /></span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-text-primary">{r.title}</p>
+                        {r.description && <p className="line-clamp-2 text-xs text-text-secondary">{r.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Tag tone={r.source === "club" ? "accent" : "muted"}>{r.source === "club" ? "Club" : "Gradus"}</Tag>
+                      {r.edited && <Tag tone="muted">Edited</Tag>}
+                      {r.archived && <Tag tone="muted">Archived</Tag>}
+                      {r.reviewState !== "released" && <Tag tone="muted">{r.reviewState === "held" ? "In Gradus review" : "Checking"}</Tag>}
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-2 border-t border-divider pt-2">
+                      <Button variant="link" size="sm" className="px-0" disabled={r.archived || r.reviewState !== "released"} onClick={() => setAckFor(r)}>
+                        {r.ack ? `${r.ack.done} of ${r.ack.total} acknowledged` : "Not required"}
+                      </Button>
+                      <span className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>Edit</Button>
+                        {r.archived
+                          ? <Button variant="ghost" size="sm" onClick={() => archive.mutate({ row: r, archived: false })}>Restore</Button>
+                          : <Button variant="ghost" size="sm" onClick={() => setArchiveTarget(r)}>Archive</Button>}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {!shown.length && <p className="col-span-full py-10 text-center text-sm text-text-secondary">{search ? "No resources match this search." : `No resources for ${sportDisplayLabel(sport)} yet.`}</p>}
+            </div>
+          ) : (
+              <ClubTable>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
@@ -173,14 +218,10 @@ function OrgResourcesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-sm text-text-secondary">
-                        No resources for {sportDisplayLabel(sport)} yet.
-                      </TableCell>
-                    </TableRow>
+                  {shown.length === 0 && (
+                    <ClubEmptyRow colSpan={4} filtered={!!search} empty={`No resources for ${sportDisplayLabel(sport)} yet.`} onClear={() => setSearch("")} />
                   )}
-                  {rows.map((r) => (
+                  {shown.map((r) => (
                     <TableRow key={r.id} className={r.archived ? "opacity-60" : undefined}>
                       <TableCell>
                         <div className="font-medium text-text-primary">{r.title}</div>
@@ -248,9 +289,8 @@ function OrgResourcesPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+              </ClubTable>
+          )}
         </>
       )}
 
