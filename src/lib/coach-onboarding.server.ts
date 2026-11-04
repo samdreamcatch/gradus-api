@@ -21,6 +21,7 @@ import {
   type CoachProfileDTO,
 } from "./coach-profile-types";
 import { getSport } from "./coach-sports";
+import { getCoachSetupChecklist } from "./coach-setup-checklist.server";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -154,7 +155,7 @@ export async function getCoachProfile(ctx: CoachContext): Promise<CoachProfileRe
       .maybeSingle();
   };
 
-  const [levels, org, promo] = await Promise.all([
+  const [levels, org, promo, checklist] = await Promise.all([
     supabase
       .from("coach_levels")
       .select("sport, level_key, practice_hours_per_week")
@@ -167,6 +168,7 @@ export async function getCoachProfile(ctx: CoachContext): Promise<CoachProfileRe
           .maybeSingle()
       : Promise.resolve({ data: null, error: null } as const),
     promoLookup(),
+    getCoachSetupChecklist(supabase, ctx.userId),
   ]);
   if (levels.error) dbError(levels.error);
   if (org.error) dbError(org.error);
@@ -270,6 +272,7 @@ export async function getCoachProfile(ctx: CoachContext): Promise<CoachProfileRe
       trialNeedsCard,
       subscriptionEnvironment,
       billingPastDue,
+      checklist,
     },
     levels: (levels.data ?? []).map((r) => ({
       sport: r.sport,

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import type { CoachProfileDTO } from "./coach-profile-types";
-import { BILLING_MANAGE_URL, BILLING_PAYWALL_URL, billingManageUrl, getCoachBilling, toCoachBilling } from "./coach-billing.server";
+import {
+  BILLING_MANAGE_URL,
+  BILLING_PAYWALL_URL,
+  billingManageUrl,
+  getCoachBilling,
+  toCoachBilling,
+} from "./coach-billing.server";
 
 /**
  * A chainable fake that records every `table.method` call: `rows[table]`
@@ -66,6 +72,12 @@ const profile: CoachProfileDTO = {
   trialNeedsCard: false,
   subscriptionEnvironment: "live",
   billingPastDue: false,
+  checklist: {
+    identityVerification: false,
+    payoutSetup: false,
+    uploadProfilePhoto: false,
+    saveFirstPlan: false,
+  },
 };
 
 describe("toCoachBilling", () => {
@@ -96,13 +108,56 @@ describe("toCoachBilling", () => {
   });
 
   it("links the settings portal only for a live paid subscription, the paywall otherwise", () => {
-    expect(billingManageUrl({ entitlement: "paid", hasStripeCustomer: true, subscriptionStatus: "active" })).toBe(BILLING_MANAGE_URL);
-    expect(billingManageUrl({ entitlement: "paid", hasStripeCustomer: true, subscriptionStatus: "past_due" })).toBe(BILLING_MANAGE_URL);
-    expect(billingManageUrl({ entitlement: "paid", hasStripeCustomer: true, subscriptionStatus: "canceled" })).toBe(BILLING_PAYWALL_URL);
-    expect(billingManageUrl({ entitlement: "paid", hasStripeCustomer: false, subscriptionStatus: "active" })).toBe(BILLING_PAYWALL_URL);
-    expect(billingManageUrl({ entitlement: "pending", hasStripeCustomer: false, subscriptionStatus: null })).toBe(BILLING_PAYWALL_URL);
-    expect(billingManageUrl({ entitlement: "promo_free", hasStripeCustomer: false, subscriptionStatus: null })).toBe(BILLING_PAYWALL_URL);
-    expect(toCoachBilling({ ...profile, entitlement: "promo_free", hasStripeCustomer: false, subscriptionStatus: null }).manageUrl).toBe(BILLING_PAYWALL_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "paid",
+        hasStripeCustomer: true,
+        subscriptionStatus: "active",
+      }),
+    ).toBe(BILLING_MANAGE_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "paid",
+        hasStripeCustomer: true,
+        subscriptionStatus: "past_due",
+      }),
+    ).toBe(BILLING_MANAGE_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "paid",
+        hasStripeCustomer: true,
+        subscriptionStatus: "canceled",
+      }),
+    ).toBe(BILLING_PAYWALL_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "paid",
+        hasStripeCustomer: false,
+        subscriptionStatus: "active",
+      }),
+    ).toBe(BILLING_PAYWALL_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "pending",
+        hasStripeCustomer: false,
+        subscriptionStatus: null,
+      }),
+    ).toBe(BILLING_PAYWALL_URL);
+    expect(
+      billingManageUrl({
+        entitlement: "promo_free",
+        hasStripeCustomer: false,
+        subscriptionStatus: null,
+      }),
+    ).toBe(BILLING_PAYWALL_URL);
+    expect(
+      toCoachBilling({
+        ...profile,
+        entitlement: "promo_free",
+        hasStripeCustomer: false,
+        subscriptionStatus: null,
+      }).manageUrl,
+    ).toBe(BILLING_PAYWALL_URL);
   });
 });
 

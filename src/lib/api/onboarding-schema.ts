@@ -8,6 +8,7 @@
  */
 import { z } from "zod";
 import type { CoachLevelDTO, CoachProfileDTO } from "@/lib/coach-profile-types";
+import { coachSetupChecklistSchema } from "@/lib/coach-setup-checklist.server";
 import type {
   AdultAthleteInvitePreview,
   InviteResolution,
@@ -49,6 +50,9 @@ export const coachProfileSchema = z.object({
   trialNeedsCard: z.boolean(),
   subscriptionEnvironment: z.enum(["sandbox", "live"]).nullable(),
   billingPastDue: z.boolean(),
+  checklist: coachSetupChecklistSchema.describe(
+    "Setup steps the coach has completed, as the app reported them (PATCH /api/v1/coach/profile).",
+  ),
 }) satisfies z.ZodType<CoachProfileDTO>;
 
 export const coachLevelSchema = z.object({

@@ -855,6 +855,30 @@
                         },
                         "billingPastDue": {
                           "type": "boolean"
+                        },
+                        "checklist": {
+                          "type": "object",
+                          "properties": {
+                            "identityVerification": {
+                              "type": "boolean"
+                            },
+                            "payoutSetup": {
+                              "type": "boolean"
+                            },
+                            "uploadProfilePhoto": {
+                              "type": "boolean"
+                            },
+                            "saveFirstPlan": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "identityVerification",
+                            "payoutSetup",
+                            "uploadProfilePhoto",
+                            "saveFirstPlan"
+                          ],
+                          "description": "Setup steps the coach has completed, as the app reported them (PATCH /api/v1/coach/profile)."
                         }
                       },
                       "required": [
@@ -881,7 +905,8 @@
                         "freeAccessUntil",
                         "trialNeedsCard",
                         "subscriptionEnvironment",
-                        "billingPastDue"
+                        "billingPastDue",
+                        "checklist"
                       ]
                     },
                     "levels": {
@@ -977,6 +1002,97 @@
                   },
                   "required": [
                     "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCoachChecklist",
+        "summary": "Mark setup checklist steps complete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "checklist": {
+                    "type": "object",
+                    "properties": {
+                      "identityVerification": {
+                        "type": "boolean"
+                      },
+                      "payoutSetup": {
+                        "type": "boolean"
+                      },
+                      "uploadProfilePhoto": {
+                        "type": "boolean"
+                      },
+                      "saveFirstPlan": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "checklist"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checklist": {
+                      "type": "object",
+                      "properties": {
+                        "identityVerification": {
+                          "type": "boolean"
+                        },
+                        "payoutSetup": {
+                          "type": "boolean"
+                        },
+                        "uploadProfilePhoto": {
+                          "type": "boolean"
+                        },
+                        "saveFirstPlan": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "identityVerification",
+                        "payoutSetup",
+                        "uploadProfilePhoto",
+                        "saveFirstPlan"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "checklist"
                   ]
                 }
               }

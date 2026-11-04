@@ -7,6 +7,17 @@ export type CoachEntitlement = "pending" | "club_covered" | "paid" | "promo_free
 
 export type CoachEffectiveTier = "coach" | "coach_pro" | "club";
 
+/**
+ * Setup steps the coach has completed, as the app reported them
+ * (`coach_profiles.checklist`, coach-setup-checklist.server.ts).
+ */
+export interface CoachSetupChecklist {
+  identityVerification: boolean;
+  payoutSetup: boolean;
+  uploadProfilePhoto: boolean;
+  saveFirstPlan: boolean;
+}
+
 export interface CoachProfileDTO {
   id: string;
   firstName: string;
@@ -49,6 +60,8 @@ export interface CoachProfileDTO {
    * mode leftovers, and free (founding / club-covered) coaches never set it.
    */
   billingPastDue: boolean;
+  /** Setup steps completed; `PATCH /api/v1/coach/profile` marks them. */
+  checklist: CoachSetupChecklist;
 }
 
 export interface CoachLevelDTO {
