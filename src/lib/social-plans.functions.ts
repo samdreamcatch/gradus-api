@@ -3,9 +3,10 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { PROMPT_INJECTION_GUARD, sanitizeUserContent } from "./ai-prompt-safety";
+import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
 import { isAdminSocialPlan } from "./social-plan-rules";
+import { PLAN_FIDELITY_RULES, PLAN_WRITING_STYLE, checkPlanStyle } from "./plan-writing-style";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
@@ -34,6 +35,28 @@ type SocialDatabase = Omit<Database, "public"> & {
   };
 };
 const socialClient = (client: unknown) => client as SupabaseClient<SocialDatabase>;
+
+/**
+ * Logs the ways a draft breaks the writing rules (field, count, jargon) so a
+ * long draft shows up in the server log next to its prompt's name. The draft
+ * is returned as is: the admin edits it before it is published.
+ */
+function warnOnStyle(
+  where: string,
+  plan: {
+    title: string;
+    notes: string;
+    moves: { name: string; description: string; cue: string; why: string }[];
+  },
+) {
+  const violations = checkPlanStyle(plan);
+  if (violations.length) {
+    console.warn(
+      `[social-plans ${where}] draft breaks the writing rules`,
+      violations.map((v) => `${v.field}: ${v.problem}`).join("; "),
+    );
+  }
+}
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -97,15 +120,17 @@ Level: ${level || "general / all levels"}
 Focus: ${focus || "well-rounded fundamentals"}
 
 Write exactly ${data.moveCount} moves an athlete can do on their own, in order. For each move give:
-- name: short, punchy (max 6 words)
-- description: 1-2 sentences on how to do it
+- name: short, punchy
+- description: what to do
 - cue: one short coaching cue an athlete can repeat to themselves
 - why: one short sentence on why it matters
 - targetKind: "reps" or "mins"
 - targetValue: a realistic number
 
-Also write a plan title (max 8 words, no emoji) and a 1-2 sentence intro note.
-Be specific to ${sport}. Never invent medical claims.`;
+Also write a plan title (no emoji) and an intro note.
+Be specific to ${sport}. Never invent medical claims.
+
+${PLAN_WRITING_STYLE}`;
 
     const schema = z.object({
       title: z.string().min(1).max(120),
@@ -119,6 +144,7 @@ Be specific to ${sport}. Never invent medical claims.`;
         schema,
         prompt,
       });
+      warnOnStyle("draft", object);
       return object;
     } catch (err) {
       console.error("[social-plans draft]", err);
@@ -167,24 +193,28 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
     const sport = sanitizeUserContent(data.sport, 60);
     const prompt = `${PROMPT_INJECTION_GUARD}
 
-You are a ${sport} coach. Below is a competition result (judges' protocol, score sheet, or results text) — attached as a file and/or pasted. Write a practice plan that will be shared publicly by Gradus as an example of turning results into training.
+You are a ${sport} coach. Below is the source: a competition result (judges' protocol, score sheet, or results text) or a coach's notes from a lesson — attached as a file and/or pasted. Write a practice plan that will be shared publicly by Gradus as an example of turning that source into training.
 
-Write exactly ${data.moveCount} practice moves that target exactly what the result shows lost points or value (e.g. negative GOE, underrotations, falls, low components, missed shots, slow splits). Do not invent problems the result does not show. Never include any athlete's name, club, or other identifying detail — refer to "the athlete".
+Write up to ${data.moveCount} practice moves, one per drill, game, or problem the source shows (for a result: lost points or value, e.g. negative GOE, underrotations, falls, low components, missed shots, slow splits). Fewer moves is fine. Do not invent problems or drills the source does not show. Never include any athlete's name, club, or other identifying detail — refer to "the athlete".
 For each move give:
-- name: short and specific (max 6 words)
-- description: 1-2 sentences on how to practise it
+- name: short and specific
+- description: what to do
 - cue: one short cue the athlete can repeat
-- why: one sentence tying it to the result (name the element or component)
+- why: one sentence tying it to the source (for a result, name the element or component)
 - targetKind: "reps" or "mins"
-- targetValue: a realistic number
+- targetValue: the source's count or minutes
 
-Also write a plan title (max 8 words, no emoji, no names) and a 1-2 sentence intro note summarising the takeaway.
+Also write a plan title (no emoji, no names) and an intro note with the takeaway.
 
 Respond with ONLY a JSON object with EXACTLY these top-level keys:
 - "title": string
 - "notes": string
 - "moves": array of objects, each with exactly "name", "description", "cue", "why" (strings), "targetKind" ("reps" or "mins"), "targetValue" (number)
-${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}` : ""}`;
+
+${PLAN_FIDELITY_RULES}
+
+${PLAN_WRITING_STYLE}
+${data.text.trim() ? `\n${wrapUntrusted("pasted_source", sanitizeUserContent(data.text, 12000))}` : ""}`;
 
     const lenientMove = z.object({
       name: z
@@ -242,6 +272,7 @@ ${data.text.trim() ? `\nPasted result:\n${sanitizeUserContent(data.text, 12000)}
         schema,
         messages: [{ role: "user", content }],
       });
+      warnOnStyle("result draft", object);
       return object;
     } catch (err) {
       console.error("[social-plans result draft]", err);
@@ -541,9 +572,11 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
       data.notes ? `Intro note: ${data.notes}` : "",
       `Instruction from the editor: ${data.prompt}`,
       "Rewrite every move following that instruction. Keep the same number and order of moves unless the instruction says otherwise (max 12). Never include athlete names.",
-      'Limits: name ≤120 chars, description ≤600, cue ≤300, why ≤300. targetKind is "reps" or "mins"; targetValue is a number 1–600.',
+      'targetKind is "reps" or "mins"; targetValue is a number 1–600. Keep each move\'s target unless the instruction changes it.',
       'Respond with ONLY a JSON object: {"moves":[{"name","description","cue","why","targetKind","targetValue"}]}.',
       `Current moves (JSON): ${JSON.stringify(data.moves)}`,
+      PLAN_WRITING_STYLE,
+      "Where the editor's instruction conflicts with the writing style above, the editor's instruction wins.",
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -553,6 +586,7 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
         schema,
         prompt,
       });
+      warnOnStyle("improve", { title: "", notes: "", moves: object.moves });
       return { moves: object.moves as SocialPlanMoveInput[] };
     } catch (err) {
       console.error("[social-plans improve]", err);
