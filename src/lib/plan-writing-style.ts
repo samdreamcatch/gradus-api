@@ -13,7 +13,7 @@
 export const PLAN_WORD_LIMITS = {
   title: 6,
   name: 5,
-  description: 25,
+  description: 35,
   cue: 6,
   why: 12,
   notes: 20,
@@ -44,7 +44,7 @@ They will glance, not read. Every word must earn its place.
 Hard length limits (count them):
 - Plan title: ${PLAN_WORD_LIMITS.title} words max.
 - Move name: ${PLAN_WORD_LIMITS.name} words max.
-- Description: ${PLAN_WORD_LIMITS.description} words max. Short imperative sentences. Say what to DO, not why it works.
+- Description: ${PLAN_WORD_LIMITS.description} words max. Short imperative sentences. Say what to DO, not why it works. Short means fewer words, not fewer steps: keep every step, count, club, ball and prop the coach gave.
 - Cue: ${PLAN_WORD_LIMITS.cue} words max. Something you could shout across the range.
 - Why: ${PLAN_WORD_LIMITS.why} words max, one plain sentence. Leave it empty if it would just repeat the description.
 - Plan notes: ${PLAN_WORD_LIMITS.notes} words max.
@@ -56,14 +56,14 @@ Plain language:
 - No explanations of physics or equipment design.
 - The cue must not repeat a sentence from the description.
 
-Example
-Too long (49 words): "Set up a stick or visual marker at waist height about 10 to 15 feet in front of you. Hit low running shots so the ball flies underneath the barrier. Keep your hands leaning slightly forward as you hit the ball to keep its flight down along the ground."
+Example (for length and tone only; it is a different sport, so never reuse its words)
+Too long (47 words): "Begin at the baseline with a basket of balls and have your partner feed you a gentle ball to the forehand side. Split-step as the ball is fed, turn your shoulders early and swing from low to high so that the ball clears the net with topspin."
 
 Right:
-Name: Low Shot Under the Handle
-Description: Hit bump & runs that stay below the Gobbler handle. Narrow stance, ball just back, hands ahead.
-Cue: Small swing, no click.
-Why: Low shots roll like putts.`;
+Name: Crosscourt Forehands
+Description: Partner feeds 20 balls to your forehand. Split-step, turn early, swing low to high. Aim deep crosscourt.
+Cue: Low to high.
+Why: Topspin keeps it in.`;
 
 /**
  * Rules for drafts made FROM a coach's notes or a result. The sport/level/
@@ -73,7 +73,8 @@ export const PLAN_FIDELITY_RULES = `Stay close to the source:
 - Make one move per drill, game, or problem the source describes. Do not invent extra moves to fill out a session. Fewer moves is fine.
 - Use the coach's rep counts or minutes when the source gives them. When it gives none, use 10 reps; never make up a larger number.
 - Things the coach says to work on later or next time go in the plan notes, not in a move.
-- A setup checklist stays a short checklist ("Narrow stance. Ball just back. Hands ahead."), not a paragraph.`;
+- A setup or checklist the coach wrote is its own first move: the move name is what it sets up, the description is the checklist in the coach's order ("Narrow stance. Ball just back. Hands ahead. Small swing, no click."), the cue is its shortest line.
+- A game or drill keeps its structure: how many balls or reps, which clubs or tools, in what order, and what changes between rounds.`;
 
 export type PlanStyleViolation = {
   /** `title`, `notes`, or `moves[2].cue`. */

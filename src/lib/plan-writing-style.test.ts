@@ -46,7 +46,8 @@ describe("the style block", () => {
       expect(PLAN_WRITING_STYLE).toContain(`${limit} words max`);
     }
     for (const w of PLAN_BANNED_WORDS) expect(PLAN_WRITING_STYLE).toContain(w);
-    expect(PLAN_WRITING_STYLE).toContain("Low Shot Under the Handle");
+    expect(PLAN_WRITING_STYLE).toContain("Crosscourt Forehands");
+    expect(PLAN_WRITING_STYLE).toContain("never reuse its words");
     expect(PLAN_WRITING_STYLE.indexOf("Too long")).toBeLessThan(
       PLAN_WRITING_STYLE.indexOf("Right:"),
     );
@@ -54,15 +55,15 @@ describe("the style block", () => {
 
   it("the example move itself passes the checker", () => {
     const example = {
-      title: "Bump & Run",
+      title: "Forehand Basics",
       notes: "",
       moves: [
         {
-          name: "Low Shot Under the Handle",
+          name: "Crosscourt Forehands",
           description:
-            "Hit bump & runs that stay below the Gobbler handle. Narrow stance, ball just back, hands ahead.",
-          cue: "Small swing, no click.",
-          why: "Low shots roll like putts.",
+            "Partner feeds 20 balls to your forehand. Split-step, turn early, swing low to high. Aim deep crosscourt.",
+          cue: "Low to high.",
+          why: "Topspin keeps it in.",
         },
       ],
     };
@@ -73,6 +74,8 @@ describe("the style block", () => {
     expect(PLAN_FIDELITY_RULES).toContain("Do not invent extra moves");
     expect(PLAN_FIDELITY_RULES).toContain("plan notes, not in a move");
     expect(PLAN_FIDELITY_RULES).toContain("never make up a larger number");
+    expect(PLAN_FIDELITY_RULES).toContain("is its own first move");
+    expect(PLAN_FIDELITY_RULES).toContain("keeps its structure");
   });
 });
 
@@ -112,7 +115,7 @@ describe("checkPlanStyle", () => {
         .filter((v) => v.field === field)
         .map((v) => v.problem)
         .join("; ");
-    expect(problems("moves[0].description")).toBe("46 words, limit 25");
+    expect(problems("moves[0].description")).toBe("46 words, limit 35");
     expect(problems("title")).toBe("7 words, limit 6; banned words: trajectory");
     expect(problems("notes")).toBe(
       "31 words, limit 20; banned words: trajectory, calibration, contrast, mechanics, establish",

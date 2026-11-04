@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isNativeApp } from "@/lib/native";
 import { AppStoreBadges } from "@/components/app-store-badges";
+import { sharedPlanByline } from "@/lib/plan-share-byline";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getSharedPlanPublic,
@@ -26,8 +27,7 @@ export const Route = createFileRoute("/p/$token")({
       };
     }
     const title = `${plan.title} — join me on Gradus`;
-    const description =
-      plan.notes?.trim() || `A ${plan.moves.length}-move workout on Gradus.`;
+    const description = plan.notes?.trim() || `A ${plan.moves.length}-move workout on Gradus.`;
     const url = `${SITE_ORIGIN}/p/${params.token}`;
     return {
       meta: [
@@ -47,7 +47,9 @@ export const Route = createFileRoute("/p/$token")({
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">
       <h1 className="font-display text-2xl font-black">Couldn't load this plan</h1>
-      <p className="mt-2 text-sm text-text-secondary">{error instanceof Error ? error.message : String(error)}</p>
+      <p className="mt-2 text-sm text-text-secondary">
+        {error instanceof Error ? error.message : String(error)}
+      </p>
       <Link to="/" className="mt-6 inline-block text-sm font-bold text-accent-ink underline">
         Go to Gradus
       </Link>
@@ -79,9 +81,7 @@ function SharedPlanPage() {
       <div className="mx-auto max-w-2xl px-4 pt-6 pb-32">
         <div className="text-center">
           <p className="text-[11px] font-black uppercase tracking-widest text-text-tertiary">
-            {plan.authorKind === "athlete"
-              ? `Plan by ${plan.authorFirstName ?? "an athlete"}`
-              : `Plan by Coach ${[plan.coachFirstName, plan.coachLastName].filter(Boolean).join(" ")}`}
+            {sharedPlanByline(plan)}
           </p>
           <h1 className="mt-1 font-display text-3xl font-black leading-tight tracking-tight text-text-primary">
             {plan.title}
