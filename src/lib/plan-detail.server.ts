@@ -64,6 +64,12 @@ export interface RoleAwarePlanDetailDTO {
   price?: number;
   /** The plan's image URL (plan-marketplace-fields.server.ts); for the owning coach only. */
   media?: string | null;
+  /** "plan" or "program"; null on plans made before it existed. In the coach's view only. */
+  productType?: "plan" | "program" | null;
+  /** The level the plan is for; null on older plans. In the coach's view only. */
+  selectedLevel?: string | null;
+  /** Marketplace description; in the coach's view only. */
+  description?: string | null;
 }
 
 /**
@@ -168,7 +174,14 @@ export async function getPlanForViewer(
       sessionsTotal: plan.sessionsTotal,
       feedbackScope: plan.feedbackScope,
       ...(source ? { source, authorFirstName } : {}),
-      ...(marketplace ? { price: marketplace.price } : {}),
+      ...(marketplace
+        ? {
+            price: marketplace.price,
+            productType: marketplace.productType,
+            selectedLevel: marketplace.selectedLevel,
+            description: marketplace.description,
+          }
+        : {}),
       // Only the owner can load the image (the plan-media storage policies).
       ...(marketplace && plan.isOwner ? { media: marketplace.media } : {}),
     };

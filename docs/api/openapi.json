@@ -7834,8 +7834,32 @@
                     ],
                     "maxLength": 2048,
                     "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
                   }
-                }
+                },
+                "required": [
+                  "price",
+                  "productType",
+                  "selectedLevel"
+                ]
               }
             }
           }
@@ -8139,6 +8163,28 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "productType": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "plan",
+                        "program"
+                      ]
+                    },
+                    "selectedLevel": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -8290,6 +8336,25 @@
                     ],
                     "maxLength": 2048,
                     "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
                   }
                 },
                 "required": [
@@ -8397,6 +8462,25 @@
                     ],
                     "maxLength": 2048,
                     "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
                   }
                 }
               }
@@ -19276,6 +19360,28 @@
                           "price": {
                             "type": "number"
                           },
+                          "productType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "plan",
+                              "program"
+                            ]
+                          },
+                          "selectedLevel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "updatedAt": {
                             "type": "string"
                           },
@@ -19305,6 +19411,9 @@
                           "kind",
                           "moveCount",
                           "price",
+                          "productType",
+                          "selectedLevel",
+                          "description",
                           "updatedAt",
                           "coach"
                         ]

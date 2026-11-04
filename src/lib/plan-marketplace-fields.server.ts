@@ -1,13 +1,15 @@
 /**
- * The marketplace fields on a plan (migration 20261103120000_plans_price_media):
- * `price`, in USD with 0 as free, and `media`, the plan's one image as the
- * authenticated Supabase Storage URL of an object in the private `plan-media`
- * bucket (`<SUPABASE_URL>/storage/v1/object/authenticated/plan-media/<plan id>/<file>`).
+ * The marketplace fields on a plan: `price`, in USD with 0 as free, and
+ * `media`, the plan's one image as the authenticated Supabase Storage URL of an
+ * object in the private `plan-media` bucket
+ * (`<SUPABASE_URL>/storage/v1/object/authenticated/plan-media/<plan id>/<file>`)
+ * (migration 20261103120000_plans_price_media); `productType`, `selectedLevel`
+ * and `description` (20261104120000_plans_product_type_level_description).
  * The plan create, save and patch routes write them; the coach's plan detail
  * reads them back.
  *
- * `plans.price` and `plans.media` aren't in the generated types until Lovable
- * regenerates them, so they're read and written through `untyped`.
+ * These columns aren't in the generated types until Lovable regenerates them,
+ * so they're read and written through `untyped`.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -23,6 +25,10 @@ const untyped = (client: Client) => client as unknown as Untyped;
 /** Fits `numeric(10, 2)`. */
 export const planPriceInput = z.number().min(0).max(99_999_999.99);
 export const planMediaInput = z.string().url().max(2048);
+export const planProductTypeInput = z.enum(["plan", "program"]);
+/** The level the coach picked for the plan, as the frontend sends it. */
+export const planSelectedLevelInput = z.string().trim().min(1).max(160);
+export const planDescriptionInput = z.string().max(4000);
 
 export const PLAN_MEDIA_PATH = "/storage/v1/object/authenticated/plan-media/";
 
@@ -75,22 +81,45 @@ export async function assertPlanMediaOwned(
   if (!data) throw invalidMedia();
 }
 
-export type PlanMarketplaceFields = { price: number; media: string | null };
+export type PlanProductType = z.infer<typeof planProductTypeInput>;
 
-/** A plan's price and image, or null when the caller can't read the plan. */
+export type PlanMarketplaceFields = {
+  price: number;
+  media: string | null;
+  productType: PlanProductType | null;
+  selectedLevel: string | null;
+  description: string | null;
+};
+
+/** The fields a request may write; an absent one stays as it is. */
+export type PlanMarketplaceInput = {
+  price?: number;
+  media?: string | null;
+  productType?: PlanProductType;
+  selectedLevel?: string;
+  description?: string | null;
+};
+
+/** A plan's marketplace fields, or null when the caller can't read the plan. */
 export async function getPlanMarketplaceFields(
   supabase: Client,
   planId: string,
 ): Promise<PlanMarketplaceFields | null> {
   const { data, error } = await untyped(supabase)
     .from("plans")
-    .select("price, media")
+    .select("price, media, product_type, selected_level, description")
     .eq("id", planId)
     .maybeSingle();
   if (error) dbError(error);
   if (!data) return null;
   // PostgREST sends numeric as a number, or as a string past float precision.
-  return { price: Number(data.price), media: data.media ?? null };
+  return {
+    price: Number(data.price),
+    media: data.media ?? null,
+    productType: data.product_type ?? null,
+    selectedLevel: data.selected_level ?? null,
+    description: data.description ?? null,
+  };
 }
 
 /**
@@ -101,13 +130,34 @@ export async function getPlanMarketplaceFields(
 export async function setPlanMarketplaceFields(
   supabase: Client,
   planId: string,
-  input: { price?: number; media?: string | null },
+  input: PlanMarketplaceInput,
 ): Promise<void> {
   const columns = {
     ...(input.price !== undefined ? { price: input.price } : {}),
     ...(input.media !== undefined ? { media: input.media } : {}),
+    ...(input.productType !== undefined ? { product_type: input.productType } : {}),
+    ...(input.selectedLevel !== undefined ? { selected_level: input.selectedLevel } : {}),
+    ...(input.description !== undefined ? { description: input.description } : {}),
   };
   if (Object.keys(columns).length === 0) return;
   const { error } = await untyped(supabase).from("plans").update(columns).eq("id", planId);
   if (error) dbError(error);
+}
+
+/**
+ * What a copy of a plan (a clone, or the fork on reassigning an athlete) gets:
+ * the fields the request sent, else its source's. Never the source's image: it
+ * lives in that plan's plan-media folder.
+ */
+export function marketplaceFieldsForCopy(
+  source: PlanMarketplaceFields | null,
+  sent: PlanMarketplaceInput,
+): PlanMarketplaceInput {
+  return {
+    price: sent.price ?? source?.price,
+    media: sent.media,
+    productType: sent.productType ?? source?.productType ?? undefined,
+    selectedLevel: sent.selectedLevel ?? source?.selectedLevel ?? undefined,
+    description: sent.description !== undefined ? sent.description : source?.description,
+  };
 }

@@ -8,6 +8,11 @@ export const marketplacePlanSchema = z.object({
   moveCount: z.number(),
   /** USD; 0 is free. */
   price: z.number(),
+  /** "plan" or "program"; null on plans made before it existed. */
+  productType: z.enum(["plan", "program"]).nullable(),
+  /** The level the plan is for; null on older plans. */
+  selectedLevel: z.string().nullable(),
+  description: z.string().nullable(),
   updatedAt: z.string(),
   coach: z.object({
     id: z.string(),

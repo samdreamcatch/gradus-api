@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   assertPlanMediaOwned,
   getPlanMarketplaceFields,
+  marketplaceFieldsForCopy,
   planMediaFolder,
   setPlanMarketplaceFields,
 } from "./plan-marketplace-fields.server";
@@ -35,8 +36,7 @@ function fakeClient(rows: Row[]) {
       };
       return chain;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
+  } as unknown as Parameters<typeof setPlanMarketplaceFields>[0];
   return { client, updates };
 }
 
@@ -88,15 +88,65 @@ describe("plan marketplace fields", () => {
     await setPlanMarketplaceFields(client, PLAN, {});
     await setPlanMarketplaceFields(client, PLAN, { price: 19.99 });
     await setPlanMarketplaceFields(client, PLAN, { media: null });
+    await setPlanMarketplaceFields(client, PLAN, {
+      productType: "program",
+      selectedLevel: "Juvenile",
+      description: null,
+    });
     expect(updates).toEqual([
       { columns: { price: 19.99 }, id: PLAN },
       { columns: { media: null }, id: PLAN },
+      {
+        columns: { product_type: "program", selected_level: "Juvenile", description: null },
+        id: PLAN,
+      },
     ]);
   });
 
   it("reads price as a number, numeric strings included", async () => {
-    const { client } = fakeClient([{ id: PLAN, price: "24.50", media: null }]);
-    expect(await getPlanMarketplaceFields(client, PLAN)).toEqual({ price: 24.5, media: null });
+    const { client } = fakeClient([
+      {
+        id: PLAN,
+        price: "24.50",
+        media: null,
+        product_type: "plan",
+        selected_level: "Novice",
+        description: "Edges first.",
+      },
+    ]);
+    expect(await getPlanMarketplaceFields(client, PLAN)).toEqual({
+      price: 24.5,
+      media: null,
+      productType: "plan",
+      selectedLevel: "Novice",
+      description: "Edges first.",
+    });
     expect(await getPlanMarketplaceFields(client, "missing")).toBeNull();
+  });
+});
+
+describe("marketplaceFieldsForCopy", () => {
+  const source = {
+    price: 30,
+    media: imageUrl(),
+    productType: "program" as const,
+    selectedLevel: "Novice",
+    description: "Edges first.",
+  };
+
+  it("takes the source's fields but never its image", () => {
+    expect(marketplaceFieldsForCopy(source, {})).toEqual({
+      price: 30,
+      media: undefined,
+      productType: "program",
+      selectedLevel: "Novice",
+      description: "Edges first.",
+    });
+  });
+
+  it("lets what the request sent win, a cleared description included", () => {
+    expect(
+      marketplaceFieldsForCopy(source, { price: 0, productType: "plan", description: null }),
+    ).toMatchObject({ price: 0, productType: "plan", selectedLevel: "Novice", description: null });
   });
 });

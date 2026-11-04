@@ -9,6 +9,8 @@ import {
 } from "./plan-sessions.server";
 import {
   createPlan,
+  createPlanApiInput,
+  createPlanInput,
   deletePlan,
   removePlanMove,
   savePlan,
@@ -1018,5 +1020,34 @@ describe("setPlanStatus and the guardian on file (decision #56)", () => {
     } finally {
       mock.module("./guardian.server", () => real);
     }
+  });
+});
+
+describe("createPlanApiInput", () => {
+  const required = { productType: "program", selectedLevel: "Pre-Juvenile", price: 25 };
+
+  it("requires product type, level and price on a new plan through the API", () => {
+    expect(createPlanApiInput.safeParse(required).success).toBe(true);
+    for (const field of Object.keys(required)) {
+      const { [field]: _omitted, ...rest } = required as Record<string, unknown>;
+      expect(createPlanApiInput.safeParse(rest).success).toBe(false);
+    }
+  });
+
+  it("takes only plan or program, any non-blank level, and an optional description", () => {
+    expect(createPlanApiInput.safeParse({ ...required, productType: "course" }).success).toBe(
+      false,
+    );
+    expect(createPlanApiInput.safeParse({ ...required, selectedLevel: "Any Level" }).success).toBe(
+      true,
+    );
+    expect(createPlanApiInput.safeParse({ ...required, selectedLevel: "  " }).success).toBe(false);
+    expect(createPlanApiInput.safeParse({ ...required, description: "Edges first." }).success).toBe(
+      true,
+    );
+  });
+
+  it("leaves the web app's create input as it was", () => {
+    expect(createPlanInput.safeParse({}).success).toBe(true);
   });
 });

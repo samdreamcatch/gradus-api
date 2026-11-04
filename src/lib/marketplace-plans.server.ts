@@ -28,6 +28,13 @@ export interface MarketplacePlanDTO {
   moveCount: number;
   /** USD; 0 is free (migration 20261103120000_plans_price_media). */
   price: number;
+  /**
+   * "plan" or "program", the level the plan is for, and its description
+   * (20261104120000_plans_product_type_level_description); null when unset.
+   */
+  productType: "plan" | "program" | null;
+  selectedLevel: string | null;
+  description: string | null;
   updatedAt: string;
   coach: { id: string; firstName: string; lastName: string };
 }
@@ -131,6 +138,9 @@ type ListingRow = {
   title: string;
   kind: string;
   price: number | string;
+  product_type: string | null;
+  selected_level: string | null;
+  description: string | null;
   updated_at: string;
   coach: { id: string; first_name: string; last_name: string };
 };
@@ -161,7 +171,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, updated_at, coach:coach_profiles!inner(id, first_name, last_name, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, description, updated_at, coach:coach_profiles!inner(id, first_name, last_name, subscription_tier, organization_id)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -223,6 +233,10 @@ export async function getMarketplacePlans(
       moveCount: moveCounts.get(row.id) ?? 0,
       // PostgREST sends numeric as a number, or as a string past float precision.
       price: Number(row.price),
+      productType:
+        row.product_type === "plan" || row.product_type === "program" ? row.product_type : null,
+      selectedLevel: row.selected_level,
+      description: row.description,
       updatedAt: row.updated_at,
       coach: {
         id: row.coach.id,
