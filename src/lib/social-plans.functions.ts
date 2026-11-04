@@ -3,10 +3,10 @@ import { z } from "zod";
 import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
 import { dbError } from "./db-error";
 import { isAdminSocialPlan } from "./social-plan-rules";
-import { PLAN_FIDELITY_RULES, PLAN_WRITING_STYLE, checkPlanStyle } from "./plan-writing-style";
+import { checkPlanStyle } from "./plan-writing-style";
+import { planDraftPrompt, planImprovePrompt } from "./plan-draft-prompt";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
@@ -107,30 +107,10 @@ export const adminDraftSocialPlan = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
     const gateway = createLovableAiGatewayProvider(apiKey);
 
-    const sport = sanitizeUserContent(data.sport, 60);
-    const level = sanitizeUserContent(data.level, 80);
-    const focus = sanitizeUserContent(data.focus, 200);
-
-    const prompt = `${PROMPT_INJECTION_GUARD}
-
-You are a ${sport} coach writing a short at-home practice plan that will be shared publicly on social media by Gradus.
-
-Sport: ${sport}
-Level: ${level || "general / all levels"}
-Focus: ${focus || "well-rounded fundamentals"}
-
-Write exactly ${data.moveCount} moves an athlete can do on their own, in order. For each move give:
-- name: short, punchy
-- description: what to do
-- cue: one short coaching cue an athlete can repeat to themselves
-- why: one short sentence on why it matters
-- targetKind: "reps" or "mins"
-- targetValue: a realistic number
-
-Also write a plan title (no emoji) and an intro note.
-Be specific to ${sport}. Never invent medical claims.
-
-${PLAN_WRITING_STYLE}`;
+    const prompt = planDraftPrompt({
+      sport: data.sport,
+      source: { kind: "brief", level: data.level, focus: data.focus, moveCount: data.moveCount },
+    });
 
     const schema = z.object({
       title: z.string().min(1).max(120),
@@ -190,31 +170,10 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
       file = { bytes: Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)), mediaType };
     }
 
-    const sport = sanitizeUserContent(data.sport, 60);
-    const prompt = `${PROMPT_INJECTION_GUARD}
-
-You are a ${sport} coach. Below is the source: a competition result (judges' protocol, score sheet, or results text) or a coach's notes from a lesson — attached as a file and/or pasted. Write a practice plan that will be shared publicly by Gradus as an example of turning that source into training.
-
-Write up to ${data.moveCount} practice moves, one per drill, game, or problem the source shows (for a result: lost points or value, e.g. negative GOE, underrotations, falls, low components, missed shots, slow splits). Fewer moves is fine. Do not invent problems or drills the source does not show. Never include any athlete's name, club, or other identifying detail — refer to "the athlete".
-For each move give:
-- name: short and specific
-- description: what to do
-- cue: one short cue the athlete can repeat
-- why: one sentence tying it to the source (for a result, name the element or component)
-- targetKind: "reps" or "mins"
-- targetValue: the source's count or minutes
-
-Also write a plan title (no emoji, no names) and an intro note with the takeaway.
-
-Respond with ONLY a JSON object with EXACTLY these top-level keys:
-- "title": string
-- "notes": string
-- "moves": array of objects, each with exactly "name", "description", "cue", "why" (strings), "targetKind" ("reps" or "mins"), "targetValue" (number)
-
-${PLAN_FIDELITY_RULES}
-
-${PLAN_WRITING_STYLE}
-${data.text.trim() ? `\n${wrapUntrusted("pasted_source", sanitizeUserContent(data.text, 12000))}` : ""}`;
+    const prompt = planDraftPrompt({
+      sport: data.sport,
+      source: { kind: "source", pastedText: data.text, maxMoves: data.moveCount },
+    });
 
     const lenientMove = z.object({
       name: z
@@ -566,20 +525,14 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
         .min(1)
         .transform((a) => a.slice(0, 12)),
     });
-    const prompt = [
-      `You are an expert ${data.sport} coach improving a shareable practice plan${data.level ? ` for level ${data.level}` : ""}.`,
-      data.title ? `Plan title: ${data.title}` : "",
-      data.notes ? `Intro note: ${data.notes}` : "",
-      `Instruction from the editor: ${data.prompt}`,
-      "Rewrite every move following that instruction. Keep the same number and order of moves unless the instruction says otherwise (max 12). Never include athlete names.",
-      'targetKind is "reps" or "mins"; targetValue is a number 1–600. Keep each move\'s target unless the instruction changes it.',
-      'Respond with ONLY a JSON object: {"moves":[{"name","description","cue","why","targetKind","targetValue"}]}.',
-      `Current moves (JSON): ${JSON.stringify(data.moves)}`,
-      PLAN_WRITING_STYLE,
-      "Where the editor's instruction conflicts with the writing style above, the editor's instruction wins.",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+    const prompt = planImprovePrompt({
+      sport: data.sport,
+      level: data.level,
+      title: data.title,
+      notes: data.notes,
+      instruction: data.prompt,
+      moves: data.moves,
+    });
     try {
       const { object } = await generateObject({
         model: gateway("google/gemini-3.8-flash"),

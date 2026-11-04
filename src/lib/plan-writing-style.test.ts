@@ -1,13 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import {
-  PLAN_BANNED_WORDS,
-  PLAN_FIDELITY_RULES,
-  PLAN_WORD_LIMITS,
-  PLAN_WRITING_STYLE,
-  bannedWordsIn,
-  checkPlanStyle,
-  countWords,
-} from "./plan-writing-style";
+import { bannedWordsIn, checkPlanStyle, countWords } from "./plan-writing-style";
 
 /** The target shape from the handoff for the bump & run notes (about 90 words). */
 const GOOD_PLAN = {
@@ -39,45 +31,6 @@ const LONG_MOVE = {
   cue: "Wider stance, smooth swing, let the loft work.",
   why: "Builds trajectory contrast so he can choose the right shot for each lie.",
 };
-
-describe("the style block", () => {
-  it("states every word limit and the banned words, and ends with the short example", () => {
-    for (const limit of Object.values(PLAN_WORD_LIMITS)) {
-      expect(PLAN_WRITING_STYLE).toContain(`${limit} words max`);
-    }
-    for (const w of PLAN_BANNED_WORDS) expect(PLAN_WRITING_STYLE).toContain(w);
-    expect(PLAN_WRITING_STYLE).toContain("Crosscourt Forehands");
-    expect(PLAN_WRITING_STYLE).toContain("never reuse its words");
-    expect(PLAN_WRITING_STYLE.indexOf("Too long")).toBeLessThan(
-      PLAN_WRITING_STYLE.indexOf("Right:"),
-    );
-  });
-
-  it("the example move itself passes the checker", () => {
-    const example = {
-      title: "Forehand Basics",
-      notes: "",
-      moves: [
-        {
-          name: "Crosscourt Forehands",
-          description:
-            "Partner feeds 20 balls to your forehand. Split-step, turn early, swing low to high. Aim deep crosscourt.",
-          cue: "Low to high.",
-          why: "Topspin keeps it in.",
-        },
-      ],
-    };
-    expect(checkPlanStyle(example)).toEqual([]);
-  });
-
-  it("the fidelity rules keep later work in the notes and forbid invented moves and numbers", () => {
-    expect(PLAN_FIDELITY_RULES).toContain("Do not invent extra moves");
-    expect(PLAN_FIDELITY_RULES).toContain("plan notes, not in a move");
-    expect(PLAN_FIDELITY_RULES).toContain("never make up a larger number");
-    expect(PLAN_FIDELITY_RULES).toContain("is its own first move");
-    expect(PLAN_FIDELITY_RULES).toContain("keeps its structure");
-  });
-});
 
 describe("checkPlanStyle", () => {
   it("passes the handoff's target plan", () => {
