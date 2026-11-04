@@ -356,7 +356,7 @@ function SocialPlansPage() {
 
       <section className="rounded-2xl border border-divider bg-card p-5 space-y-4">
         <h2 className="font-display text-h3 text-text-primary">
-          Or draft from a competition result
+          Or draft from a competition result or a coach's notes
         </h2>
         <div className="space-y-1.5">
           <Label htmlFor="result-file">Result image or PDF</Label>
@@ -368,14 +368,14 @@ function SocialPlansPage() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="result-text">Or paste the result text</Label>
+          <Label htmlFor="result-text">Or paste the result text or the coach's notes</Label>
           <Textarea
             id="result-text"
             value={resultText}
             onChange={(e) => setResultText(e.target.value)}
             rows={4}
             maxLength={20000}
-            placeholder="Paste a protocol, score sheet, or results summary"
+            placeholder="Paste a protocol, score sheet, results summary, or lesson notes"
           />
         </div>
         <Button
