@@ -1,15 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import {
-  PLAN_BANNED_WORDS,
-  PLAN_FIDELITY_RULES,
-  PLAN_WORD_LIMITS,
-  PLAN_WRITING_STYLE,
-  bannedWordsIn,
-  checkPlanStyle,
-  countWords,
-} from "./plan-writing-style";
+import { bannedWordsIn, checkPlanStyle, countWords } from "./plan-writing-style";
 
-/** The target shape from the handoff for the bump & run notes (about 90 words). */
+/** A plain plan with no jargon. */
 const GOOD_PLAN = {
   title: "Bump & Run: Low vs. High",
   notes: "Next up: control distance with club choice and swing length.",
@@ -40,84 +32,23 @@ const LONG_MOVE = {
   why: "Builds trajectory contrast so he can choose the right shot for each lie.",
 };
 
-describe("the style block", () => {
-  it("states every word limit and the banned words, and ends with the short example", () => {
-    for (const limit of Object.values(PLAN_WORD_LIMITS)) {
-      expect(PLAN_WRITING_STYLE).toContain(`${limit} words max`);
-    }
-    for (const w of PLAN_BANNED_WORDS) expect(PLAN_WRITING_STYLE).toContain(w);
-    expect(PLAN_WRITING_STYLE).toContain("Low Shot Under the Handle");
-    expect(PLAN_WRITING_STYLE.indexOf("Too long")).toBeLessThan(
-      PLAN_WRITING_STYLE.indexOf("Right:"),
-    );
-  });
-
-  it("the example move itself passes the checker", () => {
-    const example = {
-      title: "Bump & Run",
-      notes: "",
-      moves: [
-        {
-          name: "Low Shot Under the Handle",
-          description:
-            "Hit bump & runs that stay below the Gobbler handle. Narrow stance, ball just back, hands ahead.",
-          cue: "Small swing, no click.",
-          why: "Low shots roll like putts.",
-        },
-      ],
-    };
-    expect(checkPlanStyle(example)).toEqual([]);
-  });
-
-  it("the fidelity rules keep later work in the notes and forbid invented moves and numbers", () => {
-    expect(PLAN_FIDELITY_RULES).toContain("Do not invent extra moves");
-    expect(PLAN_FIDELITY_RULES).toContain("plan notes, not in a move");
-    expect(PLAN_FIDELITY_RULES).toContain("never make up a larger number");
-  });
-});
-
 describe("checkPlanStyle", () => {
-  it("passes the handoff's target plan", () => {
+  it("passes a plain plan", () => {
     expect(checkPlanStyle(GOOD_PLAN)).toEqual([]);
-    const total =
-      countWords(GOOD_PLAN.title) +
-      countWords(GOOD_PLAN.notes) +
-      GOOD_PLAN.moves.reduce(
-        (n, m) =>
-          n +
-          countWords(m.name) +
-          countWords(m.description) +
-          countWords(m.cue) +
-          countWords(m.why),
-        0,
-      );
-    expect(total).toBeLessThan(100);
   });
 
-  it("flags the long style by field, with the count and the jargon", () => {
+  it("flags jargon by field, and nothing for length", () => {
     const violations = checkPlanStyle({
       title: "Bump and Run Trajectory and Distance Control",
       notes:
         "The athlete has established the core setup and wrist mechanics for low trajectory shots. This session builds trajectory contrast and dials in distance control through multi-club selection and swing length calibration.",
       moves: [LONG_MOVE],
     });
-    const fields = violations.map((v) => v.field);
-    expect(fields).toContain("title");
-    expect(fields).toContain("notes");
-    expect(fields).toContain("moves[0].description");
-    expect(fields).toContain("moves[0].cue");
-    expect(fields).toContain("moves[0].why");
-    const problems = (field: string) =>
-      violations
-        .filter((v) => v.field === field)
-        .map((v) => v.problem)
-        .join("; ");
-    expect(problems("moves[0].description")).toBe("46 words, limit 25");
-    expect(problems("title")).toBe("7 words, limit 6; banned words: trajectory");
-    expect(problems("notes")).toBe(
-      "31 words, limit 20; banned words: trajectory, calibration, contrast, mechanics, establish",
+    expect(violations.map((v) => v.field)).toEqual(["title", "notes", "moves[0].why"]);
+    expect(violations[0].problem).toBe("banned words: trajectory");
+    expect(violations[1].problem).toBe(
+      "banned words: trajectory, calibration, contrast, mechanics, establish",
     );
-    expect(problems("moves[0].why")).toContain("trajectory, contrast");
   });
 
   it("matches banned stems at the start of a word, case-insensitively", () => {
