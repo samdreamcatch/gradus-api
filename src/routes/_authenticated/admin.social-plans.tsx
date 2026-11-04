@@ -114,7 +114,7 @@ function SocialPlansPage() {
     setImproving(true);
     try {
       const res = await improveFn({
-        data: { sport: sportLabel, level, title, notes, prompt: improvePrompt, moves: valid },
+        data: { sport, level, title, notes, prompt: improvePrompt, moves: valid },
       });
       setPreviousMoves(moves);
       setMoves(res.moves);
@@ -174,7 +174,7 @@ function SocialPlansPage() {
     try {
       const res = await draftFn({
         data: {
-          sport: sportLabel,
+          sport,
           level: levels.find((l) => l.key === level)?.label ?? "",
           focus: focus.trim(),
           moveCount,
@@ -207,7 +207,7 @@ function SocialPlansPage() {
           })
         : undefined;
       const res = await draftFromResultFn({
-        data: { sport: sportLabel, text: resultText.trim(), fileDataUrl, moveCount },
+        data: { sport, text: resultText.trim(), fileDataUrl, moveCount },
       });
       setTitle(res.title);
       setNotes(res.notes);

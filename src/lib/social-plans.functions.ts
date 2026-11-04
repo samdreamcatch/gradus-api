@@ -7,6 +7,8 @@ import { dbError } from "./db-error";
 import { isAdminSocialPlan } from "./social-plan-rules";
 import { checkPlanStyle } from "./plan-writing-style";
 import { planDraftPrompt, planImprovePrompt } from "./plan-draft-prompt";
+import { applyLibrary, type LibraryMove } from "./plan-draft-library";
+import { getSport } from "./coach-sports";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
@@ -37,9 +39,9 @@ type SocialDatabase = Omit<Database, "public"> & {
 const socialClient = (client: unknown) => client as SupabaseClient<SocialDatabase>;
 
 /**
- * Logs the ways a draft breaks the writing rules (field, count, jargon) so a
- * long draft shows up in the server log next to its prompt's name. The draft
- * is returned as is: the admin edits it before it is published.
+ * Logs the fields of a draft that use banned jargon, so a draft that slips
+ * shows up in the server log next to its prompt's name. The draft is
+ * returned as is: the admin edits it before it is published.
  */
 function warnOnStyle(
   where: string,
@@ -52,11 +54,85 @@ function warnOnStyle(
   const violations = checkPlanStyle(plan);
   if (violations.length) {
     console.warn(
-      `[social-plans ${where}] draft breaks the writing rules`,
+      `[social-plans ${where}] draft uses jargon`,
       violations.map((v) => `${v.field}: ${v.problem}`).join("; "),
     );
   }
 }
+
+/** The sport as people read it: the label of a known key, else the key itself. */
+function sportLabelFor(sportKey: string): string {
+  return getSport(sportKey)?.label ?? sportKey.replace(/^custom_/, "").replace(/_/g, " ");
+}
+
+/**
+ * The sport's Gradus library (`seed_moves`, the curriculum every coach's
+ * library is seeded from). Best effort: a failed read drafts without it.
+ */
+async function loadLibrary(supabase: any, sportKey: string): Promise<LibraryMove[]> {
+  try {
+    const { data, error } = await supabase
+      .from("seed_moves")
+      .select("name, category, description, cue, why, default_target_kind, default_target_value")
+      .eq("sport", sportKey)
+      .limit(500);
+    if (error) {
+      console.error("[social-plans] seed_moves read failed", error.message);
+      return [];
+    }
+    return (data ?? []).map((r: any) => ({
+      name: String(r.name ?? ""),
+      category: String(r.category ?? ""),
+      description: String(r.description ?? ""),
+      cue: String(r.cue ?? ""),
+      why: String(r.why ?? ""),
+      defaultTargetKind: /^min/i.test(String(r.default_target_kind ?? "")) ? "mins" : "reps",
+      defaultTargetValue: Number(r.default_target_value) > 0 ? Number(r.default_target_value) : 10,
+    }));
+  } catch (err) {
+    console.error("[social-plans] seed_moves read failed", err);
+    return [];
+  }
+}
+
+const clip = (n: number) =>
+  z
+    .string()
+    .default("")
+    .transform((s) => s.slice(0, n));
+
+/** A move as the model returns it: lenient on shape, a library name when it matched, no target when the source gave none. */
+const draftedMoveSchema = z.object({
+  libraryName: z.preprocess((v) => (typeof v === "string" ? v : null), z.string().nullable()),
+  name: z
+    .string()
+    .min(1)
+    .transform((s) => s.slice(0, 120)),
+  description: clip(600),
+  cue: clip(300),
+  why: clip(300),
+  targetKind: z.preprocess(
+    (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
+    z.enum(["reps", "mins"]),
+  ),
+  targetValue: z.preprocess((v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) && n > 0 ? Math.min(600, n) : null;
+  }, z.number().nullable()),
+});
+
+const draftedPlanSchema = z.object({
+  title: z
+    .string()
+    .min(1)
+    .transform((s) => s.slice(0, 120)),
+  notes: clip(600),
+  moves: z
+    .array(draftedMoveSchema)
+    .min(1)
+    .transform((a) => a.slice(0, 8)),
+});
 
 /** Throws if the caller is not an admin. */
 async function assertAdmin(context: { userId: string; supabase: any }) {
@@ -107,25 +183,26 @@ export const adminDraftSocialPlan = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
     const gateway = createLovableAiGatewayProvider(apiKey);
 
+    const library = await loadLibrary(context.supabase, data.sport);
     const prompt = planDraftPrompt({
-      sport: data.sport,
+      sportLabel: sportLabelFor(data.sport),
+      library,
       source: { kind: "brief", level: data.level, focus: data.focus, moveCount: data.moveCount },
-    });
-
-    const schema = z.object({
-      title: z.string().min(1).max(120),
-      notes: z.string().max(600),
-      moves: z.array(moveSchema).min(1).max(8),
     });
 
     try {
       const { object } = await generateObject({
         model: gateway("google/gemini-2.5-flash"),
-        schema,
+        schema: draftedPlanSchema,
         prompt,
       });
-      warnOnStyle("draft", object);
-      return object;
+      const plan = {
+        title: object.title,
+        notes: object.notes,
+        moves: applyLibrary(object.moves, library),
+      };
+      warnOnStyle("draft", plan);
+      return plan;
     } catch (err) {
       console.error("[social-plans draft]", err);
       throw new Error("Could not draft the plan. Please try again.");
@@ -170,50 +247,11 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
       file = { bytes: Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0)), mediaType };
     }
 
+    const library = await loadLibrary(context.supabase, data.sport);
     const prompt = planDraftPrompt({
-      sport: data.sport,
+      sportLabel: sportLabelFor(data.sport),
+      library,
       source: { kind: "source", pastedText: data.text, maxMoves: data.moveCount },
-    });
-
-    const lenientMove = z.object({
-      name: z
-        .string()
-        .min(1)
-        .transform((s) => s.slice(0, 120)),
-      description: z
-        .string()
-        .default("")
-        .transform((s) => s.slice(0, 600)),
-      cue: z
-        .string()
-        .default("")
-        .transform((s) => s.slice(0, 300)),
-      why: z
-        .string()
-        .default("")
-        .transform((s) => s.slice(0, 300)),
-      targetKind: z.preprocess(
-        (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
-        z.enum(["reps", "mins"]),
-      ),
-      targetValue: z.preprocess((v) => {
-        const n = Math.round(Number(v));
-        return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
-      }, z.number()),
-    });
-    const schema = z.object({
-      title: z
-        .string()
-        .min(1)
-        .transform((s) => s.slice(0, 120)),
-      notes: z
-        .string()
-        .default("")
-        .transform((s) => s.slice(0, 600)),
-      moves: z
-        .array(lenientMove)
-        .min(1)
-        .transform((a) => a.slice(0, 8)),
     });
 
     const content: any[] = [{ type: "text", text: prompt }];
@@ -228,11 +266,16 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
     try {
       const { object } = await generateObject({
         model: gateway("google/gemini-3.8-flash"),
-        schema,
+        schema: draftedPlanSchema,
         messages: [{ role: "user", content }],
       });
-      warnOnStyle("result draft", object);
-      return object;
+      const plan = {
+        title: object.title,
+        notes: object.notes,
+        moves: applyLibrary(object.moves, library),
+      };
+      warnOnStyle("source draft", plan);
+      return plan;
     } catch (err) {
       console.error("[social-plans result draft]", err);
       throw new Error("Could not read that result. Try a clearer image or paste the text.");
@@ -496,11 +539,6 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
     const gateway = createLovableAiGatewayProvider(apiKey);
-    const clip = (n: number) =>
-      z
-        .string()
-        .default("")
-        .transform((s) => s.slice(0, n));
     const schema = z.object({
       moves: z
         .array(
@@ -526,7 +564,8 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
         .transform((a) => a.slice(0, 12)),
     });
     const prompt = planImprovePrompt({
-      sport: data.sport,
+      sportLabel: sportLabelFor(data.sport),
+      library: await loadLibrary(context.supabase, data.sport),
       level: data.level,
       title: data.title,
       notes: data.notes,
