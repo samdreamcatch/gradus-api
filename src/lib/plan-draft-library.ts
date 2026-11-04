@@ -16,7 +16,11 @@ export type LibraryMove = {
   defaultTargetValue: number;
 };
 
-/** A move as the model returns it: a library name when it matched, and no target when the source gave none. */
+/**
+ * A move as the model returns it: a library name when it matched (then its
+ * description holds only what the source adds to the library move), and no
+ * target when the source gave none.
+ */
 export type DraftedMove = {
   libraryName?: string | null;
   name: string;
@@ -41,23 +45,47 @@ export const FALLBACK_TARGET = { targetKind: "reps", targetValue: 10 } as const;
 
 const key = (s: string) => s.trim().toLowerCase();
 
+/** The library by lower-cased name, built once per draft. */
+export function libraryIndex(library: LibraryMove[]): Map<string, LibraryMove> {
+  return new Map(library.map((m) => [key(m.name), m]));
+}
+
 /** The library move the draft names, or the one whose name the draft's own name equals. */
-export function findLibraryMove(move: DraftedMove, library: LibraryMove[]): LibraryMove | null {
-  const byName = new Map(library.map((m) => [key(m.name), m]));
-  const named = move.libraryName?.trim() ? byName.get(key(move.libraryName)) : undefined;
-  return named ?? byName.get(key(move.name)) ?? null;
+export function findLibraryMove(
+  move: DraftedMove,
+  index: Map<string, LibraryMove>,
+): LibraryMove | null {
+  const named = move.libraryName?.trim() ? index.get(key(move.libraryName)) : undefined;
+  return named ?? index.get(key(move.name)) ?? null;
+}
+
+/**
+ * The library's text with the source's addition after it, unless the library
+ * already says it. The addition is what the source workout adds to the
+ * library move (a constraint, a count, a variation), so a converted plan
+ * still shows what the source was.
+ */
+export function withAddition(libraryText: string, addition: string): string {
+  const lib = libraryText.trim();
+  const add = addition.trim();
+  if (!add) return lib;
+  if (!lib) return add;
+  if (lib.toLowerCase().includes(add.toLowerCase())) return lib;
+  return `${/[.!?]$/.test(lib) ? lib : `${lib}.`} ${add}`;
 }
 
 /**
  * Applies the library to every drafted move. A matched move takes the
- * library's name, and its description, cue and why where the library has
- * them; its target is the source's count when the model found one, else the
- * library's default. An unmatched move keeps the model's words and gets the
- * fallback target when the source gave none.
+ * library's name and its description, cue and why, with the source's own
+ * addition kept after the library's description; its target is the source's
+ * count when the model found one, else the library's default. An unmatched
+ * move keeps the model's words and gets the fallback target when the source
+ * gave none.
  */
 export function applyLibrary(moves: DraftedMove[], library: LibraryMove[]): FinalMove[] {
+  const index = libraryIndex(library);
   return moves.map((m) => {
-    const lib = findLibraryMove(m, library);
+    const lib = findLibraryMove(m, index);
     const kind = m.targetKind === "mins" ? "mins" : "reps";
     const fromSource = m.targetValue != null && Number.isFinite(m.targetValue) && m.targetValue > 0;
     if (!lib) {
@@ -72,7 +100,7 @@ export function applyLibrary(moves: DraftedMove[], library: LibraryMove[]): Fina
     }
     return {
       name: lib.name,
-      description: lib.description.trim() || m.description.trim(),
+      description: withAddition(lib.description, m.description),
       cue: lib.cue.trim() || m.cue.trim(),
       why: lib.why.trim() || m.why.trim(),
       targetKind: fromSource ? kind : lib.defaultTargetKind,

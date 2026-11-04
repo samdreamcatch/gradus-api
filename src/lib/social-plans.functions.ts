@@ -8,7 +8,7 @@ import { isAdminSocialPlan } from "./social-plan-rules";
 import { checkPlanStyle } from "./plan-writing-style";
 import { planDraftPrompt, planImprovePrompt } from "./plan-draft-prompt";
 import { applyLibrary, type LibraryMove } from "./plan-draft-library";
-import { getSport } from "./coach-sports";
+import { sportDisplayLabel } from "./coach-sports";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
@@ -60,14 +60,11 @@ function warnOnStyle(
   }
 }
 
-/** The sport as people read it: the label of a known key, else the key itself. */
-function sportLabelFor(sportKey: string): string {
-  return getSport(sportKey)?.label ?? sportKey.replace(/^custom_/, "").replace(/_/g, " ");
-}
-
 /**
  * The sport's Gradus library (`seed_moves`, the curriculum every coach's
- * library is seeded from). Best effort: a failed read drafts without it.
+ * library is seeded from). Best effort: a failed read drafts without it. The
+ * count is logged every time, so a sport that silently matches no rows (a
+ * key that drifted from the seed data) shows up next to its draft.
  */
 async function loadLibrary(supabase: any, sportKey: string): Promise<LibraryMove[]> {
   try {
@@ -80,6 +77,7 @@ async function loadLibrary(supabase: any, sportKey: string): Promise<LibraryMove
       console.error("[social-plans] seed_moves read failed", error.message);
       return [];
     }
+    console.info(`[social-plans] library ${sportKey}: ${(data ?? []).length} moves`);
     return (data ?? []).map((r: any) => ({
       name: String(r.name ?? ""),
       category: String(r.category ?? ""),
@@ -128,10 +126,9 @@ const draftedPlanSchema = z.object({
     .min(1)
     .transform((s) => s.slice(0, 120)),
   notes: clip(600),
-  moves: z
-    .array(draftedMoveSchema)
-    .min(1)
-    .transform((a) => a.slice(0, 8)),
+  // No minimum: a source with no drills in it (a "next time" note, an unreadable
+  // photo) comes back as a title and a note, not as a failed read.
+  moves: z.array(draftedMoveSchema).transform((a) => a.slice(0, 8)),
 });
 
 /** Throws if the caller is not an admin. */
@@ -185,7 +182,7 @@ export const adminDraftSocialPlan = createServerFn({ method: "POST" })
 
     const library = await loadLibrary(context.supabase, data.sport);
     const prompt = planDraftPrompt({
-      sportLabel: sportLabelFor(data.sport),
+      sportLabel: sportDisplayLabel(data.sport),
       library,
       source: { kind: "brief", level: data.level, focus: data.focus, moveCount: data.moveCount },
     });
@@ -249,7 +246,7 @@ export const adminDraftSocialPlanFromResult = createServerFn({ method: "POST" })
 
     const library = await loadLibrary(context.supabase, data.sport);
     const prompt = planDraftPrompt({
-      sportLabel: sportLabelFor(data.sport),
+      sportLabel: sportDisplayLabel(data.sport),
       library,
       source: { kind: "source", pastedText: data.text, maxMoves: data.moveCount },
     });
@@ -539,32 +536,22 @@ export const adminImproveSocialPlanMoves = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI service is unavailable. Please try again later.");
     const gateway = createLovableAiGatewayProvider(apiKey);
+    // The draft move shape without the library match, and a target that is
+    // always a number: an improve starts from moves that already have one.
+    const improvedMoveSchema = draftedMoveSchema.omit({ libraryName: true }).extend({
+      targetValue: z.preprocess((v) => {
+        const n = Math.round(Number(v));
+        return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
+      }, z.number()),
+    });
     const schema = z.object({
       moves: z
-        .array(
-          z.object({
-            name: z
-              .string()
-              .min(1)
-              .transform((s) => s.slice(0, 120)),
-            description: clip(600),
-            cue: clip(300),
-            why: clip(300),
-            targetKind: z.preprocess(
-              (v) => (/^min/i.test(String(v ?? "")) ? "mins" : "reps"),
-              z.enum(["reps", "mins"]),
-            ),
-            targetValue: z.preprocess((v) => {
-              const n = Math.round(Number(v));
-              return Number.isFinite(n) ? Math.min(600, Math.max(1, n)) : 10;
-            }, z.number()),
-          }),
-        )
+        .array(improvedMoveSchema)
         .min(1)
         .transform((a) => a.slice(0, 12)),
     });
     const prompt = planImprovePrompt({
-      sportLabel: sportLabelFor(data.sport),
+      sportLabel: sportDisplayLabel(data.sport),
       library: await loadLibrary(context.supabase, data.sport),
       level: data.level,
       title: data.title,

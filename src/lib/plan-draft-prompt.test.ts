@@ -47,6 +47,7 @@ describe("planDraftPrompt", () => {
     expect(notes).toContain("GRADUS LIBRARY for Golf");
     expect(notes).toContain("- Bump and Run | Short game | A low chip that lands short and rolls.");
     expect(notes).toContain("libraryName: the exact name from the GRADUS LIBRARY");
+    expect(notes).toContain("On a library match, write here only what the source adds");
     expect(brief).toContain("The library has no moves for this sport");
   });
 
@@ -88,6 +89,17 @@ describe("planImprovePrompt", () => {
     });
     expect(p).toContain("Gradus practice plan for Tennis");
     expect(p).toContain("GRADUS LIBRARY for Tennis");
+    const withLib = planImprovePrompt({
+      sportLabel: "Golf",
+      library: LIB,
+      level: "",
+      title: "",
+      notes: "",
+      instruction: "x",
+      moves: [],
+    });
+    expect(withLib).toContain("- Bump and Run\n");
+    expect(withLib).not.toContain("A low chip that lands short and rolls.");
     expect(p).toContain("Instruction: make the cues shorter");
     expect(p).toContain('"Toss and catch"');
     expect(p).toContain("the instruction wins");

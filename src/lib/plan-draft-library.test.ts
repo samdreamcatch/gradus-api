@@ -1,5 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import { applyLibrary, findLibraryMove, type LibraryMove } from "./plan-draft-library";
+import {
+  applyLibrary,
+  findLibraryMove,
+  libraryIndex,
+  withAddition,
+  type LibraryMove,
+} from "./plan-draft-library";
 
 const LIB: LibraryMove[] = [
   {
@@ -35,7 +41,7 @@ describe("findLibraryMove", () => {
           targetKind: "reps",
           targetValue: null,
         },
-        LIB,
+        libraryIndex(LIB),
       )?.name,
     ).toBe("Bump and Run");
     expect(
@@ -49,7 +55,7 @@ describe("findLibraryMove", () => {
           targetKind: "reps",
           targetValue: null,
         },
-        LIB,
+        libraryIndex(LIB),
       )?.name,
     ).toBe("Lag Putting");
     expect(
@@ -63,14 +69,14 @@ describe("findLibraryMove", () => {
           targetKind: "reps",
           targetValue: null,
         },
-        LIB,
+        libraryIndex(LIB),
       ),
     ).toBeNull();
   });
 });
 
 describe("applyLibrary", () => {
-  it("library wins on a matched move; the source's count wins over the library default", () => {
+  it("library wins on a matched move, the source's addition follows its description, and the source's count wins", () => {
     const [m] = applyLibrary(
       [
         {
@@ -87,7 +93,8 @@ describe("applyLibrary", () => {
     );
     expect(m).toEqual({
       name: "Bump and Run",
-      description: "A low chip that lands short and rolls to the hole.",
+      description:
+        "A low chip that lands short and rolls to the hole. Keep it under the Gobbler handle.",
       cue: "Hands ahead, small swing.",
       why: "The safest shot from just off the green.",
       targetKind: "reps",
@@ -166,5 +173,18 @@ describe("applyLibrary", () => {
     expect(a.targetValue).toBe(3);
     expect(a.name).toBe("High shot");
     expect(b).toMatchObject({ targetKind: "reps", targetValue: 10 });
+  });
+});
+
+describe("withAddition", () => {
+  it("appends the source's addition after the library text, once, with a full stop between", () => {
+    expect(withAddition("A low chip that rolls", "Under the Gobbler handle.")).toBe(
+      "A low chip that rolls. Under the Gobbler handle.",
+    );
+    expect(withAddition("A low chip that rolls.", "")).toBe("A low chip that rolls.");
+    expect(withAddition("", "Under the handle.")).toBe("Under the handle.");
+    expect(withAddition("Keep it under the handle.", "under the handle")).toBe(
+      "Keep it under the handle.",
+    );
   });
 });

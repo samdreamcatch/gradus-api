@@ -36,28 +36,42 @@ A PLAN IS
 - moves: in order. Each move is one discrete drill or skill. A game in the source is split into the moves it exercises.
 
 EACH MOVE
-- libraryName: the exact name from the GRADUS LIBRARY below when the move is one the library has, else null. The library's description, cue and why replace yours for that move, so match whenever you honestly can.
+- libraryName: the exact name from the GRADUS LIBRARY below when the move is one the library has, else null. The library's description, cue and why are used for that move, so match whenever you honestly can.
 - name: the library's name; else the source's name for it; else the shortest plain name.
-- description: what the move is and how it is done. Set-up points (stance, grip, position, where to stand) belong here, inside the move they set up. A set-up checklist is never a move of its own.
+- description: what the move is and how it is done. Set-up points (stance, grip, position, where to stand) belong here, inside the move they set up. A set-up checklist is never a move of its own. On a library match, write here only what the source adds to the library move (a constraint, a count, a variation), in one short sentence, or nothing.
 - cue: the few words a parent says in the moment to bring the coach's instruction back, or the coach's own words. Useful on its own; not a repeat of the description.
 - why: why this move matters or gets assigned. The coach's reason when they gave one; otherwise the usual reason. The editor can change it.
 - targetKind: "reps" or "mins".
 - targetValue: the count or time the source gives, or the number the drill's own structure gives (3 shots with each of 3 clubs is 9 reps; 2 laps on each foot is 4 reps). Otherwise null. Never a number from nowhere.`;
 }
 
-function librarySection(sportLabel: string, library: LibraryMove[]): string {
+/**
+ * The sport's library as the model sees it. A draft gets each move's
+ * description too, since it has to tell a match from a near miss; an improve
+ * only needs the names, so it lists those (finding: the full list cost tokens
+ * for nothing there).
+ */
+function librarySection(
+  sportLabel: string,
+  library: LibraryMove[],
+  detail: "full" | "names",
+): string {
   if (!library.length) {
     return `GRADUS LIBRARY for ${sportLabel}
 The library has no moves for this sport. Leave libraryName null and write every field yourself, in the style above.`;
   }
   const rows = library
     .slice(0, LIBRARY_PROMPT_LIMIT)
-    .map(
-      (m) =>
-        `- ${m.name} | ${m.category}${m.description ? ` | ${sanitizeUserContent(m.description, 160)}` : ""}`,
+    .map((m) =>
+      detail === "names"
+        ? `- ${m.name}`
+        : `- ${m.name} | ${m.category}${m.description ? ` | ${sanitizeUserContent(m.description, 160)}` : ""}`,
     )
     .join("\n");
-  return `GRADUS LIBRARY for ${sportLabel} (name | category | what it is)
+  return detail === "names"
+    ? `GRADUS LIBRARY for ${sportLabel} (move names; use these names for moves the library has)
+${rows}`
+    : `GRADUS LIBRARY for ${sportLabel} (name | category | what it is)
 ${rows}`;
 }
 
@@ -90,7 +104,7 @@ export function planDraftPrompt(opts: {
   const guard = opts.source.kind === "source" ? `${PROMPT_INJECTION_GUARD}\n\n` : "";
   return [
     guard + principles(sport),
-    librarySection(sport, opts.library),
+    librarySection(sport, opts.library, "full"),
     sourceSection(opts.source, sport),
     OUTPUT_SHAPE,
   ].join("\n\n");
@@ -109,7 +123,7 @@ export function planImprovePrompt(opts: {
   const sport = sanitizeUserContent(opts.sportLabel, 60) || "this sport";
   return [
     principles(sport),
-    librarySection(sport, opts.library),
+    librarySection(sport, opts.library, "names"),
     `THE SOURCE
 An existing plan${opts.level ? ` for level ${sanitizeUserContent(opts.level, 60)}` : ""}${opts.title ? `, titled "${sanitizeUserContent(opts.title, 140)}"` : ""}${opts.notes ? `, with the note "${sanitizeUserContent(opts.notes, 1000)}"` : ""}, and an editor's instruction.
 Rewrite every move to follow the instruction. Keep the number and order of moves unless the instruction says otherwise (12 at most), and keep each move's target unless it changes it. Where the instruction conflicts with the rules above, the instruction wins.
