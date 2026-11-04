@@ -270,4 +270,39 @@ describe("sendApnsRequest never rejects", () => {
     );
     expect(outcome).toEqual({ ok: false, status: 400, reason: "BadDeviceToken", dead: false });
   });
+
+  it("sends a token from the other APNs environment there (Xcode build, production server)", async () => {
+    resetApnsTokenCache();
+    const config = { ...(await testConfig()), host: "https://api.push.apple.com" };
+    const { fetchImpl, calls } = fetchStub([apnsError(400, "BadDeviceToken"), ok]);
+    const outcome = await sendApnsRequest(
+      config,
+      { token: "sandboxtoken", payload: {}, pushType: "alert" },
+      { fetch: fetchImpl },
+    );
+    expect(outcome).toEqual({ ok: true, apnsId: "abc-123" });
+    expect(calls.map((c) => c.url)).toEqual([
+      "https://api.push.apple.com/3/device/sandboxtoken",
+      "https://api.sandbox.push.apple.com/3/device/sandboxtoken",
+    ]);
+  });
+
+  it("tries the other environment once, from sandbox too, and reports its failure", async () => {
+    resetApnsTokenCache();
+    const config = { ...(await testConfig()), host: "https://api.sandbox.push.apple.com" };
+    const { fetchImpl, calls } = fetchStub([
+      apnsError(400, "BadDeviceToken"),
+      apnsError(400, "BadDeviceToken"),
+    ]);
+    const outcome = await sendApnsRequest(
+      config,
+      { token: "t", payload: {}, pushType: "alert" },
+      { fetch: fetchImpl },
+    );
+    expect(outcome).toEqual({ ok: false, status: 400, reason: "BadDeviceToken", dead: false });
+    expect(calls.map((c) => c.url)).toEqual([
+      "https://api.sandbox.push.apple.com/3/device/t",
+      "https://api.push.apple.com/3/device/t",
+    ]);
+  });
 });
