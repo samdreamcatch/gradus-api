@@ -286,6 +286,7 @@ import { Route as ApiV1MessagesIdReactionRouteImport } from './routes/api/v1/mes
 import { Route as ApiV1ParentAthletesIndexRouteImport } from './routes/api/v1/parent/athletes/index'
 import { Route as ApiV1ParentTeamIndexRouteImport } from './routes/api/v1/parent/team/index'
 import { Route as ApiV1PlansIdIndexRouteImport } from './routes/api/v1/plans/$id/index'
+import { Route as ApiV1PlansIdRatingRouteImport } from './routes/api/v1/plans/$id/rating'
 import { Route as ApiV1PlansIdShareTokenRouteImport } from './routes/api/v1/plans/$id/share-token'
 import { Route as ApiV1PlansIdStatusRouteImport } from './routes/api/v1/plans/$id/status'
 import { Route as ApiV1PlansImportTokenRouteImport } from './routes/api/v1/plans/import/$token'
@@ -353,6 +354,8 @@ import { Route as ApiV1PlansIdMovesIndexRouteImport } from './routes/api/v1/plan
 import { Route as ApiV1PlansIdMovesMoveIdRouteImport } from './routes/api/v1/plans/$id/moves/$moveId'
 import { Route as ApiV1PlansIdMovesFromLibraryRouteImport } from './routes/api/v1/plans/$id/moves/from-library'
 import { Route as ApiV1PlansIdMovesOrderRouteImport } from './routes/api/v1/plans/$id/moves/order'
+import { Route as ApiV1PlansIdRatingsIndexRouteImport } from './routes/api/v1/plans/$id/ratings/index'
+import { Route as ApiV1PlansIdRatingsSummaryRouteImport } from './routes/api/v1/plans/$id/ratings/summary'
 import { Route as ApiV1PlansIdSessionsIndexRouteImport } from './routes/api/v1/plans/$id/sessions/index'
 import { Route as ApiV1PlansIdSessionsSummaryRouteImport } from './routes/api/v1/plans/$id/sessions/summary'
 import { Route as ApiV1AthletePlansIdMovesMoveIdRouteImport } from './routes/api/v1/athlete/plans/$id/moves/$moveId'
@@ -361,6 +364,7 @@ import { Route as ApiV1AthletePlansIdMovesOrderRouteImport } from './routes/api/
 import { Route as ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRouteImport } from './routes/api/v1/athletes/$id/competition-results/$resultId/generate-plan'
 import { Route as ApiV1ParentAthletesIdCoachesIndexRouteImport } from './routes/api/v1/parent/athletes/$id/coaches/index'
 import { Route as ApiV1ParentTeamGuardiansInvitesIndexRouteImport } from './routes/api/v1/parent/team/guardians/invites/index'
+import { Route as ApiV1PlansIdRatingsRatingIdResponseRouteImport } from './routes/api/v1/plans/$id/ratings/$ratingId/response'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateCancelRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateOverrideRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/override'
 import { Route as ApiV1CoachLessonSlotsIdOccurrencesDateRescheduleRouteImport } from './routes/api/v1/coach/lesson-slots/$id/occurrences/$date/reschedule'
@@ -1892,6 +1896,11 @@ const ApiV1PlansIdIndexRoute = ApiV1PlansIdIndexRouteImport.update({
   path: '/api/v1/plans/$id/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PlansIdRatingRoute = ApiV1PlansIdRatingRouteImport.update({
+  id: '/api/v1/plans/$id/rating',
+  path: '/api/v1/plans/$id/rating',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1PlansIdShareTokenRoute = ApiV1PlansIdShareTokenRouteImport.update({
   id: '/api/v1/plans/$id/share-token',
   path: '/api/v1/plans/$id/share-token',
@@ -2273,6 +2282,18 @@ const ApiV1PlansIdMovesOrderRoute = ApiV1PlansIdMovesOrderRouteImport.update({
   path: '/api/v1/plans/$id/moves/order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PlansIdRatingsIndexRoute =
+  ApiV1PlansIdRatingsIndexRouteImport.update({
+    id: '/api/v1/plans/$id/ratings/',
+    path: '/api/v1/plans/$id/ratings/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PlansIdRatingsSummaryRoute =
+  ApiV1PlansIdRatingsSummaryRouteImport.update({
+    id: '/api/v1/plans/$id/ratings/summary',
+    path: '/api/v1/plans/$id/ratings/summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1PlansIdSessionsIndexRoute =
   ApiV1PlansIdSessionsIndexRouteImport.update({
     id: '/api/v1/plans/$id/sessions/',
@@ -2319,6 +2340,12 @@ const ApiV1ParentTeamGuardiansInvitesIndexRoute =
   ApiV1ParentTeamGuardiansInvitesIndexRouteImport.update({
     id: '/api/v1/parent/team/guardians/invites/',
     path: '/api/v1/parent/team/guardians/invites/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1PlansIdRatingsRatingIdResponseRoute =
+  ApiV1PlansIdRatingsRatingIdResponseRouteImport.update({
+    id: '/api/v1/plans/$id/ratings/$ratingId/response',
+    path: '/api/v1/plans/$id/ratings/$ratingId/response',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute =
@@ -2627,6 +2654,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
+  '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -2701,6 +2729,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
+  '/api/v1/plans/$id/ratings/summary': typeof ApiV1PlansIdRatingsSummaryRoute
   '/api/v1/plans/$id/sessions/summary': typeof ApiV1PlansIdSessionsSummaryRoute
   '/api/v1/adult-athlete/coaches/$id/': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/athlete/plans/$id/': typeof ApiV1AthletePlansIdIndexRoute
@@ -2715,11 +2744,13 @@ export interface FileRoutesByFullPath {
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
+  '/api/v1/plans/$id/ratings/': typeof ApiV1PlansIdRatingsIndexRoute
   '/api/v1/plans/$id/sessions/': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
   '/api/v1/athlete/plans/$id/moves/from-library': typeof ApiV1AthletePlansIdMovesFromLibraryRoute
   '/api/v1/athlete/plans/$id/moves/order': typeof ApiV1AthletePlansIdMovesOrderRoute
   '/api/v1/athletes/$id/competition-results/$resultId/generate-plan': typeof ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute
+  '/api/v1/plans/$id/ratings/$ratingId/response': typeof ApiV1PlansIdRatingsRatingIdResponseRoute
   '/api/v1/parent/athletes/$id/coaches/': typeof ApiV1ParentAthletesIdCoachesIndexRoute
   '/api/v1/parent/team/guardians/invites/': typeof ApiV1ParentTeamGuardiansInvitesIndexRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
@@ -2982,6 +3013,7 @@ export interface FileRoutesByTo {
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
+  '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -3056,6 +3088,7 @@ export interface FileRoutesByTo {
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
+  '/api/v1/plans/$id/ratings/summary': typeof ApiV1PlansIdRatingsSummaryRoute
   '/api/v1/plans/$id/sessions/summary': typeof ApiV1PlansIdSessionsSummaryRoute
   '/api/v1/adult-athlete/coaches/$id': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/athlete/plans/$id': typeof ApiV1AthletePlansIdIndexRoute
@@ -3070,11 +3103,13 @@ export interface FileRoutesByTo {
   '/api/v1/parent/athletes/$id': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves': typeof ApiV1PlansIdMovesIndexRoute
+  '/api/v1/plans/$id/ratings': typeof ApiV1PlansIdRatingsIndexRoute
   '/api/v1/plans/$id/sessions': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
   '/api/v1/athlete/plans/$id/moves/from-library': typeof ApiV1AthletePlansIdMovesFromLibraryRoute
   '/api/v1/athlete/plans/$id/moves/order': typeof ApiV1AthletePlansIdMovesOrderRoute
   '/api/v1/athletes/$id/competition-results/$resultId/generate-plan': typeof ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute
+  '/api/v1/plans/$id/ratings/$ratingId/response': typeof ApiV1PlansIdRatingsRatingIdResponseRoute
   '/api/v1/parent/athletes/$id/coaches': typeof ApiV1ParentAthletesIdCoachesIndexRoute
   '/api/v1/parent/team/guardians/invites': typeof ApiV1ParentTeamGuardiansInvitesIndexRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
@@ -3345,6 +3380,7 @@ export interface FileRoutesById {
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
+  '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
   '/api/v1/plans/$id/share-token': typeof ApiV1PlansIdShareTokenRoute
   '/api/v1/plans/$id/status': typeof ApiV1PlansIdStatusRoute
   '/api/v1/plans/import/$token': typeof ApiV1PlansImportTokenRoute
@@ -3419,6 +3455,7 @@ export interface FileRoutesById {
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
+  '/api/v1/plans/$id/ratings/summary': typeof ApiV1PlansIdRatingsSummaryRoute
   '/api/v1/plans/$id/sessions/summary': typeof ApiV1PlansIdSessionsSummaryRoute
   '/api/v1/adult-athlete/coaches/$id/': typeof ApiV1AdultAthleteCoachesIdIndexRoute
   '/api/v1/athlete/plans/$id/': typeof ApiV1AthletePlansIdIndexRoute
@@ -3433,11 +3470,13 @@ export interface FileRoutesById {
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
+  '/api/v1/plans/$id/ratings/': typeof ApiV1PlansIdRatingsIndexRoute
   '/api/v1/plans/$id/sessions/': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
   '/api/v1/athlete/plans/$id/moves/from-library': typeof ApiV1AthletePlansIdMovesFromLibraryRoute
   '/api/v1/athlete/plans/$id/moves/order': typeof ApiV1AthletePlansIdMovesOrderRoute
   '/api/v1/athletes/$id/competition-results/$resultId/generate-plan': typeof ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute
+  '/api/v1/plans/$id/ratings/$ratingId/response': typeof ApiV1PlansIdRatingsRatingIdResponseRoute
   '/api/v1/parent/athletes/$id/coaches/': typeof ApiV1ParentAthletesIdCoachesIndexRoute
   '/api/v1/parent/team/guardians/invites/': typeof ApiV1ParentTeamGuardiansInvitesIndexRoute
   '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
@@ -3708,6 +3747,7 @@ export interface FileRouteTypes {
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
+    | '/api/v1/plans/$id/rating'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -3782,6 +3822,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
+    | '/api/v1/plans/$id/ratings/summary'
     | '/api/v1/plans/$id/sessions/summary'
     | '/api/v1/adult-athlete/coaches/$id/'
     | '/api/v1/athlete/plans/$id/'
@@ -3796,11 +3837,13 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/moves/'
+    | '/api/v1/plans/$id/ratings/'
     | '/api/v1/plans/$id/sessions/'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
     | '/api/v1/athlete/plans/$id/moves/from-library'
     | '/api/v1/athlete/plans/$id/moves/order'
     | '/api/v1/athletes/$id/competition-results/$resultId/generate-plan'
+    | '/api/v1/plans/$id/ratings/$ratingId/response'
     | '/api/v1/parent/athletes/$id/coaches/'
     | '/api/v1/parent/team/guardians/invites/'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
@@ -4063,6 +4106,7 @@ export interface FileRouteTypes {
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
+    | '/api/v1/plans/$id/rating'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -4137,6 +4181,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
+    | '/api/v1/plans/$id/ratings/summary'
     | '/api/v1/plans/$id/sessions/summary'
     | '/api/v1/adult-athlete/coaches/$id'
     | '/api/v1/athlete/plans/$id'
@@ -4151,11 +4196,13 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id'
     | '/api/v1/parent/team/guardians'
     | '/api/v1/plans/$id/moves'
+    | '/api/v1/plans/$id/ratings'
     | '/api/v1/plans/$id/sessions'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
     | '/api/v1/athlete/plans/$id/moves/from-library'
     | '/api/v1/athlete/plans/$id/moves/order'
     | '/api/v1/athletes/$id/competition-results/$resultId/generate-plan'
+    | '/api/v1/plans/$id/ratings/$ratingId/response'
     | '/api/v1/parent/athletes/$id/coaches'
     | '/api/v1/parent/team/guardians/invites'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
@@ -4425,6 +4472,7 @@ export interface FileRouteTypes {
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/messages/$id/reaction'
+    | '/api/v1/plans/$id/rating'
     | '/api/v1/plans/$id/share-token'
     | '/api/v1/plans/$id/status'
     | '/api/v1/plans/import/$token'
@@ -4499,6 +4547,7 @@ export interface FileRouteTypes {
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
+    | '/api/v1/plans/$id/ratings/summary'
     | '/api/v1/plans/$id/sessions/summary'
     | '/api/v1/adult-athlete/coaches/$id/'
     | '/api/v1/athlete/plans/$id/'
@@ -4513,11 +4562,13 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/moves/'
+    | '/api/v1/plans/$id/ratings/'
     | '/api/v1/plans/$id/sessions/'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
     | '/api/v1/athlete/plans/$id/moves/from-library'
     | '/api/v1/athlete/plans/$id/moves/order'
     | '/api/v1/athletes/$id/competition-results/$resultId/generate-plan'
+    | '/api/v1/plans/$id/ratings/$ratingId/response'
     | '/api/v1/parent/athletes/$id/coaches/'
     | '/api/v1/parent/team/guardians/invites/'
     | '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel'
@@ -4698,6 +4749,7 @@ export interface RootRouteChildren {
   ApiV1LiveActivitiesTokensTokenRoute: typeof ApiV1LiveActivitiesTokensTokenRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1MessagesIdReactionRoute: typeof ApiV1MessagesIdReactionRoute
+  ApiV1PlansIdRatingRoute: typeof ApiV1PlansIdRatingRoute
   ApiV1PlansIdShareTokenRoute: typeof ApiV1PlansIdShareTokenRoute
   ApiV1PlansIdStatusRoute: typeof ApiV1PlansIdStatusRoute
   ApiV1PlansImportTokenRoute: typeof ApiV1PlansImportTokenRoute
@@ -4772,6 +4824,7 @@ export interface RootRouteChildren {
   ApiV1PlansIdMovesMoveIdRoute: typeof ApiV1PlansIdMovesMoveIdRoute
   ApiV1PlansIdMovesFromLibraryRoute: typeof ApiV1PlansIdMovesFromLibraryRoute
   ApiV1PlansIdMovesOrderRoute: typeof ApiV1PlansIdMovesOrderRoute
+  ApiV1PlansIdRatingsSummaryRoute: typeof ApiV1PlansIdRatingsSummaryRoute
   ApiV1PlansIdSessionsSummaryRoute: typeof ApiV1PlansIdSessionsSummaryRoute
   ApiV1AdultAthleteCoachesIdIndexRoute: typeof ApiV1AdultAthleteCoachesIdIndexRoute
   ApiV1AthletePlansIdIndexRoute: typeof ApiV1AthletePlansIdIndexRoute
@@ -4786,11 +4839,13 @@ export interface RootRouteChildren {
   ApiV1ParentAthletesIdIndexRoute: typeof ApiV1ParentAthletesIdIndexRoute
   ApiV1ParentTeamGuardiansIndexRoute: typeof ApiV1ParentTeamGuardiansIndexRoute
   ApiV1PlansIdMovesIndexRoute: typeof ApiV1PlansIdMovesIndexRoute
+  ApiV1PlansIdRatingsIndexRoute: typeof ApiV1PlansIdRatingsIndexRoute
   ApiV1PlansIdSessionsIndexRoute: typeof ApiV1PlansIdSessionsIndexRoute
   ApiV1AthletePlansIdMovesMoveIdRoute: typeof ApiV1AthletePlansIdMovesMoveIdRoute
   ApiV1AthletePlansIdMovesFromLibraryRoute: typeof ApiV1AthletePlansIdMovesFromLibraryRoute
   ApiV1AthletePlansIdMovesOrderRoute: typeof ApiV1AthletePlansIdMovesOrderRoute
   ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute: typeof ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute
+  ApiV1PlansIdRatingsRatingIdResponseRoute: typeof ApiV1PlansIdRatingsRatingIdResponseRoute
   ApiV1ParentAthletesIdCoachesIndexRoute: typeof ApiV1ParentAthletesIdCoachesIndexRoute
   ApiV1ParentTeamGuardiansInvitesIndexRoute: typeof ApiV1ParentTeamGuardiansInvitesIndexRoute
   ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute: typeof ApiV1CoachLessonSlotsIdOccurrencesDateCancelRoute
@@ -6744,6 +6799,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PlansIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/plans/$id/rating': {
+      id: '/api/v1/plans/$id/rating'
+      path: '/api/v1/plans/$id/rating'
+      fullPath: '/api/v1/plans/$id/rating'
+      preLoaderRoute: typeof ApiV1PlansIdRatingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/plans/$id/share-token': {
       id: '/api/v1/plans/$id/share-token'
       path: '/api/v1/plans/$id/share-token'
@@ -7213,6 +7275,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PlansIdMovesOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/plans/$id/ratings/': {
+      id: '/api/v1/plans/$id/ratings/'
+      path: '/api/v1/plans/$id/ratings'
+      fullPath: '/api/v1/plans/$id/ratings/'
+      preLoaderRoute: typeof ApiV1PlansIdRatingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/ratings/summary': {
+      id: '/api/v1/plans/$id/ratings/summary'
+      path: '/api/v1/plans/$id/ratings/summary'
+      fullPath: '/api/v1/plans/$id/ratings/summary'
+      preLoaderRoute: typeof ApiV1PlansIdRatingsSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/plans/$id/sessions/': {
       id: '/api/v1/plans/$id/sessions/'
       path: '/api/v1/plans/$id/sessions'
@@ -7267,6 +7343,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/parent/team/guardians/invites'
       fullPath: '/api/v1/parent/team/guardians/invites/'
       preLoaderRoute: typeof ApiV1ParentTeamGuardiansInvitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/ratings/$ratingId/response': {
+      id: '/api/v1/plans/$id/ratings/$ratingId/response'
+      path: '/api/v1/plans/$id/ratings/$ratingId/response'
+      fullPath: '/api/v1/plans/$id/ratings/$ratingId/response'
+      preLoaderRoute: typeof ApiV1PlansIdRatingsRatingIdResponseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/coach/lesson-slots/$id/occurrences/$date/cancel': {
@@ -7794,6 +7877,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1LiveActivitiesTokensTokenRoute: ApiV1LiveActivitiesTokensTokenRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1MessagesIdReactionRoute: ApiV1MessagesIdReactionRoute,
+  ApiV1PlansIdRatingRoute: ApiV1PlansIdRatingRoute,
   ApiV1PlansIdShareTokenRoute: ApiV1PlansIdShareTokenRoute,
   ApiV1PlansIdStatusRoute: ApiV1PlansIdStatusRoute,
   ApiV1PlansImportTokenRoute: ApiV1PlansImportTokenRoute,
@@ -7874,6 +7958,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1PlansIdMovesMoveIdRoute: ApiV1PlansIdMovesMoveIdRoute,
   ApiV1PlansIdMovesFromLibraryRoute: ApiV1PlansIdMovesFromLibraryRoute,
   ApiV1PlansIdMovesOrderRoute: ApiV1PlansIdMovesOrderRoute,
+  ApiV1PlansIdRatingsSummaryRoute: ApiV1PlansIdRatingsSummaryRoute,
   ApiV1PlansIdSessionsSummaryRoute: ApiV1PlansIdSessionsSummaryRoute,
   ApiV1AdultAthleteCoachesIdIndexRoute: ApiV1AdultAthleteCoachesIdIndexRoute,
   ApiV1AthletePlansIdIndexRoute: ApiV1AthletePlansIdIndexRoute,
@@ -7890,6 +7975,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1ParentAthletesIdIndexRoute: ApiV1ParentAthletesIdIndexRoute,
   ApiV1ParentTeamGuardiansIndexRoute: ApiV1ParentTeamGuardiansIndexRoute,
   ApiV1PlansIdMovesIndexRoute: ApiV1PlansIdMovesIndexRoute,
+  ApiV1PlansIdRatingsIndexRoute: ApiV1PlansIdRatingsIndexRoute,
   ApiV1PlansIdSessionsIndexRoute: ApiV1PlansIdSessionsIndexRoute,
   ApiV1AthletePlansIdMovesMoveIdRoute: ApiV1AthletePlansIdMovesMoveIdRoute,
   ApiV1AthletePlansIdMovesFromLibraryRoute:
@@ -7897,6 +7983,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AthletePlansIdMovesOrderRoute: ApiV1AthletePlansIdMovesOrderRoute,
   ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute:
     ApiV1AthletesIdCompetitionResultsResultIdGeneratePlanRoute,
+  ApiV1PlansIdRatingsRatingIdResponseRoute:
+    ApiV1PlansIdRatingsRatingIdResponseRoute,
   ApiV1ParentAthletesIdCoachesIndexRoute:
     ApiV1ParentAthletesIdCoachesIndexRoute,
   ApiV1ParentTeamGuardiansInvitesIndexRoute:

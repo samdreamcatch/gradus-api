@@ -8783,6 +8783,618 @@
         }
       }
     },
+    "/api/v1/plans/{id}/rating": {
+      "put": {
+        "operationId": "ratePlan",
+        "summary": "Rate a plan, or change your rating",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "review": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "rating"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "review": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reviewer": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "First name and last initial, e.g. \"Greta S.\""
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "athlete",
+                            "parent"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "role"
+                      ]
+                    },
+                    "coachResponse": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "coachRespondedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "rating",
+                    "review",
+                    "reviewer",
+                    "coachResponse",
+                    "coachRespondedAt",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlanRating",
+        "summary": "Remove your rating of a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings": {
+      "get": {
+        "operationId": "listPlanRatings",
+        "summary": "A plan's ratings and reviews",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "average": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "count": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "average",
+                        "count"
+                      ]
+                    },
+                    "myRating": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "rating": {
+                          "type": "number"
+                        },
+                        "review": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "reviewer": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "description": "First name and last initial, e.g. \"Greta S.\""
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "athlete",
+                                "parent"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "role"
+                          ]
+                        },
+                        "coachResponse": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "coachRespondedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "rating",
+                        "review",
+                        "reviewer",
+                        "coachResponse",
+                        "coachRespondedAt",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "description": "The caller's own rating of this plan, if any."
+                    },
+                    "canRate": {
+                      "type": "boolean",
+                      "description": "Whether the caller may rate (or re-rate) this plan."
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rating": {
+                            "type": "number"
+                          },
+                          "review": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "reviewer": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "First name and last initial, e.g. \"Greta S.\""
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "athlete",
+                                  "parent"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "role"
+                            ]
+                          },
+                          "coachResponse": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "coachRespondedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rating",
+                          "review",
+                          "reviewer",
+                          "coachResponse",
+                          "coachRespondedAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "summary",
+                    "myRating",
+                    "canRate",
+                    "items",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings/summary": {
+      "get": {
+        "operationId": "getPlanRatingSummary",
+        "summary": "A plan's average rating",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "average": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "count": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "average",
+                    "count"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings/{ratingId}/response": {
+      "put": {
+        "operationId": "respondToPlanRating",
+        "summary": "Reply to a rating of your plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "ratingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "response": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "response"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "review": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reviewer": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "First name and last initial, e.g. \"Greta S.\""
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "athlete",
+                            "parent"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "role"
+                      ]
+                    },
+                    "coachResponse": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "coachRespondedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "rating",
+                    "review",
+                    "reviewer",
+                    "coachResponse",
+                    "coachRespondedAt",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/plans/{id}/moves": {
       "post": {
         "operationId": "addPlanMove",
@@ -19498,6 +20110,24 @@
                               "null"
                             ]
                           },
+                          "rating": {
+                            "type": "object",
+                            "properties": {
+                              "average": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "average",
+                              "count"
+                            ]
+                          },
                           "updatedAt": {
                             "type": "string"
                           },
@@ -19530,6 +20160,7 @@
                           "productType",
                           "selectedLevel",
                           "description",
+                          "rating",
                           "updatedAt",
                           "coach"
                         ]

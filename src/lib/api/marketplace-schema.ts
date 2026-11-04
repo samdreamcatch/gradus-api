@@ -13,6 +13,8 @@ export const marketplacePlanSchema = z.object({
   /** The level the plan is for; null on older plans. */
   selectedLevel: z.string().nullable(),
   description: z.string().nullable(),
+  /** Rating totals; `average` is null with no ratings. */
+  rating: z.object({ average: z.number().nullable(), count: z.number() }),
   updatedAt: z.string(),
   coach: z.object({
     id: z.string(),

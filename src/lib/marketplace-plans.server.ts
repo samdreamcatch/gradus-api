@@ -35,6 +35,8 @@ export interface MarketplacePlanDTO {
   productType: "plan" | "program" | null;
   selectedLevel: string | null;
   description: string | null;
+  /** Rating totals (20261106120000_plan_ratings); `average` is null with no ratings. */
+  rating: { average: number | null; count: number };
   updatedAt: string;
   coach: { id: string; firstName: string; lastName: string };
 }
@@ -141,6 +143,8 @@ type ListingRow = {
   product_type: string | null;
   selected_level: string | null;
   description: string | null;
+  rating_avg: number | string | null;
+  rating_count: number | null;
   updated_at: string;
   coach: { id: string; first_name: string; last_name: string };
 };
@@ -171,7 +175,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, description, updated_at, coach:coach_profiles!inner(id, first_name, last_name, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, description, rating_avg, rating_count, updated_at, coach:coach_profiles!inner(id, first_name, last_name, subscription_tier, organization_id)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -237,6 +241,10 @@ export async function getMarketplacePlans(
         row.product_type === "plan" || row.product_type === "program" ? row.product_type : null,
       selectedLevel: row.selected_level,
       description: row.description,
+      rating: {
+        average: row.rating_avg === null ? null : Number(row.rating_avg),
+        count: row.rating_count ?? 0,
+      },
       updatedAt: row.updated_at,
       coach: {
         id: row.coach.id,
