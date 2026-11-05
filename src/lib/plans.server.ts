@@ -157,22 +157,44 @@ export interface PlanDetailDTO extends PlanSummaryDTO {
 export interface AthleteOptionDTO {
   id: string;
   name: string;
+  /** The roster's sport for this athlete under this coach, when one is linked. */
+  sport: string | null;
 }
 
 /* ---------------- roster helpers ---------------- */
 
 export async function listCoachAthletes(ctx: PlansContext): Promise<AthleteOptionDTO[]> {
   const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
-  const { data, error } = await ctx.supabase
-    .from("coach_athletes")
-    .select("athlete_id, athletes!inner(id, first_name, last_name)")
-    .eq("coach_id", coachId);
-  if (error) dbError(error);
+  // Every coach_athlete_sports row for this coach is a rostered athlete's (the insert trigger
+  // checks the link), so both reads only need the coach and can run together.
+  const [rosterRes, sportsRes] = await Promise.all([
+    ctx.supabase
+      .from("coach_athletes")
+      .select("athlete_id, athletes!inner(id, first_name, last_name)")
+      .eq("coach_id", coachId),
+    ctx.supabase
+      .from("coach_athlete_sports")
+      .select("athlete_id, sport, created_at")
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: true }),
+  ]);
+  if (rosterRes.error) dbError(rosterRes.error);
+  if (sportsRes.error) dbError(sportsRes.error);
+  const data = rosterRes.data;
+  // The roster's sport link: the earliest row per athlete, so the default is stable across loads.
+  const sportByAthlete = new Map<string, string>();
+  for (const r of sportsRes.data ?? []) {
+    if (!sportByAthlete.has(r.athlete_id)) sportByAthlete.set(r.athlete_id, r.sport);
+  }
   const athletes: AthleteOptionDTO[] = (data ?? []).map((row) => {
     const a = (
       row as unknown as { athletes: { id: string; first_name: string; last_name: string } }
     ).athletes;
-    return { id: a.id, name: `${a.first_name} ${a.last_name}`.trim() };
+    return {
+      id: a.id,
+      name: `${a.first_name} ${a.last_name}`.trim(),
+      sport: sportByAthlete.get(a.id) ?? null,
+    };
   });
   athletes.sort((a, b) => a.name.localeCompare(b.name));
   return athletes;

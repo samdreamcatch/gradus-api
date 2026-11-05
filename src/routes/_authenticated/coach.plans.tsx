@@ -43,6 +43,8 @@ import { FilterPill } from "@/components/ui/filter-pill";
 import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 import { SegmentedToggle } from "@/components/plans/segmented-toggle";
 import { FilterBar } from "@/components/plans/filter-bar";
+import { FilterChip } from "@/components/plans/filter-chip";
+import { pickerMoves } from "@/lib/plan-move-picker";
 import { PlanHelpBubble } from "@/components/coach/plan-help-bubble";
 
 export const Route = createFileRoute("/_authenticated/coach/plans")({
@@ -539,18 +541,7 @@ function LibraryView({
   const moves = data?.moves ?? [];
   const sports = useMemo(() => Array.from(new Set(moves.map((m) => m.sport))).sort(), [moves]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return moves.filter((m) => {
-      if (sport && m.sport !== sport) return false;
-      if (!q) return true;
-      return (
-        m.name.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        m.cue.toLowerCase().includes(q)
-      );
-    });
-  }, [moves, query, sport]);
+  const filtered = useMemo(() => pickerMoves(moves, sport, query), [moves, query, sport]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, MoveDTO[]>();
@@ -567,13 +558,17 @@ function LibraryView({
   return (
     <div>
       {sports.length > 1 ? (
-        <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
+        <div
+          role="group"
+          aria-label="Sport"
+          className="mb-3 flex items-center gap-2 overflow-x-auto pb-1"
+        >
           <FilterChip active={sport === ""} onClick={() => setSport("")}>
             All
           </FilterChip>
           {sports.map((s) => (
             <FilterChip key={s} active={sport === s} onClick={() => setSport(s)}>
-              {s}
+              {sportDisplayLabel(s)}
             </FilterChip>
           ))}
         </div>
@@ -648,31 +643,6 @@ function LibraryView({
         </div>
       )}
     </div>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold transition",
-        active
-          ? "border-accent/70 bg-accent text-accent-foreground"
-          : "border-divider bg-card text-text-secondary hover:text-text-primary",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

@@ -10,6 +10,7 @@ import {
 import {
   createPlan,
   deletePlan,
+  listCoachAthletes,
   removePlanMove,
   savePlan,
   setPlanStatus,
@@ -83,6 +84,34 @@ async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
 const coach = { coach_profiles: { id: "coach-1" } };
 /** The coach has athlete `a1` on their roster; any other athlete id reads as not rostered. */
 const roster = { coach_athletes: { athlete_id: "a1" } };
+
+describe("listCoachAthletes", () => {
+  it("adds each athlete's earliest roster sport, scoped to this coach, or null without one", async () => {
+    const filters: string[] = [];
+    const supabase = fakeClient(
+      { ...coach },
+      {
+        coach_athletes: [
+          { athlete_id: "a1", athletes: { id: "a1", first_name: "Zed", last_name: "Ames" } },
+          { athlete_id: "a2", athletes: { id: "a2", first_name: "Amy", last_name: "Bell" } },
+        ],
+        // Ordered by created_at, as the query asks: the first row per athlete wins.
+        coach_athlete_sports: [
+          { athlete_id: "a1", sport: "hockey" },
+          { athlete_id: "a1", sport: "figure_skating" },
+        ],
+      },
+      { filters },
+    );
+    const athletes = await listCoachAthletes({ userId: "u", supabase });
+    expect(athletes).toEqual([
+      { id: "a2", name: "Amy Bell", sport: null },
+      { id: "a1", name: "Zed Ames", sport: "hockey" },
+    ]);
+    expect(filters).toContain("coach_athletes.coach_id=coach-1");
+    expect(filters).toContain("coach_athlete_sports.coach_id=coach-1");
+  });
+});
 
 describe("setPlanStatus", () => {
   // No cap on active plans per athlete (PRD decision #52).

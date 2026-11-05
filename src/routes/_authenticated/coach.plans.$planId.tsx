@@ -69,6 +69,7 @@ import { NameConflictDialog } from "@/components/coach/name-conflict-dialog";
 import { AiDraftedNote, DraftWithAiButton, UnrecognisedMove } from "@/components/coach/move-draft";
 import { useMoveDraft } from "@/hooks/use-move-draft";
 import { sportDisplayLabel } from "@/lib/coach-sports";
+import { pickerMoves } from "@/lib/plan-move-picker";
 import {
   DRAFT_STALE_NOTE,
   draftFills,
@@ -80,6 +81,7 @@ import {
 } from "@/lib/move-draft";
 import { VoiceFab } from "@/components/coach/voice-fab";
 import { consumeVoiceTouched, type VoiceTouchedSnapshot } from "@/lib/voice-touched-store";
+import { FilterChip } from "@/components/plans/filter-chip";
 import { FlowStateBars } from "@/components/plans/flow-state-bars";
 import { SessionMoveRatings } from "@/components/plans/session-move-ratings";
 import {
@@ -1126,6 +1128,9 @@ function PlanEditorBody({
       <MovePicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
+        defaultSport={
+          athletesData ? (athletes.find((a) => a.id === plan.athleteId)?.sport ?? null) : undefined
+        }
         onAdd={(picked) => {
           if (!picked.length) {
             setPickerOpen(false);
@@ -1233,10 +1238,16 @@ function MovePicker({
   open,
   onOpenChange,
   onAdd,
+  defaultSport,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onAdd: (moves: MoveDTO[]) => void;
+  /**
+   * The plan athlete's sport: the chip the picker opens on when the library has it.
+   * `undefined` while the roster is still loading (the picker waits), `null` for no sport.
+   */
+  defaultSport: string | null | undefined;
 }) {
   const qc = useQueryClient();
   const fetchMoves = useServerFn(listMoves);
@@ -1251,25 +1262,31 @@ function MovePicker({
   const [mode, setMode] = useState<"pick" | "create">("pick");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Record<string, MoveDTO>>({});
+  // "" is All. Starts on the plan athlete's sport (Mariah, 2026-11-04) once the library
+  // is known to hold it, so a sport with no moves never opens on an empty list.
+  const [sport, setSport] = useState("");
+  const [sportSeeded, setSportSeeded] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSelected({});
       setMode("pick");
       setQuery("");
+      setSport("");
+      setSportSeeded(false);
     }
   }, [open]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return moves;
-    return moves.filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        m.cue.toLowerCase().includes(q),
-    );
-  }, [moves, query]);
+  const sports = useMemo(() => Array.from(new Set(moves.map((m) => m.sport))).sort(), [moves]);
+
+  useEffect(() => {
+    // Wait for both the library and the roster, so a late-arriving athlete sport is never missed.
+    if (!open || sportSeeded || !data || defaultSport === undefined) return;
+    setSportSeeded(true);
+    if (defaultSport && sports.length > 1 && sports.includes(defaultSport)) setSport(defaultSport);
+  }, [open, sportSeeded, data, defaultSport, sports]);
+
+  const filtered = useMemo(() => pickerMoves(moves, sport, query), [moves, sport, query]);
 
   const count = Object.keys(selected).length;
 
@@ -1340,7 +1357,30 @@ function MovePicker({
                   <Plus className="h-4 w-4" /> New
                 </Button>
               </div>
+              {sports.length > 1 ? (
+                <div
+                  role="group"
+                  aria-label="Sport"
+                  className="mt-3 flex items-center gap-2 overflow-x-auto pb-1"
+                >
+                  <FilterChip active={sport === ""} onClick={() => setSport("")}>
+                    All
+                  </FilterChip>
+                  {sports.map((s) => (
+                    <FilterChip key={s} active={sport === s} onClick={() => setSport(s)}>
+                      {sportDisplayLabel(s)}
+                    </FilterChip>
+                  ))}
+                </div>
+              ) : null}
               <ul className="mt-3 flex-1 divide-y divide-divider overflow-y-auto">
+                {data && filtered.length === 0 ? (
+                  <li className="py-6 text-center text-sm text-text-secondary">
+                    {moves.length === 0
+                      ? "Your move library is empty."
+                      : "No moves match your filters."}
+                  </li>
+                ) : null}
                 {filtered.map((m) => {
                   const isSel = !!selected[m.id];
                   return (
@@ -1394,6 +1434,8 @@ function MovePicker({
           ) : (
             <NewMoveForm
               existingMoves={moves}
+              // The chip's sport; on All, the plan athlete's sport (as the iOS form does).
+              defaultSport={sport || defaultSport || null}
               saving={upsertMutation.isPending}
               onCancel={() => setMode("pick")}
               onUseExisting={(m) => onAdd([m])}
@@ -1443,9 +1485,12 @@ function NewMoveForm({
   onCancel,
   onUseExisting,
   onCreate,
+  defaultSport = null,
 }: {
   existingMoves: MoveDTO[];
   saving: boolean;
+  /** The sport the form opens on when the coach's sports include it (the picker's chip). */
+  defaultSport?: string | null;
   onCancel: () => void;
   onUseExisting: (m: MoveDTO) => void;
   onCreate: (input: {
@@ -1490,8 +1535,9 @@ function NewMoveForm({
   const [hint, setHint] = useState("");
 
   useEffect(() => {
-    if (sportOptions.length > 0 && !sport) setSport(sportOptions[0]);
-  }, [sportOptions, sport]);
+    if (sportOptions.length === 0 || sport) return;
+    setSport(defaultSport && sportOptions.includes(defaultSport) ? defaultSport : sportOptions[0]);
+  }, [sportOptions, sport, defaultSport]);
 
   useEffect(() => {
     setCategory("");
