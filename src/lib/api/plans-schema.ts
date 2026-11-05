@@ -128,6 +128,7 @@ export const planDetailSchema = z.object({
   // view; null on plans made before them. Optional for older clients and servers.
   productType: z.enum(["plan", "program"]).nullable().optional(),
   selectedLevel: z.string().nullable().optional(),
+  selectedLevelTo: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 

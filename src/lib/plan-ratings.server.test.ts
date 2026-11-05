@@ -230,7 +230,7 @@ describe("listPlanRatings", () => {
   });
 
   it("returns totals, the caller's rating, and named reviews for a listing", async () => {
-    const user = fakeClient({ plans: [] }, { can_rate_plan: true });
+    const user = fakeClient({ plans: [] }, { can_rate_plan: true, is_plan_coach: false });
     const admin = fakeClient({
       plans: [listedPlan],
       plan_ratings: [
@@ -246,6 +246,7 @@ describe("listPlanRatings", () => {
     );
     expect(page.summary).toEqual({ average: 4.5, count: 2 });
     expect(page.canRate).toBe(true);
+    expect(page.canRespond).toBe(false);
     expect(page.myRating?.reviewer).toEqual({ name: "Greta S.", role: "athlete" });
     expect(page.items).toHaveLength(1);
     expect(page.items[0].reviewer).toEqual({ name: "Maria S.", role: "parent" });

@@ -15,6 +15,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { listingCoverUrls } from "./plan-marketplace-fields.server";
 import { guardianAthleteAccess } from "./team.server";
 
 type Admin = SupabaseClient<Database>;
@@ -34,11 +35,19 @@ export interface MarketplacePlanDTO {
    */
   productType: "plan" | "program" | null;
   selectedLevel: string | null;
+  /** The other end of a level range (20261107120000); null for a single level. */
+  selectedLevelTo: string | null;
   description: string | null;
   /** Rating totals (20261106120000_plan_ratings); `average` is null with no ratings. */
   rating: { average: number | null; count: number };
+  /**
+   * The cover to show: Gradus default artwork, or a signed link (an hour) to the
+   * coach's uploaded photo; null when there's none.
+   */
+  media: string | null;
   updatedAt: string;
-  coach: { id: string; firstName: string; lastName: string };
+  /** `verified`: the coach finished identity verification (their setup checklist). */
+  coach: { id: string; firstName: string; lastName: string; verified: boolean };
 }
 
 /**
@@ -142,11 +151,18 @@ type ListingRow = {
   price: number | string;
   product_type: string | null;
   selected_level: string | null;
+  selected_level_to: string | null;
   description: string | null;
   rating_avg: number | string | null;
   rating_count: number | null;
+  media: string | null;
   updated_at: string;
-  coach: { id: string; first_name: string; last_name: string };
+  coach: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    checklist: { identityVerification?: unknown } | null;
+  };
 };
 
 export async function getMarketplacePlans(
@@ -175,7 +191,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, description, rating_avg, rating_count, updated_at, coach:coach_profiles!inner(id, first_name, last_name, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, selected_level_to, description, rating_avg, rating_count, media, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, subscription_tier, organization_id)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -229,8 +245,13 @@ export async function getMarketplacePlans(
     }
   }
 
+  const covers = await listingCoverUrls(
+    admin as unknown as Parameters<typeof listingCoverUrls>[0],
+    page.map((row) => row.media),
+  );
+
   return {
-    items: page.map((row) => ({
+    items: page.map((row, i) => ({
       id: row.id,
       title: row.title,
       kind: row.kind === "template" ? "template" : "plan",
@@ -240,16 +261,19 @@ export async function getMarketplacePlans(
       productType:
         row.product_type === "plan" || row.product_type === "program" ? row.product_type : null,
       selectedLevel: row.selected_level,
+      selectedLevelTo: row.selected_level_to,
       description: row.description,
       rating: {
         average: row.rating_avg === null ? null : Number(row.rating_avg),
         count: row.rating_count ?? 0,
       },
+      media: covers[i],
       updatedAt: row.updated_at,
       coach: {
         id: row.coach.id,
         firstName: row.coach.first_name,
         lastName: row.coach.last_name,
+        verified: row.coach.checklist?.identityVerification === true,
       },
     })),
     nextCursor,

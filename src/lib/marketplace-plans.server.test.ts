@@ -70,7 +70,12 @@ function fakeAdmin(tables: Record<string, Row[]>) {
   return { admin, calls };
 }
 
-const COACH = { id: "c-pro", first_name: "Tami", last_name: "Taylor" };
+const COACH = {
+  id: "c-pro",
+  first_name: "Tami",
+  last_name: "Taylor",
+  checklist: { identityVerification: true },
+};
 const listing = (id: string, updatedAt: string) => ({
   id,
   title: `Plan ${id}`,
@@ -78,10 +83,12 @@ const listing = (id: string, updatedAt: string) => ({
   status: "active",
   price: "24.99",
   product_type: "program",
-  selected_level: "Pre-Juvenile",
+  selected_level: "basic_skills",
+  selected_level_to: "pre_juvenile",
   description: null,
   rating_avg: "4.50",
   rating_count: 2,
+  media: null,
   updated_at: updatedAt,
   notes: "private notes",
   coach: COACH,
@@ -135,11 +142,13 @@ describe("getMarketplacePlans", () => {
           moveCount: 2,
           price: 24.99,
           productType: "program",
-          selectedLevel: "Pre-Juvenile",
+          selectedLevel: "basic_skills",
+          selectedLevelTo: "pre_juvenile",
           description: null,
           rating: { average: 4.5, count: 2 },
+          media: null,
           updatedAt: "2026-11-02T10:00:00.000Z",
-          coach: { id: "c-pro", firstName: "Tami", lastName: "Taylor" },
+          coach: { id: "c-pro", firstName: "Tami", lastName: "Taylor", verified: true },
         },
       ],
       nextCursor: null,

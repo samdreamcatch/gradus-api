@@ -459,6 +459,8 @@ const marketplaceDetailInputs = {
   productType: planProductTypeInput.optional(),
   /** The level the plan is for, as the frontend sends it. */
   selectedLevel: planSelectedLevelInput.optional(),
+  /** The other end of a level range; null (or absent with `selectedLevel`) is a single level. */
+  selectedLevelTo: planSelectedLevelInput.nullable().optional(),
   /** Marketplace description; null clears it. */
   description: planDescriptionInput.nullable().optional(),
 };
@@ -884,13 +886,19 @@ export const createPlanInput = z.object({
 });
 
 /**
- * `POST /api/v1/coach/plans`: every new plan states its product type, level and
- * price. The web app's server function still takes `createPlanInput`.
+ * `POST /api/v1/coach/plans`: a new plan states its product type and price; a
+ * copy (`fromPlanId` / `fromTemplateId`) takes its source's unless sent. The
+ * level is optional: the app creates the draft before the coach picks one and
+ * sets it with `PATCH /api/v1/plans/{id}`. The web app's server function still
+ * takes `createPlanInput`.
  */
-export const createPlanApiInput = createPlanInput.extend({
-  productType: planProductTypeInput,
-  selectedLevel: planSelectedLevelInput,
-  price: planPriceInput,
+export const createPlanApiInput = createPlanInput.superRefine((input, ctx) => {
+  if (input.fromPlanId || input.fromTemplateId) return;
+  for (const field of ["productType", "price"] as const) {
+    if (input[field] === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
+    }
+  }
 });
 
 /** A new draft (or benched template), optionally cloned from one of the coach's plans or templates. */

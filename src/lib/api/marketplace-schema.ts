@@ -12,14 +12,20 @@ export const marketplacePlanSchema = z.object({
   productType: z.enum(["plan", "program"]).nullable(),
   /** The level the plan is for; null on older plans. */
   selectedLevel: z.string().nullable(),
+  /** The other end of a level range; null for a single level. */
+  selectedLevelTo: z.string().nullable(),
   description: z.string().nullable(),
   /** Rating totals; `average` is null with no ratings. */
   rating: z.object({ average: z.number().nullable(), count: z.number() }),
+  /** Cover to show: default artwork, or a signed link (an hour) to the coach's photo; null when none. */
+  media: z.string().nullable(),
   updatedAt: z.string(),
   coach: z.object({
     id: z.string(),
     firstName: z.string(),
     lastName: z.string(),
+    /** Finished identity verification: show the Verified badge. */
+    verified: z.boolean(),
   }),
 });
 

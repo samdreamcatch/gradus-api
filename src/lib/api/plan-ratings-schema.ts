@@ -26,6 +26,9 @@ export const planRatingsPageSchema = z.object({
   summary: planRatingSummarySchema,
   myRating: planRatingSchema.nullable().describe("The caller's own rating of this plan, if any."),
   canRate: z.boolean().describe("Whether the caller may rate (or re-rate) this plan."),
+  canRespond: z
+    .boolean()
+    .describe("Whether the caller is the plan's coach, who may reply to ratings."),
   items: z.array(planRatingSchema),
   nextCursor: z.string().nullable(),
 }) satisfies z.ZodType<PlanRatingsPageDTO>;

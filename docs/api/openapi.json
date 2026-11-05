@@ -7963,6 +7963,14 @@
                     "minLength": 1,
                     "maxLength": 160
                   },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
                   "description": {
                     "type": [
                       "string",
@@ -7970,12 +7978,7 @@
                     ],
                     "maxLength": 4000
                   }
-                },
-                "required": [
-                  "price",
-                  "productType",
-                  "selectedLevel"
-                ]
+                }
               }
             }
           }
@@ -8296,6 +8299,12 @@
                         "null"
                       ]
                     },
+                    "selectedLevelTo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "description": {
                       "type": [
                         "string",
@@ -8465,6 +8474,14 @@
                     "minLength": 1,
                     "maxLength": 160
                   },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
                   "description": {
                     "type": [
                       "string",
@@ -8588,6 +8605,14 @@
                   },
                   "selectedLevel": {
                     "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "minLength": 1,
                     "maxLength": 160
                   },
@@ -9103,6 +9128,10 @@
                       "type": "boolean",
                       "description": "Whether the caller may rate (or re-rate) this plan."
                     },
+                    "canRespond": {
+                      "type": "boolean",
+                      "description": "Whether the caller is the plan's coach, who may reply to ratings."
+                    },
                     "items": {
                       "type": "array",
                       "items": {
@@ -9182,6 +9211,7 @@
                     "summary",
                     "myRating",
                     "canRate",
+                    "canRespond",
                     "items",
                     "nextCursor"
                   ]
@@ -20104,6 +20134,12 @@
                               "null"
                             ]
                           },
+                          "selectedLevelTo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "description": {
                             "type": [
                               "string",
@@ -20128,6 +20164,12 @@
                               "count"
                             ]
                           },
+                          "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "updatedAt": {
                             "type": "string"
                           },
@@ -20142,12 +20184,16 @@
                               },
                               "lastName": {
                                 "type": "string"
+                              },
+                              "verified": {
+                                "type": "boolean"
                               }
                             },
                             "required": [
                               "id",
                               "firstName",
-                              "lastName"
+                              "lastName",
+                              "verified"
                             ]
                           }
                         },
@@ -20159,8 +20205,10 @@
                           "price",
                           "productType",
                           "selectedLevel",
+                          "selectedLevelTo",
                           "description",
                           "rating",
+                          "media",
                           "updatedAt",
                           "coach"
                         ]

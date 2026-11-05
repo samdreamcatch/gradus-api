@@ -68,6 +68,8 @@ export interface RoleAwarePlanDetailDTO {
   productType?: "plan" | "program" | null;
   /** The level the plan is for; null on older plans. In the coach's view only. */
   selectedLevel?: string | null;
+  /** The other end of a level range; null for a single level. In the coach's view only. */
+  selectedLevelTo?: string | null;
   /** Marketplace description; in the coach's view only. */
   description?: string | null;
 }
@@ -179,6 +181,7 @@ export async function getPlanForViewer(
             price: marketplace.price,
             productType: marketplace.productType,
             selectedLevel: marketplace.selectedLevel,
+            selectedLevelTo: marketplace.selectedLevelTo,
             description: marketplace.description,
           }
         : {}),

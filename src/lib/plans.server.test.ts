@@ -1024,14 +1024,22 @@ describe("setPlanStatus and the guardian on file (decision #56)", () => {
 });
 
 describe("createPlanApiInput", () => {
-  const required = { productType: "program", selectedLevel: "Pre-Juvenile", price: 25 };
+  const required = { productType: "program" as const, selectedLevel: "Pre-Juvenile", price: 25 };
 
-  it("requires product type, level and price on a new plan through the API", () => {
+  it("requires product type and price on a new plan through the API, and takes a level", () => {
     expect(createPlanApiInput.safeParse(required).success).toBe(true);
-    for (const field of Object.keys(required)) {
+    for (const field of ["productType", "price"]) {
       const { [field]: _omitted, ...rest } = required as Record<string, unknown>;
       expect(createPlanApiInput.safeParse(rest).success).toBe(false);
     }
+    const { selectedLevel: _level, ...withoutLevel } = required;
+    expect(createPlanApiInput.safeParse(withoutLevel).success).toBe(true);
+  });
+
+  it("lets a copy take its source's product type and price", () => {
+    const fromPlanId = "6a1f2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+    expect(createPlanApiInput.safeParse({ fromPlanId }).success).toBe(true);
+    expect(createPlanApiInput.safeParse({ fromTemplateId: fromPlanId }).success).toBe(true);
   });
 
   it("takes only plan or program, any non-blank level, and an optional description", () => {

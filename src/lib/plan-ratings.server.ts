@@ -72,6 +72,8 @@ export interface PlanRatingsPageDTO {
   myRating: PlanRatingDTO | null;
   /** Whether the caller may rate (or re-rate) this plan. */
   canRate: boolean;
+  /** Whether the caller is the plan's coach, who may reply to its ratings. */
+  canRespond: boolean;
   items: PlanRatingDTO[];
   nextCursor: string | null;
 }
@@ -166,6 +168,12 @@ async function canRatePlan(supabase: Client, planId: string): Promise<boolean> {
   return data === true;
 }
 
+async function isPlanCoach(supabase: Client, planId: string): Promise<boolean> {
+  const { data, error } = await untyped(supabase).rpc("is_plan_coach", { _plan_id: planId });
+  if (error) dbError(error);
+  return data === true;
+}
+
 type PlanForRatings = {
   id: string;
   athlete_id: string | null;
@@ -238,7 +246,7 @@ export async function listPlanRatings(
       `created_at.lt.${after.createdAt},and(created_at.eq.${after.createdAt},id.lt.${after.id})`,
     );
   }
-  const [page, mine, canRate] = await Promise.all([
+  const [page, mine, canRate, canRespond] = await Promise.all([
     query.limit(input.limit + 1),
     untyped(ctx.admin)
       .from("plan_ratings")
@@ -247,6 +255,7 @@ export async function listPlanRatings(
       .eq("user_id", ctx.userId)
       .maybeSingle(),
     canRatePlan(ctx.supabase, planId),
+    isPlanCoach(ctx.supabase, planId),
   ]);
   if (page.error) dbError(page.error);
   if (mine.error) dbError(mine.error);
@@ -265,6 +274,7 @@ export async function listPlanRatings(
     summary: toSummary(plan),
     myRating: myRow ? toDto(myRow, reviewers.get(myRow.user_id)) : null,
     canRate,
+    canRespond,
     items: items.map((r) => toDto(r, reviewers.get(r.user_id))),
     nextCursor:
       rows.length > input.limit && last ? encodeRatingsCursor(last.created_at, last.id) : null,

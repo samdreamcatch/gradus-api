@@ -4,7 +4,12 @@
  * object in the private `plan-media` bucket
  * (`<SUPABASE_URL>/storage/v1/object/authenticated/plan-media/<plan id>/<file>`)
  * (migration 20261103120000_plans_price_media); `productType`, `selectedLevel`
- * and `description` (20261104120000_plans_product_type_level_description).
+ * and `description` (20261104120000_plans_product_type_level_description); and
+ * `selectedLevelTo`, the other end of a level range (20261107120000).
+ *
+ * A level is one key in `selectedLevel`, or a range: the first pick there and the
+ * second in `selectedLevelTo`. Sending `selectedLevel` alone makes it a single
+ * level (the old range end is cleared).
  * The plan create, save and patch routes write them; the coach's plan detail
  * reads them back.
  *
@@ -32,11 +37,25 @@ export const planDescriptionInput = z.string().max(4000);
 
 export const PLAN_MEDIA_PATH = "/storage/v1/object/authenticated/plan-media/";
 
+/**
+ * Gradus's own cover artwork, hosted on Cloudinary: the image a plan gets when
+ * the coach keeps the default instead of uploading a photo. Any plan may use
+ * these; they aren't in anyone's plan-media folder.
+ */
+export const DEFAULT_PLAN_MEDIA_URLS: readonly string[] = [
+  "https://res.cloudinary.com/sameer0075/image/upload/v1793896307/gradus-artwork-1_tl3lnl.png",
+];
+
+export function isDefaultPlanMedia(url: string): boolean {
+  return DEFAULT_PLAN_MEDIA_URLS.includes(url);
+}
+
 const invalidMedia = () =>
   new ApiError({
     code: "unprocessable",
     status: 422,
-    message: "media must be the URL of an image uploaded to one of your plans in plan-media.",
+    message:
+      "media must be Gradus default artwork or the URL of an image uploaded to one of your plans in plan-media.",
   });
 
 /**
@@ -48,6 +67,14 @@ export function planMediaFolder(
   url: string,
   supabaseUrl: string | undefined = process.env.SUPABASE_URL,
 ): string | null {
+  return planMediaObjectPath(url, supabaseUrl)?.split("/")[0] ?? null;
+}
+
+/** The object's path in plan-media (`<plan id>/<file>`) for the same URLs `planMediaFolder` accepts. */
+export function planMediaObjectPath(
+  url: string,
+  supabaseUrl: string | undefined = process.env.SUPABASE_URL,
+): string | null {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -56,19 +83,65 @@ export function planMediaFolder(
   }
   if (supabaseUrl && parsed.origin !== new URL(supabaseUrl).origin) return null;
   if (!parsed.pathname.startsWith(PLAN_MEDIA_PATH)) return null;
-  const [folder, ...file] = decodeURIComponent(parsed.pathname.slice(PLAN_MEDIA_PATH.length)).split(
-    "/",
-  );
+  const path = decodeURIComponent(parsed.pathname.slice(PLAN_MEDIA_PATH.length));
+  const [folder, ...file] = path.split("/");
   if (!file.join("/")) return null;
-  return z.string().uuid().safeParse(folder).success ? folder : null;
+  return z.string().uuid().safeParse(folder).success ? path : null;
 }
 
-/** 422 unless `url` is an image in the folder of a plan this coach owns. */
+/** How long a listing's cover link works: long enough to browse, short enough not to leak. */
+export const LISTING_COVER_TTL_SECONDS = 60 * 60;
+
+type StorageClient = {
+  storage: {
+    from: (bucket: string) => {
+      createSignedUrls: (
+        paths: string[],
+        expiresIn: number,
+      ) => Promise<{
+        data: { path: string | null; signedUrl: string | null }[] | null;
+        error: unknown;
+      }>;
+    };
+  };
+};
+
+/**
+ * A cover anyone browsing can load, per stored `media`: default artwork as it
+ * is, an upload in the private plan-media bucket as a signed link (its storage
+ * policies admit only the plan's coach), anything else null. One signing call
+ * for the whole page; a failure leaves those covers null, never the listing.
+ */
+export async function listingCoverUrls(
+  admin: StorageClient,
+  media: (string | null)[],
+): Promise<(string | null)[]> {
+  const paths = media.map((url) =>
+    url && !isDefaultPlanMedia(url) ? planMediaObjectPath(url) : null,
+  );
+  const toSign = [...new Set(paths.filter((p): p is string => p !== null))];
+  const signed = new Map<string, string>();
+  if (toSign.length) {
+    const { data, error } = await admin.storage
+      .from("plan-media")
+      .createSignedUrls(toSign, LISTING_COVER_TTL_SECONDS);
+    if (error) console.error("[marketplace] signing covers failed", error);
+    for (const s of data ?? []) if (s.path && s.signedUrl) signed.set(s.path, s.signedUrl);
+  }
+  return media.map((url, i) => {
+    if (url && isDefaultPlanMedia(url)) return url;
+    const path = paths[i];
+    return path ? (signed.get(path) ?? null) : null;
+  });
+}
+
+/** 422 unless `url` is default artwork or an image in the folder of a plan this coach owns. */
 export async function assertPlanMediaOwned(
   supabase: Client,
   coachId: string,
   url: string,
 ): Promise<void> {
+  if (isDefaultPlanMedia(url)) return;
   const folder = planMediaFolder(url);
   if (!folder) throw invalidMedia();
   const { data, error } = await supabase
@@ -88,6 +161,7 @@ export type PlanMarketplaceFields = {
   media: string | null;
   productType: PlanProductType | null;
   selectedLevel: string | null;
+  selectedLevelTo: string | null;
   description: string | null;
 };
 
@@ -97,6 +171,8 @@ export type PlanMarketplaceInput = {
   media?: string | null;
   productType?: PlanProductType;
   selectedLevel?: string;
+  /** The range's other end; null makes it a single level. */
+  selectedLevelTo?: string | null;
   description?: string | null;
 };
 
@@ -107,7 +183,7 @@ export async function getPlanMarketplaceFields(
 ): Promise<PlanMarketplaceFields | null> {
   const { data, error } = await untyped(supabase)
     .from("plans")
-    .select("price, media, product_type, selected_level, description")
+    .select("price, media, product_type, selected_level, selected_level_to, description")
     .eq("id", planId)
     .maybeSingle();
   if (error) dbError(error);
@@ -118,6 +194,7 @@ export async function getPlanMarketplaceFields(
     media: data.media ?? null,
     productType: data.product_type ?? null,
     selectedLevel: data.selected_level ?? null,
+    selectedLevelTo: data.selected_level_to ?? null,
     description: data.description ?? null,
   };
 }
@@ -137,6 +214,12 @@ export async function setPlanMarketplaceFields(
     ...(input.media !== undefined ? { media: input.media } : {}),
     ...(input.productType !== undefined ? { product_type: input.productType } : {}),
     ...(input.selectedLevel !== undefined ? { selected_level: input.selectedLevel } : {}),
+    // A new level without a range end is a single level: the old end goes.
+    ...(input.selectedLevelTo !== undefined
+      ? { selected_level_to: input.selectedLevelTo }
+      : input.selectedLevel !== undefined
+        ? { selected_level_to: null }
+        : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
   };
   if (Object.keys(columns).length === 0) return;
@@ -146,8 +229,9 @@ export async function setPlanMarketplaceFields(
 
 /**
  * What a copy of a plan (a clone, or the fork on reassigning an athlete) gets:
- * the fields the request sent, else its source's. Never the source's image: it
- * lives in that plan's plan-media folder.
+ * the fields the request sent, else its source's. The source's uploaded image
+ * stays with it (it lives in that plan's plan-media folder); default artwork
+ * carries over.
  */
 export function marketplaceFieldsForCopy(
   source: PlanMarketplaceFields | null,
@@ -155,9 +239,19 @@ export function marketplaceFieldsForCopy(
 ): PlanMarketplaceInput {
   return {
     price: sent.price ?? source?.price,
-    media: sent.media,
+    media:
+      sent.media !== undefined
+        ? sent.media
+        : source?.media && isDefaultPlanMedia(source.media)
+          ? source.media
+          : undefined,
     productType: sent.productType ?? source?.productType ?? undefined,
     selectedLevel: sent.selectedLevel ?? source?.selectedLevel ?? undefined,
+    // The range travels with its first level: a level sent here brings its own end.
+    selectedLevelTo:
+      sent.selectedLevel !== undefined
+        ? (sent.selectedLevelTo ?? null)
+        : (source?.selectedLevelTo ?? undefined),
     description: sent.description !== undefined ? sent.description : source?.description,
   };
 }
