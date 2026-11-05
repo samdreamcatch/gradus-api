@@ -10,7 +10,10 @@
  * Secrets (Lovable Cloud): `APNS_KEY_P8`, `APNS_KEY_ID`, `APPLE_TEAM_ID`
  * (shared with Sign in with Apple and App Attest). Optional: `APNS_BUNDLE_ID`
  * (default `training.gradus.app`) and `APNS_ENV` (`production` default;
- * `sandbox` for Xcode-installed debug builds).
+ * `sandbox` for Xcode-installed debug builds). `APNS_ENV` only picks which
+ * environment is tried first: a token from the other one (a TestFlight build
+ * against a sandbox server, or an Xcode build against production) gets
+ * `BadDeviceToken` there and is sent again to the other host.
  */
 import { SignJWT, importPKCS8 } from "jose";
 
@@ -128,9 +131,18 @@ async function fetchWithTimeout(deps: ApnsDeps, url: string, init: RequestInit):
   }
 }
 
+/** The other APNs environment's host, for a token `host` calls a `BadDeviceToken`. */
+function otherApnsHost(host: string): string | null {
+  if (host === PRODUCTION_HOST) return SANDBOX_HOST;
+  if (host === SANDBOX_HOST) return PRODUCTION_HOST;
+  return null;
+}
+
 /**
  * Deliver one push. Retries exactly once, with a fresh provider token, when
- * APNs reports the token expired or invalid (clock skew, key rotation).
+ * APNs reports the token expired or invalid (clock skew, key rotation), and
+ * once on the other APNs environment when the token belongs to it
+ * (`BadDeviceToken`).
  */
 export async function sendApnsRequest(
   config: ApnsConfig,
@@ -145,7 +157,8 @@ export async function sendApnsRequest(
   };
 
   let usedJwt: string | null = null;
-  const attempt = async (): Promise<ApnsOutcome> => {
+  const topic = req.topic ?? apnsTopic(config.bundleId, req.pushType);
+  const attempt = async (host: string): Promise<ApnsOutcome> => {
     const startedAt = d.now();
     let jwt: string;
     try {
@@ -161,7 +174,7 @@ export async function sendApnsRequest(
     }
     const headers: Record<string, string> = {
       authorization: `bearer ${jwt}`,
-      "apns-topic": req.topic ?? apnsTopic(config.bundleId, req.pushType),
+      "apns-topic": topic,
       "apns-push-type": req.pushType,
       "apns-priority": String(req.priority ?? (req.pushType === "alert" ? 10 : 5)),
       "apns-expiration": String(req.expiration ?? 0),
@@ -171,7 +184,7 @@ export async function sendApnsRequest(
 
     let response: Response;
     try {
-      response = await fetchWithTimeout(d, `${config.host}/3/device/${req.token}`, {
+      response = await fetchWithTimeout(d, `${host}/3/device/${req.token}`, {
         method: "POST",
         headers,
         body: JSON.stringify(req.payload),
@@ -194,29 +207,40 @@ export async function sendApnsRequest(
     } catch {
       /* APNs always sends JSON on errors; tolerate anything else */
     }
-    if (CONFIG_ERROR_REASONS.has(reason)) {
-      console.error("[apns] configuration error from APNs", {
-        status: response.status,
-        reason,
-        host: config.host,
-        topic: headers["apns-topic"],
-      });
-    }
     const dead = response.status === 410 || reason === "Unregistered";
     return { ok: false, status: response.status, reason, dead };
   };
 
-  const first = await attempt();
-  if (
-    !first.ok &&
-    first.status === 403 &&
-    (first.reason === "ExpiredProviderToken" || first.reason === "InvalidProviderToken")
-  ) {
-    // Only discard the token that actually failed; a parallel send may have
-    // replaced it already, and re-minting again would trip Apple's
-    // TooManyProviderTokenUpdates.
-    if (cached && cached.jwt === usedJwt) resetApnsTokenCache();
-    return attempt();
+  const send = async (host: string): Promise<ApnsOutcome> => {
+    const first = await attempt(host);
+    if (
+      !first.ok &&
+      first.status === 403 &&
+      (first.reason === "ExpiredProviderToken" || first.reason === "InvalidProviderToken")
+    ) {
+      // Only discard the token that actually failed; a parallel send may have
+      // replaced it already, and re-minting again would trip Apple's
+      // TooManyProviderTokenUpdates.
+      if (cached && cached.jwt === usedJwt) resetApnsTokenCache();
+      return attempt(host);
+    }
+    return first;
+  };
+
+  let host = config.host;
+  let outcome = await send(host);
+  const fallback = otherApnsHost(host);
+  if (!outcome.ok && outcome.reason === "BadDeviceToken" && fallback) {
+    host = fallback;
+    outcome = await send(host);
   }
-  return first;
+  if (!outcome.ok && CONFIG_ERROR_REASONS.has(outcome.reason)) {
+    console.error("[apns] configuration error from APNs", {
+      status: outcome.status,
+      reason: outcome.reason,
+      host,
+      topic,
+    });
+  }
+  return outcome;
 }

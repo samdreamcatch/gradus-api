@@ -33,7 +33,10 @@ export type PushMessage = {
   route: string;
   title?: string;
   body?: string;
-  /** Groups notifications in Notification Center (e.g. `room:<id>`). */
+  /**
+   * Stacks notifications in Notification Center (e.g. `room:<id>`); each one
+   * still shows. The inbox doesn't group on it: every message is its own row.
+   */
   threadId?: string;
   /**
    * `aps.category`: the notification category the apps register, which adds
@@ -164,7 +167,6 @@ export async function notifyUsers(
       title: inboxTitle,
       body: message.title ? message.body : undefined,
       route: message.route,
-      groupKey: message.threadId,
       collapseKey: message.collapseId,
       actorUserId: message.actorUserId,
       athleteId: message.athleteId,

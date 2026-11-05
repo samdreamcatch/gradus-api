@@ -273,7 +273,7 @@ describe("notifyUsers inbox", () => {
     ]);
   });
 
-  it("folds room messages on the thread id and uses a bare body as the title", async () => {
+  it("gives every room message its own inbox row and uses a bare body as the title", async () => {
     const { admin, rpcs } = fakeAdmin({ device_tokens: [] });
     await notifyUsers(
       admin,
@@ -284,7 +284,7 @@ describe("notifyUsers inbox", () => {
     expect(rpcs[0].args).toMatchObject({
       p_title: "hi",
       p_body: null,
-      p_group_key: "room:r1",
+      p_group_key: null,
       p_collapse_key: null,
     });
   });
