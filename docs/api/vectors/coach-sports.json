@@ -460,6 +460,635 @@
       ]
     },
     {
+      "key": "baseball",
+      "label": "Baseball",
+      "standard": "Little League / USA Baseball age divisions",
+      "levels": [
+        {
+          "key": "tee_ball",
+          "label": "Tee Ball",
+          "hint": "Ages 4–6, hitting off a tee, no pitching",
+          "suggestedHours": 1
+        },
+        {
+          "key": "coach_pitch",
+          "label": "Coach Pitch",
+          "hint": "Ages 6–8, a coach pitches, outs and bases begin",
+          "suggestedHours": 1
+        },
+        {
+          "key": "minors",
+          "label": "Minors",
+          "hint": "Ages 8–10, kids start pitching, 46-foot mound",
+          "suggestedHours": 2
+        },
+        {
+          "key": "majors",
+          "label": "Majors",
+          "hint": "Ages 10–12, full Little League rules, 60-foot bases",
+          "suggestedHours": 3
+        },
+        {
+          "key": "intermediate_13u",
+          "label": "Intermediate / 13U",
+          "hint": "Ages 12–13, 50-foot mound and 70-foot bases, leading off begins",
+          "suggestedHours": 3
+        },
+        {
+          "key": "junior_14u",
+          "label": "Junior / 14U",
+          "hint": "Ages 13–14, full-size field (60 ft 6 in and 90-foot bases)",
+          "suggestedHours": 4
+        },
+        {
+          "key": "senior_16u",
+          "label": "Senior / 16U",
+          "hint": "Ages 15–16, full-size field, travel and showcase play",
+          "suggestedHours": 5
+        },
+        {
+          "key": "high_school",
+          "label": "High school",
+          "hint": "JV and varsity, spring season plus summer ball",
+          "suggestedHours": 6
+        },
+        {
+          "key": "college_prospect",
+          "label": "College prospect",
+          "hint": "Ages 16–18, showcases, recruiting, year-round training",
+          "suggestedHours": 8
+        }
+      ]
+    },
+    {
+      "key": "softball",
+      "label": "Softball",
+      "standard": "USA Softball / Little League fastpitch age divisions",
+      "levels": [
+        {
+          "key": "6u_tee_ball",
+          "label": "6U Tee Ball",
+          "hint": "Ages 5–6, hitting off a tee",
+          "suggestedHours": 1
+        },
+        {
+          "key": "8u_coach_pitch",
+          "label": "8U Coach Pitch",
+          "hint": "Ages 7–8, coaches pitch to their own team",
+          "suggestedHours": 1
+        },
+        {
+          "key": "10u",
+          "label": "10U",
+          "hint": "Ages 9–10, player pitching begins at 35 ft with an 11-inch ball",
+          "suggestedHours": 2
+        },
+        {
+          "key": "12u",
+          "label": "12U",
+          "hint": "Ages 11–12, 12-inch ball, 40 ft pitching, full rules",
+          "suggestedHours": 3
+        },
+        {
+          "key": "14u",
+          "label": "14U",
+          "hint": "Ages 13–14, 43 ft pitching, position specialization",
+          "suggestedHours": 4
+        },
+        {
+          "key": "16u",
+          "label": "16U",
+          "hint": "Ages 15–16, showcase travel ball",
+          "suggestedHours": 5
+        },
+        {
+          "key": "18u",
+          "label": "18U",
+          "hint": "Ages 17–18, top travel and club ball",
+          "suggestedHours": 6
+        },
+        {
+          "key": "high_school_varsity",
+          "label": "High school varsity",
+          "hint": "School team, spring season",
+          "suggestedHours": 6
+        },
+        {
+          "key": "college_prospect",
+          "label": "College prospect",
+          "hint": "Actively recruiting: video, camps, showcases",
+          "suggestedHours": 8
+        }
+      ]
+    },
+    {
+      "key": "basketball",
+      "label": "Basketball",
+      "standard": "USA Basketball / Jr. NBA youth guidelines by age segment",
+      "levels": [
+        {
+          "key": "ages_7_8",
+          "label": "Ages 7–8",
+          "hint": "Intro: 8-foot rim, size 5 ball, learning the basics",
+          "suggestedHours": 1
+        },
+        {
+          "key": "ages_9_11",
+          "label": "Ages 9–11",
+          "hint": "Rec and school teams: 9-foot rim, size 5 or 6 ball",
+          "suggestedHours": 2
+        },
+        {
+          "key": "ages_12_14",
+          "label": "Ages 12–14",
+          "hint": "Middle school: 10-foot rim, size 6 (girls) or 7 (boys 14+)",
+          "suggestedHours": 3
+        },
+        {
+          "key": "hs_jv",
+          "label": "High School JV",
+          "hint": "Junior varsity, usually grades 9–10",
+          "suggestedHours": 4
+        },
+        {
+          "key": "hs_varsity",
+          "label": "High School Varsity",
+          "hint": "Top high school team, grades 10–12",
+          "suggestedHours": 5
+        },
+        {
+          "key": "aau_club",
+          "label": "AAU / Club",
+          "hint": "Travel and tournament teams outside the school season",
+          "suggestedHours": 6
+        },
+        {
+          "key": "college_prospect",
+          "label": "College Prospect",
+          "hint": "Recruitable player training for the next level",
+          "suggestedHours": 8
+        }
+      ]
+    },
+    {
+      "key": "soccer",
+      "label": "Soccer",
+      "standard": "US Youth Soccer / US Soccer player development age groups",
+      "levels": [
+        {
+          "key": "u6",
+          "label": "U6",
+          "hint": "Ages 4–5, 4v4, no goalkeeper",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u8",
+          "label": "U8",
+          "hint": "Ages 6–7, 4v4",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u10",
+          "label": "U10",
+          "hint": "Ages 8–9, 7v7, no heading",
+          "suggestedHours": 2
+        },
+        {
+          "key": "u12",
+          "label": "U12",
+          "hint": "Ages 10–11, 9v9, offside starts",
+          "suggestedHours": 3
+        },
+        {
+          "key": "u14",
+          "label": "U14",
+          "hint": "Ages 12–13, first 11v11",
+          "suggestedHours": 3
+        },
+        {
+          "key": "u16",
+          "label": "U16",
+          "hint": "Ages 14–15, competitive club",
+          "suggestedHours": 4
+        },
+        {
+          "key": "high_school",
+          "label": "High school",
+          "hint": "JV / varsity, grades 9–12",
+          "suggestedHours": 4
+        },
+        {
+          "key": "u19",
+          "label": "U19",
+          "hint": "Ages 16–18, college-recruiting window",
+          "suggestedHours": 5
+        },
+        {
+          "key": "club_academy",
+          "label": "Club / academy",
+          "hint": "MLS NEXT, ECNL, Girls Academy and other national leagues",
+          "suggestedHours": 6
+        }
+      ]
+    },
+    {
+      "key": "football",
+      "label": "Football",
+      "standard": "USA Football / Pop Warner age progression (flag first, then tackle by age group, then high school and college prospect)",
+      "levels": [
+        {
+          "key": "flag_6u_8u",
+          "label": "Flag 6U–8U",
+          "hint": "Ages 5–8, flag only, learning the game",
+          "suggestedHours": 1
+        },
+        {
+          "key": "flag_10u",
+          "label": "Flag 10U",
+          "hint": "Ages 9–10, flag, routes and positions",
+          "suggestedHours": 2
+        },
+        {
+          "key": "tackle_10u",
+          "label": "Tackle 10U",
+          "hint": "Ages 9–10, first padded season, Heads Up technique",
+          "suggestedHours": 2
+        },
+        {
+          "key": "tackle_12u",
+          "label": "12U",
+          "hint": "Ages 11–12, full positions and playbooks",
+          "suggestedHours": 3
+        },
+        {
+          "key": "tackle_14u",
+          "label": "14U",
+          "hint": "Ages 13–14, middle school and youth league",
+          "suggestedHours": 3
+        },
+        {
+          "key": "hs_freshman_jv",
+          "label": "HS Freshman/JV",
+          "hint": "Grades 9–10, school program",
+          "suggestedHours": 4
+        },
+        {
+          "key": "hs_varsity",
+          "label": "Varsity",
+          "hint": "Grades 10–12, top school team",
+          "suggestedHours": 5
+        },
+        {
+          "key": "college_prospect",
+          "label": "College prospect",
+          "hint": "Varsity players being recruited",
+          "suggestedHours": 6
+        }
+      ]
+    },
+    {
+      "key": "volleyball",
+      "label": "Volleyball",
+      "standard": "USA Volleyball age divisions, plus high school and club",
+      "levels": [
+        {
+          "key": "10u",
+          "label": "10U",
+          "hint": "Ages 10 and under, intro; lighter ball, lower net",
+          "suggestedHours": 1
+        },
+        {
+          "key": "12u",
+          "label": "12U",
+          "hint": "Ages 11–12, full six-on-six",
+          "suggestedHours": 2
+        },
+        {
+          "key": "13u",
+          "label": "13U",
+          "hint": "Age 13, positions begin",
+          "suggestedHours": 2
+        },
+        {
+          "key": "14u",
+          "label": "14U",
+          "hint": "Age 14, specialized positions and serve-receive patterns",
+          "suggestedHours": 3
+        },
+        {
+          "key": "15u",
+          "label": "15U",
+          "hint": "Age 15, jump serves and quick offense",
+          "suggestedHours": 3
+        },
+        {
+          "key": "hs_jv",
+          "label": "High school JV",
+          "hint": "Grades 9–10, developmental school team",
+          "suggestedHours": 3
+        },
+        {
+          "key": "16u",
+          "label": "16U",
+          "hint": "Age 16, varsity-speed club play",
+          "suggestedHours": 4
+        },
+        {
+          "key": "17u_18u",
+          "label": "17U/18U",
+          "hint": "Ages 17–18, top club divisions",
+          "suggestedHours": 4
+        },
+        {
+          "key": "varsity_club",
+          "label": "Varsity / Club",
+          "hint": "Varsity school team or national-level club",
+          "suggestedHours": 5
+        }
+      ]
+    },
+    {
+      "key": "hockey",
+      "label": "Hockey",
+      "standard": "USA Hockey age classifications",
+      "levels": [
+        {
+          "key": "8u",
+          "label": "8U (Mite)",
+          "hint": "Ages 7–8, cross-ice games",
+          "suggestedHours": 2
+        },
+        {
+          "key": "10u",
+          "label": "10U (Squirt)",
+          "hint": "Ages 9–10, first full-ice season",
+          "suggestedHours": 3
+        },
+        {
+          "key": "12u",
+          "label": "12U (Peewee)",
+          "hint": "Ages 11–12, body contact taught, no checking",
+          "suggestedHours": 4
+        },
+        {
+          "key": "14u",
+          "label": "14U (Bantam)",
+          "hint": "Ages 13–14, body checking begins",
+          "suggestedHours": 5
+        },
+        {
+          "key": "16u",
+          "label": "16U (Midget Minor)",
+          "hint": "Ages 15–16",
+          "suggestedHours": 6
+        },
+        {
+          "key": "high_school",
+          "label": "High school",
+          "hint": "JV and varsity, alongside or instead of 16U/18U",
+          "suggestedHours": 6
+        },
+        {
+          "key": "18u",
+          "label": "18U (Midget Major)",
+          "hint": "Ages 17–18, last youth level",
+          "suggestedHours": 7
+        },
+        {
+          "key": "junior_prospect",
+          "label": "Junior / prospect",
+          "hint": "Ages 16–20, junior leagues feeding college and pro",
+          "suggestedHours": 8
+        }
+      ]
+    },
+    {
+      "key": "lacrosse",
+      "label": "Lacrosse",
+      "standard": "USA Lacrosse age segments",
+      "levels": [
+        {
+          "key": "6u",
+          "label": "6U",
+          "hint": "Ages 5–6, intro, soft ball and small sticks",
+          "suggestedHours": 1
+        },
+        {
+          "key": "8u",
+          "label": "8U",
+          "hint": "Ages 7–8, small-sided, no checking",
+          "suggestedHours": 1
+        },
+        {
+          "key": "10u",
+          "label": "10U",
+          "hint": "Ages 9–10, full field skills, very limited checking",
+          "suggestedHours": 2
+        },
+        {
+          "key": "12u",
+          "label": "12U",
+          "hint": "Ages 11–12, modified checking",
+          "suggestedHours": 3
+        },
+        {
+          "key": "14u",
+          "label": "14U",
+          "hint": "Ages 13–14, full youth rules",
+          "suggestedHours": 4
+        },
+        {
+          "key": "hs_jv",
+          "label": "High School JV",
+          "hint": "Grades 9–10, developing varsity skills",
+          "suggestedHours": 5
+        },
+        {
+          "key": "hs_varsity",
+          "label": "Varsity",
+          "hint": "High school starting lineup level",
+          "suggestedHours": 6
+        },
+        {
+          "key": "club_elite",
+          "label": "Club/Elite",
+          "hint": "Travel and showcase teams, college recruiting",
+          "suggestedHours": 8
+        }
+      ]
+    },
+    {
+      "key": "field_hockey",
+      "label": "Field Hockey",
+      "standard": "USA Field Hockey age groups",
+      "levels": [
+        {
+          "key": "u8",
+          "label": "U8",
+          "hint": "Ages 7 and under, intro",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u10",
+          "label": "U10",
+          "hint": "Ages 9 and under, small-sided",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u12",
+          "label": "U12",
+          "hint": "Ages 11 and under, full rules begin",
+          "suggestedHours": 2
+        },
+        {
+          "key": "u14",
+          "label": "U14",
+          "hint": "Ages 13 and under, 11v11",
+          "suggestedHours": 3
+        },
+        {
+          "key": "hs_jv",
+          "label": "High school JV",
+          "hint": "Fall school season, junior varsity",
+          "suggestedHours": 3
+        },
+        {
+          "key": "u16",
+          "label": "U16",
+          "hint": "Ages 15 and under, regional club",
+          "suggestedHours": 4
+        },
+        {
+          "key": "u19",
+          "label": "U19",
+          "hint": "Ages 18 and under, national club",
+          "suggestedHours": 5
+        },
+        {
+          "key": "hs_varsity",
+          "label": "High school varsity",
+          "hint": "Fall school season, varsity",
+          "suggestedHours": 5
+        },
+        {
+          "key": "club_futures",
+          "label": "Club / Futures",
+          "hint": "Year-round club and USA Field Hockey Futures pathway",
+          "suggestedHours": 6
+        }
+      ]
+    },
+    {
+      "key": "water_polo",
+      "label": "Water Polo",
+      "standard": "USA Water Polo age groups",
+      "levels": [
+        {
+          "key": "10u_splashball",
+          "label": "10U Splashball",
+          "hint": "Ages 10 and under, intro program",
+          "suggestedHours": 1
+        },
+        {
+          "key": "12u",
+          "label": "12U",
+          "hint": "Ages 11–12, first full-rules play",
+          "suggestedHours": 2
+        },
+        {
+          "key": "14u",
+          "label": "14U",
+          "hint": "Ages 13–14, positions and travel begin",
+          "suggestedHours": 3
+        },
+        {
+          "key": "16u",
+          "label": "16U",
+          "hint": "Ages 15–16, full-speed club",
+          "suggestedHours": 4
+        },
+        {
+          "key": "hs_jv",
+          "label": "High school JV",
+          "hint": "Junior varsity school team",
+          "suggestedHours": 4
+        },
+        {
+          "key": "18u",
+          "label": "18U",
+          "hint": "Ages 17–18, top youth group",
+          "suggestedHours": 5
+        },
+        {
+          "key": "hs_varsity",
+          "label": "High school varsity",
+          "hint": "School top team",
+          "suggestedHours": 5
+        },
+        {
+          "key": "club_odp",
+          "label": "Club / ODP",
+          "hint": "Year-round club and Olympic Development Program",
+          "suggestedHours": 6
+        }
+      ]
+    },
+    {
+      "key": "rugby",
+      "label": "Rugby",
+      "standard": "USA Rugby youth pathway (Rookie Rugby flag through club/academy)",
+      "levels": [
+        {
+          "key": "rookie_u8",
+          "label": "Rookie Rugby (U6–U8)",
+          "hint": "Ages 5–8, flag rugby, no contact",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u10",
+          "label": "U10",
+          "hint": "Ages 8–10, touch or flag",
+          "suggestedHours": 1
+        },
+        {
+          "key": "u12",
+          "label": "U12",
+          "hint": "Ages 10–12, intro to tackle in some clubs",
+          "suggestedHours": 2
+        },
+        {
+          "key": "u14",
+          "label": "U14",
+          "hint": "Ages 12–14, full tackle with modified laws",
+          "suggestedHours": 2
+        },
+        {
+          "key": "u16",
+          "label": "U16",
+          "hint": "Ages 14–16, sevens and fifteens",
+          "suggestedHours": 3
+        },
+        {
+          "key": "u18",
+          "label": "U18",
+          "hint": "Ages 16–18, full laws",
+          "suggestedHours": 4
+        },
+        {
+          "key": "high_school",
+          "label": "High school",
+          "hint": "School-based teams, varsity and JV",
+          "suggestedHours": 4
+        },
+        {
+          "key": "club_academy",
+          "label": "Club / academy",
+          "hint": "Select-side, academy, and pathway programs",
+          "suggestedHours": 6
+        }
+      ]
+    },
+    {
       "key": "strength_conditioning",
       "label": "Strength & Conditioning",
       "standard": "",
