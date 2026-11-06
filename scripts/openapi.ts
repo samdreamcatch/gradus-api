@@ -49,6 +49,7 @@ import "../src/routes/api/v1/signup/parent/link-coach";
 import "../src/routes/api/v1/signup/parent/goals";
 import "../src/routes/api/v1/signup/parent/schedule";
 import "../src/routes/api/v1/parent/invite-code";
+import "../src/routes/api/v1/parent/checklist";
 import "../src/routes/api/v1/signup/athlete/invite-summary";
 import "../src/routes/api/v1/signup/athlete/claim";
 import "../src/routes/api/v1/signup/athlete/username";

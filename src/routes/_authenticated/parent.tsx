@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getParentSignupStatus } from "@/lib/parent-signup.functions";
 import { InviteCoachBanner } from "@/components/parent/invite-coach-banner";
+import { ParentGettingStarted } from "@/components/parent/parent-getting-started";
 import { ConnectionCelebration } from "@/components/connection-celebration";
 
 import { useAuthReady } from "@/hooks/use-auth-ready";
@@ -32,10 +33,18 @@ function ParentLayout() {
     !status.hasAnyCoach &&
     !pathname.startsWith("/parent/settings"); // settings page hosts the full card
 
+  // The "Get set up" helper floats over the home, Plans and Resources tabs; not
+  // over a conversation's composer, and not over Settings, where its steps are done.
+  const showGettingStarted =
+    !!status?.hasParentProfile &&
+    !pathname.startsWith("/parent/settings") &&
+    !pathname.startsWith("/parent/messages");
+
   return (
     <>
       {showBanner && <InviteCoachBanner />}
       <Outlet />
+      {showGettingStarted && <ParentGettingStarted />}
       <ConnectionCelebration role="parent" />
     </>
   );

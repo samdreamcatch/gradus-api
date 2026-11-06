@@ -3659,6 +3659,75 @@
         }
       }
     },
+    "/api/v1/parent/checklist": {
+      "get": {
+        "operationId": "getParentChecklist",
+        "summary": "Getting-started progress for the parent helper",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "parentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "verifyApplies": {
+                      "type": "boolean",
+                      "description": "The adult-verification step is part of this parent's setup: the switch is on or KWS is configured."
+                    },
+                    "verifyDone": {
+                      "type": "boolean",
+                      "description": "The parent is a verified adult (KWS, admin, or legacy)."
+                    },
+                    "coachDone": {
+                      "type": "boolean",
+                      "description": "At least one coach is linked to one of the parent's athletes."
+                    },
+                    "athleteCount": {
+                      "type": "integer",
+                      "description": "How many athletes the parent has added."
+                    },
+                    "goalsDone": {
+                      "type": "boolean",
+                      "description": "At least one of the parent's athletes has a level and season goal on file."
+                    }
+                  },
+                  "required": [
+                    "parentId",
+                    "verifyApplies",
+                    "verifyDone",
+                    "coachDone",
+                    "athleteCount",
+                    "goalsDone"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/signup/athlete/invite-summary": {
       "post": {
         "operationId": "postSignupAthleteInviteSummary",

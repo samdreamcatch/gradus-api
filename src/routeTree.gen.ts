@@ -193,6 +193,7 @@ import { Route as ApiV1OrgsLookupCodeRouteImport } from './routes/api/v1/orgs/lo
 import { Route as ApiV1OrgsPopularRouteImport } from './routes/api/v1/orgs/popular'
 import { Route as ApiV1OrgsSearchRouteImport } from './routes/api/v1/orgs/search'
 import { Route as ApiV1OrgsVerifyCodeRouteImport } from './routes/api/v1/orgs/verify-code'
+import { Route as ApiV1ParentChecklistRouteImport } from './routes/api/v1/parent/checklist'
 import { Route as ApiV1ParentCoachVisibilityRouteImport } from './routes/api/v1/parent/coach-visibility'
 import { Route as ApiV1ParentGoalsRouteImport } from './routes/api/v1/parent/goals'
 import { Route as ApiV1ParentInviteCodeRouteImport } from './routes/api/v1/parent/invite-code'
@@ -1379,6 +1380,11 @@ const ApiV1OrgsVerifyCodeRoute = ApiV1OrgsVerifyCodeRouteImport.update({
   path: '/api/v1/orgs/verify-code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1ParentChecklistRoute = ApiV1ParentChecklistRouteImport.update({
+  id: '/api/v1/parent/checklist',
+  path: '/api/v1/parent/checklist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ParentCoachVisibilityRoute =
   ApiV1ParentCoachVisibilityRouteImport.update({
     id: '/api/v1/parent/coach-visibility',
@@ -2532,6 +2538,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/checklist': typeof ApiV1ParentChecklistRoute
   '/api/v1/parent/coach-visibility': typeof ApiV1ParentCoachVisibilityRoute
   '/api/v1/parent/goals': typeof ApiV1ParentGoalsRoute
   '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
@@ -2886,6 +2893,7 @@ export interface FileRoutesByTo {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/checklist': typeof ApiV1ParentChecklistRoute
   '/api/v1/parent/coach-visibility': typeof ApiV1ParentCoachVisibilityRoute
   '/api/v1/parent/goals': typeof ApiV1ParentGoalsRoute
   '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
@@ -3248,6 +3256,7 @@ export interface FileRoutesById {
   '/api/v1/orgs/popular': typeof ApiV1OrgsPopularRoute
   '/api/v1/orgs/search': typeof ApiV1OrgsSearchRoute
   '/api/v1/orgs/verify-code': typeof ApiV1OrgsVerifyCodeRoute
+  '/api/v1/parent/checklist': typeof ApiV1ParentChecklistRoute
   '/api/v1/parent/coach-visibility': typeof ApiV1ParentCoachVisibilityRoute
   '/api/v1/parent/goals': typeof ApiV1ParentGoalsRoute
   '/api/v1/parent/invite-code': typeof ApiV1ParentInviteCodeRoute
@@ -3610,6 +3619,7 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/checklist'
     | '/api/v1/parent/coach-visibility'
     | '/api/v1/parent/goals'
     | '/api/v1/parent/invite-code'
@@ -3964,6 +3974,7 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/checklist'
     | '/api/v1/parent/coach-visibility'
     | '/api/v1/parent/goals'
     | '/api/v1/parent/invite-code'
@@ -4325,6 +4336,7 @@ export interface FileRouteTypes {
     | '/api/v1/orgs/popular'
     | '/api/v1/orgs/search'
     | '/api/v1/orgs/verify-code'
+    | '/api/v1/parent/checklist'
     | '/api/v1/parent/coach-visibility'
     | '/api/v1/parent/goals'
     | '/api/v1/parent/invite-code'
@@ -4609,6 +4621,7 @@ export interface RootRouteChildren {
   ApiV1OrgsPopularRoute: typeof ApiV1OrgsPopularRoute
   ApiV1OrgsSearchRoute: typeof ApiV1OrgsSearchRoute
   ApiV1OrgsVerifyCodeRoute: typeof ApiV1OrgsVerifyCodeRoute
+  ApiV1ParentChecklistRoute: typeof ApiV1ParentChecklistRoute
   ApiV1ParentCoachVisibilityRoute: typeof ApiV1ParentCoachVisibilityRoute
   ApiV1ParentGoalsRoute: typeof ApiV1ParentGoalsRoute
   ApiV1ParentInviteCodeRoute: typeof ApiV1ParentInviteCodeRoute
@@ -6077,6 +6090,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/orgs/verify-code'
       fullPath: '/api/v1/orgs/verify-code'
       preLoaderRoute: typeof ApiV1OrgsVerifyCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/parent/checklist': {
+      id: '/api/v1/parent/checklist'
+      path: '/api/v1/parent/checklist'
+      fullPath: '/api/v1/parent/checklist'
+      preLoaderRoute: typeof ApiV1ParentChecklistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/parent/coach-visibility': {
@@ -7693,6 +7713,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1OrgsPopularRoute: ApiV1OrgsPopularRoute,
   ApiV1OrgsSearchRoute: ApiV1OrgsSearchRoute,
   ApiV1OrgsVerifyCodeRoute: ApiV1OrgsVerifyCodeRoute,
+  ApiV1ParentChecklistRoute: ApiV1ParentChecklistRoute,
   ApiV1ParentCoachVisibilityRoute: ApiV1ParentCoachVisibilityRoute,
   ApiV1ParentGoalsRoute: ApiV1ParentGoalsRoute,
   ApiV1ParentInviteCodeRoute: ApiV1ParentInviteCodeRoute,
