@@ -114,7 +114,7 @@
     {
       "key": "figure_skating",
       "label": "Figure Skating",
-      "standard": "U.S. Figure Skating test track",
+      "standard": "U.S. Figure Skating standard, Excel, and adult tracks",
       "levels": [
         {
           "key": "basic_skills",
@@ -160,6 +160,96 @@
           "key": "senior",
           "label": "Senior",
           "suggestedHours": 22
+        },
+        {
+          "key": "excel_beginner",
+          "label": "Excel Beginner",
+          "hint": "Excel track",
+          "suggestedHours": 2
+        },
+        {
+          "key": "excel_high_beginner",
+          "label": "Excel High Beginner",
+          "hint": "Excel track",
+          "suggestedHours": 3
+        },
+        {
+          "key": "excel_pre_preliminary",
+          "label": "Excel Pre-Preliminary",
+          "hint": "Excel track",
+          "suggestedHours": 3
+        },
+        {
+          "key": "excel_preliminary",
+          "label": "Excel Preliminary",
+          "hint": "Excel track",
+          "suggestedHours": 4
+        },
+        {
+          "key": "excel_pre_juvenile",
+          "label": "Excel Pre-Juvenile",
+          "hint": "Excel track",
+          "suggestedHours": 6
+        },
+        {
+          "key": "excel_juvenile",
+          "label": "Excel Juvenile",
+          "hint": "Excel track",
+          "suggestedHours": 8
+        },
+        {
+          "key": "excel_intermediate",
+          "label": "Excel Intermediate",
+          "hint": "Excel track",
+          "suggestedHours": 10
+        },
+        {
+          "key": "excel_novice",
+          "label": "Excel Novice",
+          "hint": "Excel track",
+          "suggestedHours": 12
+        },
+        {
+          "key": "excel_junior",
+          "label": "Excel Junior",
+          "hint": "Excel track",
+          "suggestedHours": 14
+        },
+        {
+          "key": "excel_senior",
+          "label": "Excel Senior",
+          "hint": "Excel track",
+          "suggestedHours": 16
+        },
+        {
+          "key": "adult_pre_bronze",
+          "label": "Adult Pre-Bronze",
+          "hint": "Adult track",
+          "suggestedHours": 2
+        },
+        {
+          "key": "adult_bronze",
+          "label": "Adult Bronze",
+          "hint": "Adult track",
+          "suggestedHours": 3
+        },
+        {
+          "key": "adult_silver",
+          "label": "Adult Silver",
+          "hint": "Adult track",
+          "suggestedHours": 4
+        },
+        {
+          "key": "adult_gold",
+          "label": "Adult Gold",
+          "hint": "Adult track",
+          "suggestedHours": 6
+        },
+        {
+          "key": "adult_masters",
+          "label": "Adult Masters",
+          "hint": "Adult track",
+          "suggestedHours": 8
         }
       ]
     },

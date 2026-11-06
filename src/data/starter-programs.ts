@@ -58,7 +58,8 @@ const JUMP_FAMILIES: Record<string, JumpFamily> = {
     why: "The axel is the dividing line in figure skating — the extra half rotation is what separates advancing skaters from the rest.",
   },
   salchow: {
-    takeoff: "a sweeping edge jump off the back inside edge, powered by a wide free-leg swing rather than a toe pick",
+    takeoff:
+      "a sweeping edge jump off the back inside edge, powered by a wide free-leg swing rather than a toe pick",
     cue: "Deep bend through the entry turn, swing the free leg out wide, push off one foot only.",
     why: "Salchow builds the edge control and free-leg swing every other edge jump depends on.",
   },
@@ -78,7 +79,8 @@ const JUMP_FAMILIES: Record<string, JumpFamily> = {
     why: "Flip is a standard element at every competitive level and trains a controlled picking action.",
   },
   lutz: {
-    takeoff: "a toe-assisted jump off the back outside edge, rotating against the direction of the entry curve",
+    takeoff:
+      "a toe-assisted jump off the back outside edge, rotating against the direction of the entry curve",
     cue: "Hold the outside edge all the way to the pick — don't let it roll over.",
     why: "The counter-rotated takeoff makes lutz one of the hardest jumps to keep clean; the edge is what judges watch.",
   },
@@ -206,6 +208,65 @@ const ELEMENT_COPY: Record<string, MoveCopy> = {
     cue: "Land the fly already low, hold it, then push the change of foot straight back into a sit.",
     why: "Demands sit position strength on both legs, which is where the levels are won or lost.",
   },
+  "Waltz Jump": {
+    description:
+      "A half-rotation jump from a forward outside edge to a backward outside edge — the first jump every skater learns, and the shape of the axel.",
+    cue: "Step forward onto a bending outside edge, swing the free leg through, land on a bent knee with the arms checked.",
+    why: "Every edge jump and the axel itself grow out of this takeoff and landing; a clean waltz jump is the foundation of the whole jump list.",
+  },
+  "Half Flip": {
+    description:
+      "A half-rotation toe jump off the back inside edge, landing forward on the toe pick of the other foot.",
+    cue: "Reach the pick straight back, vault up, and land light on the toe facing forward.",
+    why: "Teaches the picking action and the air position that the full flip and lutz depend on.",
+  },
+  "Waltz Jump + Single Toeloop": {
+    description:
+      "Land the waltz jump on a strong back outside edge, then pick straight into a single toe loop with no steps in between.",
+    cue: "Ride the landing edge for a count, reach the pick back, keep the arms quiet.",
+    why: "The first combination most skaters learn; it proves the landing edge is strong enough to launch another jump.",
+  },
+  "Two-Foot Spin": {
+    description: "A spin on both feet, upright, arms pulling in to speed it up.",
+    cue: "Feet under the hips, arms out to start, then pull in and feel the speed come.",
+    why: "Finds the center of a spin before balancing on one foot; everything spinning starts here.",
+  },
+  "Upright Spin": {
+    description:
+      "A one-foot upright spin on the back inside edge of the skating foot, free leg crossed in front.",
+    cue: "Push into the spin on a bent knee, rise as the free leg crosses, stay over the ball of the foot.",
+    why: "The basic one-foot spin that every sit, camel, and combination spin builds on.",
+  },
+  "Scratch Spin": {
+    description:
+      "A fast upright spin with the free foot crossed low and pulled in tight, finishing on the toe pick.",
+    cue: "Cross low, squeeze the thighs together, pull the arms in last for the speed.",
+    why: "The speed and centering learned here carry into every spin, and it closes a program with a flourish.",
+  },
+  "Forward Spiral": {
+    description:
+      "A long glide on one foot with the free leg held at or above hip height behind you.",
+    cue: "Lift from the hip, keep the back flat and the chest up, hold the glide to the end of the edge.",
+    why: "Builds balance and flexibility on a moving edge, and shows judges stretch and control.",
+  },
+  "Spiral Sequence": {
+    description:
+      "Two or more spirals on different edges, linked across the ice as one continuous pattern.",
+    cue: "Hold each position until the edge runs out; make the change between them part of the pattern.",
+    why: "A required element at the lower free skate levels and the clearest display of edge quality and extension.",
+  },
+  "Backward Crossovers": {
+    description:
+      "Power stroking backward on a curve, crossing the outside foot over the inside one.",
+    cue: "Push with the whole blade, knees bent, look over the shoulder in the direction of travel.",
+    why: "Backward speed is what sets up every jump entry; strong crossovers are where program speed comes from.",
+  },
+  "Bunny Hop": {
+    description:
+      "A small forward hop from one foot, landing on the toe pick of the other and pushing onto the first.",
+    cue: "Swing the free leg forward, hop up not out, land light on the pick and glide away.",
+    why: "The first jump off the ice: teaches a quick, balanced takeoff and a soft landing.",
+  },
   "Step Sequence": {
     description:
       "A sequence of turns, steps, and edges skated across the ice as one continuous pattern.",
@@ -255,9 +316,75 @@ function program(
   };
 }
 
+/*
+ * Pre-Juvenile and below: representative programs within each level's
+ * well-balanced program limits (no double axel or triples; pre-preliminary
+ * and basic skills singles only). Before 2026-11-05 all five of these
+ * levels were handed the Juvenile program, which opens with a double axel.
+ */
+
+const BASIC_SKILLS_FS = program("fs_basic_skills_fs", "Basic Skills — Free Skate", [
+  ["Jump", "Bunny Hop"],
+  ["Jump", "Waltz Jump"],
+  ["Jump", "Half Flip"],
+  ["Jump", "Single Salchow"],
+  ["Jump", "Single Toeloop"],
+  ["Jump combination", "Waltz Jump + Single Toeloop"],
+  ["Spin", "Two-Foot Spin"],
+  ["Spin", "Upright Spin"],
+  ["Spiral", "Forward Spiral"],
+  ["Stroking", "Backward Crossovers"],
+]);
+
+// Adult Bronze: singles only, no axel (the axel arrives at Silver).
+const ADULT_BRONZE_FS = program("fs_adult_bronze_fs", "Adult Bronze — Free Skate", [
+  ["Solo jump", "Single Salchow"],
+  ["Solo jump", "Single Toeloop"],
+  ["Solo jump", "Single Loop"],
+  ["Solo jump", "Single Flip"],
+  ["Jump combination", "Single Salchow + Single Toeloop"],
+  ["Spin, one position", "Upright Spin"],
+  ["Spin, one position", "Sit Spin"],
+  ["Spiral sequence", "Spiral Sequence"],
+  ["Step sequence", "Step Sequence"],
+]);
+
+const PRE_PRELIMINARY_FS = program("fs_pre_preliminary_fs", "Pre-Preliminary — Free Skate", [
+  ["Axel-type jump", "Single Axel"],
+  ["Solo jump", "Single Lutz"],
+  ["Solo jump", "Single Flip"],
+  ["Jump combination", "Single Loop + Single Loop"],
+  ["Spin, one position", "Scratch Spin"],
+  ["Spin combination", "Combination Spin"],
+  ["Spiral sequence", "Spiral Sequence"],
+  ["Step sequence", "Step Sequence"],
+]);
+
+const PRELIMINARY_FS = program("fs_preliminary_fs", "Preliminary — Free Skate", [
+  ["Axel-type jump", "Single Axel"],
+  ["Solo jump", "Double Salchow"],
+  ["Solo jump", "Single Lutz"],
+  ["Jump combination", "Double Toeloop + Single Toeloop"],
+  ["Spin, one position", "Sit Spin"],
+  ["Spin combination, change of foot", "Change Foot Combo Spin"],
+  ["Step sequence", "Step Sequence"],
+]);
+
+const PRE_JUVENILE_FS = program("fs_pre_juvenile_fs", "Pre-Juvenile — Free Skate", [
+  ["Axel-type jump", "Single Axel"],
+  ["Solo jump", "Double Loop"],
+  ["Solo jump", "Double Flip"],
+  ["Jump combination", "Double Salchow + Double Toeloop"],
+  ["Jump combination", "Double Flip + Double Toeloop"],
+  ["Spin, one position", "Camel Spin"],
+  ["Spin combination, change of foot", "Change Foot Combo Spin"],
+  ["Step sequence", "Step Sequence"],
+]);
+
+// Juvenile: double axel permitted, no triples (the chart's triple salchow was out of level).
 const JUVENILE_FS = program("fs_juvenile_fs", "Juvenile — Free Skate", [
   ["Axel-type jump", "Double Axel"],
-  ["Solo jump", "Triple Salchow"],
+  ["Solo jump", "Double Lutz"],
   ["Solo jump", "Double Flip"],
   ["Jump combination", "Double Loop + Single Euler + Double Salchow"],
   ["Flying spin", "Fly Sit Spin"],
@@ -370,28 +497,68 @@ const SENIOR_FS = program("fs_senior_fs", "Senior — Free Skate", [
  */
 export const STARTER_PROGRAMS: Record<string, Record<string, StarterProgram[]>> = {
   figure_skating: {
-    basic_skills: [JUVENILE_FS],
-    pre_preliminary: [JUVENILE_FS],
-    preliminary: [JUVENILE_FS],
-    pre_juvenile: [JUVENILE_FS],
+    basic_skills: [BASIC_SKILLS_FS],
+    pre_preliminary: [PRE_PRELIMINARY_FS],
+    preliminary: [PRELIMINARY_FS],
+    pre_juvenile: [PRE_JUVENILE_FS],
     juvenile: [JUVENILE_FS],
     intermediate: [INTERMEDIATE_SP, INTERMEDIATE_FS],
     novice: [NOVICE_SP, NOVICE_FS],
     junior: [JUNIOR_SP, JUNIOR_FS],
     senior: [SENIOR_SP, SENIOR_FS],
+    // Excel (non-qualifying) track: the same element limits as the standard
+    // level of the same name, one level earlier at the bottom (Excel Beginner
+    // has no axel, High Beginner does).
+    excel_beginner: [BASIC_SKILLS_FS],
+    excel_high_beginner: [PRE_PRELIMINARY_FS],
+    excel_pre_preliminary: [PRE_PRELIMINARY_FS],
+    excel_preliminary: [PRELIMINARY_FS],
+    excel_pre_juvenile: [PRE_JUVENILE_FS],
+    excel_juvenile: [JUVENILE_FS],
+    excel_intermediate: [INTERMEDIATE_SP, INTERMEDIATE_FS],
+    excel_novice: [NOVICE_SP, NOVICE_FS],
+    excel_junior: [JUNIOR_SP, JUNIOR_FS],
+    excel_senior: [SENIOR_SP, SENIOR_FS],
+    // Adult track: Pre-Bronze is the beginner list; Bronze has its own
+    // (singles, no axel); Silver adds the axel, Gold doubles, Masters more.
+    adult_pre_bronze: [BASIC_SKILLS_FS],
+    adult_bronze: [ADULT_BRONZE_FS],
+    adult_silver: [PRE_PRELIMINARY_FS],
+    adult_gold: [PRELIMINARY_FS],
+    adult_masters: [PRE_JUVENILE_FS],
   },
 };
 
-/** Level used when a sport has programs but the athlete's level isn't mapped. */
-const FALLBACK_LEVEL: Record<string, string> = {
-  figure_skating: "juvenile",
-};
-
+/**
+ * The programs for a sport + level. A level the sport doesn't map produces
+ * nothing: a wrong-level program is worse than none (every unmapped level
+ * used to fall back to Juvenile).
+ */
 export function resolveStarterPrograms(sport: string, levelKey: string): StarterProgram[] {
-  const bySport = STARTER_PROGRAMS[sport];
-  if (!bySport) return [];
-  const exact = bySport[levelKey];
-  if (exact) return exact;
-  const fallbackKey = FALLBACK_LEVEL[sport];
-  return (fallbackKey ? bySport[fallbackKey] : undefined) ?? [];
+  return STARTER_PROGRAMS[sport]?.[levelKey] ?? [];
+}
+
+/** Every title this sport could ever produce, at any level. */
+export function starterTitlesForSport(sport: string): Set<string> {
+  const titles = new Set<string>();
+  for (const programs of Object.values(STARTER_PROGRAMS[sport] ?? {})) {
+    for (const p of programs) titles.add(p.title);
+  }
+  return titles;
+}
+
+/**
+ * Which of an athlete's existing Gradus plan titles belong to this sport but
+ * to a level other than the one on file — seeded before the lower levels had
+ * programs of their own, or before a level was corrected. Only these are
+ * candidates for replacement; the caller still checks nothing was logged.
+ */
+export function staleStarterTitles(
+  existingTitles: Iterable<string>,
+  sport: string,
+  levelKey: string,
+): string[] {
+  const sportTitles = starterTitlesForSport(sport);
+  const current = new Set(resolveStarterPrograms(sport, levelKey).map((p) => p.title));
+  return Array.from(new Set(existingTitles)).filter((t) => sportTitles.has(t) && !current.has(t));
 }

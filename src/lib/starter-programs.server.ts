@@ -2,18 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
-import { STARTER_PROGRAMS, resolveStarterPrograms, starterMoveCopy } from "@/data/starter-programs";
+import {
+  resolveStarterPrograms,
+  staleStarterTitles,
+  starterMoveCopy,
+  starterTitlesForSport,
+} from "@/data/starter-programs";
 
-/** Every title this sport could ever produce, used for the "already has one" check. */
-function titlesForSport(sport: string): Set<string> {
-  const bySport = STARTER_PROGRAMS[sport];
-  const titles = new Set<string>();
-  if (!bySport) return titles;
-  for (const programs of Object.values(bySport)) {
-    for (const p of programs) titles.add(p.title);
-  }
-  return titles;
-}
+const titlesForSport = starterTitlesForSport;
 
 /**
  * Create the Gradus starter program(s) for an athlete's sport + level.
@@ -115,6 +111,48 @@ async function repairStarterMoveCopy(athleteId: string): Promise<void> {
 }
 
 /**
+ * One-time repair for athletes seeded with another level's program — every
+ * level at Juvenile or below got "Juvenile — Free Skate" until 2026-11-05.
+ * A Gradus plan for the sport whose title belongs to a different level is
+ * removed when nothing was ever logged against it, so the right one can be
+ * seeded; a plan with sessions stays (logged work is never thrown away).
+ * Adopted plans are no longer `source = gradus` and are never touched.
+ */
+async function replaceWrongLevelStarters(
+  athleteId: string,
+  sport: string,
+  levelKey: string,
+): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const plans = await supabaseAdmin
+      .from("plans")
+      .select("id, title")
+      .eq("athlete_id", athleteId)
+      .eq("source", "gradus");
+    if (plans.error || !plans.data?.length) return;
+    const stale = new Set(
+      staleStarterTitles(
+        plans.data.map((p) => p.title),
+        sport,
+        levelKey,
+      ),
+    );
+    for (const plan of plans.data.filter((p) => stale.has(p.title))) {
+      const logged = await supabaseAdmin
+        .from("plan_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("plan_id", plan.id);
+      if (logged.error || (logged.count ?? 0) > 0) continue;
+      await supabaseAdmin.from("plan_moves").delete().eq("plan_id", plan.id);
+      await supabaseAdmin.from("plans").delete().eq("id", plan.id).eq("source", "gradus");
+    }
+  } catch {
+    // never block the caller
+  }
+}
+
+/**
  * Backfill safety net: create starter programs from the athlete's saved goals.
  * Safe to call on every read — ensureStarterPrograms is idempotent and silent.
  */
@@ -127,6 +165,7 @@ export async function ensureStarterProgramsForAthlete(athleteId: string): Promis
       .eq("athlete_id", athleteId);
     if (goals.error) return;
     for (const g of goals.data ?? []) {
+      await replaceWrongLevelStarters(athleteId, g.sport, g.current_level_key);
       await ensureStarterPrograms(athleteId, g.sport, g.current_level_key);
     }
     await repairStarterMoveCopy(athleteId);
