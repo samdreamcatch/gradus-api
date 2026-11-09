@@ -45,9 +45,13 @@ export const marketplacePlanSchema = z.object({
     verified: z.boolean(),
     /** A link (an hour) to their profile photo; null when they have none. */
     photoUrl: z.string().nullable(),
+    /** Their Stripe payouts are set up; until then nobody can buy their plans. */
+    canSell: z.boolean(),
   }),
   /** The caller made this plan: show it, but no Buy button. */
   isOwn: z.boolean(),
+  /** The caller's purchases of this listing (an athlete's own, or a parent's per child); `planId` is the copy. */
+  purchases: z.array(z.object({ athleteId: z.string(), planId: z.string().nullable() })),
 });
 
 export const marketplacePlansPageSchema = z.object({
@@ -75,4 +79,16 @@ export const marketplaceCoachSchema = z.object({
   /** Across all their active plans; `average` is null with no ratings. */
   rating: z.object({ average: z.number().nullable(), count: z.number() }),
   plans: z.array(marketplacePlanSchema),
+});
+
+/** A plan purchase (src/lib/plan-purchases.server.ts `PlanPurchaseDTO`). */
+export const planPurchaseSchema = z.object({
+  id: z.string(),
+  /** pending: checkout open; fulfilling: paid, being delivered; fulfilled: done; canceled: abandoned. */
+  status: z.enum(["pending", "fulfilling", "fulfilled", "canceled"]),
+  planId: z.string().nullable(),
+  athleteId: z.string().nullable(),
+  /** The athlete's own copy, once fulfilled. */
+  copiedPlanId: z.string().nullable(),
+  amountCents: z.number(),
 });

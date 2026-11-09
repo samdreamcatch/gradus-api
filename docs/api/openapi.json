@@ -274,6 +274,12 @@
                         "null"
                       ]
                     },
+                    "athleteCanPurchase": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
                     "sports": {
                       "type": "array",
                       "items": {
@@ -20340,6 +20346,9 @@
                                   "string",
                                   "null"
                                 ]
+                              },
+                              "canSell": {
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -20347,11 +20356,33 @@
                               "firstName",
                               "lastName",
                               "verified",
-                              "photoUrl"
+                              "photoUrl",
+                              "canSell"
                             ]
                           },
                           "isOwn": {
                             "type": "boolean"
+                          },
+                          "purchases": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "athleteId": {
+                                  "type": "string"
+                                },
+                                "planId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "athleteId",
+                                "planId"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -20373,7 +20404,8 @@
                           "updatedAt",
                           "sampleMove",
                           "coach",
-                          "isOwn"
+                          "isOwn",
+                          "purchases"
                         ]
                       }
                     },
@@ -20387,6 +20419,395 @@
                   "required": [
                     "items",
                     "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans/{id}/checkout": {
+      "post": {
+        "operationId": "startMarketplacePlanCheckout",
+        "summary": "Start buying a marketplace plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "purchase": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "fulfilling",
+                            "fulfilled",
+                            "canceled"
+                          ]
+                        },
+                        "planId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "athleteId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "copiedPlanId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amountCents": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "planId",
+                        "athleteId",
+                        "copiedPlanId",
+                        "amountCents"
+                      ]
+                    },
+                    "checkoutUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "purchase",
+                    "checkoutUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases/{id}": {
+      "get": {
+        "operationId": "getMarketplacePurchase",
+        "summary": "A plan purchase's status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "fulfilling",
+                        "fulfilled",
+                        "canceled"
+                      ]
+                    },
+                    "planId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "copiedPlanId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "planId",
+                    "athleteId",
+                    "copiedPlanId",
+                    "amountCents"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect": {
+      "get": {
+        "operationId": "getStripeConnectStatus",
+        "summary": "The coach's Stripe Connect status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "refresh",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "not_connected",
+                        "pending",
+                        "restricted",
+                        "active"
+                      ]
+                    },
+                    "accountId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detailsSubmitted": {
+                      "type": "boolean"
+                    },
+                    "chargesEnabled": {
+                      "type": "boolean"
+                    },
+                    "payoutsEnabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "accountId",
+                    "detailsSubmitted",
+                    "chargesEnabled",
+                    "payoutsEnabled"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect/onboarding": {
+      "post": {
+        "operationId": "startStripeConnectOnboarding",
+        "summary": "Start (or continue) connecting the coach's Stripe account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "returnUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "refreshUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "returnUrl",
+                  "refreshUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect/dashboard": {
+      "post": {
+        "operationId": "createStripeConnectDashboardLink",
+        "summary": "Open the coach's Stripe dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
                   ]
                 }
               }
@@ -20673,6 +21094,9 @@
                                   "string",
                                   "null"
                                 ]
+                              },
+                              "canSell": {
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -20680,11 +21104,33 @@
                               "firstName",
                               "lastName",
                               "verified",
-                              "photoUrl"
+                              "photoUrl",
+                              "canSell"
                             ]
                           },
                           "isOwn": {
                             "type": "boolean"
+                          },
+                          "purchases": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "athleteId": {
+                                  "type": "string"
+                                },
+                                "planId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "athleteId",
+                                "planId"
+                              ]
+                            }
                           }
                         },
                         "required": [
@@ -20706,7 +21152,8 @@
                           "updatedAt",
                           "sampleMove",
                           "coach",
-                          "isOwn"
+                          "isOwn",
+                          "purchases"
                         ]
                       }
                     }

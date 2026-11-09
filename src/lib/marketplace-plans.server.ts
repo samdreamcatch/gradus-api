@@ -67,6 +67,7 @@ export interface MarketplacePlanDTO {
   /**
    * `verified`: the coach finished identity verification (their setup checklist).
    * `photoUrl`: a link (an hour) to their profile photo; null when they have none.
+   * `canSell`: their Stripe payouts are set up; until then nobody can buy their plans.
    */
   coach: {
     id: string;
@@ -74,9 +75,15 @@ export interface MarketplacePlanDTO {
     lastName: string;
     verified: boolean;
     photoUrl: string | null;
+    canSell: boolean;
   };
   /** The caller is the coach who made it: show it, but no Buy. */
   isOwn: boolean;
+  /**
+   * The caller's purchases of this listing: for an athlete, their own; for a
+   * parent, one per child they bought it for. `planId` is that athlete's copy.
+   */
+  purchases: { athleteId: string; planId: string | null }[];
 }
 
 /**
@@ -157,6 +164,36 @@ async function viewerScope(
   return { coachId: coachRes.data?.id ?? null, athleteIds: Array.from(athleteIds) };
 }
 
+/** The caller's fulfilled purchases among `planIds`: listing id → who it was bought for. */
+async function viewerPurchases(
+  admin: Admin,
+  userId: string,
+  planIds: string[],
+): Promise<Map<string, { athleteId: string; planId: string | null }[]>> {
+  const out = new Map<string, { athleteId: string; planId: string | null }[]>();
+  if (planIds.length === 0) return out;
+  // The generated types don't know plan_purchases yet (20261111120800_plan_purchases).
+  const { data, error } = await (admin as unknown as { from: (t: string) => any }) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .from("plan_purchases")
+    .select("plan_id, athlete_id, copied_plan_id")
+    .eq("buyer_user_id", userId)
+    .eq("status", "fulfilled")
+    .in("plan_id", planIds);
+  if (error) dbError(error);
+  for (const p of (data ?? []) as {
+    plan_id: string;
+    athlete_id: string | null;
+    copied_plan_id: string | null;
+  }[]) {
+    if (!p.athlete_id) continue;
+    out.set(p.plan_id, [
+      ...(out.get(p.plan_id) ?? []),
+      { athleteId: p.athlete_id, planId: p.copied_plan_id },
+    ]);
+  }
+  return out;
+}
+
 /** Coach Pro coaches whose name contains every search term. */
 async function coachIdsMatching(admin: Admin, terms: string[]): Promise<string[]> {
   if (terms.length === 0) return [];
@@ -196,6 +233,9 @@ type ListingRow = {
     last_name: string;
     checklist: { identityVerification?: unknown } | null;
     photo_url: string | null;
+    stripe_connect_account_id: string | null;
+    stripe_connect_charges_enabled: boolean | null;
+    stripe_connect_payouts_enabled: boolean | null;
   };
 };
 
@@ -227,7 +267,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -293,7 +333,7 @@ export async function getMarketplacePlans(
     }
   }
 
-  const [covers, coachPhotos] = await Promise.all([
+  const [covers, coachPhotos, bought] = await Promise.all([
     listingCoverUrls(
       admin as unknown as Parameters<typeof listingCoverUrls>[0],
       page.map((row) => row.media),
@@ -301,6 +341,11 @@ export async function getMarketplacePlans(
     signedCoachPhotoUrls(
       admin as unknown as Parameters<typeof signedCoachPhotoUrls>[0],
       page.map((row) => ({ id: row.coach.id, photoUrl: row.coach.photo_url })),
+    ),
+    viewerPurchases(
+      admin,
+      ctx.userId,
+      page.map((row) => row.id),
     ),
   ]);
 
@@ -334,8 +379,13 @@ export async function getMarketplacePlans(
         lastName: row.coach.last_name,
         verified: row.coach.checklist?.identityVerification === true,
         photoUrl: coachPhotos.get(row.coach.id) ?? null,
+        canSell:
+          !!row.coach.stripe_connect_account_id &&
+          row.coach.stripe_connect_charges_enabled === true &&
+          row.coach.stripe_connect_payouts_enabled === true,
       },
       isOwn: scope.coachId !== null && row.coach.id === scope.coachId,
+      purchases: bought.get(row.id) ?? [],
     })),
     nextCursor,
   };

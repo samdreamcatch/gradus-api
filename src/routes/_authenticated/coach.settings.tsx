@@ -35,6 +35,7 @@ import { ConnectPeopleSheet } from "@/components/coach/connect-people-sheet";
 import { CoachVisibilitySettingsRow } from "@/components/coach/coach-visibility-sheet";
 import { JoinClubSheet } from "@/components/coach/join-club-sheet";
 import { UpgradeToProRow } from "@/components/coach/upgrade-to-pro-row";
+import { StripeConnectSection } from "@/components/coach/stripe-connect-section";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe-env";
 import { maxPrimarySportsForCoach } from "@/lib/paywall-flag";
@@ -101,6 +102,10 @@ function SettingsPage() {
           <div className="mt-3">
             <ConnectPeopleSheet />
           </div>
+        </SettingsGroup>
+
+        <SettingsGroup label="Payouts">
+          <StripeConnectSection />
         </SettingsGroup>
 
         <SettingsGroup label="Plan">
