@@ -8,6 +8,7 @@ import {
   submitSessionInput,
 } from "./plan-sessions.server";
 import {
+  addLibraryMovesToPlan,
   createPlan,
   createPlanApiInput,
   createPlanInput,
@@ -538,6 +539,19 @@ describe("plan writes stay on the coach's roster", () => {
       expect(writes).toContain("plans.insert");
     });
 
+    it("editing a published marketplace plan (active, no athlete) keeps it on sale", async () => {
+      const payloads: unknown[] = [];
+      const supabase = fakeClient(
+        { ...coach, plans: { ...owned, status: "active", athlete_id: null } },
+        {},
+        { payloads },
+      );
+      await expect(
+        updatePlan({ userId: "u", supabase }, "p1", { title: "New title", weeks: 6 }),
+      ).resolves.toEqual({ ok: true });
+      expect((payloads[0] as Record<string, unknown>).status).toBeUndefined();
+    });
+
     it("editing a plan whose athlete has left the roster is 403, as the database would refuse it", async () => {
       const writes: string[] = [];
       const supabase = fakeClient({ ...coach, plans: owned }, {}, { writes });
@@ -1057,5 +1071,39 @@ describe("createPlanApiInput", () => {
 
   it("leaves the web app's create input as it was", () => {
     expect(createPlanInput.safeParse({}).success).toBe(true);
+  });
+});
+
+describe("addLibraryMovesToPlan", () => {
+  const axel = {
+    id: "m1",
+    name: "Axel",
+    description: "",
+    cue: "",
+    why: "",
+    default_target_kind: "reps",
+    default_target_value: 5,
+  };
+  const draft = { id: "p1", kind: "plan", status: "draft", athlete_id: null };
+
+  it("refuses a move that's already in the plan, and writes nothing", async () => {
+    const writes: string[] = [];
+    const supabase = fakeClient(
+      { ...coach, plans: draft },
+      { moves: [axel], plan_moves: [{ move_id: "m1" }] },
+      { writes },
+    );
+    const err = await caught(() => addLibraryMovesToPlan({ userId: "u", supabase }, "p1", ["m1"]));
+    expect(err?.status).toBe(409);
+    expect(err?.code).toBe("move_already_in_plan");
+    expect(err?.message).toBe("Axel is already in this plan.");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds a move sent twice only once", async () => {
+    const supabase = fakeClient({ ...coach, plans: draft }, { moves: [axel], plan_moves: [] });
+    await expect(
+      addLibraryMovesToPlan({ userId: "u", supabase }, "p1", ["m1", "m1"]),
+    ).resolves.toEqual({ inserted: 1 });
   });
 });

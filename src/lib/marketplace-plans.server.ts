@@ -2,8 +2,8 @@
  * The plan marketplace read side (`GET /api/v1/marketplace/plans`). A listing
  * is an active plan whose coach is on Coach Pro, the same rule as
  * `public.coach_effective_tier()`: `subscription_tier = 'coach_pro'` and no
- * club. The caller never sees their own plans, or the plans assigned to them
- * or to the athletes they guard. Purchases aren't recorded anywhere yet, so an
+ * club. A coach sees their own plans too, flagged `isOwn` so the apps hide
+ * Buy; nobody sees the plans assigned to them or to the athletes they guard. Purchases aren't recorded anywhere yet, so an
  * "already bought" plan can't be left out; add that here once they are.
  *
  * Another coach's plan is invisible to the caller's RLS client, so reads go
@@ -22,6 +22,15 @@ type Admin = SupabaseClient<Database>;
 
 export type MarketplaceContext = { userId: string; admin: Admin };
 
+/** A plan's first move: what it is and how to do it, never the rest of the plan. */
+export interface MarketplaceSampleMoveDTO {
+  name: string;
+  targetKind: string;
+  targetValue: number;
+  cue: string | null;
+  why: string | null;
+}
+
 export interface MarketplacePlanDTO {
   id: string;
   title: string;
@@ -38,6 +47,10 @@ export interface MarketplacePlanDTO {
   /** The other end of a level range (20261107120000); null for a single level. */
   selectedLevelTo: string | null;
   description: string | null;
+  /** Weeks it runs, practice sessions per week, a Program's lessons (20261110120000); null when unset. */
+  weeks: number | null;
+  sessionsPerWeek: number | null;
+  lessonCount: number | null;
   /** Rating totals (20261106120000_plan_ratings); `average` is null with no ratings. */
   rating: { average: number | null; count: number };
   /**
@@ -45,9 +58,15 @@ export interface MarketplacePlanDTO {
    * coach's uploaded photo; null when there's none.
    */
   media: string | null;
+  /** When the coach made the plan. */
+  createdAt: string;
   updatedAt: string;
+  /** The plan's first move, shown as a free sample; null when it has none. */
+  sampleMove: MarketplaceSampleMoveDTO | null;
   /** `verified`: the coach finished identity verification (their setup checklist). */
   coach: { id: string; firstName: string; lastName: string; verified: boolean };
+  /** The caller is the coach who made it: show it, but no Buy. */
+  isOwn: boolean;
 }
 
 /**
@@ -105,7 +124,7 @@ export function allOf(groups: string[]): string | null {
   return `and(${groups.map((g) => `or(${g})`).join(",")})`;
 }
 
-/** Whose plans the caller already has: their own as a coach, and their athletes' and children's. */
+/** Who the caller is as a coach (their own plans), and the athletes whose plans they already have. */
 async function viewerScope(
   admin: Admin,
   userId: string,
@@ -153,9 +172,13 @@ type ListingRow = {
   selected_level: string | null;
   selected_level_to: string | null;
   description: string | null;
+  weeks: number | null;
+  sessions_per_week: number | null;
+  lesson_count: number | null;
   rating_avg: number | string | null;
   rating_count: number | null;
   media: string | null;
+  created_at: string;
   updated_at: string;
   coach: {
     id: string;
@@ -191,14 +214,13 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, selected_level_to, description, rating_avg, rating_count, media, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, subscription_tier, organization_id)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
     .is("coach.organization_id", null)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false });
-  if (scope.coachId) query = query.neq("coach_id", scope.coachId);
   if (input.minPrice !== undefined) query = query.gte("price", input.minPrice);
   if (input.maxPrice !== undefined) query = query.lte("price", input.maxPrice);
 
@@ -231,17 +253,29 @@ export async function getMarketplacePlans(
     rows.length > input.limit && last ? encodeMarketplaceCursor(last.updated_at, last.id) : null;
 
   const moveCounts = new Map<string, number>();
+  const samples = new Map<string, MarketplaceSampleMoveDTO>();
   if (page.length) {
     const moves = await admin
       .from("plan_moves")
-      .select("plan_id")
+      .select("plan_id, position, name, cue, why, target_kind, target_value")
       .in(
         "plan_id",
         page.map((p) => p.id),
-      );
+      )
+      .order("position", { ascending: true });
     if (moves.error) dbError(moves.error);
     for (const m of moves.data ?? []) {
       moveCounts.set(m.plan_id, (moveCounts.get(m.plan_id) ?? 0) + 1);
+      // Ordered by position: the first one seen is the plan's first move.
+      if (!samples.has(m.plan_id)) {
+        samples.set(m.plan_id, {
+          name: m.name,
+          targetKind: m.target_kind,
+          targetValue: Number(m.target_value),
+          cue: m.cue || null,
+          why: m.why || null,
+        });
+      }
     }
   }
 
@@ -263,18 +297,24 @@ export async function getMarketplacePlans(
       selectedLevel: row.selected_level,
       selectedLevelTo: row.selected_level_to,
       description: row.description,
+      weeks: row.weeks,
+      sessionsPerWeek: row.sessions_per_week,
+      lessonCount: row.lesson_count,
       rating: {
         average: row.rating_avg === null ? null : Number(row.rating_avg),
         count: row.rating_count ?? 0,
       },
       media: covers[i],
+      createdAt: row.created_at,
       updatedAt: row.updated_at,
+      sampleMove: samples.get(row.id) ?? null,
       coach: {
         id: row.coach.id,
         firstName: row.coach.first_name,
         lastName: row.coach.last_name,
         verified: row.coach.checklist?.identityVerification === true,
       },
+      isOwn: scope.coachId !== null && row.coach.id === scope.coachId,
     })),
     nextCursor,
   };

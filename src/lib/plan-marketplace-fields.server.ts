@@ -34,6 +34,11 @@ export const planProductTypeInput = z.enum(["plan", "program"]);
 /** The level the coach picked for the plan, as the frontend sends it. */
 export const planSelectedLevelInput = z.string().trim().min(1).max(160);
 export const planDescriptionInput = z.string().max(4000);
+/** How long the plan runs (the column checks match). */
+export const planWeeksInput = z.number().int().min(1).max(52);
+export const planSessionsPerWeekInput = z.number().int().min(1).max(14);
+/** Lessons in a Program. */
+export const planLessonCountInput = z.number().int().min(1).max(100);
 
 export const PLAN_MEDIA_PATH = "/storage/v1/object/authenticated/plan-media/";
 
@@ -163,6 +168,9 @@ export type PlanMarketplaceFields = {
   selectedLevel: string | null;
   selectedLevelTo: string | null;
   description: string | null;
+  weeks: number | null;
+  sessionsPerWeek: number | null;
+  lessonCount: number | null;
 };
 
 /** The fields a request may write; an absent one stays as it is. */
@@ -174,6 +182,10 @@ export type PlanMarketplaceInput = {
   /** The range's other end; null makes it a single level. */
   selectedLevelTo?: string | null;
   description?: string | null;
+  /** Each of these: null clears it. */
+  weeks?: number | null;
+  sessionsPerWeek?: number | null;
+  lessonCount?: number | null;
 };
 
 /** A plan's marketplace fields, or null when the caller can't read the plan. */
@@ -183,7 +195,9 @@ export async function getPlanMarketplaceFields(
 ): Promise<PlanMarketplaceFields | null> {
   const { data, error } = await untyped(supabase)
     .from("plans")
-    .select("price, media, product_type, selected_level, selected_level_to, description")
+    .select(
+      "price, media, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count",
+    )
     .eq("id", planId)
     .maybeSingle();
   if (error) dbError(error);
@@ -196,6 +210,9 @@ export async function getPlanMarketplaceFields(
     selectedLevel: data.selected_level ?? null,
     selectedLevelTo: data.selected_level_to ?? null,
     description: data.description ?? null,
+    weeks: data.weeks ?? null,
+    sessionsPerWeek: data.sessions_per_week ?? null,
+    lessonCount: data.lesson_count ?? null,
   };
 }
 
@@ -221,6 +238,9 @@ export async function setPlanMarketplaceFields(
         ? { selected_level_to: null }
         : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
+    ...(input.weeks !== undefined ? { weeks: input.weeks } : {}),
+    ...(input.sessionsPerWeek !== undefined ? { sessions_per_week: input.sessionsPerWeek } : {}),
+    ...(input.lessonCount !== undefined ? { lesson_count: input.lessonCount } : {}),
   };
   if (Object.keys(columns).length === 0) return;
   const { error } = await untyped(supabase).from("plans").update(columns).eq("id", planId);
@@ -253,5 +273,12 @@ export function marketplaceFieldsForCopy(
         ? (sent.selectedLevelTo ?? null)
         : (source?.selectedLevelTo ?? undefined),
     description: sent.description !== undefined ? sent.description : source?.description,
+    weeks: sent.weeks !== undefined ? sent.weeks : (source?.weeks ?? undefined),
+    sessionsPerWeek:
+      sent.sessionsPerWeek !== undefined
+        ? sent.sessionsPerWeek
+        : (source?.sessionsPerWeek ?? undefined),
+    lessonCount:
+      sent.lessonCount !== undefined ? sent.lessonCount : (source?.lessonCount ?? undefined),
   };
 }

@@ -130,6 +130,11 @@ export const planDetailSchema = z.object({
   selectedLevel: z.string().nullable().optional(),
   selectedLevelTo: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  // Weeks it runs, sessions per week, and a Program's lessons, in the coach's
+  // view; null when unset. Optional for older clients and servers.
+  weeks: z.number().int().nullable().optional(),
+  sessionsPerWeek: z.number().int().nullable().optional(),
+  lessonCount: z.number().int().nullable().optional(),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
 export const planIdSchema = z.object({ id: z.string() });

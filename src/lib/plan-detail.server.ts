@@ -72,6 +72,10 @@ export interface RoleAwarePlanDetailDTO {
   selectedLevelTo?: string | null;
   /** Marketplace description; in the coach's view only. */
   description?: string | null;
+  /** Weeks it runs, sessions per week, and a Program's lessons; null when unset. In the coach's view only. */
+  weeks?: number | null;
+  sessionsPerWeek?: number | null;
+  lessonCount?: number | null;
 }
 
 /**
@@ -183,6 +187,9 @@ export async function getPlanForViewer(
             selectedLevel: marketplace.selectedLevel,
             selectedLevelTo: marketplace.selectedLevelTo,
             description: marketplace.description,
+            weeks: marketplace.weeks,
+            sessionsPerWeek: marketplace.sessionsPerWeek,
+            lessonCount: marketplace.lessonCount,
           }
         : {}),
       // Only the owner can load the image (the plan-media storage policies).

@@ -15,11 +15,28 @@ export const marketplacePlanSchema = z.object({
   /** The other end of a level range; null for a single level. */
   selectedLevelTo: z.string().nullable(),
   description: z.string().nullable(),
+  /** Weeks it runs, practice sessions per week, and a Program's lessons; null when unset. */
+  weeks: z.number().int().nullable(),
+  sessionsPerWeek: z.number().int().nullable(),
+  lessonCount: z.number().int().nullable(),
   /** Rating totals; `average` is null with no ratings. */
   rating: z.object({ average: z.number().nullable(), count: z.number() }),
   /** Cover to show: default artwork, or a signed link (an hour) to the coach's photo; null when none. */
   media: z.string().nullable(),
+  /** When the coach made the plan. */
+  createdAt: z.string(),
   updatedAt: z.string(),
+  /** The plan's first move, a free sample of it; null when the plan has no moves. */
+  sampleMove: z
+    .object({
+      name: z.string(),
+      /** "reps" or "mins". */
+      targetKind: z.string(),
+      targetValue: z.number(),
+      cue: z.string().nullable(),
+      why: z.string().nullable(),
+    })
+    .nullable(),
   coach: z.object({
     id: z.string(),
     firstName: z.string(),
@@ -27,6 +44,8 @@ export const marketplacePlanSchema = z.object({
     /** Finished identity verification: show the Verified badge. */
     verified: z.boolean(),
   }),
+  /** The caller made this plan: show it, but no Buy button. */
+  isOwn: z.boolean(),
 });
 
 export const marketplacePlansPageSchema = z.object({

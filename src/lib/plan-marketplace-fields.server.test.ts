@@ -101,6 +101,11 @@ describe("plan marketplace fields", () => {
       selectedLevel: "basic_skills",
       selectedLevelTo: "pre_juvenile",
     });
+    await setPlanMarketplaceFields(client, PLAN, {
+      weeks: 6,
+      sessionsPerWeek: 3,
+      lessonCount: null,
+    });
     expect(updates).toEqual([
       { columns: { price: 19.99 }, id: PLAN },
       { columns: { media: null }, id: PLAN },
@@ -118,6 +123,7 @@ describe("plan marketplace fields", () => {
         columns: { selected_level: "basic_skills", selected_level_to: "pre_juvenile" },
         id: PLAN,
       },
+      { columns: { weeks: 6, sessions_per_week: 3, lesson_count: null }, id: PLAN },
     ]);
   });
 
@@ -131,6 +137,9 @@ describe("plan marketplace fields", () => {
         selected_level: "basic_skills",
         selected_level_to: "pre_juvenile",
         description: "Edges first.",
+        weeks: 8,
+        sessions_per_week: null,
+        lesson_count: 6,
       },
     ]);
     expect(await getPlanMarketplaceFields(client, PLAN)).toEqual({
@@ -140,6 +149,9 @@ describe("plan marketplace fields", () => {
       selectedLevel: "basic_skills",
       selectedLevelTo: "pre_juvenile",
       description: "Edges first.",
+      weeks: 8,
+      sessionsPerWeek: null,
+      lessonCount: 6,
     });
     expect(await getPlanMarketplaceFields(client, "missing")).toBeNull();
   });
@@ -153,6 +165,9 @@ describe("marketplaceFieldsForCopy", () => {
     selectedLevel: "basic_skills",
     selectedLevelTo: "pre_juvenile",
     description: "Edges first.",
+    weeks: 8,
+    sessionsPerWeek: 3,
+    lessonCount: 6,
   };
 
   it("takes the source's fields, its level range included, but never its image", () => {
@@ -163,6 +178,17 @@ describe("marketplaceFieldsForCopy", () => {
       selectedLevel: "basic_skills",
       selectedLevelTo: "pre_juvenile",
       description: "Edges first.",
+      weeks: 8,
+      sessionsPerWeek: 3,
+      lessonCount: 6,
+    });
+  });
+
+  it("lets a copy clear or change how long it runs", () => {
+    expect(marketplaceFieldsForCopy(source, { weeks: 4, lessonCount: null })).toMatchObject({
+      weeks: 4,
+      sessionsPerWeek: 3,
+      lessonCount: null,
     });
   });
 
@@ -194,6 +220,9 @@ describe("default artwork on copies", () => {
       selectedLevel: "Novice",
       selectedLevelTo: null,
       description: null,
+      weeks: null,
+      sessionsPerWeek: null,
+      lessonCount: null,
     };
     expect(marketplaceFieldsForCopy(source, {}).media).toBe(DEFAULT_PLAN_MEDIA_URLS[0]);
   });

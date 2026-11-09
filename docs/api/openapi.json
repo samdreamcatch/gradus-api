@@ -7977,6 +7977,30 @@
                       "null"
                     ],
                     "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 }
               }
@@ -8310,6 +8334,24 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "weeks": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "sessionsPerWeek": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "lessonCount": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -8488,6 +8530,30 @@
                       "null"
                     ],
                     "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 },
                 "required": [
@@ -8622,6 +8688,30 @@
                       "null"
                     ],
                     "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 }
               }
@@ -20146,6 +20236,24 @@
                               "null"
                             ]
                           },
+                          "weeks": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sessionsPerWeek": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "lessonCount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
                           "rating": {
                             "type": "object",
                             "properties": {
@@ -20170,8 +20278,47 @@
                               "null"
                             ]
                           },
+                          "createdAt": {
+                            "type": "string"
+                          },
                           "updatedAt": {
                             "type": "string"
+                          },
+                          "sampleMove": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "targetKind": {
+                                "type": "string"
+                              },
+                              "targetValue": {
+                                "type": "number"
+                              },
+                              "cue": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "why": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "targetKind",
+                              "targetValue",
+                              "cue",
+                              "why"
+                            ]
                           },
                           "coach": {
                             "type": "object",
@@ -20195,6 +20342,9 @@
                               "lastName",
                               "verified"
                             ]
+                          },
+                          "isOwn": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -20207,10 +20357,16 @@
                           "selectedLevel",
                           "selectedLevelTo",
                           "description",
+                          "weeks",
+                          "sessionsPerWeek",
+                          "lessonCount",
                           "rating",
                           "media",
+                          "createdAt",
                           "updatedAt",
-                          "coach"
+                          "sampleMove",
+                          "coach",
+                          "isOwn"
                         ]
                       }
                     },

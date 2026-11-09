@@ -86,9 +86,13 @@ const listing = (id: string, updatedAt: string) => ({
   selected_level: "basic_skills",
   selected_level_to: "pre_juvenile",
   description: null,
+  weeks: 8,
+  sessions_per_week: 3,
+  lesson_count: null,
   rating_avg: "4.50",
   rating_count: 2,
   media: null,
+  created_at: "2026-10-30T09:00:00.000Z",
   updated_at: updatedAt,
   notes: "private notes",
   coach: COACH,
@@ -118,7 +122,7 @@ describe("marketplace cursor", () => {
 });
 
 describe("getMarketplacePlans", () => {
-  it("lists active Coach Pro plans without the caller's own, assigned, or children's plans", async () => {
+  it("lists active Coach Pro plans, the caller's own included, without assigned or children's plans", async () => {
     const { admin, calls } = fakeAdmin({
       coach_profiles: [{ id: "c-me", user_id: "me" }],
       athletes: [
@@ -128,7 +132,26 @@ describe("getMarketplacePlans", () => {
       parent_profiles: [{ id: "p-me", user_id: "me" }],
       athlete_guardians: [],
       plans: [listing("p1", "2026-11-02T10:00:00.000Z")],
-      plan_moves: [{ plan_id: "p1" }, { plan_id: "p1" }],
+      plan_moves: [
+        {
+          plan_id: "p1",
+          position: 0,
+          name: "Forward crossovers",
+          cue: "Push from the outside edge.",
+          why: "",
+          target_kind: "reps",
+          target_value: "20",
+        },
+        {
+          plan_id: "p1",
+          position: 1,
+          name: "Spirals",
+          cue: "",
+          why: "",
+          target_kind: "mins",
+          target_value: 5,
+        },
+      ],
     });
 
     const page = await getMarketplacePlans({ userId: "me", admin }, { limit: 20 });
@@ -145,10 +168,22 @@ describe("getMarketplacePlans", () => {
           selectedLevel: "basic_skills",
           selectedLevelTo: "pre_juvenile",
           description: null,
+          weeks: 8,
+          sessionsPerWeek: 3,
+          lessonCount: null,
           rating: { average: 4.5, count: 2 },
           media: null,
+          createdAt: "2026-10-30T09:00:00.000Z",
           updatedAt: "2026-11-02T10:00:00.000Z",
+          sampleMove: {
+            name: "Forward crossovers",
+            targetKind: "reps",
+            targetValue: 20,
+            cue: "Push from the outside edge.",
+            why: null,
+          },
           coach: { id: "c-pro", firstName: "Tami", lastName: "Taylor", verified: true },
+          isOwn: false,
         },
       ],
       nextCursor: null,
@@ -157,11 +192,25 @@ describe("getMarketplacePlans", () => {
     expect(plans.filters).toContainEqual(["eq", "status", "active"]);
     expect(plans.filters).toContainEqual(["eq", "coach.subscription_tier", "coach_pro"]);
     expect(plans.filters).toContainEqual(["is", "coach.organization_id", null]);
-    expect(plans.filters).toContainEqual(["neq", "coach_id", "c-me"]);
+    expect(plans.filters.some((f) => f[0] === "neq")).toBe(false);
     expect(plans.filters).toContainEqual([
       "or",
       "athlete_id.is.null,athlete_id.not.in.(a-me,a-kid)",
     ]);
+  });
+
+  it("flags the caller's own plans so the apps hide Buy", async () => {
+    const { admin } = fakeAdmin({
+      coach_profiles: [{ id: "c-pro", user_id: "me" }],
+      athletes: [],
+      parent_profiles: [],
+      plans: [listing("p1", "2026-11-02T10:00:00.000Z")],
+      plan_moves: [],
+    });
+
+    const page = await getMarketplacePlans({ userId: "me", admin }, { limit: 20 });
+
+    expect(page.items[0].isOwn).toBe(true);
   });
 
   it("matches the title or the coach's name, and pages with a cursor", async () => {
