@@ -895,20 +895,20 @@ export const createPlanInput = z.object({
 });
 
 /**
- * `POST /api/v1/coach/plans`: a new plan states its product type and price; a
- * copy (`fromPlanId` / `fromTemplateId`) takes its source's unless sent. The
- * level is optional: the app creates the draft before the coach picks one and
- * sets it with `PATCH /api/v1/plans/{id}`. The web app's server function still
- * takes `createPlanInput`.
+ * `POST /api/v1/coach/plans`: product type and price are optional, so app
+ * builds that don't send them (the App Store app before the marketplace) keep
+ * creating plans. A new plan without a product type is a "plan"; without a
+ * price it's free (the column default). A copy (`fromPlanId` /
+ * `fromTemplateId`) takes its source's unless sent. The level is optional: the
+ * app creates the draft before the coach picks one and sets it with
+ * `PATCH /api/v1/plans/{id}`. The web app's server function still takes
+ * `createPlanInput`.
  */
-export const createPlanApiInput = createPlanInput.superRefine((input, ctx) => {
-  if (input.fromPlanId || input.fromTemplateId) return;
-  for (const field of ["productType", "price"] as const) {
-    if (input[field] === undefined) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
-    }
-  }
-});
+export const createPlanApiInput = createPlanInput.transform((input) =>
+  input.fromPlanId || input.fromTemplateId || input.productType !== undefined
+    ? input
+    : { ...input, productType: "plan" as const },
+);
 
 /** A new draft (or benched template), optionally cloned from one of the coach's plans or templates. */
 export async function createPlan(

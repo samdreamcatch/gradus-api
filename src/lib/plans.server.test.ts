@@ -1040,19 +1040,24 @@ describe("setPlanStatus and the guardian on file (decision #56)", () => {
 describe("createPlanApiInput", () => {
   const required = { productType: "program" as const, selectedLevel: "Pre-Juvenile", price: 25 };
 
-  it("requires product type and price on a new plan through the API, and takes a level", () => {
+  it("takes product type, price and level, each optional on a new plan", () => {
     expect(createPlanApiInput.safeParse(required).success).toBe(true);
-    for (const field of ["productType", "price"]) {
-      const { [field]: _omitted, ...rest } = required as Record<string, unknown>;
-      expect(createPlanApiInput.safeParse(rest).success).toBe(false);
-    }
     const { selectedLevel: _level, ...withoutLevel } = required;
     expect(createPlanApiInput.safeParse(withoutLevel).success).toBe(true);
+  });
+
+  it("keeps the App Store app's create working: no product type is a plan, no price is free", () => {
+    const oldAppBody = { kind: "plan", athleteId: null };
+    const parsed = createPlanApiInput.safeParse(oldAppBody);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.productType).toBe("plan");
+    expect(parsed.data?.price).toBeUndefined();
   });
 
   it("lets a copy take its source's product type and price", () => {
     const fromPlanId = "6a1f2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
     expect(createPlanApiInput.safeParse({ fromPlanId }).success).toBe(true);
+    expect(createPlanApiInput.safeParse({ fromPlanId }).data?.productType).toBeUndefined();
     expect(createPlanApiInput.safeParse({ fromTemplateId: fromPlanId }).success).toBe(true);
   });
 
