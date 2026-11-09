@@ -3,9 +3,9 @@
  * `media`, the plan's one image as the authenticated Supabase Storage URL of an
  * object in the private `plan-media` bucket
  * (`<SUPABASE_URL>/storage/v1/object/authenticated/plan-media/<plan id>/<file>`)
- * (migration 20261103120000_plans_price_media); `productType`, `selectedLevel`
- * and `description` (20261104120000_plans_product_type_level_description); and
- * `selectedLevelTo`, the other end of a level range (20261107120000).
+ * (migration 20261111120000_plans_price_media); `productType`, `selectedLevel`
+ * and `description` (20261111120100_plans_product_type_level_description); and
+ * `selectedLevelTo`, the other end of a level range (20261111120400).
  *
  * A level is one key in `selectedLevel`, or a range: the first pick there and the
  * second in `selectedLevelTo`. Sending `selectedLevel` alone makes it a single

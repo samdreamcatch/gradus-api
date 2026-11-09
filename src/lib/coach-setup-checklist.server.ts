@@ -1,5 +1,5 @@
 /**
- * The coach's setup checklist (migration 20261105120000_coach_profiles_checklist):
+ * The coach's setup checklist (migration 20261111120200_coach_profiles_checklist):
  * four steps the app reports as the coach completes them, stored in
  * `coach_profiles.checklist`. `GET /api/v1/coach/profile` returns it as
  * `profile.checklist`; `PATCH /api/v1/coach/profile` marks steps, usually one

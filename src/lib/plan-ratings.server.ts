@@ -1,5 +1,5 @@
 /**
- * Plan ratings (migration 20261106120000_plan_ratings): 1–5 stars and an
+ * Plan ratings (migration 20261111120300_plan_ratings): 1–5 stars and an
  * optional review, one per person per plan, and an optional reply from the
  * plan's coach.
  *

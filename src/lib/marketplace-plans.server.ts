@@ -36,22 +36,22 @@ export interface MarketplacePlanDTO {
   title: string;
   kind: "plan" | "template";
   moveCount: number;
-  /** USD; 0 is free (migration 20261103120000_plans_price_media). */
+  /** USD; 0 is free (migration 20261111120000_plans_price_media). */
   price: number;
   /**
    * "plan" or "program", the level the plan is for, and its description
-   * (20261104120000_plans_product_type_level_description); null when unset.
+   * (20261111120100_plans_product_type_level_description); null when unset.
    */
   productType: "plan" | "program" | null;
   selectedLevel: string | null;
-  /** The other end of a level range (20261107120000); null for a single level. */
+  /** The other end of a level range (20261111120400); null for a single level. */
   selectedLevelTo: string | null;
   description: string | null;
-  /** Weeks it runs, practice sessions per week, a Program's lessons (20261110120000); null when unset. */
+  /** Weeks it runs, practice sessions per week, a Program's lessons (20261111120500); null when unset. */
   weeks: number | null;
   sessionsPerWeek: number | null;
   lessonCount: number | null;
-  /** Rating totals (20261106120000_plan_ratings); `average` is null with no ratings. */
+  /** Rating totals (20261111120300_plan_ratings); `average` is null with no ratings. */
   rating: { average: number | null; count: number };
   /**
    * The cover to show: Gradus default artwork, or a signed link (an hour) to the

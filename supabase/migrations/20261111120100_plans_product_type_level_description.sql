@@ -1,5 +1,5 @@
 -- More marketplace fields on plans, next to price and media
--- (20261103120000_plans_price_media). All three are optional in the database,
+-- (20261111120000_plans_price_media). All three are optional in the database,
 -- so existing plans stay valid; `POST /api/v1/coach/plans` requires product
 -- type and selected level (and price) on every new plan.
 --
