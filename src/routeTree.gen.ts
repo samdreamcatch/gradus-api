@@ -252,6 +252,7 @@ import { Route as ApiV1CoachOnboardingCompleteRouteImport } from './routes/api/v
 import { Route as ApiV1CoachOtherPlansPlanIdRouteImport } from './routes/api/v1/coach/other-plans/$planId'
 import { Route as ApiV1CoachPlansIndexRouteImport } from './routes/api/v1/coach/plans/index'
 import { Route as ApiV1CoachPostEventIndexRouteImport } from './routes/api/v1/coach/post-event/index'
+import { Route as ApiV1CoachProfilePhotoRouteImport } from './routes/api/v1/coach/profile_.photo'
 import { Route as ApiV1CoachResourcesIndexRouteImport } from './routes/api/v1/coach/resources/index'
 import { Route as ApiV1CoachResourcesIdRouteImport } from './routes/api/v1/coach/resources/$id'
 import { Route as ApiV1CoachResourcesUploadUrlRouteImport } from './routes/api/v1/coach/resources/upload-url'
@@ -279,6 +280,7 @@ import { Route as ApiV1InvitesParentClaimRouteImport } from './routes/api/v1/inv
 import { Route as ApiV1InvitesParentPreviewRouteImport } from './routes/api/v1/invites/parent/preview'
 import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api/v1/live-activities/tokens/index'
 import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
+import { Route as ApiV1MarketplaceCoachesIdRouteImport } from './routes/api/v1/marketplace/coaches/$id'
 import { Route as ApiV1MarketplacePlansIndexRouteImport } from './routes/api/v1/marketplace/plans/index'
 import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
@@ -1703,6 +1705,11 @@ const ApiV1CoachPostEventIndexRoute =
     path: '/api/v1/coach/post-event/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachProfilePhotoRoute = ApiV1CoachProfilePhotoRouteImport.update({
+  id: '/api/v1/coach/profile_/photo',
+  path: '/api/v1/coach/profile/photo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1CoachResourcesIndexRoute =
   ApiV1CoachResourcesIndexRouteImport.update({
     id: '/api/v1/coach/resources/',
@@ -1856,6 +1863,12 @@ const ApiV1LiveActivitiesTokensTokenRoute =
   ApiV1LiveActivitiesTokensTokenRouteImport.update({
     id: '/api/v1/live-activities/tokens/$token',
     path: '/api/v1/live-activities/tokens/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MarketplaceCoachesIdRoute =
+  ApiV1MarketplaceCoachesIdRouteImport.update({
+    id: '/api/v1/marketplace/coaches/$id',
+    path: '/api/v1/marketplace/coaches/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1MarketplacePlansIndexRoute =
@@ -2630,6 +2643,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/moves/import': typeof ApiV1CoachMovesImportRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/coach/other-plans/$planId': typeof ApiV1CoachOtherPlansPlanIdRoute
+  '/api/v1/coach/profile/photo': typeof ApiV1CoachProfilePhotoRoute
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
@@ -2652,6 +2666,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
+  '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -2989,6 +3004,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/moves/import': typeof ApiV1CoachMovesImportRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/coach/other-plans/$planId': typeof ApiV1CoachOtherPlansPlanIdRoute
+  '/api/v1/coach/profile/photo': typeof ApiV1CoachProfilePhotoRoute
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
@@ -3011,6 +3027,7 @@ export interface FileRoutesByTo {
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
+  '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -3356,6 +3373,7 @@ export interface FileRoutesById {
   '/api/v1/coach/moves/import': typeof ApiV1CoachMovesImportRoute
   '/api/v1/coach/onboarding/complete': typeof ApiV1CoachOnboardingCompleteRoute
   '/api/v1/coach/other-plans/$planId': typeof ApiV1CoachOtherPlansPlanIdRoute
+  '/api/v1/coach/profile_/photo': typeof ApiV1CoachProfilePhotoRoute
   '/api/v1/coach/resources/$id': typeof ApiV1CoachResourcesIdRoute
   '/api/v1/coach/resources/upload-url': typeof ApiV1CoachResourcesUploadUrlRoute
   '/api/v1/coach/roster/practice-summaries': typeof ApiV1CoachRosterPracticeSummariesRoute
@@ -3378,6 +3396,7 @@ export interface FileRoutesById {
   '/api/v1/invites/parent/claim': typeof ApiV1InvitesParentClaimRoute
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
+  '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -3723,6 +3742,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/import'
     | '/api/v1/coach/onboarding/complete'
     | '/api/v1/coach/other-plans/$planId'
+    | '/api/v1/coach/profile/photo'
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
@@ -3745,6 +3765,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
+    | '/api/v1/marketplace/coaches/$id'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -4082,6 +4103,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/import'
     | '/api/v1/coach/onboarding/complete'
     | '/api/v1/coach/other-plans/$planId'
+    | '/api/v1/coach/profile/photo'
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
@@ -4104,6 +4126,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
+    | '/api/v1/marketplace/coaches/$id'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -4448,6 +4471,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/import'
     | '/api/v1/coach/onboarding/complete'
     | '/api/v1/coach/other-plans/$planId'
+    | '/api/v1/coach/profile_/photo'
     | '/api/v1/coach/resources/$id'
     | '/api/v1/coach/resources/upload-url'
     | '/api/v1/coach/roster/practice-summaries'
@@ -4470,6 +4494,7 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/claim'
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
+    | '/api/v1/marketplace/coaches/$id'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -4725,6 +4750,7 @@ export interface RootRouteChildren {
   ApiV1CoachMovesImportRoute: typeof ApiV1CoachMovesImportRoute
   ApiV1CoachOnboardingCompleteRoute: typeof ApiV1CoachOnboardingCompleteRoute
   ApiV1CoachOtherPlansPlanIdRoute: typeof ApiV1CoachOtherPlansPlanIdRoute
+  ApiV1CoachProfilePhotoRoute: typeof ApiV1CoachProfilePhotoRoute
   ApiV1CoachResourcesIdRoute: typeof ApiV1CoachResourcesIdRoute
   ApiV1CoachResourcesUploadUrlRoute: typeof ApiV1CoachResourcesUploadUrlRoute
   ApiV1CoachRosterPracticeSummariesRoute: typeof ApiV1CoachRosterPracticeSummariesRoute
@@ -4747,6 +4773,7 @@ export interface RootRouteChildren {
   ApiV1InvitesParentClaimRoute: typeof ApiV1InvitesParentClaimRoute
   ApiV1InvitesParentPreviewRoute: typeof ApiV1InvitesParentPreviewRoute
   ApiV1LiveActivitiesTokensTokenRoute: typeof ApiV1LiveActivitiesTokensTokenRoute
+  ApiV1MarketplaceCoachesIdRoute: typeof ApiV1MarketplaceCoachesIdRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1MessagesIdReactionRoute: typeof ApiV1MessagesIdReactionRoute
   ApiV1PlansIdRatingRoute: typeof ApiV1PlansIdRatingRoute
@@ -6561,6 +6588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachPostEventIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/profile_/photo': {
+      id: '/api/v1/coach/profile_/photo'
+      path: '/api/v1/coach/profile/photo'
+      fullPath: '/api/v1/coach/profile/photo'
+      preLoaderRoute: typeof ApiV1CoachProfilePhotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/resources/': {
       id: '/api/v1/coach/resources/'
       path: '/api/v1/coach/resources'
@@ -6748,6 +6782,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/live-activities/tokens/$token'
       fullPath: '/api/v1/live-activities/tokens/$token'
       preLoaderRoute: typeof ApiV1LiveActivitiesTokensTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/marketplace/coaches/$id': {
+      id: '/api/v1/marketplace/coaches/$id'
+      path: '/api/v1/marketplace/coaches/$id'
+      fullPath: '/api/v1/marketplace/coaches/$id'
+      preLoaderRoute: typeof ApiV1MarketplaceCoachesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/marketplace/plans/': {
@@ -7851,6 +7892,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachMovesImportRoute: ApiV1CoachMovesImportRoute,
   ApiV1CoachOnboardingCompleteRoute: ApiV1CoachOnboardingCompleteRoute,
   ApiV1CoachOtherPlansPlanIdRoute: ApiV1CoachOtherPlansPlanIdRoute,
+  ApiV1CoachProfilePhotoRoute: ApiV1CoachProfilePhotoRoute,
   ApiV1CoachResourcesIdRoute: ApiV1CoachResourcesIdRoute,
   ApiV1CoachResourcesUploadUrlRoute: ApiV1CoachResourcesUploadUrlRoute,
   ApiV1CoachRosterPracticeSummariesRoute:
@@ -7875,6 +7917,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1InvitesParentClaimRoute: ApiV1InvitesParentClaimRoute,
   ApiV1InvitesParentPreviewRoute: ApiV1InvitesParentPreviewRoute,
   ApiV1LiveActivitiesTokensTokenRoute: ApiV1LiveActivitiesTokensTokenRoute,
+  ApiV1MarketplaceCoachesIdRoute: ApiV1MarketplaceCoachesIdRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1MessagesIdReactionRoute: ApiV1MessagesIdReactionRoute,
   ApiV1PlansIdRatingRoute: ApiV1PlansIdRatingRoute,

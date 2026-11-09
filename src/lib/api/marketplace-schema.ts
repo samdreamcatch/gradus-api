@@ -43,6 +43,8 @@ export const marketplacePlanSchema = z.object({
     lastName: z.string(),
     /** Finished identity verification: show the Verified badge. */
     verified: z.boolean(),
+    /** A link (an hour) to their profile photo; null when they have none. */
+    photoUrl: z.string().nullable(),
   }),
   /** The caller made this plan: show it, but no Buy button. */
   isOwn: z.boolean(),
@@ -51,4 +53,26 @@ export const marketplacePlanSchema = z.object({
 export const marketplacePlansPageSchema = z.object({
   items: z.array(marketplacePlanSchema),
   nextCursor: z.string().nullable(),
+});
+
+/** `GET /api/v1/marketplace/coaches/{id}` (src/lib/marketplace-plans.server.ts `MarketplaceCoachDTO`). */
+export const marketplaceCoachSchema = z.object({
+  coach: z.object({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    /** Finished identity verification: show the Verified badge. */
+    verified: z.boolean(),
+    /** A link (an hour) to their profile photo; null when they have none. */
+    photoUrl: z.string().nullable(),
+    /** The caller is this coach: they may change the photo. */
+    isMe: z.boolean(),
+    /** When they finished onboarding; null before that. */
+    onboardedAt: z.string().nullable(),
+    sports: z.array(z.string()),
+    levels: z.array(z.object({ sport: z.string(), levelKey: z.string() })),
+  }),
+  /** Across all their active plans; `average` is null with no ratings. */
+  rating: z.object({ average: z.number().nullable(), count: z.number() }),
+  plans: z.array(marketplacePlanSchema),
 });

@@ -20334,13 +20334,20 @@
                               },
                               "verified": {
                                 "type": "boolean"
+                              },
+                              "photoUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "id",
                               "firstName",
                               "lastName",
-                              "verified"
+                              "verified",
+                              "photoUrl"
                             ]
                           },
                           "isOwn": {
@@ -20380,6 +20387,400 @@
                   "required": [
                     "items",
                     "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/coaches/{id}": {
+      "get": {
+        "operationId": "getMarketplaceCoach",
+        "summary": "A marketplace coach's profile and listings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coach": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "photoUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isMe": {
+                          "type": "boolean"
+                        },
+                        "onboardedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "levels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sport": {
+                                "type": "string"
+                              },
+                              "levelKey": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "sport",
+                              "levelKey"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "verified",
+                        "photoUrl",
+                        "isMe",
+                        "onboardedAt",
+                        "sports",
+                        "levels"
+                      ]
+                    },
+                    "rating": {
+                      "type": "object",
+                      "properties": {
+                        "average": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "count": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "average",
+                        "count"
+                      ]
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "plan",
+                              "template"
+                            ]
+                          },
+                          "moveCount": {
+                            "type": "number"
+                          },
+                          "price": {
+                            "type": "number"
+                          },
+                          "productType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "plan",
+                              "program"
+                            ]
+                          },
+                          "selectedLevel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "selectedLevelTo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "weeks": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sessionsPerWeek": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "lessonCount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "rating": {
+                            "type": "object",
+                            "properties": {
+                              "average": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "average",
+                              "count"
+                            ]
+                          },
+                          "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sampleMove": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "targetKind": {
+                                "type": "string"
+                              },
+                              "targetValue": {
+                                "type": "number"
+                              },
+                              "cue": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "why": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "targetKind",
+                              "targetValue",
+                              "cue",
+                              "why"
+                            ]
+                          },
+                          "coach": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "verified": {
+                                "type": "boolean"
+                              },
+                              "photoUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "firstName",
+                              "lastName",
+                              "verified",
+                              "photoUrl"
+                            ]
+                          },
+                          "isOwn": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "moveCount",
+                          "price",
+                          "productType",
+                          "selectedLevel",
+                          "selectedLevelTo",
+                          "description",
+                          "weeks",
+                          "sessionsPerWeek",
+                          "lessonCount",
+                          "rating",
+                          "media",
+                          "createdAt",
+                          "updatedAt",
+                          "sampleMove",
+                          "coach",
+                          "isOwn"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "coach",
+                    "rating",
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/profile/photo": {
+      "put": {
+        "operationId": "setCoachProfilePhoto",
+        "summary": "Set or remove the coach's profile photo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "photo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "photoUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "photoUrl"
                   ]
                 }
               }

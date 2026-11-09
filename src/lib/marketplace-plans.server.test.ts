@@ -3,6 +3,7 @@ import {
   allOf,
   decodeMarketplaceCursor,
   encodeMarketplaceCursor,
+  getMarketplaceCoach,
   getMarketplacePlans,
   searchTerms,
 } from "./marketplace-plans.server";
@@ -182,7 +183,13 @@ describe("getMarketplacePlans", () => {
             cue: "Push from the outside edge.",
             why: null,
           },
-          coach: { id: "c-pro", firstName: "Tami", lastName: "Taylor", verified: true },
+          coach: {
+            id: "c-pro",
+            firstName: "Tami",
+            lastName: "Taylor",
+            verified: true,
+            photoUrl: null,
+          },
           isOwn: false,
         },
       ],
@@ -253,5 +260,84 @@ describe("getMarketplacePlans", () => {
     await expect(
       getMarketplacePlans({ userId: "me", admin }, { minPrice: 50, maxPrice: 10, limit: 20 }),
     ).rejects.toThrow();
+  });
+});
+
+describe("getMarketplaceCoach", () => {
+  const proCoach = {
+    id: "c-pro",
+    user_id: "u-tami",
+    photo_url: null,
+    first_name: "Tami",
+    last_name: "Taylor",
+    checklist: { identityVerification: true },
+    onboarded_at: "2026-09-01T10:00:00.000Z",
+    subscription_tier: "coach_pro",
+    organization_id: null,
+  };
+  const ownPlan = (id: string, avg: string | null, count: number) => ({
+    ...listing(id, "2026-11-02T10:00:00.000Z"),
+    coach_id: "c-pro",
+    rating_avg: avg,
+    rating_count: count,
+  });
+
+  it("returns the coach, their sports and levels, a weighted rating, and only their listings", async () => {
+    const { admin, calls } = fakeAdmin({
+      coach_profiles: [proCoach],
+      coach_levels: [
+        { coach_id: "c-pro", sport: "figure_skating", level_key: "basic_skills" },
+        { coach_id: "c-pro", sport: "figure_skating", level_key: "pre_juvenile" },
+        { coach_id: "c-pro", sport: "tennis", level_key: "beginner" },
+      ],
+      athletes: [],
+      parent_profiles: [],
+      plans: [ownPlan("p1", "4.00", 1), ownPlan("p2", "5.00", 3), ownPlan("p3", null, 0)],
+      plan_moves: [],
+    });
+
+    const profile = await getMarketplaceCoach({ userId: "me", admin }, "c-pro");
+
+    expect(profile.coach).toEqual({
+      id: "c-pro",
+      firstName: "Tami",
+      lastName: "Taylor",
+      verified: true,
+      photoUrl: null,
+      isMe: false,
+      onboardedAt: "2026-09-01T10:00:00.000Z",
+      sports: ["figure_skating", "tennis"],
+      levels: [
+        { sport: "figure_skating", levelKey: "basic_skills" },
+        { sport: "figure_skating", levelKey: "pre_juvenile" },
+        { sport: "tennis", levelKey: "beginner" },
+      ],
+    });
+    // (4 × 1 + 5 × 3) / 4
+    expect(profile.rating).toEqual({ average: 4.75, count: 4 });
+    expect(profile.plans.map((p) => p.id)).toEqual(["p1", "p2", "p3"]);
+    const listings = calls.filter((c) => c.table === "plans").at(-1)!;
+    expect(listings.filters).toContainEqual(["eq", "coach_id", "c-pro"]);
+    expect(listings.filters).toContainEqual(["eq", "status", "active"]);
+  });
+
+  it("tells the coach it's their own profile, so they may change the photo", async () => {
+    const { admin } = fakeAdmin({ coach_profiles: [proCoach], coach_levels: [], plans: [] });
+    const profile = await getMarketplaceCoach({ userId: "u-tami", admin }, "c-pro");
+    expect(profile.coach.isMe).toBe(true);
+  });
+
+  it("is 404 for a coach the marketplace doesn't show: not Coach Pro, in a club, or unknown", async () => {
+    for (const coach of [
+      { ...proCoach, subscription_tier: "coach" },
+      { ...proCoach, organization_id: "org-1" },
+      null,
+    ]) {
+      const { admin } = fakeAdmin({ coach_profiles: coach ? [coach] : [] });
+      await expect(getMarketplaceCoach({ userId: "me", admin }, "c-pro")).rejects.toMatchObject({
+        status: 404,
+        code: "not_found",
+      });
+    }
   });
 });

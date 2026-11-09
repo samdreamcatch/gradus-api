@@ -9,8 +9,9 @@ import { getMarketplacePlans, marketplacePlansQuery } from "@/lib/marketplace-pl
  * `src/lib/marketplace-plans.server.ts`.
  *
  * `GET` `[page]`: `?q=&limit=20&cursor=<opaque>` returns `{ items, nextCursor }`,
- * newest first: active plans by Coach Pro coaches, without the caller's own
- * plans or the ones assigned to them or their athletes.
+ * newest first: active plans by Coach Pro coaches, without the ones assigned to
+ * the caller or their athletes. The caller's own plans are included, flagged
+ * `isOwn`.
  */
 export const Route = createFileRoute("/api/v1/marketplace/plans/")({
   server: {

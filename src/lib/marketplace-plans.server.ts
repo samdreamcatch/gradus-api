@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
+import { signedCoachPhotoUrl, signedCoachPhotoUrls } from "./coach-photo.server";
 import { dbError } from "./db-error";
 import { listingCoverUrls } from "./plan-marketplace-fields.server";
 import { guardianAthleteAccess } from "./team.server";
@@ -63,8 +64,17 @@ export interface MarketplacePlanDTO {
   updatedAt: string;
   /** The plan's first move, shown as a free sample; null when it has none. */
   sampleMove: MarketplaceSampleMoveDTO | null;
-  /** `verified`: the coach finished identity verification (their setup checklist). */
-  coach: { id: string; firstName: string; lastName: string; verified: boolean };
+  /**
+   * `verified`: the coach finished identity verification (their setup checklist).
+   * `photoUrl`: a link (an hour) to their profile photo; null when they have none.
+   */
+  coach: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    verified: boolean;
+    photoUrl: string | null;
+  };
   /** The caller is the coach who made it: show it, but no Buy. */
   isOwn: boolean;
 }
@@ -185,12 +195,15 @@ type ListingRow = {
     first_name: string;
     last_name: string;
     checklist: { identityVerification?: unknown } | null;
+    photo_url: string | null;
   };
 };
 
 export async function getMarketplacePlans(
   ctx: MarketplaceContext,
   input: z.infer<typeof marketplacePlansQuery>,
+  /** One coach's listings only (the coach profile). */
+  opts: { coachId?: string } = {},
 ): Promise<{ items: MarketplacePlanDTO[]; nextCursor: string | null }> {
   const { admin } = ctx;
   if (
@@ -214,13 +227,14 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, subscription_tier, organization_id)",
+      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
     .is("coach.organization_id", null)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false });
+  if (opts.coachId) query = query.eq("coach_id", opts.coachId);
   if (input.minPrice !== undefined) query = query.gte("price", input.minPrice);
   if (input.maxPrice !== undefined) query = query.lte("price", input.maxPrice);
 
@@ -279,10 +293,16 @@ export async function getMarketplacePlans(
     }
   }
 
-  const covers = await listingCoverUrls(
-    admin as unknown as Parameters<typeof listingCoverUrls>[0],
-    page.map((row) => row.media),
-  );
+  const [covers, coachPhotos] = await Promise.all([
+    listingCoverUrls(
+      admin as unknown as Parameters<typeof listingCoverUrls>[0],
+      page.map((row) => row.media),
+    ),
+    signedCoachPhotoUrls(
+      admin as unknown as Parameters<typeof signedCoachPhotoUrls>[0],
+      page.map((row) => ({ id: row.coach.id, photoUrl: row.coach.photo_url })),
+    ),
+  ]);
 
   return {
     items: page.map((row, i) => ({
@@ -313,9 +333,139 @@ export async function getMarketplacePlans(
         firstName: row.coach.first_name,
         lastName: row.coach.last_name,
         verified: row.coach.checklist?.identityVerification === true,
+        photoUrl: coachPhotos.get(row.coach.id) ?? null,
       },
       isOwn: scope.coachId !== null && row.coach.id === scope.coachId,
     })),
     nextCursor,
+  };
+}
+
+/* ---------------------------------------------------------- coach profile */
+
+/** `GET /api/v1/marketplace/coaches/{id}`: what's on file about a coach who sells plans, and their listings. */
+export interface MarketplaceCoachDTO {
+  coach: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    /** Finished identity verification (their setup checklist): the Verified badge. */
+    verified: boolean;
+    /** A link (an hour) to their profile photo; null when they have none. */
+    photoUrl: string | null;
+    /** The caller is this coach: they may change the photo. */
+    isMe: boolean;
+    /** When they finished onboarding ("On Gradus since …"); null before that. */
+    onboardedAt: string | null;
+    /** The sports they coach, in the order they added them. */
+    sports: string[];
+    /** Each sport and level they coach (`coach_levels`). */
+    levels: { sport: string; levelKey: string }[];
+  };
+  /** Across all their active plans, weighted by each plan's rating count; `average` is null with none. */
+  rating: { average: number | null; count: number };
+  /** Their listings, as `GET /api/v1/marketplace/plans` shows them to the caller. */
+  plans: MarketplacePlanDTO[];
+}
+
+/** The coach profile shows at most this many listings: 4 pages of 50. */
+const COACH_PROFILE_PAGES = 4;
+
+const coachNotFound = () =>
+  new ApiError({ code: "not_found", status: 404, message: "Coach not found." });
+
+/**
+ * A marketplace coach: only one the listing would show (Coach Pro, no club),
+ * so the profile never reveals a coach who doesn't sell plans. Bio and
+ * location aren't stored yet, so they aren't returned.
+ */
+export async function getMarketplaceCoach(
+  ctx: MarketplaceContext,
+  coachId: string,
+): Promise<MarketplaceCoachDTO> {
+  const { admin } = ctx;
+  const coachRes = await admin
+    .from("coach_profiles")
+    .select(
+      "id, user_id, first_name, last_name, checklist, onboarded_at, subscription_tier, organization_id, photo_url",
+    )
+    .eq("id", coachId)
+    .maybeSingle();
+  if (coachRes.error) dbError(coachRes.error);
+  // The generated types don't know photo_url yet (20261111120600_coach_profiles_photo).
+  const coach = coachRes.data as unknown as {
+    id: string;
+    user_id: string;
+    photo_url: string | null;
+    first_name: string;
+    last_name: string;
+    checklist: { identityVerification?: unknown } | null;
+    onboarded_at: string | null;
+    subscription_tier: string | null;
+    organization_id: string | null;
+  } | null;
+  if (!coach || coach.subscription_tier !== "coach_pro" || coach.organization_id !== null) {
+    throw coachNotFound();
+  }
+
+  const [levelsRes, ratingsRes] = await Promise.all([
+    admin
+      .from("coach_levels")
+      .select("sport, level_key, created_at")
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: true }),
+    admin
+      .from("plans")
+      .select("rating_avg, rating_count")
+      .eq("coach_id", coachId)
+      .eq("status", "active"),
+  ]);
+  if (levelsRes.error) dbError(levelsRes.error);
+  if (ratingsRes.error) dbError(ratingsRes.error);
+
+  const levels = ((levelsRes.data ?? []) as { sport: string; level_key: string }[]).map((l) => ({
+    sport: l.sport,
+    levelKey: l.level_key,
+  }));
+
+  let weighted = 0;
+  let count = 0;
+  // The generated types don't know the rating columns yet (20261111120300_plan_ratings).
+  for (const r of (ratingsRes.data ?? []) as unknown as {
+    rating_avg: number | string | null;
+    rating_count: number | null;
+  }[]) {
+    const n = r.rating_count ?? 0;
+    if (n > 0 && r.rating_avg !== null) {
+      weighted += Number(r.rating_avg) * n;
+      count += n;
+    }
+  }
+
+  const photoUrl = await signedCoachPhotoUrl(admin, coach.id, coach.photo_url);
+
+  const plans: MarketplacePlanDTO[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < COACH_PROFILE_PAGES; page++) {
+    const res = await getMarketplacePlans(ctx, { limit: 50, cursor }, { coachId });
+    plans.push(...res.items);
+    if (!res.nextCursor) break;
+    cursor = res.nextCursor;
+  }
+
+  return {
+    coach: {
+      id: coach.id,
+      firstName: coach.first_name,
+      lastName: coach.last_name,
+      verified: coach.checklist?.identityVerification === true,
+      photoUrl,
+      isMe: coach.user_id === ctx.userId,
+      onboardedAt: coach.onboarded_at,
+      sports: Array.from(new Set(levels.map((l) => l.sport))),
+      levels,
+    },
+    rating: { average: count > 0 ? Math.round((weighted / count) * 100) / 100 : null, count },
+    plans,
   };
 }
