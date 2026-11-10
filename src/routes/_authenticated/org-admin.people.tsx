@@ -35,7 +35,14 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { SectionLabel } from "@/components/org-admin/trust-ui";
-import { getClubContract, removeClubAdmin } from "@/lib/club-contract.functions";
+import {
+  assignWaitingCoach,
+  getClubContract,
+  listClubSeatRequests,
+  releaseClubCoach,
+  removeClubAdmin,
+  setClubAdminRole,
+} from "@/lib/club-contract.functions";
 import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
@@ -369,6 +376,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
               <TableHead>Sports</TableHead>
               <TableHead>Seat since</TableHead>
               <TableHead className="text-right">Students</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -410,6 +418,20 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                   <TableCell className="font-mono text-right tabular-nums">
                     {coach?.athleteCount ?? "—"}
                   </TableCell>
+                  <TableCell>
+                    {coach && status === "filled" ? (
+                      <Button
+                        variant="link"
+                        className="min-h-11 text-text-primary"
+                        disabled={busy}
+                        onClick={() => setReleasing(coach)}
+                      >
+                        Release seat
+                      </Button>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -436,7 +458,34 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                   <TableCell>
                     {coach ? `${coach.firstName} ${coach.lastName}` : "Club administrator"}
                   </TableCell>
-                  <TableCell>{admin.club_role}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="min-h-11 px-0 text-text-primary"
+                      disabled={
+                        busy ||
+                        (admin.club_role === "owner" &&
+                          !data.admins.some(
+                            (other) => other.id !== admin.id && other.club_role === "owner",
+                          ))
+                      }
+                      onClick={() =>
+                        run(
+                          () =>
+                            setRole({
+                              data: {
+                                organizationId: orgId,
+                                adminId: admin.id,
+                                role: admin.club_role === "owner" ? "admin" : "owner",
+                              },
+                            }),
+                          "Role updated.",
+                        )
+                      }
+                    >
+                      {admin.club_role === "owner" ? "Owner · make admin" : "Admin · make owner"}
+                    </Button>
+                  </TableCell>
                   <TableCell>{admin.club_title ?? "—"}</TableCell>
                   <TableCell>{admin.created_at.slice(0, 10)}</TableCell>
                   <TableCell>
@@ -455,6 +504,43 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </TableBody>
         </ClubTable>
       </section>
+      <AlertDialog
+        open={!!releasing}
+        onOpenChange={(open) => {
+          if (!open && !busy) setReleasing(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Release {releasing ? `${releasing.firstName} ${releasing.lastName}` : "this coach"}'s
+              seat?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              They leave your club and the seat opens for someone else. Their own Gradus account,
+              students and plans stay with them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!releasing) return;
+                const ok = await run(
+                  () =>
+                    release({ data: { organizationId: orgId, coachId: releasing.coachId } }),
+                  "Seat released.",
+                );
+                if (ok) setReleasing(null);
+              }}
+            >
+              {busy ? "Releasing…" : "Release seat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog
         open={!!removing}
         onOpenChange={(open) => {
