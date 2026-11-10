@@ -37,6 +37,8 @@ import {
   CLUB_SCHEDULE_TEMPLATE,
   parseClubSchedule,
   clubScheduleErrors,
+  clubScheduleCommitErrors,
+  matchClubScheduleStudent,
   inviteDestination,
   type ClubScheduleRow,
 } from "@/lib/club-schedule";
@@ -54,6 +56,8 @@ import {
   saveClubScheduleReview,
   getClubLessonCalendar,
   sendClubLessonInvites,
+  getClubScheduleStudents,
+  commitClubScheduleReview,
 } from "@/lib/club-schedule.functions";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import {
@@ -111,6 +115,15 @@ function ClubSchedulePage() {
   const reviewFn = useServerFn(getClubScheduleReview);
   const saveFn = useServerFn(saveClubScheduleReview);
   const calendarFn = useServerFn(getClubLessonCalendar);
+  const studentsFn = useServerFn(getClubScheduleStudents);
+  const commitFn = useServerFn(commitClubScheduleReview);
+  const students = useQuery({
+    queryKey: ["club-schedule-students", org.id],
+    queryFn: () => studentsFn({ data: { organizationId: org.id } }),
+    retry: false,
+  });
+  const [committed, setCommitted] = useState(false);
+  const [startDate, setStartDate] = useState(toIso(new Date()));
   const seats = useQuery({
     queryKey: ["club-schedule-seats", org.id],
     queryFn: () => seatsFn({ data: { organizationId: org.id } }),
@@ -290,7 +303,7 @@ function ClubSchedulePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const seatedCoaches = coaches.filter((c) => seats.data?.some((s) => s.coach_id === c.coachId));
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))];
-  const issues = clubScheduleErrors(rows);
+  const issues = step >= 2 ? clubScheduleCommitErrors(rows) : clubScheduleErrors(rows);
   const decisions = rows.filter((r) => (issues[r.id]?.length ?? 0) > 0).length;
   const groups = [...new Set(rows.map((r) => r.coachName))];
   const shown = rows.filter(
@@ -334,6 +347,7 @@ function ClubSchedulePage() {
       };
     });
     setRows(next);
+    setCommitted(false);
     setFileName(file.name);
     setStep(1);
     setSearch("");
@@ -344,8 +358,8 @@ function ClubSchedulePage() {
       await saveFn({ data: { organizationId: org.id, fileName, rows } });
       await qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] });
       toast.success("Review saved. No invitations sent.");
-    } catch {
-      toast.error("Could not save the review. Accept the draft to enable import history.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save the review.");
     } finally {
       setBusy(false);
     }
@@ -354,10 +368,36 @@ function ClubSchedulePage() {
     setBusy(true);
     try {
       setRows(await reviewFn({ data: { organizationId: org.id, importId: id } }));
+      setCommitted(!!history.data?.find((r) => r.id === id)?.committed_at);
       setFileName(name);
       setStep(2);
     } catch {
       toast.error("Could not open this import.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  function matchStudents() {
+    setRows((current) => current.map((r) => ({ ...r,
+      athleteId: matchClubScheduleStudent(r, students.data ?? []),
+      startsOn: r.startsOn ?? startDate,
+    })));
+    setStep(2);
+  }
+  async function createLessons() {
+    setBusy(true);
+    try {
+      const review = await saveFn({ data: { organizationId: org.id, fileName, rows } });
+      const result = await commitFn({ data: { organizationId: org.id, importId: review.id } });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] }),
+        qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] }),
+      ]);
+      setCommitted(true);
+      setStep(3);
+      toast.success(`${result.added} lessons added · ${result.skipped} already scheduled. No emails sent.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create lessons.");
     } finally {
       setBusy(false);
     }
@@ -433,7 +473,7 @@ function ClubSchedulePage() {
             aria-label="Import progress"
             className="grid grid-cols-2 gap-2 border-y border-divider py-3 sm:grid-cols-4"
           >
-            {["Upload", "Match coaches", "Review rows", "Send invites"].map((label, i) => (
+            {["Upload", "Match coaches", "Match students", "Lessons & invites"].map((label, i) => (
               <li
                 key={label}
                 aria-current={step === i ? "step" : undefined}
@@ -515,8 +555,12 @@ function ClubSchedulePage() {
                       })}
                     </TableBody>
                   </ClubTable>
-                  <Button disabled={rows.some((r) => !r.coachId)} onClick={() => setStep(2)}>
-                    Review rows
+                  <div className="space-y-1">
+                    <Label htmlFor="import-start-date">Lessons start on</Label>
+                    <Input id="import-start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="max-w-56" />
+                  </div>
+                  <Button disabled={rows.some((r) => !r.coachId) || !students.data || !startDate} onClick={matchStudents}>
+                    Match students
                   </Button>
                 </section>
               )}
@@ -561,7 +605,7 @@ function ClubSchedulePage() {
                         {[
                           "Athlete as written",
                           "Coach",
-                          "Age",
+                          "Existing student",
                           "Day / start",
                           "Min",
                           "Invite goes to",
@@ -581,7 +625,19 @@ function ClubSchedulePage() {
                           <TableCell>
                             {coaches.find((c) => c.coachId === r.coachId)?.firstName ?? r.coachName}
                           </TableCell>
-                          <TableCell className="font-mono text-right">{r.age ?? "—"}</TableCell>
+                          <TableCell className="min-w-56">
+                            <FilterPill
+                              aria-label={`Match student ${r.firstName} ${r.lastName}`}
+                              value={r.athleteId ?? "none"}
+                              disabled={committed}
+                              options={[
+                                { value: "none", label: "Choose existing student" },
+                                ...(students.data ?? []).filter((s) => r.coachId && s.coachIds.includes(r.coachId))
+                                  .map((s) => ({ value: s.id, label: `${s.firstName} ${s.lastName} · ${s.id.slice(0, 6)}` })),
+                              ]}
+                              onValueChange={(v) => setRows((current) => current.map((item) => item.id === r.id ? { ...item, athleteId: v === "none" ? null : v } : item))}
+                            />
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {IMPORT_DAYS.find((d) => d.value === r.dayOfWeek)?.short ?? "—"} ·{" "}
                             {r.startMinute === null ? "—" : formatTimeLabel(r.startMinute)}
@@ -593,7 +649,7 @@ function ClubSchedulePage() {
                           <TableCell className="min-w-48">
                             <StatusDot
                               status={issues[r.id]?.length ? "attention" : "informational"}
-                              label={issues[r.id]?.[0] ?? "Ready for matching"}
+                              label={committed ? "Lessons created" : issues[r.id]?.[0] ?? "Ready to create"}
                             />
                           </TableCell>
                           <TableCell>
@@ -602,6 +658,7 @@ function ClubSchedulePage() {
                               size="icon"
                               className="size-11"
                               aria-label={`Edit ${r.firstName} ${r.lastName}`}
+                              disabled={committed}
                               onClick={() => setEditing({ ...r })}
                             >
                               <Pencil className="size-4" />
@@ -627,20 +684,16 @@ function ClubSchedulePage() {
                       </TableRow>
                     </TableFooter>
                   </ClubTable>
-                  {step === 2 && (
-                    <Button disabled={decisions > 0} onClick={() => setStep(3)}>
-                      Continue to invites
+                  {step === 2 && !committed && (
+                    <Button disabled={decisions > 0 || busy} onClick={createLessons}>
+                      {busy ? "Creating…" : "Create lessons"}
                     </Button>
                   )}
-                  {step === 3 && (
+                  {committed && (
                     <div className="space-y-3 border-t border-divider pt-4">
-                      <h2 className="font-display text-h3">Invitations not sent</h2>
-                      <p className="text-sm text-text-secondary">
-                        This review has not added lessons or sent emails. Once a coach adds these
-                        students to their roster, send family invites from the Lessons tab.
-                      </p>
-                      <Button variant="outline" onClick={() => setStep(2)}>
-                        Back to review
+                      <h2 className="font-display text-h3">Lessons created · no invitations sent</h2>
+                      <Button variant="outline" onClick={() => { setLessonSearch(""); void setSp({ tab: "calendar", coach: "all", invite: "all" }); }}>
+                        Review lessons & invites
                       </Button>
                     </div>
                   )}
@@ -672,7 +725,7 @@ function ClubSchedulePage() {
                         <StatusDot
                           status="informational"
                           label={
-                            record.status === "ready" ? "Review ready · not sent" : "In review"
+                            record.committed_at ? "Lessons created" : record.status === "ready" ? "Review ready · not sent" : "In review"
                           }
                         />
                       </TableCell>
@@ -1065,6 +1118,20 @@ function ClubSchedulePage() {
                   setEditing({ ...editing, frequency: v as ClubScheduleRow["frequency"] })
                 }
               />
+              <div className="space-y-1">
+                <Label htmlFor="lesson-start-date">Starts on</Label>
+                <Input id="lesson-start-date" type="date" value={editing.startsOn ?? ""}
+                  onChange={(e) => setEditing({ ...editing, startsOn: e.target.value })} />
+              </div>
+              {(editing.frequency === "monthly" || editing.frequency === "twice_monthly") && (
+                <div className="space-y-1">
+                  <Label>Weeks of month</Label>
+                  <ToggleGroup type="multiple" value={(editing.weeksOfMonth ?? []).map(String)}
+                    onValueChange={(values) => setEditing({ ...editing, weeksOfMonth: values.map(Number).sort() })}>
+                    {[1, 2, 3, 4, 5].map((w) => <ToggleGroupItem key={w} value={String(w)} aria-label={`Week ${w}`}>{w}</ToggleGroupItem>)}
+                  </ToggleGroup>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   setRows((current) => current.map((r) => (r.id === editing.id ? editing : r)));
