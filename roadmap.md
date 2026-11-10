@@ -64,4 +64,4 @@
 - [ ] Schedule import: match existing athletes, create lessons, hand off to invites
 - [ ] Real email test (coach invite, family invite, reminders template choice, verification on)
 - [ ] Settings contract card + "contact your rep"; Home first-run checklist; fresh-account end-to-end check; demo cleanup
-- [ ] Decide: what a coach sees when their club has no open seat (today joining is refused, unchanged)
+- [x] No open seat: coach finishes sign-up on their own plan; club admins get a "Coach joined without a seat" notice (clears when they get a seat)
