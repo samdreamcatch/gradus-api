@@ -2406,3 +2406,100 @@ export const adminGetPlanShareToken = createServerFn({ method: "POST" })
     }
     return { token };
   });
+
+/** Club admins for one club (staff view of the org_admins list the club panel trusts). */
+export const adminListClubAdmins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ organizationId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("org_admins")
+      .select("user_id, created_at")
+      .eq("organization_id", data.organizationId)
+      .order("created_at");
+    if (error) dbError(error);
+    const admins = await Promise.all(
+      (rows ?? []).map(async (r) => {
+        const { data: u } = await supabaseAdmin.auth.admin.getUserById(r.user_id);
+        return { userId: r.user_id, email: u?.user?.email ?? null, addedAt: r.created_at };
+      }),
+    );
+    return { admins };
+  });
+
+/**
+ * Name a club admin by email. Existing accounts are added directly; a new
+ * address gets the standard account invite and is added to the club at once,
+ * so the club panel opens for them when they first sign in.
+ */
+export const adminAddClubAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ organizationId: z.string().uuid(), email: z.string().trim().email().max(255) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email = data.email.toLowerCase();
+    const { data: found, error: findErr } = await supabaseAdmin.rpc(
+      "find_confirmed_user_by_email",
+      { _email: email },
+    );
+    if (findErr) dbError(findErr);
+    let userId = (found as string | null) ?? null;
+    let invited = false;
+    if (!userId) {
+      const site = process.env.SITE_URL ?? "https://gradus.training";
+      const { data: inv, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${site}/org-admin`,
+      });
+      if (invErr || !inv?.user)
+        throw new Error(invErr?.message ?? "Could not invite that address.");
+      userId = inv.user.id;
+      invited = true;
+    }
+    const { count } = await supabaseAdmin
+      .from("org_admins")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", data.organizationId);
+    const { error } = await supabaseAdmin.from("org_admins").upsert(
+      {
+        organization_id: data.organizationId,
+        user_id: userId,
+        created_by: context.userId,
+        // The first admin named by staff owns the club account.
+        club_role: (count ?? 0) === 0 ? "owner" : "admin",
+      } as never,
+      { onConflict: "organization_id,user_id", ignoreDuplicates: true },
+    );
+    if (error) {
+      if (/capacity|admin seat/i.test(error.message))
+        throw new Error(
+          "This club has no admin seats left. Raise admin seats in the contract first.",
+        );
+      dbError(error);
+    }
+    return { ok: true, invited };
+  });
+
+/** Remove a club admin (staff). The database still refuses to remove the last admin or owner. */
+export const adminRemoveClubAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ organizationId: z.string().uuid(), userId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("org_admins")
+      .delete()
+      .eq("organization_id", data.organizationId)
+      .eq("user_id", data.userId);
+    if (error) dbError(error);
+    return { ok: true };
+  });
