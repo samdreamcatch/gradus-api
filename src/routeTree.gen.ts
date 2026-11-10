@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PaymentHistoryPreviewRouteImport } from './routes/payment-history-preview'
+import { Route as PaymentsPreviewRouteImport } from './routes/payments-preview'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SupportRouteImport } from './routes/support'
@@ -408,6 +410,16 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentHistoryPreviewRoute = PaymentHistoryPreviewRouteImport.update({
+  id: '/payment-history-preview',
+  path: '/payment-history-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentsPreviewRoute = PaymentsPreviewRouteImport.update({
+  id: '/payments-preview',
+  path: '/payments-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -2516,6 +2528,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/payment-history-preview': typeof PaymentHistoryPreviewRoute
+  '/payments-preview': typeof PaymentsPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -2898,6 +2912,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/payment-history-preview': typeof PaymentHistoryPreviewRoute
+  '/payments-preview': typeof PaymentsPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -3276,6 +3292,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/payment-history-preview': typeof PaymentHistoryPreviewRoute
+  '/payments-preview': typeof PaymentsPreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -3660,6 +3678,8 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/payment-history-preview'
+    | '/payments-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4042,6 +4062,8 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/payment-history-preview'
+    | '/payments-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4419,6 +4441,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/forgot-password'
     | '/login'
+    | '/payment-history-preview'
+    | '/payments-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4803,6 +4827,8 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PaymentHistoryPreviewRoute: typeof PaymentHistoryPreviewRoute
+  PaymentsPreviewRoute: typeof PaymentsPreviewRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SupportRoute: typeof SupportRoute
@@ -5120,6 +5146,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-history-preview': {
+      id: '/payment-history-preview'
+      path: '/payment-history-preview'
+      fullPath: '/payment-history-preview'
+      preLoaderRoute: typeof PaymentHistoryPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payments-preview': {
+      id: '/payments-preview'
+      path: '/payments-preview'
+      fullPath: '/payments-preview'
+      preLoaderRoute: typeof PaymentsPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -8062,6 +8102,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PaymentHistoryPreviewRoute: PaymentHistoryPreviewRoute,
+  PaymentsPreviewRoute: PaymentsPreviewRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SupportRoute: SupportRoute,
