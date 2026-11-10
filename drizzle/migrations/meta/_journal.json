@@ -267,6 +267,13 @@
       "when": 1794281164278,
       "tag": "0037_club_no_seat_falls_back_to_own_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794281608324,
+      "tag": "0038_club_people_controls",
+      "breakpoints": true
     }
   ]
 }

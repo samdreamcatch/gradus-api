@@ -5633,9 +5633,17 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: string
       }
+      club_assign_waiting_coach: {
+        Args: { p_actor: string; p_org_id: string; p_request_id: string }
+        Returns: undefined
+      }
       club_open_seat_for: {
         Args: { p_org: string; p_user: string }
         Returns: string
+      }
+      club_release_coach: {
+        Args: { p_actor: string; p_coach_id: string; p_org_id: string }
+        Returns: undefined
       }
       club_remove_admin: {
         Args: { p_admin_id: string; p_org_id: string }
@@ -5653,6 +5661,15 @@ export type Database = {
       }
       club_seat_fallback: {
         Args: { p_coach: string; p_name: string; p_org: string }
+        Returns: undefined
+      }
+      club_set_admin_role: {
+        Args: {
+          p_actor: string
+          p_admin_id: string
+          p_org_id: string
+          p_role: string
+        }
         Returns: undefined
       }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
