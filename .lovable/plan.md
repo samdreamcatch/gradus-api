@@ -9,7 +9,7 @@ Buy seats -> Club + admin created -> Invite coaches -> Coaches get Pro access
 
 ## Blockers (a real club cannot get through without these)
 
-1. **Buying and setting up the club.** No self-serve way to buy seats in bulk. Gradus staff set seat counts and contract dates by hand, and staff create the club and its first admin. Decide: staff-led sales (invoice + staff setup screen) or Stripe checkout for N seats. Either way, build one "set up a new club" flow: club details, seat count, contract dates, first admin invite email.
+1. **Staff setup screen for a sold club.** Sales reps close deals on custom contracts, and Gradus staff set up the club (that's intended). What's missing is one staff screen to do it in a single pass: club details, sports, seat count, contract dates and file, then send the first admin their invite. Today these steps are split up, and parts of them happen directly in the backend.
 2. **Seats don't control paid access.** A coach gets club-level access just by being attached to a club, not by holding a seat, and nothing checks contract end dates. Tie access to holding a seat in a club with an active contract; define what happens when the contract lapses (for example, coaches fall back to their own plan, like Family's read-only on lapse).
 3. **People controls unfinished.** Admins can't yet change roles, resend or cancel invites, or move a seat from one coach to another. Needed on day one.
 4. **Schedule import stops before the end.** Upload, coach matching and review work, but it can't match students to athletes who already exist, can't create the lessons, and doesn't hand off to the invite step. Only CSV is accepted.
@@ -17,7 +17,7 @@ Buy seats -> Club + admin created -> Invite coaches -> Coaches get Pro access
 
 ## Should have before launch
 
-6. **Billing visibility for the admin:** seat count, renewal date, invoices/receipts, and a "request more seats" action in Settings.
+6. **Contract visibility for the admin:** seat count, contract dates, and a "contact your Gradus rep for more seats" action in Settings. No checkout.
 7. **Admin onboarding:** a first-run checklist on Home (invite coaches, upload schedule, publish policies).
 8. **End-to-end check with fresh accounts:** a brand-new admin, coach and parent, on desktop and phone, rather than the seeded Test Club.
 9. **Remove demo leftovers** (test logo/colors, "QA Warm up", seeded notifications) or keep them only in Test Club.
@@ -32,7 +32,7 @@ Buy seats -> Club + admin created -> Invite coaches -> Coaches get Pro access
 
 ## Proposed order
 
-1 and 2 together (decide purchase model first), then 3, 4, 5, then 6 to 9.
+2 first (paid access must follow the contract), then 1, 3, 4, 5, then 6 to 9.
 
 ## Technical notes
 
