@@ -4,7 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
-import { clubScheduleErrors, clubScheduleCommitErrors, type ClubScheduleRow } from "./club-schedule";
+import {
+  clubScheduleErrors,
+  clubScheduleCommitErrors,
+  type ClubScheduleRow,
+} from "./club-schedule";
 import { buildClubLessons } from "./club-lesson-calendar";
 
 type ImportRecord = {
@@ -161,19 +165,30 @@ export const getClubScheduleStudents = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orgInput.parse(input))
   .handler(async ({ data, context }) => {
     const { base, draft } = await authorized(context.supabase, context.userId, data.organizationId);
-    const seats = await draft.from("org_seats").select("coach_id").eq("organization_id", data.organizationId);
+    const seats = await draft
+      .from("org_seats")
+      .select("coach_id")
+      .eq("organization_id", data.organizationId);
     if (seats.error) dbError(seats.error);
-    const ids = (seats.data ?? []).flatMap((s) => s.coach_id ? [s.coach_id] : []);
+    const ids = (seats.data ?? []).flatMap((s) => (s.coach_id ? [s.coach_id] : []));
     if (!ids.length) return [];
-    const links = await base.from("coach_athletes").select("coach_id,athlete_id").in("coach_id", ids);
+    const links = await base
+      .from("coach_athletes")
+      .select("coach_id,athlete_id")
+      .in("coach_id", ids);
     if (links.error) dbError(links.error);
     const athleteIds = [...new Set((links.data ?? []).map((l) => l.athlete_id))];
     if (!athleteIds.length) return [];
-    const students = await base.from("athletes").select("id,first_name,last_name")
-      .in("id", athleteIds).eq("account_state", "active");
+    const students = await base
+      .from("athletes")
+      .select("id,first_name,last_name")
+      .in("id", athleteIds)
+      .eq("account_state", "active");
     if (students.error) dbError(students.error);
     return (students.data ?? []).map((s) => ({
-      id: s.id, firstName: s.first_name, lastName: s.last_name,
+      id: s.id,
+      firstName: s.first_name,
+      lastName: s.last_name,
       coachIds: (links.data ?? []).filter((l) => l.athlete_id === s.id).map((l) => l.coach_id),
     }));
   });
@@ -183,14 +198,24 @@ export const commitClubScheduleReview = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orgInput.extend({ importId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
-    const stored = await draft.from("org_schedule_import_rows").select("review_row")
-      .eq("organization_id", data.organizationId).eq("import_id", data.importId).order("row_no");
+    const stored = await draft
+      .from("org_schedule_import_rows")
+      .select("review_row")
+      .eq("organization_id", data.organizationId)
+      .eq("import_id", data.importId)
+      .order("row_no");
     if (stored.error) dbError(stored.error);
-    const rows = z.array(reviewRow).min(1).max(500).parse((stored.data ?? []).map((r) => r.review_row));
+    const rows = z
+      .array(reviewRow)
+      .min(1)
+      .max(500)
+      .parse((stored.data ?? []).map((r) => r.review_row));
     const errors = Object.values(clubScheduleCommitErrors(rows)).flat();
     if (errors.length) throw new Error(errors[0]);
     const res = await draft.rpc("club_commit_schedule_review", {
-      p_org: data.organizationId, p_user: context.userId, p_import: data.importId,
+      p_org: data.organizationId,
+      p_user: context.userId,
+      p_import: data.importId,
     });
     if (res.error) dbError(res.error);
     return z.object({ added: z.number(), skipped: z.number() }).parse(res.data);

@@ -378,10 +378,13 @@ function ClubSchedulePage() {
     }
   }
   function matchStudents() {
-    setRows((current) => current.map((r) => ({ ...r,
-      athleteId: matchClubScheduleStudent(r, students.data ?? []),
-      startsOn: r.startsOn ?? startDate,
-    })));
+    setRows((current) =>
+      current.map((r) => ({
+        ...r,
+        athleteId: matchClubScheduleStudent(r, students.data ?? []),
+        startsOn: r.startsOn ?? startDate,
+      })),
+    );
     setStep(2);
   }
   async function createLessons() {
@@ -395,7 +398,9 @@ function ClubSchedulePage() {
       ]);
       setCommitted(true);
       setStep(3);
-      toast.success(`${result.added} lessons added · ${result.skipped} already scheduled. No emails sent.`);
+      toast.success(
+        `${result.added} lessons added · ${result.skipped} already scheduled. No emails sent.`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not create lessons.");
     } finally {
@@ -557,9 +562,18 @@ function ClubSchedulePage() {
                   </ClubTable>
                   <div className="space-y-1">
                     <Label htmlFor="import-start-date">Lessons start on</Label>
-                    <Input id="import-start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="max-w-56" />
+                    <Input
+                      id="import-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="max-w-56"
+                    />
                   </div>
-                  <Button disabled={rows.some((r) => !r.coachId) || !students.data || !startDate} onClick={matchStudents}>
+                  <Button
+                    disabled={rows.some((r) => !r.coachId) || !students.data || !startDate}
+                    onClick={matchStudents}
+                  >
                     Match students
                   </Button>
                 </section>
@@ -632,10 +646,22 @@ function ClubSchedulePage() {
                               disabled={committed}
                               options={[
                                 { value: "none", label: "Choose existing student" },
-                                ...(students.data ?? []).filter((s) => r.coachId && s.coachIds.includes(r.coachId))
-                                  .map((s) => ({ value: s.id, label: `${s.firstName} ${s.lastName} · ${s.id.slice(0, 6)}` })),
+                                ...(students.data ?? [])
+                                  .filter((s) => r.coachId && s.coachIds.includes(r.coachId))
+                                  .map((s) => ({
+                                    value: s.id,
+                                    label: `${s.firstName} ${s.lastName} · ${s.id.slice(0, 6)}`,
+                                  })),
                               ]}
-                              onValueChange={(v) => setRows((current) => current.map((item) => item.id === r.id ? { ...item, athleteId: v === "none" ? null : v } : item))}
+                              onValueChange={(v) =>
+                                setRows((current) =>
+                                  current.map((item) =>
+                                    item.id === r.id
+                                      ? { ...item, athleteId: v === "none" ? null : v }
+                                      : item,
+                                  ),
+                                )
+                              }
                             />
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
@@ -649,7 +675,11 @@ function ClubSchedulePage() {
                           <TableCell className="min-w-48">
                             <StatusDot
                               status={issues[r.id]?.length ? "attention" : "informational"}
-                              label={committed ? "Lessons created" : issues[r.id]?.[0] ?? "Ready to create"}
+                              label={
+                                committed
+                                  ? "Lessons created"
+                                  : (issues[r.id]?.[0] ?? "Ready to create")
+                              }
                             />
                           </TableCell>
                           <TableCell>
@@ -691,8 +721,16 @@ function ClubSchedulePage() {
                   )}
                   {committed && (
                     <div className="space-y-3 border-t border-divider pt-4">
-                      <h2 className="font-display text-h3">Lessons created · no invitations sent</h2>
-                      <Button variant="outline" onClick={() => { setLessonSearch(""); void setSp({ tab: "calendar", coach: "all", invite: "all" }); }}>
+                      <h2 className="font-display text-h3">
+                        Lessons created · no invitations sent
+                      </h2>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setLessonSearch("");
+                          void setSp({ tab: "calendar", coach: "all", invite: "all" });
+                        }}
+                      >
                         Review lessons & invites
                       </Button>
                     </div>
@@ -725,7 +763,11 @@ function ClubSchedulePage() {
                         <StatusDot
                           status="informational"
                           label={
-                            record.committed_at ? "Lessons created" : record.status === "ready" ? "Review ready · not sent" : "In review"
+                            record.committed_at
+                              ? "Lessons created"
+                              : record.status === "ready"
+                                ? "Review ready · not sent"
+                                : "In review"
                           }
                         />
                       </TableCell>
@@ -1120,15 +1162,28 @@ function ClubSchedulePage() {
               />
               <div className="space-y-1">
                 <Label htmlFor="lesson-start-date">Starts on</Label>
-                <Input id="lesson-start-date" type="date" value={editing.startsOn ?? ""}
-                  onChange={(e) => setEditing({ ...editing, startsOn: e.target.value })} />
+                <Input
+                  id="lesson-start-date"
+                  type="date"
+                  value={editing.startsOn ?? ""}
+                  onChange={(e) => setEditing({ ...editing, startsOn: e.target.value })}
+                />
               </div>
               {(editing.frequency === "monthly" || editing.frequency === "twice_monthly") && (
                 <div className="space-y-1">
                   <Label>Weeks of month</Label>
-                  <ToggleGroup type="multiple" value={(editing.weeksOfMonth ?? []).map(String)}
-                    onValueChange={(values) => setEditing({ ...editing, weeksOfMonth: values.map(Number).sort() })}>
-                    {[1, 2, 3, 4, 5].map((w) => <ToggleGroupItem key={w} value={String(w)} aria-label={`Week ${w}`}>{w}</ToggleGroupItem>)}
+                  <ToggleGroup
+                    type="multiple"
+                    value={(editing.weeksOfMonth ?? []).map(String)}
+                    onValueChange={(values) =>
+                      setEditing({ ...editing, weeksOfMonth: values.map(Number).sort() })
+                    }
+                  >
+                    {[1, 2, 3, 4, 5].map((w) => (
+                      <ToggleGroupItem key={w} value={String(w)} aria-label={`Week ${w}`}>
+                        {w}
+                      </ToggleGroupItem>
+                    ))}
                   </ToggleGroup>
                 </div>
               )}
