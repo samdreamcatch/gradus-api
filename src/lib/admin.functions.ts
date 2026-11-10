@@ -2450,16 +2450,26 @@ export const adminAddClubAdmin = createServerFn({ method: "POST" })
     if (!userId) {
       const site = process.env.SITE_URL ?? "https://gradus.training";
       const { data: inv, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${site}/auth/callback?next=/org-admin`,
+        redirectTo: `${site}/org-admin`,
       });
       if (invErr || !inv?.user) throw new Error(invErr?.message ?? "Could not invite that address.");
       userId = inv.user.id;
       invited = true;
     }
+    const { count } = await supabaseAdmin
+      .from("org_admins")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", data.organizationId);
     const { error } = await supabaseAdmin
       .from("org_admins")
       .upsert(
-        { organization_id: data.organizationId, user_id: userId, created_by: context.userId },
+        {
+          organization_id: data.organizationId,
+          user_id: userId,
+          created_by: context.userId,
+          // The first admin named by staff owns the club account.
+          club_role: (count ?? 0) === 0 ? "owner" : "admin",
+        } as never,
         { onConflict: "organization_id,user_id", ignoreDuplicates: true },
       );
     if (error) {
@@ -2469,7 +2479,7 @@ export const adminAddClubAdmin = createServerFn({ method: "POST" })
     return { ok: true, invited };
   });
 
-/** Remove a club admin (staff). The capacity trigger still keeps at least the rules it enforces. */
+/** Remove a club admin (staff). The database still refuses to remove the last admin or owner. */
 export const adminRemoveClubAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
