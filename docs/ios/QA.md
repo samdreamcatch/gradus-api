@@ -25,7 +25,7 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] An account with no profile (started on the web, or Apple as above) signing in with email + password: role chooser; "Sign out" there returns to sign-in; the chooser is never shown to a coach, parent or athlete.
 - [ ] **No Terms sheet mid sign-up** (regression, 2026-10-02): parent and adult-athlete email sign-ups reach their onboarding with no "Our terms have changed" sheet in the way; after onboarding, Settings → Legal shows the terms accepted. The sheet still appears for an existing coach, parent or athlete after the terms version is bumped.
 - [ ] Google button is hidden (no client ID yet) — confirm it does not appear.
-- [ ] "Remember me" keeps the identifier after sign-out; Face ID lock (Settings → Device) locks on background after the chosen delay; passcode fallback works; nothing behind the lock is reachable.
+- [ ] "Remember me" keeps the identifier after sign-out. (The Face ID lock check was dropped with the lock, PRD decision #63.)
 - [ ] Coach sign-up: promo code applied (Settings → Plan shows it); terms checkbox required; onboarding: name → sports → levels/hours → invite code; sample athlete and starter plan appear for figure skating; club join skippable.
 - [ ] Parent sign-up: athletes (name + birthdate) → goals → schedule per coach; kill the app mid-flow and reopen → resumes at the same step.
 - [ ] Minor athlete sign-up with the parent's code: identity confirmed, username availability check debounces, password set, lands in the athlete app.
