@@ -1404,6 +1404,41 @@ export type Database = {
           },
         ]
       }
+      club_seat_requests: {
+        Row: {
+          coach_id: string
+          coach_name: string | null
+          id: string
+          organization_id: string
+          requested_at: string
+          resolved_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          coach_name?: string | null
+          id?: string
+          organization_id: string
+          requested_at?: string
+          resolved_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          coach_name?: string | null
+          id?: string
+          organization_id?: string
+          requested_at?: string
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_seat_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_athlete_practice_targets: {
         Row: {
           athlete_id: string
@@ -5598,6 +5633,10 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: string
       }
+      club_open_seat_for: {
+        Args: { p_org: string; p_user: string }
+        Returns: string
+      }
       club_remove_admin: {
         Args: { p_admin_id: string; p_org_id: string }
         Returns: undefined
@@ -5611,6 +5650,10 @@ export type Database = {
           p_user: string
         }
         Returns: string
+      }
+      club_seat_fallback: {
+        Args: { p_coach: string; p_name: string; p_org: string }
+        Returns: undefined
       }
       coach_effective_tier: { Args: { _coach_id: string }; Returns: string }
       coach_has_rostered_athlete_of_parent: {

@@ -260,6 +260,13 @@
       "when": 1794280659861,
       "tag": "0036_club_tier_requires_active_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794281164278,
+      "tag": "0037_club_no_seat_falls_back_to_own_plan",
+      "breakpoints": true
     }
   ]
 }
