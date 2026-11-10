@@ -3925,6 +3925,9 @@ export type Database = {
       }
       org_schedule_imports: {
         Row: {
+          commit_counts: Json | null
+          committed_at: string | null
+          committed_by: string | null
           counts: Json
           created_at: string
           file_name: string
@@ -3934,6 +3937,9 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          commit_counts?: Json | null
+          committed_at?: string | null
+          committed_by?: string | null
           counts?: Json
           created_at?: string
           file_name: string
@@ -3943,6 +3949,9 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          commit_counts?: Json | null
+          committed_at?: string | null
+          committed_by?: string | null
           counts?: Json
           created_at?: string
           file_name?: string
@@ -5636,6 +5645,10 @@ export type Database = {
       club_assign_waiting_coach: {
         Args: { p_actor: string; p_org_id: string; p_request_id: string }
         Returns: undefined
+      }
+      club_commit_schedule_review: {
+        Args: { p_import: string; p_org: string; p_user: string }
+        Returns: Json
       }
       club_open_seat_for: {
         Args: { p_org: string; p_user: string }

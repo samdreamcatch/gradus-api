@@ -61,7 +61,8 @@
 - [x] Club access follows contract dates (club tier only while contract is active); app onboarding unchanged
 - [x] Internal admin → Organizations → "Contract & admins": add/remove club admins by email (first becomes owner); not test-sent
 - [x] People: change admin roles, release seats, give waiting coaches a seat (invite resend/cancel already on Roster)
-- [ ] Schedule import: match existing athletes, create lessons, hand off to invites
+- [x] Schedule import: existing-roster student matching, explicit transactional lesson creation, duplicate protection and handoff to Lessons/invites. Buddy's existing-lesson import verified (0 added, 1 skipped); 20 tests pass, no emails sent.
+- [ ] Schedule import follow-up: fresh-lesson creation/readback and new-student onboarding; current import only accepts students already on the selected coach's roster.
 - [ ] Real email test (coach invite, family invite, reminders template choice, verification on)
 - [ ] Settings contract card + "contact your rep"; Home first-run checklist; fresh-account end-to-end check; demo cleanup
 - [x] No open seat: coach finishes sign-up on their own plan; club admins get a "Coach joined without a seat" notice (clears when they get a seat)

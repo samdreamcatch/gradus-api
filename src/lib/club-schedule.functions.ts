@@ -4,7 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
-import { clubScheduleErrors, type ClubScheduleRow } from "./club-schedule";
+import {
+  clubScheduleErrors,
+  clubScheduleCommitErrors,
+  type ClubScheduleRow,
+} from "./club-schedule";
 import { buildClubLessons } from "./club-lesson-calendar";
 
 type ImportRecord = {
@@ -15,6 +19,8 @@ type ImportRecord = {
   created_at: string;
   organization_id: string;
   uploaded_by: string;
+  committed_at: string | null;
+  commit_counts: Json;
 };
 type Table<R> = { Row: R; Insert: never; Update: never; Relationships: [] };
 type ScheduleDatabase = Omit<Database, "public"> & {
@@ -34,6 +40,10 @@ type ScheduleDatabase = Omit<Database, "public"> & {
         Args: { p_org: string; p_user: string; p_file: string; p_rows: Json; p_ready: boolean };
         Returns: string;
       };
+      club_commit_schedule_review: {
+        Args: { p_org: string; p_user: string; p_import: string };
+        Returns: Json;
+      };
     };
   };
 };
@@ -52,6 +62,9 @@ const reviewRow = z.object({
   guardianEmail: z.string().max(254),
   athleteEmail: z.string().max(254),
   sport: z.string().max(100),
+  athleteId: z.string().uuid().nullable().optional(),
+  startsOn: z.string().nullable().optional(),
+  weeksOfMonth: z.array(z.number().int().min(1).max(5)).max(2).optional(),
 });
 
 async function authorized(
@@ -93,7 +106,7 @@ export const getClubScheduleHistory = createServerFn({ method: "POST" })
     const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
     const result = await draft
       .from("org_schedule_imports")
-      .select("id,file_name,status,counts,created_at")
+      .select("id,file_name,status,counts,created_at,committed_at,commit_counts")
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -145,6 +158,67 @@ export const saveClubScheduleReview = createServerFn({ method: "POST" })
     });
     if (result.error) dbError(result.error);
     return { id: result.data, ready };
+  });
+
+export const getClubScheduleStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { base, draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const seats = await draft
+      .from("org_seats")
+      .select("coach_id")
+      .eq("organization_id", data.organizationId);
+    if (seats.error) dbError(seats.error);
+    const ids = (seats.data ?? []).flatMap((s) => (s.coach_id ? [s.coach_id] : []));
+    if (!ids.length) return [];
+    const links = await base
+      .from("coach_athletes")
+      .select("coach_id,athlete_id")
+      .in("coach_id", ids);
+    if (links.error) dbError(links.error);
+    const athleteIds = [...new Set((links.data ?? []).map((l) => l.athlete_id))];
+    if (!athleteIds.length) return [];
+    const students = await base
+      .from("athletes")
+      .select("id,first_name,last_name")
+      .in("id", athleteIds)
+      .eq("account_state", "active");
+    if (students.error) dbError(students.error);
+    return (students.data ?? []).map((s) => ({
+      id: s.id,
+      firstName: s.first_name,
+      lastName: s.last_name,
+      coachIds: (links.data ?? []).filter((l) => l.athlete_id === s.id).map((l) => l.coach_id),
+    }));
+  });
+
+export const commitClubScheduleReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ importId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const stored = await draft
+      .from("org_schedule_import_rows")
+      .select("review_row")
+      .eq("organization_id", data.organizationId)
+      .eq("import_id", data.importId)
+      .order("row_no");
+    if (stored.error) dbError(stored.error);
+    const rows = z
+      .array(reviewRow)
+      .min(1)
+      .max(500)
+      .parse((stored.data ?? []).map((r) => r.review_row));
+    const errors = Object.values(clubScheduleCommitErrors(rows)).flat();
+    if (errors.length) throw new Error(errors[0]);
+    const res = await draft.rpc("club_commit_schedule_review", {
+      p_org: data.organizationId,
+      p_user: context.userId,
+      p_import: data.importId,
+    });
+    if (res.error) dbError(res.error);
+    return z.object({ added: z.number(), skipped: z.number() }).parse(res.data);
   });
 
 // Operational club schedule only; family contacts must never enter Home/Coaching rollups.
@@ -278,7 +352,7 @@ export const sendClubLessonInvites = createServerFn({ method: "POST" })
       await sendGuardianInvite({
         to: email,
         athleteName: [s.first_name, s.last_name].filter(Boolean).join(" "),
-        coachName: coachById.get(coachFor.get(s.id)!) || null,
+        coachName: coachById.get(coachFor.get(s.id) ?? "") || null,
         token,
         recipient: s.invite_recipient === "athlete" ? "athlete" : "guardian",
       });
