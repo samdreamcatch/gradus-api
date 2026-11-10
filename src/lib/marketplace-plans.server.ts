@@ -83,7 +83,15 @@ export interface MarketplacePlanDTO {
    * The caller's purchases of this listing: for an athlete, their own; for a
    * parent, one per child they bought it for. `planId` is that athlete's copy.
    */
-  purchases: { athleteId: string; planId: string | null }[];
+  purchases: MarketplacePurchaseRef[];
+}
+
+/** One of the caller's purchases of a listing: who it's for, their copy, and whether it's paid. */
+export interface MarketplacePurchaseRef {
+  purchaseId: string;
+  athleteId: string;
+  planId: string | null;
+  paymentStatus: "awaiting_coach_setup" | "payment_due" | "processing" | "paid";
 }
 
 /**
@@ -169,26 +177,33 @@ async function viewerPurchases(
   admin: Admin,
   userId: string,
   planIds: string[],
-): Promise<Map<string, { athleteId: string; planId: string | null }[]>> {
-  const out = new Map<string, { athleteId: string; planId: string | null }[]>();
+): Promise<Map<string, MarketplacePurchaseRef[]>> {
+  const out = new Map<string, MarketplacePurchaseRef[]>();
   if (planIds.length === 0) return out;
   // The generated types don't know plan_purchases yet (20261111120800_plan_purchases).
   const { data, error } = await (admin as unknown as { from: (t: string) => any }) // eslint-disable-line @typescript-eslint/no-explicit-any
     .from("plan_purchases")
-    .select("plan_id, athlete_id, copied_plan_id")
+    .select("id, plan_id, athlete_id, copied_plan_id, payment_status")
     .eq("buyer_user_id", userId)
     .eq("status", "fulfilled")
     .in("plan_id", planIds);
   if (error) dbError(error);
   for (const p of (data ?? []) as {
+    id: string;
     plan_id: string;
     athlete_id: string | null;
     copied_plan_id: string | null;
+    payment_status: MarketplacePurchaseRef["paymentStatus"] | null;
   }[]) {
     if (!p.athlete_id) continue;
     out.set(p.plan_id, [
       ...(out.get(p.plan_id) ?? []),
-      { athleteId: p.athlete_id, planId: p.copied_plan_id },
+      {
+        purchaseId: p.id,
+        athleteId: p.athlete_id,
+        planId: p.copied_plan_id,
+        paymentStatus: p.payment_status ?? "paid",
+      },
     ]);
   }
   return out;

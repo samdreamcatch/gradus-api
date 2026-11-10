@@ -179,7 +179,9 @@ describe("startStripeConnectOnboarding", () => {
       },
       metadata: { coach_id: "c1" },
     });
-    expect(create[2]).toEqual({ idempotencyKey: "gradus-connect-v2-account-c1" });
+    expect((create[2] as { idempotencyKey: string }).idempotencyKey).toMatch(
+      /^gradus-connect-v2-account-c1-\d+$/,
+    );
     expect(calls.find((c) => c[0] === "v2.accountLinks.create")![1]).toEqual({
       account: "acct_new",
       use_case: {

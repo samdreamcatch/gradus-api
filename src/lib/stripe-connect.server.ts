@@ -28,7 +28,7 @@ type Admin = SupabaseClient<Database>;
 
 // The generated types don't know the Connect columns yet.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Untyped = { from: (table: "coach_profiles") => any };
+type Untyped = { from: (table: "coach_profiles" | "plan_purchases") => any };
 const untyped = (client: Admin) => client as unknown as Untyped;
 
 type V2Account = Stripe.V2.Core.Account;
@@ -213,6 +213,17 @@ export async function syncConnectAccount(
   }
   const { error } = await untyped(admin).from("coach_profiles").update(patch).eq("id", row.id);
   if (error) dbError(error);
+  if (flags.chargesEnabled && flags.payoutsEnabled) {
+    // Plans bought before the coach could be paid are now owed
+    // (src/lib/plan-purchases.server.ts, 20261111121000_plan_purchases_payment_status).
+    const { error: dueError } = await untyped(admin)
+      .from("plan_purchases")
+      .update({ payment_status: "payment_due", payment_due_at: new Date().toISOString() })
+      .eq("coach_id", row.id)
+      .eq("status", "fulfilled")
+      .eq("payment_status", "awaiting_coach_setup");
+    if (dueError) dbError(dueError);
+  }
   return {
     ...row,
     stripe_connect_details_submitted: flags.detailsSubmitted,
@@ -291,8 +302,11 @@ export async function startStripeConnectOnboarding(
         },
         metadata: { coach_id: row.id, user_id: ctx.userId },
       },
-      // A double tap within a day gets the same account back, not a second one.
-      { idempotencyKey: `gradus-connect-v2-account-${row.id}` },
+      // A double tap gets the same account back, not a second one. Only within the
+      // minute: Stripe replays a key for a day, and a coach whose account link was
+      // cleared must get a fresh account, not a replay of the old one. The guarded
+      // save below covers anything slower.
+      { idempotencyKey: `gradus-connect-v2-account-${row.id}-${Math.floor(Date.now() / 60_000)}` },
     );
     // Only fill an empty slot: if another request saved an account first, use that one.
     const { data: saved, error } = await untyped(ctx.admin)

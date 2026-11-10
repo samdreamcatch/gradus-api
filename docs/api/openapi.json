@@ -20376,11 +20376,25 @@
                                     "string",
                                     "null"
                                   ]
+                                },
+                                "paymentStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "awaiting_coach_setup",
+                                    "payment_due",
+                                    "processing",
+                                    "paid"
+                                  ]
+                                },
+                                "purchaseId": {
+                                  "type": "string"
                                 }
                               },
                               "required": [
                                 "athleteId",
-                                "planId"
+                                "planId",
+                                "paymentStatus",
+                                "purchaseId"
                               ]
                             }
                           }
@@ -20491,7 +20505,17 @@
                             "pending",
                             "fulfilling",
                             "fulfilled",
-                            "canceled"
+                            "canceled",
+                            "restricted"
+                          ]
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "awaiting_coach_setup",
+                            "payment_due",
+                            "processing",
+                            "paid"
                           ]
                         },
                         "planId": {
@@ -20514,15 +20538,34 @@
                         },
                         "amountCents": {
                           "type": "number"
+                        },
+                        "paymentDueAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paidAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "overdue": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
                         "id",
                         "status",
+                        "paymentStatus",
                         "planId",
                         "athleteId",
                         "copiedPlanId",
-                        "amountCents"
+                        "amountCents",
+                        "paymentDueAt",
+                        "paidAt",
+                        "overdue"
                       ]
                     },
                     "checkoutUrl": {
@@ -20535,6 +20578,163 @@
                   "required": [
                     "purchase",
                     "checkoutUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases": {
+      "get": {
+        "operationId": "listMyMarketplacePurchases",
+        "summary": "The caller's plan purchases and their payment status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "paid",
+                "pending",
+                "awaiting_coach_setup",
+                "payment_due"
+              ]
+            },
+            "required": false,
+            "name": "paymentStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "coachName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "coachName",
+                          "athleteName",
+                          "createdAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
                   ]
                 }
               }
@@ -20589,7 +20789,17 @@
                         "pending",
                         "fulfilling",
                         "fulfilled",
-                        "canceled"
+                        "canceled",
+                        "restricted"
+                      ]
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_coach_setup",
+                        "payment_due",
+                        "processing",
+                        "paid"
                       ]
                     },
                     "planId": {
@@ -20612,15 +20822,868 @@
                     },
                     "amountCents": {
                       "type": "number"
+                    },
+                    "paymentDueAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "overdue": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "id",
                     "status",
+                    "paymentStatus",
                     "planId",
                     "athleteId",
                     "copiedPlanId",
-                    "amountCents"
+                    "amountCents",
+                    "paymentDueAt",
+                    "paidAt",
+                    "overdue"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases/{id}/pay": {
+      "post": {
+        "operationId": "payMarketplacePurchase",
+        "summary": "Complete payment for a plan bought before the coach was on Stripe",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "purchase": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "fulfilling",
+                            "fulfilled",
+                            "canceled",
+                            "restricted"
+                          ]
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "awaiting_coach_setup",
+                            "payment_due",
+                            "processing",
+                            "paid"
+                          ]
+                        },
+                        "planId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "athleteId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "copiedPlanId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amountCents": {
+                          "type": "number"
+                        },
+                        "paymentDueAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paidAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "overdue": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "paymentStatus",
+                        "planId",
+                        "athleteId",
+                        "copiedPlanId",
+                        "amountCents",
+                        "paymentDueAt",
+                        "paidAt",
+                        "overdue"
+                      ]
+                    },
+                    "checkoutUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "purchase",
+                    "checkoutUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/sales": {
+      "get": {
+        "operationId": "listCoachSales",
+        "summary": "The coach's plan sales: received and pending payments",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "paid",
+                "pending",
+                "awaiting_coach_setup",
+                "payment_due"
+              ]
+            },
+            "required": false,
+            "name": "paymentStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "platformFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "stripeFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "coachPayoutCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "canRestrict": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "athleteName",
+                          "platformFeeCents",
+                          "stripeFeeCents",
+                          "coachPayoutCents",
+                          "canRestrict",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "receivedCents": {
+                          "type": "number"
+                        },
+                        "pendingCents": {
+                          "type": "number"
+                        },
+                        "overdueCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "receivedCents",
+                        "pendingCents",
+                        "overdueCount"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "totals"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/marketplace/dashboard": {
+      "get": {
+        "operationId": "getCoachMarketplaceDashboard",
+        "summary": "The coach's marketplace seller dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "connected": {
+                      "type": "boolean"
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "salesCount": {
+                          "type": "number"
+                        },
+                        "earnedCents": {
+                          "type": "number"
+                        },
+                        "pendingCents": {
+                          "type": "number"
+                        },
+                        "onTheWayCents": {
+                          "type": "number"
+                        },
+                        "stripeBalanceCents": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "paidOutCents": {
+                          "type": "number"
+                        },
+                        "views": {
+                          "type": "number"
+                        },
+                        "conversion": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ratingAverage": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ratingCount": {
+                          "type": "number"
+                        },
+                        "overdueCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "salesCount",
+                        "earnedCents",
+                        "pendingCents",
+                        "onTheWayCents",
+                        "stripeBalanceCents",
+                        "paidOutCents",
+                        "views",
+                        "conversion",
+                        "ratingAverage",
+                        "ratingCount",
+                        "overdueCount"
+                      ]
+                    },
+                    "monthlyEarnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "month": {
+                            "type": "string"
+                          },
+                          "cents": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "month",
+                          "cents"
+                        ]
+                      }
+                    },
+                    "sales": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "platformFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "stripeFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "coachPayoutCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "canRestrict": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "athleteName",
+                          "platformFeeCents",
+                          "stripeFeeCents",
+                          "coachPayoutCents",
+                          "canRestrict",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "priceCents": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "soldCount": {
+                            "type": "number"
+                          },
+                          "views": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "priceCents",
+                          "status",
+                          "soldCount",
+                          "views"
+                        ]
+                      }
+                    },
+                    "weekly": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "weekStart": {
+                            "type": "string"
+                          },
+                          "weekEnd": {
+                            "type": "string"
+                          },
+                          "views": {
+                            "type": "number"
+                          },
+                          "sales": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "weekStart",
+                          "weekEnd",
+                          "views",
+                          "sales"
+                        ]
+                      }
+                    },
+                    "payouts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "arrivalDate": {
+                            "type": "string"
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "bankLast4": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "arrivalDate",
+                          "amountCents",
+                          "status",
+                          "bankLast4"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "connected",
+                    "totals",
+                    "monthlyEarnings",
+                    "sales",
+                    "plans",
+                    "weekly",
+                    "payouts"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans/{id}/view": {
+      "post": {
+        "operationId": "recordMarketplacePlanView",
+        "summary": "Count a view of a marketplace plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "counted": {
+                      "type": "boolean"
+                    },
+                    "viewCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "counted",
+                    "viewCount"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/sales/{id}/restrict": {
+      "post": {
+        "operationId": "restrictCoachSale",
+        "summary": "Restrict a buyer who hasn't paid for a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "fulfilling",
+                        "fulfilled",
+                        "canceled",
+                        "restricted"
+                      ]
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_coach_setup",
+                        "payment_due",
+                        "processing",
+                        "paid"
+                      ]
+                    },
+                    "planId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "copiedPlanId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    },
+                    "paymentDueAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "overdue": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "paymentStatus",
+                    "planId",
+                    "athleteId",
+                    "copiedPlanId",
+                    "amountCents",
+                    "paymentDueAt",
+                    "paidAt",
+                    "overdue"
                   ]
                 }
               }
@@ -21124,11 +22187,25 @@
                                     "string",
                                     "null"
                                   ]
+                                },
+                                "paymentStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "awaiting_coach_setup",
+                                    "payment_due",
+                                    "processing",
+                                    "paid"
+                                  ]
+                                },
+                                "purchaseId": {
+                                  "type": "string"
                                 }
                               },
                               "required": [
                                 "athleteId",
-                                "planId"
+                                "planId",
+                                "paymentStatus",
+                                "purchaseId"
                               ]
                             }
                           }

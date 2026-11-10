@@ -8,10 +8,10 @@ import { getPlanPurchase } from "@/lib/plan-purchases.server";
 /**
  * Thin wrapper over `getPlanPurchase` in `src/lib/plan-purchases.server.ts`:
  * the caller's purchase. The app asks on its return from Stripe; a paid
- * purchase not delivered yet is delivered first, so this works even before
- * the webhook arrives.
+ * checkout not recorded yet is recorded first, so this works even before the
+ * webhook arrives.
  */
-export const Route = createFileRoute("/api/v1/marketplace/purchases/$id")({
+export const Route = createFileRoute("/api/v1/marketplace/purchases/$id/")({
   server: {
     handlers: defineApiRoute({
       method: "GET",

@@ -14,8 +14,19 @@
  *   - an athlete, for themselves, if their account is active (not
  *     provisional or paused) and they're 13 or older by their birthdate.
  *     Under 13, no birthdate on file, or provisional: their parent buys.
- * Coaches don't buy plans. A plan whose coach can't be paid out yet (Stripe
- * Connect not finished) can't be bought by anyone.
+ * Coaches don't buy plans.
+ *
+ * Paying (migration 20261111121000_plan_purchases_payment_status):
+ *   - coach's Stripe payouts on: pay at checkout, then the plan is delivered
+ *     (`payment_status` paid);
+ *   - coach not on Stripe yet: the plan is delivered right away without
+ *     paying (`awaiting_coach_setup`). Once the coach's payouts are on it
+ *     becomes `payment_due` and the buyer completes payment from the plan
+ *     (`payPlanPurchase`). Unpaid `PAYMENT_GRACE_DAYS` after it became due,
+ *     the coach may restrict the buyer (`restrictPlanPurchase`), which
+ *     removes their copy.
+ * Buyers list their purchases (`listMyPlanPurchases`) and coaches their
+ * sales, received and pending (`listCoachSales`).
  *
  * Stripe keys (the platform's own, as for Connect):
  *   STRIPE_CONNECT_SECRET_KEY            sk_test_… / sk_live_…
@@ -41,6 +52,10 @@ const untyped = (client: Admin) => client as unknown as Untyped;
 /** Gradus's cut of every sale. */
 export const PLATFORM_FEE_RATE = 0.03;
 
+/** Days a buyer has to pay once payment is due before the coach may restrict them. */
+export const PAYMENT_GRACE_DAYS = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /** The Stripe calls this module makes; tests pass a fake. */
 export type PurchaseStripe = {
   checkout: { sessions: Pick<Stripe["checkout"]["sessions"], "create" | "retrieve"> };
@@ -60,17 +75,27 @@ export const startPlanCheckoutInput = z.object({
   athleteId: z.string().uuid().optional(),
 });
 
-export type PurchaseStatus = "pending" | "fulfilling" | "fulfilled" | "canceled";
+/** Delivery: pending (at checkout), fulfilling, fulfilled (plan delivered), canceled, restricted (coach removed access). */
+export type PurchaseStatus = "pending" | "fulfilling" | "fulfilled" | "canceled" | "restricted";
+
+/** Money: awaiting_coach_setup (nothing owed yet), payment_due, processing, paid. */
+export type PaymentStatus = "awaiting_coach_setup" | "payment_due" | "processing" | "paid";
 
 export interface PlanPurchaseDTO {
   id: string;
   status: PurchaseStatus;
+  paymentStatus: PaymentStatus;
   /** The listing bought. */
   planId: string | null;
   athleteId: string | null;
-  /** The athlete's own copy, once fulfilled. */
+  /** The athlete's own copy, once delivered. */
   copiedPlanId: string | null;
   amountCents: number;
+  /** Since when the buyer owes it; null while nothing is owed. */
+  paymentDueAt: string | null;
+  paidAt: string | null;
+  /** Unpaid `PAYMENT_GRACE_DAYS` after it became due: the coach may restrict. */
+  overdue: boolean;
 }
 
 export interface PlanCheckoutDTO {
@@ -89,19 +114,44 @@ type PurchaseRow = {
   amount_cents: number;
   currency: string;
   status: PurchaseStatus;
+  payment_status: PaymentStatus | null;
+  payment_due_at: string | null;
+  paid_at: string | null;
+  platform_fee_cents: number | null;
+  stripe_fee_cents: number | null;
+  coach_payout_cents: number | null;
   stripe_checkout_session_id: string | null;
+  created_at: string;
 };
 
 const PURCHASE_COLUMNS =
-  "id, plan_id, coach_id, buyer_user_id, athlete_id, copied_plan_id, amount_cents, currency, status, stripe_checkout_session_id";
+  "id, plan_id, coach_id, buyer_user_id, athlete_id, copied_plan_id, amount_cents, currency, status, payment_status, payment_due_at, paid_at, platform_fee_cents, stripe_fee_cents, coach_payout_cents, stripe_checkout_session_id, created_at";
 
-const toDTO = (row: PurchaseRow): PlanPurchaseDTO => ({
+/** A row from before payment_status existed counts as paid once delivered (the migration labels them). */
+const paymentStatusOf = (row: PurchaseRow): PaymentStatus =>
+  row.payment_status ?? (row.status === "fulfilled" ? "paid" : "payment_due");
+
+/** Unpaid `PAYMENT_GRACE_DAYS` or more after payment became due, and still delivered. */
+export function isOverdue(row: PurchaseRow, now: Date = new Date()): boolean {
+  return (
+    row.status === "fulfilled" &&
+    paymentStatusOf(row) === "payment_due" &&
+    !!row.payment_due_at &&
+    now.getTime() - new Date(row.payment_due_at).getTime() >= PAYMENT_GRACE_DAYS * DAY_MS
+  );
+}
+
+const toDTO = (row: PurchaseRow, now: Date = new Date()): PlanPurchaseDTO => ({
   id: row.id,
   status: row.status,
+  paymentStatus: paymentStatusOf(row),
   planId: row.plan_id,
   athleteId: row.athlete_id,
   copiedPlanId: row.copied_plan_id,
   amountCents: row.amount_cents,
+  paymentDueAt: row.payment_due_at,
+  paidAt: row.paid_at,
+  overdue: isOverdue(row, now),
 });
 
 const forbidden = (code: string, message: string) => new ApiError({ code, status: 403, message });
@@ -263,9 +313,11 @@ async function buyerEmail(admin: Admin, userId: string): Promise<string | undefi
 }
 
 /**
- * Starts buying `planId` for an athlete: checks who may buy and that the coach
- * can be paid, records a pending purchase, and returns the Stripe Checkout
- * page. A free plan is delivered right away instead.
+ * Starts buying `planId` for an athlete. Checks who may buy, then:
+ *   - a free plan is delivered right away;
+ *   - a coach not on Stripe yet: delivered right away, nothing owed until
+ *     their payouts are on (`awaiting_coach_setup`), no checkout page;
+ *   - otherwise: a pending purchase and the Stripe Checkout page to pay first.
  */
 export async function startPlanCheckout(
   ctx: PurchaseContext,
@@ -276,12 +328,6 @@ export async function startPlanCheckout(
   const plan = await listingForSale(ctx.admin, planId);
   if (plan.coach.user_id === ctx.userId) {
     throw conflict("own_plan", "This is your own plan.");
-  }
-  if (!coachCanSell(plan.coach)) {
-    throw conflict(
-      "seller_not_ready",
-      "This coach hasn't set up payouts yet, so this plan can't be bought right now.",
-    );
   }
   const athleteId = await resolvePurchaseAthlete(ctx.admin, ctx.userId, input.athleteId);
 
@@ -297,6 +343,9 @@ export async function startPlanCheckout(
     throw conflict("already_purchased", "This plan has already been bought for this athlete.");
 
   const amountCents = Math.round(Number(plan.price) * 100);
+  const free = amountCents === 0;
+  const payLater = !free && !coachCanSell(plan.coach);
+  const now = new Date().toISOString();
   const { data: created, error } = await untyped(ctx.admin)
     .from("plan_purchases")
     .insert({
@@ -305,29 +354,49 @@ export async function startPlanCheckout(
       buyer_user_id: ctx.userId,
       athlete_id: athleteId,
       amount_cents: amountCents,
-      status: amountCents === 0 ? "fulfilling" : "pending",
+      status: free || payLater ? "fulfilling" : "pending",
+      payment_status: free ? "paid" : payLater ? "awaiting_coach_setup" : "payment_due",
+      payment_due_at: free || payLater ? null : now,
     })
     .select(PURCHASE_COLUMNS)
     .single();
   if (error) dbError(error);
   const purchase = created as PurchaseRow;
 
-  if (amountCents === 0) {
-    // Nothing to pay and nothing to transfer: deliver the copy now.
+  if (free || payLater) {
+    // Deliver the copy now: nothing to pay (free), or nothing owed until the coach can be paid.
     const copiedPlanId = await copyPlanForAthlete(ctx.admin, planId, athleteId);
     const done = await updatePurchase(ctx.admin, purchase.id, {
       status: "fulfilled",
       copied_plan_id: copiedPlanId,
-      platform_fee_cents: 0,
-      stripe_fee_cents: 0,
-      coach_payout_cents: 0,
-      paid_at: new Date().toISOString(),
+      ...(free
+        ? { platform_fee_cents: 0, stripe_fee_cents: 0, coach_payout_cents: 0, paid_at: now }
+        : {}),
     });
     return { purchase: toDTO(done), checkoutUrl: null };
   }
 
+  const url = await openCheckout(ctx, purchase, plan.title, plan.description, opts.origin);
+  return {
+    purchase: toDTO((await purchaseRow(ctx.admin, purchase.id)) ?? purchase),
+    checkoutUrl: url,
+  };
+}
+
+/**
+ * A Stripe Checkout page for what `purchase` owes; saves its session on the
+ * purchase. Each call opens a new session, so a retry never replays an
+ * expired one.
+ */
+async function openCheckout(
+  ctx: PurchaseContext,
+  purchase: PurchaseRow,
+  title: string,
+  description: string | null,
+  origin: string,
+): Promise<string | null> {
   const stripe = ctx.stripe ?? createConnectStripeClient();
-  const complete = `${opts.origin}/purchase/complete?purchase=${purchase.id}`;
+  const complete = `${origin}/purchase/complete?purchase=${purchase.id}`;
   const session = await stripe.checkout.sessions.create(
     {
       mode: "payment",
@@ -335,31 +404,32 @@ export async function startPlanCheckout(
         {
           quantity: 1,
           price_data: {
-            currency: "usd",
-            unit_amount: amountCents,
+            currency: purchase.currency || "usd",
+            unit_amount: purchase.amount_cents,
             product_data: {
-              name: plan.title,
-              ...(plan.description ? { description: plan.description.slice(0, 500) } : {}),
+              name: title,
+              ...(description ? { description: description.slice(0, 500) } : {}),
             },
           },
         },
       ],
-      customer_email: await buyerEmail(ctx.admin, ctx.userId),
+      customer_email: await buyerEmail(ctx.admin, purchase.buyer_user_id),
       client_reference_id: purchase.id,
-      metadata: { purchase_id: purchase.id, plan_id: planId },
+      metadata: {
+        purchase_id: purchase.id,
+        ...(purchase.plan_id ? { plan_id: purchase.plan_id } : {}),
+      },
       payment_intent_data: {
         transfer_group: `purchase_${purchase.id}`,
-        metadata: { purchase_id: purchase.id, plan_id: planId },
+        metadata: { purchase_id: purchase.id },
       },
       success_url: complete,
       cancel_url: `${complete}&canceled=1`,
     },
-    { idempotencyKey: `gradus-purchase-checkout-${purchase.id}` },
+    { idempotencyKey: `gradus-purchase-checkout-${purchase.id}-${Date.now()}` },
   );
-  const saved = await updatePurchase(ctx.admin, purchase.id, {
-    stripe_checkout_session_id: session.id,
-  });
-  return { purchase: toDTO(saved), checkoutUrl: session.url };
+  await updatePurchase(ctx.admin, purchase.id, { stripe_checkout_session_id: session.id });
+  return session.url;
 }
 
 async function updatePurchase(
@@ -442,10 +512,12 @@ export async function copyPlanForAthlete(
 }
 
 /**
- * Delivers a paid purchase, once: records Stripe's fee, transfers the coach's
- * share to their Connect account, and copies the plan for the athlete. Safe to
- * call from the webhook and from the app's check at the same time; a purchase
- * not paid yet is left as it is, and an expired checkout is marked canceled.
+ * Records a paid checkout, once: Stripe's fee, the coach's share transferred
+ * to their Connect account, `payment_status` paid, and (if it wasn't delivered
+ * already) the athlete's copy of the plan. Safe to call from the webhook and
+ * from the app's check at the same time; a checkout not paid yet is left as
+ * it is. An expired checkout cancels a purchase still at checkout; a plan
+ * already delivered just stays due.
  */
 export async function fulfillPurchase(
   admin: Admin,
@@ -453,21 +525,23 @@ export async function fulfillPurchase(
   purchaseId: string,
 ): Promise<PurchaseRow | null> {
   const row = await purchaseRow(admin, purchaseId);
-  if (!row || row.status === "fulfilled" || row.status === "canceled") return row;
-  if (!row.stripe_checkout_session_id) return row;
+  if (!row || row.status === "canceled" || row.status === "restricted") return row;
+  if (paymentStatusOf(row) !== "payment_due" || !row.stripe_checkout_session_id) return row;
 
   const session = await stripe.checkout.sessions.retrieve(row.stripe_checkout_session_id);
   if (session.status === "expired") {
-    return updatePurchase(admin, row.id, { status: "canceled" });
+    return row.status === "pending"
+      ? updatePurchase(admin, row.id, { status: "canceled" })
+      : updatePurchase(admin, row.id, { stripe_checkout_session_id: null });
   }
   if (session.payment_status !== "paid") return row;
 
-  // Claim it: only one caller moves pending → fulfilling and does the work.
+  // Claim it: only one caller moves payment_due → processing and does the work.
   const { data: claimed, error: claimError } = await untyped(admin)
     .from("plan_purchases")
-    .update({ status: "fulfilling", updated_at: new Date().toISOString() })
+    .update({ payment_status: "processing", updated_at: new Date().toISOString() })
     .eq("id", row.id)
-    .eq("status", "pending")
+    .eq("payment_status", "payment_due")
     .select(PURCHASE_COLUMNS)
     .maybeSingle();
   if (claimError) dbError(claimError);
@@ -521,6 +595,7 @@ export async function fulfillPurchase(
 
     return await updatePurchase(admin, row.id, {
       status: "fulfilled",
+      payment_status: "paid",
       copied_plan_id: copiedPlanId,
       platform_fee_cents: platformFeeCents,
       stripe_fee_cents: balance.fee,
@@ -532,28 +607,344 @@ export async function fulfillPurchase(
       paid_at: new Date().toISOString(),
     });
   } catch (e) {
-    // Back to pending so the next webhook retry or app check tries again.
+    // Back to due so the next webhook retry or app check tries again.
     await updatePurchase(admin, row.id, {
-      status: "pending",
+      payment_status: "payment_due",
       failure_reason: e instanceof Error ? e.message.slice(0, 500) : "Fulfilment failed",
     });
     throw e;
   }
 }
 
-/** The caller's purchase; a paid one not delivered yet is delivered first. */
+const purchaseNotFound = () =>
+  new ApiError({ code: "not_found", status: 404, message: "Purchase not found." });
+
+/**
+ * The caller's purchase; a checkout paid but not recorded yet is recorded
+ * first, and one waiting on a coach who's now on Stripe becomes due.
+ */
 export async function getPlanPurchase(
   ctx: PurchaseContext,
   purchaseId: string,
 ): Promise<PlanPurchaseDTO> {
   const row = await purchaseRow(ctx.admin, purchaseId);
-  if (!row || row.buyer_user_id !== ctx.userId) {
-    throw new ApiError({ code: "not_found", status: 404, message: "Purchase not found." });
+  if (!row || row.buyer_user_id !== ctx.userId) throw purchaseNotFound();
+  const [current] = await promoteWhenCoachReady(ctx.admin, [row]);
+  if (paymentStatusOf(current) !== "payment_due" || !current.stripe_checkout_session_id) {
+    return toDTO(current);
   }
-  if (row.status !== "pending") return toDTO(row);
   const stripe = ctx.stripe ?? createConnectStripeClient();
-  const current = await fulfillPurchase(ctx.admin, stripe, row.id);
-  return toDTO(current ?? row);
+  return toDTO((await fulfillPurchase(ctx.admin, stripe, current.id)) ?? current);
+}
+
+/**
+ * Purchases waiting on their coach become due once the coach's payouts are on.
+ * `syncConnectAccount` does this when Stripe reports it; this catches any it
+ * missed, for the rows being read.
+ */
+async function promoteWhenCoachReady(admin: Admin, rows: PurchaseRow[]): Promise<PurchaseRow[]> {
+  const waiting = rows.filter(
+    (r) => r.status === "fulfilled" && paymentStatusOf(r) === "awaiting_coach_setup" && r.coach_id,
+  );
+  if (waiting.length === 0) return rows;
+  const coachIds = [...new Set(waiting.map((r) => r.coach_id as string))];
+  const { data, error } = await untyped(admin)
+    .from("coach_profiles")
+    .select(
+      "id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled",
+    )
+    .in("id", coachIds);
+  if (error) dbError(error);
+  const ready = new Set(
+    ((data ?? []) as (Parameters<typeof coachCanSell>[0] & { id: string })[])
+      .filter(coachCanSell)
+      .map((c) => c.id),
+  );
+  if (ready.size === 0) return rows;
+  const now = new Date().toISOString();
+  const promoted = new Map<string, PurchaseRow>();
+  for (const r of waiting) {
+    if (!ready.has(r.coach_id as string)) continue;
+    promoted.set(
+      r.id,
+      await updatePurchase(admin, r.id, { payment_status: "payment_due", payment_due_at: now }),
+    );
+  }
+  return rows.map((r) => promoted.get(r.id) ?? r);
+}
+
+/**
+ * "Complete payment": a Stripe Checkout page for a delivered plan the caller
+ * owes. 409 while the coach isn't on Stripe yet, or when it's already paid.
+ */
+export async function payPlanPurchase(
+  ctx: PurchaseContext,
+  purchaseId: string,
+  opts: { origin: string },
+): Promise<PlanCheckoutDTO> {
+  const found = await purchaseRow(ctx.admin, purchaseId);
+  if (!found || found.buyer_user_id !== ctx.userId) throw purchaseNotFound();
+  if (found.status !== "fulfilled") {
+    throw conflict("not_payable", "This purchase can't be paid.");
+  }
+  const [row] = await promoteWhenCoachReady(ctx.admin, [found]);
+  switch (paymentStatusOf(row)) {
+    case "paid":
+      throw conflict("already_paid", "This plan is already paid for.");
+    case "processing":
+      throw conflict("payment_processing", "Your payment is being processed.");
+    case "awaiting_coach_setup":
+      throw conflict(
+        "coach_not_ready",
+        "The coach hasn't set up payouts yet. You'll be able to pay once they do.",
+      );
+    case "payment_due":
+      break;
+  }
+
+  const stripe = ctx.stripe ?? createConnectStripeClient();
+  // An open checkout from an earlier tap is reused; a paid one is recorded instead.
+  if (row.stripe_checkout_session_id) {
+    const session = await stripe.checkout.sessions.retrieve(row.stripe_checkout_session_id);
+    if (session.payment_status === "paid") {
+      const done = await fulfillPurchase(ctx.admin, stripe, row.id);
+      return { purchase: toDTO(done ?? row), checkoutUrl: null };
+    }
+    if (session.status === "open" && session.url) {
+      return { purchase: toDTO(row), checkoutUrl: session.url };
+    }
+  }
+
+  const { data: plan } = await untyped(ctx.admin)
+    .from("plans")
+    .select("title, description")
+    .eq("id", row.plan_id)
+    .maybeSingle();
+  const url = await openCheckout(
+    { ...ctx, stripe },
+    row,
+    (plan?.title as string | undefined) ?? "Training plan",
+    (plan?.description as string | null | undefined) ?? null,
+    opts.origin,
+  );
+  return { purchase: toDTO((await purchaseRow(ctx.admin, row.id)) ?? row), checkoutUrl: url };
+}
+
+export const purchaseListQuery = z.object({
+  /** Only purchases in this payment state; `pending` means anything not paid yet. */
+  paymentStatus: z.enum(["paid", "pending", "awaiting_coach_setup", "payment_due"]).optional(),
+});
+
+const matchesPaymentFilter = (
+  row: PurchaseRow,
+  filter: z.infer<typeof purchaseListQuery>["paymentStatus"],
+): boolean => {
+  if (!filter) return true;
+  const status = paymentStatusOf(row);
+  return filter === "pending" ? status !== "paid" : status === filter;
+};
+
+/** Plan titles and coach and athlete names for a set of purchases, by id. */
+async function purchaseNames(admin: Admin, rows: PurchaseRow[]) {
+  const ids = (pick: (r: PurchaseRow) => string | null) => [
+    ...new Set(rows.map(pick).filter((v): v is string => !!v)),
+  ];
+  const lookup = async (table: string, columns: string, keys: string[]) => {
+    if (keys.length === 0) return new Map<string, Record<string, unknown>>();
+    const { data, error } = await untyped(admin).from(table).select(columns).in("id", keys);
+    if (error) dbError(error);
+    return new Map(((data ?? []) as Record<string, unknown>[]).map((r) => [r.id as string, r]));
+  };
+  const [plans, coaches, athletes] = await Promise.all([
+    lookup(
+      "plans",
+      "id, title",
+      ids((r) => r.plan_id),
+    ),
+    lookup(
+      "coach_profiles",
+      "id, first_name, last_name",
+      ids((r) => r.coach_id),
+    ),
+    lookup(
+      "athletes",
+      "id, first_name, last_name",
+      ids((r) => r.athlete_id),
+    ),
+  ]);
+  const fullName = (r?: Record<string, unknown>) =>
+    r ? [r.first_name, r.last_name].filter(Boolean).join(" ") : null;
+  // A buyer is shown to the coach as first name and last initial (athletes are often minors).
+  const shortName = (r?: Record<string, unknown>) =>
+    r
+      ? [r.first_name, r.last_name ? `${String(r.last_name).charAt(0)}.` : null]
+          .filter(Boolean)
+          .join(" ")
+      : null;
+  return {
+    planTitle: (r: PurchaseRow) =>
+      (plans.get(r.plan_id ?? "")?.title as string | undefined) ?? null,
+    coachName: (r: PurchaseRow) => fullName(coaches.get(r.coach_id ?? "")),
+    athleteName: (r: PurchaseRow) => shortName(athletes.get(r.athlete_id ?? "")),
+  };
+}
+
+export interface MyPlanPurchaseDTO extends PlanPurchaseDTO {
+  planTitle: string | null;
+  coachName: string | null;
+  /** Who it's for (first name and last initial): the buyer, or a parent's child. */
+  athleteName: string | null;
+  createdAt: string;
+}
+
+/**
+ * `GET /api/v1/marketplace/purchases`: the caller's purchases, newest first,
+ * delivered or restricted (abandoned checkouts aren't purchases).
+ */
+export async function listMyPlanPurchases(
+  ctx: PurchaseContext,
+  query: z.infer<typeof purchaseListQuery>,
+  now: Date = new Date(),
+): Promise<{ items: MyPlanPurchaseDTO[] }> {
+  const { data, error } = await untyped(ctx.admin)
+    .from("plan_purchases")
+    .select(PURCHASE_COLUMNS)
+    .eq("buyer_user_id", ctx.userId)
+    .in("status", ["fulfilled", "restricted"])
+    .order("created_at", { ascending: false });
+  if (error) dbError(error);
+  const rows = (await promoteWhenCoachReady(ctx.admin, (data ?? []) as PurchaseRow[])).filter((r) =>
+    matchesPaymentFilter(r, query.paymentStatus),
+  );
+  const names = await purchaseNames(ctx.admin, rows);
+  return {
+    items: rows.map((r) => ({
+      ...toDTO(r, now),
+      planTitle: names.planTitle(r),
+      coachName: names.coachName(r),
+      athleteName: names.athleteName(r),
+      createdAt: r.created_at,
+    })),
+  };
+}
+
+export interface CoachSaleDTO extends PlanPurchaseDTO {
+  planTitle: string | null;
+  /** The athlete it's for, first name and last initial. */
+  athleteName: string | null;
+  platformFeeCents: number | null;
+  stripeFeeCents: number | null;
+  /** What reached the coach's Stripe account; null until paid. */
+  coachPayoutCents: number | null;
+  /** Overdue and not restricted yet: the coach may restrict this buyer. */
+  canRestrict: boolean;
+  createdAt: string;
+}
+
+export interface CoachSalesDTO {
+  items: CoachSaleDTO[];
+  totals: {
+    /** Paid out to the coach (their share of paid sales). */
+    receivedCents: number;
+    /** Owed by buyers and not paid yet (full prices, before fees). */
+    pendingCents: number;
+    /** Sales unpaid `PAYMENT_GRACE_DAYS` after becoming due. */
+    overdueCount: number;
+  };
+}
+
+async function callerCoachId(admin: Admin, userId: string): Promise<string> {
+  const { data, error } = await admin
+    .from("coach_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) dbError(error);
+  if (!data)
+    throw new ApiError({ code: "not_found", status: 404, message: "Coach profile not found." });
+  return data.id as string;
+}
+
+/**
+ * `GET /api/v1/coach/sales`: the caller's plan sales, newest first, with what
+ * was received and what's still owed. Totals cover every sale, whatever the
+ * filter.
+ */
+export async function listCoachSales(
+  ctx: PurchaseContext,
+  query: z.infer<typeof purchaseListQuery>,
+  now: Date = new Date(),
+): Promise<CoachSalesDTO> {
+  const coachId = await callerCoachId(ctx.admin, ctx.userId);
+  const { data, error } = await untyped(ctx.admin)
+    .from("plan_purchases")
+    .select(PURCHASE_COLUMNS)
+    .eq("coach_id", coachId)
+    .in("status", ["fulfilled", "restricted"])
+    .order("created_at", { ascending: false });
+  if (error) dbError(error);
+  const all = await promoteWhenCoachReady(ctx.admin, (data ?? []) as PurchaseRow[]);
+
+  const totals = { receivedCents: 0, pendingCents: 0, overdueCount: 0 };
+  for (const r of all) {
+    if (paymentStatusOf(r) === "paid") totals.receivedCents += r.coach_payout_cents ?? 0;
+    else if (r.status === "fulfilled") totals.pendingCents += r.amount_cents;
+    if (isOverdue(r, now)) totals.overdueCount += 1;
+  }
+
+  const rows = all.filter((r) => matchesPaymentFilter(r, query.paymentStatus));
+  const names = await purchaseNames(ctx.admin, rows);
+  return {
+    items: rows.map((r) => ({
+      ...toDTO(r, now),
+      planTitle: names.planTitle(r),
+      athleteName: names.athleteName(r),
+      platformFeeCents: r.platform_fee_cents,
+      stripeFeeCents: r.stripe_fee_cents,
+      coachPayoutCents: r.coach_payout_cents,
+      canRestrict: isOverdue(r, now),
+      createdAt: r.created_at,
+    })),
+    totals,
+  };
+}
+
+/**
+ * `POST /api/v1/coach/sales/{id}/restrict`: the coach removes an unpaid
+ * buyer's access, only once the sale is overdue (unpaid `PAYMENT_GRACE_DAYS`
+ * after payment became due). The athlete's copy of the plan is deleted; the
+ * purchase stays in both histories as restricted.
+ */
+export async function restrictPlanPurchase(
+  ctx: PurchaseContext,
+  purchaseId: string,
+  now: Date = new Date(),
+): Promise<PlanPurchaseDTO> {
+  const coachId = await callerCoachId(ctx.admin, ctx.userId);
+  const row = await purchaseRow(ctx.admin, purchaseId);
+  if (!row || row.coach_id !== coachId) throw purchaseNotFound();
+  if (row.status === "restricted") return toDTO(row, now);
+  if (!isOverdue(row, now)) {
+    throw conflict(
+      "not_overdue",
+      `You can restrict a buyer once their payment is ${PAYMENT_GRACE_DAYS} days overdue.`,
+    );
+  }
+  if (row.copied_plan_id) {
+    const moves = await untyped(ctx.admin)
+      .from("plan_moves")
+      .delete()
+      .eq("plan_id", row.copied_plan_id);
+    if (moves.error) dbError(moves.error);
+    const plan = await untyped(ctx.admin).from("plans").delete().eq("id", row.copied_plan_id);
+    if (plan.error) dbError(plan.error);
+  }
+  const done = await updatePurchase(ctx.admin, row.id, {
+    status: "restricted",
+    copied_plan_id: null,
+    restricted_at: now.toISOString(),
+  });
+  return toDTO(done, now);
 }
 
 /** Verifies a Checkout webhook and returns its event (throws when it doesn't verify). */

@@ -246,6 +246,7 @@ import { Route as ApiV1CoachInviteCodeRotateRouteImport } from './routes/api/v1/
 import { Route as ApiV1CoachInvoicesIndexRouteImport } from './routes/api/v1/coach/invoices/index'
 import { Route as ApiV1CoachInvoicesPreviewRouteImport } from './routes/api/v1/coach/invoices/preview'
 import { Route as ApiV1CoachLessonSlotsIndexRouteImport } from './routes/api/v1/coach/lesson-slots/index'
+import { Route as ApiV1CoachMarketplaceDashboardRouteImport } from './routes/api/v1/coach/marketplace/dashboard'
 import { Route as ApiV1CoachMovesIndexRouteImport } from './routes/api/v1/coach/moves/index'
 import { Route as ApiV1CoachMovesDraftRouteImport } from './routes/api/v1/coach/moves/draft'
 import { Route as ApiV1CoachMovesForkFromPlanMoveRouteImport } from './routes/api/v1/coach/moves/fork-from-plan-move'
@@ -261,6 +262,7 @@ import { Route as ApiV1CoachResourcesIdRouteImport } from './routes/api/v1/coach
 import { Route as ApiV1CoachResourcesUploadUrlRouteImport } from './routes/api/v1/coach/resources/upload-url'
 import { Route as ApiV1CoachRosterIndexRouteImport } from './routes/api/v1/coach/roster/index'
 import { Route as ApiV1CoachRosterPracticeSummariesRouteImport } from './routes/api/v1/coach/roster/practice-summaries'
+import { Route as ApiV1CoachSalesIndexRouteImport } from './routes/api/v1/coach/sales/index'
 import { Route as ApiV1CoachScheduleImportCommitRouteImport } from './routes/api/v1/coach/schedule-import/commit'
 import { Route as ApiV1CoachScheduleImportParseRouteImport } from './routes/api/v1/coach/schedule-import/parse'
 import { Route as ApiV1CoachStripeConnectIndexRouteImport } from './routes/api/v1/coach/stripe-connect/index'
@@ -288,7 +290,7 @@ import { Route as ApiV1LiveActivitiesTokensIndexRouteImport } from './routes/api
 import { Route as ApiV1LiveActivitiesTokensTokenRouteImport } from './routes/api/v1/live-activities/tokens/$token'
 import { Route as ApiV1MarketplaceCoachesIdRouteImport } from './routes/api/v1/marketplace/coaches/$id'
 import { Route as ApiV1MarketplacePlansIndexRouteImport } from './routes/api/v1/marketplace/plans/index'
-import { Route as ApiV1MarketplacePurchasesIdRouteImport } from './routes/api/v1/marketplace/purchases/$id'
+import { Route as ApiV1MarketplacePurchasesIndexRouteImport } from './routes/api/v1/marketplace/purchases/index'
 import { Route as ApiV1MeCelebrationsIndexRouteImport } from './routes/api/v1/me/celebrations/index'
 import { Route as ApiV1MeTermsAcceptRouteImport } from './routes/api/v1/me/terms_.accept'
 import { Route as ApiV1MessagesIdReactionRouteImport } from './routes/api/v1/messages/$id/reaction'
@@ -347,11 +349,15 @@ import { Route as ApiV1CoachMovesIdUpdateFromPlanMoveRouteImport } from './route
 import { Route as ApiV1CoachPostEventIdDismissRouteImport } from './routes/api/v1/coach/post-event/$id/dismiss'
 import { Route as ApiV1CoachRosterAthletesIndexRouteImport } from './routes/api/v1/coach/roster/athletes/index'
 import { Route as ApiV1CoachRosterAthletesAthleteIdRouteImport } from './routes/api/v1/coach/roster/athletes/$athleteId'
+import { Route as ApiV1CoachSalesIdRestrictRouteImport } from './routes/api/v1/coach/sales/$id/restrict'
 import { Route as ApiV1CoachStarterPlansIdAdoptRouteImport } from './routes/api/v1/coach/starter-plans/$id/adopt'
 import { Route as ApiV1CoachVisibilityIdIndexRouteImport } from './routes/api/v1/coach/visibility/$id/index'
 import { Route as ApiV1CoachVisibilityIdRespondRouteImport } from './routes/api/v1/coach/visibility/$id/respond'
 import { Route as ApiV1GuardianInvitesIdResendRouteImport } from './routes/api/v1/guardian/invites/$id/resend'
 import { Route as ApiV1MarketplacePlansIdCheckoutRouteImport } from './routes/api/v1/marketplace/plans/$id/checkout'
+import { Route as ApiV1MarketplacePlansIdViewRouteImport } from './routes/api/v1/marketplace/plans/$id/view'
+import { Route as ApiV1MarketplacePurchasesIdIndexRouteImport } from './routes/api/v1/marketplace/purchases/$id/index'
+import { Route as ApiV1MarketplacePurchasesIdPayRouteImport } from './routes/api/v1/marketplace/purchases/$id/pay'
 import { Route as ApiV1MeCelebrationsIdAckRouteImport } from './routes/api/v1/me/celebrations/$id/ack'
 import { Route as ApiV1ParentAthletesIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/index'
 import { Route as ApiV1ParentAthletesIdGoalsRouteImport } from './routes/api/v1/parent/athletes/$id/goals'
@@ -1680,6 +1686,12 @@ const ApiV1CoachLessonSlotsIndexRoute =
     path: '/api/v1/coach/lesson-slots/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachMarketplaceDashboardRoute =
+  ApiV1CoachMarketplaceDashboardRouteImport.update({
+    id: '/api/v1/coach/marketplace/dashboard',
+    path: '/api/v1/coach/marketplace/dashboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1CoachMovesIndexRoute = ApiV1CoachMovesIndexRouteImport.update({
   id: '/api/v1/coach/moves/',
   path: '/api/v1/coach/moves/',
@@ -1763,6 +1775,11 @@ const ApiV1CoachRosterPracticeSummariesRoute =
     path: '/api/v1/coach/roster/practice-summaries',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachSalesIndexRoute = ApiV1CoachSalesIndexRouteImport.update({
+  id: '/api/v1/coach/sales/',
+  path: '/api/v1/coach/sales/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1CoachScheduleImportCommitRoute =
   ApiV1CoachScheduleImportCommitRouteImport.update({
     id: '/api/v1/coach/schedule-import/commit',
@@ -1920,10 +1937,10 @@ const ApiV1MarketplacePlansIndexRoute =
     path: '/api/v1/marketplace/plans/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiV1MarketplacePurchasesIdRoute =
-  ApiV1MarketplacePurchasesIdRouteImport.update({
-    id: '/api/v1/marketplace/purchases/$id',
-    path: '/api/v1/marketplace/purchases/$id',
+const ApiV1MarketplacePurchasesIndexRoute =
+  ApiV1MarketplacePurchasesIndexRouteImport.update({
+    id: '/api/v1/marketplace/purchases/',
+    path: '/api/v1/marketplace/purchases/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1MeCelebrationsIndexRoute =
@@ -2251,6 +2268,12 @@ const ApiV1CoachRosterAthletesAthleteIdRoute =
     path: '/api/v1/coach/roster/athletes/$athleteId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1CoachSalesIdRestrictRoute =
+  ApiV1CoachSalesIdRestrictRouteImport.update({
+    id: '/api/v1/coach/sales/$id/restrict',
+    path: '/api/v1/coach/sales/$id/restrict',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1CoachStarterPlansIdAdoptRoute =
   ApiV1CoachStarterPlansIdAdoptRouteImport.update({
     id: '/api/v1/coach/starter-plans/$id/adopt',
@@ -2279,6 +2302,24 @@ const ApiV1MarketplacePlansIdCheckoutRoute =
   ApiV1MarketplacePlansIdCheckoutRouteImport.update({
     id: '/api/v1/marketplace/plans/$id/checkout',
     path: '/api/v1/marketplace/plans/$id/checkout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MarketplacePlansIdViewRoute =
+  ApiV1MarketplacePlansIdViewRouteImport.update({
+    id: '/api/v1/marketplace/plans/$id/view',
+    path: '/api/v1/marketplace/plans/$id/view',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MarketplacePurchasesIdIndexRoute =
+  ApiV1MarketplacePurchasesIdIndexRouteImport.update({
+    id: '/api/v1/marketplace/purchases/$id/',
+    path: '/api/v1/marketplace/purchases/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MarketplacePurchasesIdPayRoute =
+  ApiV1MarketplacePurchasesIdPayRouteImport.update({
+    id: '/api/v1/marketplace/purchases/$id/pay',
+    path: '/api/v1/marketplace/purchases/$id/pay',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiV1MeCelebrationsIdAckRoute =
@@ -2695,6 +2736,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/marketplace/dashboard': typeof ApiV1CoachMarketplaceDashboardRoute
   '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
@@ -2727,7 +2769,6 @@ export interface FileRoutesByFullPath {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
-  '/api/v1/marketplace/purchases/$id': typeof ApiV1MarketplacePurchasesIdRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -2766,11 +2807,13 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/post-event/': typeof ApiV1CoachPostEventIndexRoute
   '/api/v1/coach/resources/': typeof ApiV1CoachResourcesIndexRoute
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
+  '/api/v1/coach/sales/': typeof ApiV1CoachSalesIndexRoute
   '/api/v1/coach/stripe-connect/': typeof ApiV1CoachStripeConnectIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/marketplace/plans/': typeof ApiV1MarketplacePlansIndexRoute
+  '/api/v1/marketplace/purchases/': typeof ApiV1MarketplacePurchasesIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -2794,10 +2837,13 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/moves/$id/update-from-plan-move': typeof ApiV1CoachMovesIdUpdateFromPlanMoveRoute
   '/api/v1/coach/post-event/$id/dismiss': typeof ApiV1CoachPostEventIdDismissRoute
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
+  '/api/v1/coach/sales/$id/restrict': typeof ApiV1CoachSalesIdRestrictRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/coach/visibility/$id/respond': typeof ApiV1CoachVisibilityIdRespondRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
+  '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -2819,6 +2865,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/lesson-slots/$id/': typeof ApiV1CoachLessonSlotsIdIndexRoute
   '/api/v1/coach/roster/athletes/': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
+  '/api/v1/marketplace/purchases/$id/': typeof ApiV1MarketplacePurchasesIdIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
@@ -3064,6 +3111,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/marketplace/dashboard': typeof ApiV1CoachMarketplaceDashboardRoute
   '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
@@ -3096,7 +3144,6 @@ export interface FileRoutesByTo {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
-  '/api/v1/marketplace/purchases/$id': typeof ApiV1MarketplacePurchasesIdRoute
   '/api/v1/me/terms/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -3135,11 +3182,13 @@ export interface FileRoutesByTo {
   '/api/v1/coach/post-event': typeof ApiV1CoachPostEventIndexRoute
   '/api/v1/coach/resources': typeof ApiV1CoachResourcesIndexRoute
   '/api/v1/coach/roster': typeof ApiV1CoachRosterIndexRoute
+  '/api/v1/coach/sales': typeof ApiV1CoachSalesIndexRoute
   '/api/v1/coach/stripe-connect': typeof ApiV1CoachStripeConnectIndexRoute
   '/api/v1/coach/wrap-ups': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/marketplace/plans': typeof ApiV1MarketplacePlansIndexRoute
+  '/api/v1/marketplace/purchases': typeof ApiV1MarketplacePurchasesIndexRoute
   '/api/v1/me/celebrations': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team': typeof ApiV1ParentTeamIndexRoute
@@ -3163,10 +3212,13 @@ export interface FileRoutesByTo {
   '/api/v1/coach/moves/$id/update-from-plan-move': typeof ApiV1CoachMovesIdUpdateFromPlanMoveRoute
   '/api/v1/coach/post-event/$id/dismiss': typeof ApiV1CoachPostEventIdDismissRoute
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
+  '/api/v1/coach/sales/$id/restrict': typeof ApiV1CoachSalesIdRestrictRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/coach/visibility/$id/respond': typeof ApiV1CoachVisibilityIdRespondRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
+  '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -3188,6 +3240,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/lesson-slots/$id': typeof ApiV1CoachLessonSlotsIdIndexRoute
   '/api/v1/coach/roster/athletes': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id': typeof ApiV1CoachVisibilityIdIndexRoute
+  '/api/v1/marketplace/purchases/$id': typeof ApiV1MarketplacePurchasesIdIndexRoute
   '/api/v1/parent/athletes/$id': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves': typeof ApiV1PlansIdMovesIndexRoute
@@ -3441,6 +3494,7 @@ export interface FileRoutesById {
   '/api/v1/coach/founding/restore': typeof ApiV1CoachFoundingRestoreRoute
   '/api/v1/coach/invite-code/rotate': typeof ApiV1CoachInviteCodeRotateRoute
   '/api/v1/coach/invoices/preview': typeof ApiV1CoachInvoicesPreviewRoute
+  '/api/v1/coach/marketplace/dashboard': typeof ApiV1CoachMarketplaceDashboardRoute
   '/api/v1/coach/moves/draft': typeof ApiV1CoachMovesDraftRoute
   '/api/v1/coach/moves/fork-from-plan-move': typeof ApiV1CoachMovesForkFromPlanMoveRoute
   '/api/v1/coach/moves/from-plan-move': typeof ApiV1CoachMovesFromPlanMoveRoute
@@ -3473,7 +3527,6 @@ export interface FileRoutesById {
   '/api/v1/invites/parent/preview': typeof ApiV1InvitesParentPreviewRoute
   '/api/v1/live-activities/tokens/$token': typeof ApiV1LiveActivitiesTokensTokenRoute
   '/api/v1/marketplace/coaches/$id': typeof ApiV1MarketplaceCoachesIdRoute
-  '/api/v1/marketplace/purchases/$id': typeof ApiV1MarketplacePurchasesIdRoute
   '/api/v1/me/terms_/accept': typeof ApiV1MeTermsAcceptRoute
   '/api/v1/messages/$id/reaction': typeof ApiV1MessagesIdReactionRoute
   '/api/v1/plans/$id/rating': typeof ApiV1PlansIdRatingRoute
@@ -3512,11 +3565,13 @@ export interface FileRoutesById {
   '/api/v1/coach/post-event/': typeof ApiV1CoachPostEventIndexRoute
   '/api/v1/coach/resources/': typeof ApiV1CoachResourcesIndexRoute
   '/api/v1/coach/roster/': typeof ApiV1CoachRosterIndexRoute
+  '/api/v1/coach/sales/': typeof ApiV1CoachSalesIndexRoute
   '/api/v1/coach/stripe-connect/': typeof ApiV1CoachStripeConnectIndexRoute
   '/api/v1/coach/wrap-ups/': typeof ApiV1CoachWrapUpsIndexRoute
   '/api/v1/guardian/claim/': typeof ApiV1GuardianClaimIndexRoute
   '/api/v1/live-activities/tokens/': typeof ApiV1LiveActivitiesTokensIndexRoute
   '/api/v1/marketplace/plans/': typeof ApiV1MarketplacePlansIndexRoute
+  '/api/v1/marketplace/purchases/': typeof ApiV1MarketplacePurchasesIndexRoute
   '/api/v1/me/celebrations/': typeof ApiV1MeCelebrationsIndexRoute
   '/api/v1/parent/athletes/': typeof ApiV1ParentAthletesIndexRoute
   '/api/v1/parent/team/': typeof ApiV1ParentTeamIndexRoute
@@ -3540,10 +3595,13 @@ export interface FileRoutesById {
   '/api/v1/coach/moves/$id/update-from-plan-move': typeof ApiV1CoachMovesIdUpdateFromPlanMoveRoute
   '/api/v1/coach/post-event/$id/dismiss': typeof ApiV1CoachPostEventIdDismissRoute
   '/api/v1/coach/roster/athletes/$athleteId': typeof ApiV1CoachRosterAthletesAthleteIdRoute
+  '/api/v1/coach/sales/$id/restrict': typeof ApiV1CoachSalesIdRestrictRoute
   '/api/v1/coach/starter-plans/$id/adopt': typeof ApiV1CoachStarterPlansIdAdoptRoute
   '/api/v1/coach/visibility/$id/respond': typeof ApiV1CoachVisibilityIdRespondRoute
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
+  '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -3565,6 +3623,7 @@ export interface FileRoutesById {
   '/api/v1/coach/lesson-slots/$id/': typeof ApiV1CoachLessonSlotsIdIndexRoute
   '/api/v1/coach/roster/athletes/': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
+  '/api/v1/marketplace/purchases/$id/': typeof ApiV1MarketplacePurchasesIdIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
@@ -3818,6 +3877,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/marketplace/dashboard'
     | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
@@ -3850,7 +3910,6 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/marketplace/coaches/$id'
-    | '/api/v1/marketplace/purchases/$id'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -3889,11 +3948,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/post-event/'
     | '/api/v1/coach/resources/'
     | '/api/v1/coach/roster/'
+    | '/api/v1/coach/sales/'
     | '/api/v1/coach/stripe-connect/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
     | '/api/v1/live-activities/tokens/'
     | '/api/v1/marketplace/plans/'
+    | '/api/v1/marketplace/purchases/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -3917,10 +3978,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/$id/update-from-plan-move'
     | '/api/v1/coach/post-event/$id/dismiss'
     | '/api/v1/coach/roster/athletes/$athleteId'
+    | '/api/v1/coach/sales/$id/restrict'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/coach/visibility/$id/respond'
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/view'
+    | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -3942,6 +4006,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id/'
     | '/api/v1/coach/roster/athletes/'
     | '/api/v1/coach/visibility/$id/'
+    | '/api/v1/marketplace/purchases/$id/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/moves/'
@@ -4187,6 +4252,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/marketplace/dashboard'
     | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
@@ -4219,7 +4285,6 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/marketplace/coaches/$id'
-    | '/api/v1/marketplace/purchases/$id'
     | '/api/v1/me/terms/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -4258,11 +4323,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/post-event'
     | '/api/v1/coach/resources'
     | '/api/v1/coach/roster'
+    | '/api/v1/coach/sales'
     | '/api/v1/coach/stripe-connect'
     | '/api/v1/coach/wrap-ups'
     | '/api/v1/guardian/claim'
     | '/api/v1/live-activities/tokens'
     | '/api/v1/marketplace/plans'
+    | '/api/v1/marketplace/purchases'
     | '/api/v1/me/celebrations'
     | '/api/v1/parent/athletes'
     | '/api/v1/parent/team'
@@ -4286,10 +4353,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/$id/update-from-plan-move'
     | '/api/v1/coach/post-event/$id/dismiss'
     | '/api/v1/coach/roster/athletes/$athleteId'
+    | '/api/v1/coach/sales/$id/restrict'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/coach/visibility/$id/respond'
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/view'
+    | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -4311,6 +4381,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id'
     | '/api/v1/coach/roster/athletes'
     | '/api/v1/coach/visibility/$id'
+    | '/api/v1/marketplace/purchases/$id'
     | '/api/v1/parent/athletes/$id'
     | '/api/v1/parent/team/guardians'
     | '/api/v1/plans/$id/moves'
@@ -4563,6 +4634,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/founding/restore'
     | '/api/v1/coach/invite-code/rotate'
     | '/api/v1/coach/invoices/preview'
+    | '/api/v1/coach/marketplace/dashboard'
     | '/api/v1/coach/moves/draft'
     | '/api/v1/coach/moves/fork-from-plan-move'
     | '/api/v1/coach/moves/from-plan-move'
@@ -4595,7 +4667,6 @@ export interface FileRouteTypes {
     | '/api/v1/invites/parent/preview'
     | '/api/v1/live-activities/tokens/$token'
     | '/api/v1/marketplace/coaches/$id'
-    | '/api/v1/marketplace/purchases/$id'
     | '/api/v1/me/terms_/accept'
     | '/api/v1/messages/$id/reaction'
     | '/api/v1/plans/$id/rating'
@@ -4634,11 +4705,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/post-event/'
     | '/api/v1/coach/resources/'
     | '/api/v1/coach/roster/'
+    | '/api/v1/coach/sales/'
     | '/api/v1/coach/stripe-connect/'
     | '/api/v1/coach/wrap-ups/'
     | '/api/v1/guardian/claim/'
     | '/api/v1/live-activities/tokens/'
     | '/api/v1/marketplace/plans/'
+    | '/api/v1/marketplace/purchases/'
     | '/api/v1/me/celebrations/'
     | '/api/v1/parent/athletes/'
     | '/api/v1/parent/team/'
@@ -4662,10 +4735,13 @@ export interface FileRouteTypes {
     | '/api/v1/coach/moves/$id/update-from-plan-move'
     | '/api/v1/coach/post-event/$id/dismiss'
     | '/api/v1/coach/roster/athletes/$athleteId'
+    | '/api/v1/coach/sales/$id/restrict'
     | '/api/v1/coach/starter-plans/$id/adopt'
     | '/api/v1/coach/visibility/$id/respond'
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/view'
+    | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -4687,6 +4763,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/lesson-slots/$id/'
     | '/api/v1/coach/roster/athletes/'
     | '/api/v1/coach/visibility/$id/'
+    | '/api/v1/marketplace/purchases/$id/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/moves/'
@@ -4850,6 +4927,7 @@ export interface RootRouteChildren {
   ApiV1CoachFoundingRestoreRoute: typeof ApiV1CoachFoundingRestoreRoute
   ApiV1CoachInviteCodeRotateRoute: typeof ApiV1CoachInviteCodeRotateRoute
   ApiV1CoachInvoicesPreviewRoute: typeof ApiV1CoachInvoicesPreviewRoute
+  ApiV1CoachMarketplaceDashboardRoute: typeof ApiV1CoachMarketplaceDashboardRoute
   ApiV1CoachMovesDraftRoute: typeof ApiV1CoachMovesDraftRoute
   ApiV1CoachMovesForkFromPlanMoveRoute: typeof ApiV1CoachMovesForkFromPlanMoveRoute
   ApiV1CoachMovesFromPlanMoveRoute: typeof ApiV1CoachMovesFromPlanMoveRoute
@@ -4882,7 +4960,6 @@ export interface RootRouteChildren {
   ApiV1InvitesParentPreviewRoute: typeof ApiV1InvitesParentPreviewRoute
   ApiV1LiveActivitiesTokensTokenRoute: typeof ApiV1LiveActivitiesTokensTokenRoute
   ApiV1MarketplaceCoachesIdRoute: typeof ApiV1MarketplaceCoachesIdRoute
-  ApiV1MarketplacePurchasesIdRoute: typeof ApiV1MarketplacePurchasesIdRoute
   ApiV1MeTermsAcceptRoute: typeof ApiV1MeTermsAcceptRoute
   ApiV1MessagesIdReactionRoute: typeof ApiV1MessagesIdReactionRoute
   ApiV1PlansIdRatingRoute: typeof ApiV1PlansIdRatingRoute
@@ -4921,11 +4998,13 @@ export interface RootRouteChildren {
   ApiV1CoachPostEventIndexRoute: typeof ApiV1CoachPostEventIndexRoute
   ApiV1CoachResourcesIndexRoute: typeof ApiV1CoachResourcesIndexRoute
   ApiV1CoachRosterIndexRoute: typeof ApiV1CoachRosterIndexRoute
+  ApiV1CoachSalesIndexRoute: typeof ApiV1CoachSalesIndexRoute
   ApiV1CoachStripeConnectIndexRoute: typeof ApiV1CoachStripeConnectIndexRoute
   ApiV1CoachWrapUpsIndexRoute: typeof ApiV1CoachWrapUpsIndexRoute
   ApiV1GuardianClaimIndexRoute: typeof ApiV1GuardianClaimIndexRoute
   ApiV1LiveActivitiesTokensIndexRoute: typeof ApiV1LiveActivitiesTokensIndexRoute
   ApiV1MarketplacePlansIndexRoute: typeof ApiV1MarketplacePlansIndexRoute
+  ApiV1MarketplacePurchasesIndexRoute: typeof ApiV1MarketplacePurchasesIndexRoute
   ApiV1MeCelebrationsIndexRoute: typeof ApiV1MeCelebrationsIndexRoute
   ApiV1ParentAthletesIndexRoute: typeof ApiV1ParentAthletesIndexRoute
   ApiV1ParentTeamIndexRoute: typeof ApiV1ParentTeamIndexRoute
@@ -4949,10 +5028,13 @@ export interface RootRouteChildren {
   ApiV1CoachMovesIdUpdateFromPlanMoveRoute: typeof ApiV1CoachMovesIdUpdateFromPlanMoveRoute
   ApiV1CoachPostEventIdDismissRoute: typeof ApiV1CoachPostEventIdDismissRoute
   ApiV1CoachRosterAthletesAthleteIdRoute: typeof ApiV1CoachRosterAthletesAthleteIdRoute
+  ApiV1CoachSalesIdRestrictRoute: typeof ApiV1CoachSalesIdRestrictRoute
   ApiV1CoachStarterPlansIdAdoptRoute: typeof ApiV1CoachStarterPlansIdAdoptRoute
   ApiV1CoachVisibilityIdRespondRoute: typeof ApiV1CoachVisibilityIdRespondRoute
   ApiV1GuardianInvitesIdResendRoute: typeof ApiV1GuardianInvitesIdResendRoute
   ApiV1MarketplacePlansIdCheckoutRoute: typeof ApiV1MarketplacePlansIdCheckoutRoute
+  ApiV1MarketplacePlansIdViewRoute: typeof ApiV1MarketplacePlansIdViewRoute
+  ApiV1MarketplacePurchasesIdPayRoute: typeof ApiV1MarketplacePurchasesIdPayRoute
   ApiV1MeCelebrationsIdAckRoute: typeof ApiV1MeCelebrationsIdAckRoute
   ApiV1ParentAthletesIdGoalsRoute: typeof ApiV1ParentAthletesIdGoalsRoute
   ApiV1ParentAthletesIdPrimaryCoachRoute: typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -4974,6 +5056,7 @@ export interface RootRouteChildren {
   ApiV1CoachLessonSlotsIdIndexRoute: typeof ApiV1CoachLessonSlotsIdIndexRoute
   ApiV1CoachRosterAthletesIndexRoute: typeof ApiV1CoachRosterAthletesIndexRoute
   ApiV1CoachVisibilityIdIndexRoute: typeof ApiV1CoachVisibilityIdIndexRoute
+  ApiV1MarketplacePurchasesIdIndexRoute: typeof ApiV1MarketplacePurchasesIdIndexRoute
   ApiV1ParentAthletesIdIndexRoute: typeof ApiV1ParentAthletesIdIndexRoute
   ApiV1ParentTeamGuardiansIndexRoute: typeof ApiV1ParentTeamGuardiansIndexRoute
   ApiV1PlansIdMovesIndexRoute: typeof ApiV1PlansIdMovesIndexRoute
@@ -6657,6 +6740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachLessonSlotsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/marketplace/dashboard': {
+      id: '/api/v1/coach/marketplace/dashboard'
+      path: '/api/v1/coach/marketplace/dashboard'
+      fullPath: '/api/v1/coach/marketplace/dashboard'
+      preLoaderRoute: typeof ApiV1CoachMarketplaceDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/moves/': {
       id: '/api/v1/coach/moves/'
       path: '/api/v1/coach/moves'
@@ -6760,6 +6850,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/coach/roster/practice-summaries'
       fullPath: '/api/v1/coach/roster/practice-summaries'
       preLoaderRoute: typeof ApiV1CoachRosterPracticeSummariesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/coach/sales/': {
+      id: '/api/v1/coach/sales/'
+      path: '/api/v1/coach/sales'
+      fullPath: '/api/v1/coach/sales/'
+      preLoaderRoute: typeof ApiV1CoachSalesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/coach/schedule-import/commit': {
@@ -6951,11 +7048,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MarketplacePlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/marketplace/purchases/$id': {
-      id: '/api/v1/marketplace/purchases/$id'
-      path: '/api/v1/marketplace/purchases/$id'
-      fullPath: '/api/v1/marketplace/purchases/$id'
-      preLoaderRoute: typeof ApiV1MarketplacePurchasesIdRouteImport
+    '/api/v1/marketplace/purchases/': {
+      id: '/api/v1/marketplace/purchases/'
+      path: '/api/v1/marketplace/purchases'
+      fullPath: '/api/v1/marketplace/purchases/'
+      preLoaderRoute: typeof ApiV1MarketplacePurchasesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me/celebrations/': {
@@ -7364,6 +7461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1CoachRosterAthletesAthleteIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/coach/sales/$id/restrict': {
+      id: '/api/v1/coach/sales/$id/restrict'
+      path: '/api/v1/coach/sales/$id/restrict'
+      fullPath: '/api/v1/coach/sales/$id/restrict'
+      preLoaderRoute: typeof ApiV1CoachSalesIdRestrictRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/coach/starter-plans/$id/adopt': {
       id: '/api/v1/coach/starter-plans/$id/adopt'
       path: '/api/v1/coach/starter-plans/$id/adopt'
@@ -7397,6 +7501,27 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/marketplace/plans/$id/checkout'
       fullPath: '/api/v1/marketplace/plans/$id/checkout'
       preLoaderRoute: typeof ApiV1MarketplacePlansIdCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/marketplace/plans/$id/view': {
+      id: '/api/v1/marketplace/plans/$id/view'
+      path: '/api/v1/marketplace/plans/$id/view'
+      fullPath: '/api/v1/marketplace/plans/$id/view'
+      preLoaderRoute: typeof ApiV1MarketplacePlansIdViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/marketplace/purchases/$id/': {
+      id: '/api/v1/marketplace/purchases/$id/'
+      path: '/api/v1/marketplace/purchases/$id'
+      fullPath: '/api/v1/marketplace/purchases/$id/'
+      preLoaderRoute: typeof ApiV1MarketplacePurchasesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/marketplace/purchases/$id/pay': {
+      id: '/api/v1/marketplace/purchases/$id/pay'
+      path: '/api/v1/marketplace/purchases/$id/pay'
+      fullPath: '/api/v1/marketplace/purchases/$id/pay'
+      preLoaderRoute: typeof ApiV1MarketplacePurchasesIdPayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me/celebrations/$id/ack': {
@@ -8057,6 +8182,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachFoundingRestoreRoute: ApiV1CoachFoundingRestoreRoute,
   ApiV1CoachInviteCodeRotateRoute: ApiV1CoachInviteCodeRotateRoute,
   ApiV1CoachInvoicesPreviewRoute: ApiV1CoachInvoicesPreviewRoute,
+  ApiV1CoachMarketplaceDashboardRoute: ApiV1CoachMarketplaceDashboardRoute,
   ApiV1CoachMovesDraftRoute: ApiV1CoachMovesDraftRoute,
   ApiV1CoachMovesForkFromPlanMoveRoute: ApiV1CoachMovesForkFromPlanMoveRoute,
   ApiV1CoachMovesFromPlanMoveRoute: ApiV1CoachMovesFromPlanMoveRoute,
@@ -8092,7 +8218,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1InvitesParentPreviewRoute: ApiV1InvitesParentPreviewRoute,
   ApiV1LiveActivitiesTokensTokenRoute: ApiV1LiveActivitiesTokensTokenRoute,
   ApiV1MarketplaceCoachesIdRoute: ApiV1MarketplaceCoachesIdRoute,
-  ApiV1MarketplacePurchasesIdRoute: ApiV1MarketplacePurchasesIdRoute,
   ApiV1MeTermsAcceptRoute: ApiV1MeTermsAcceptRoute,
   ApiV1MessagesIdReactionRoute: ApiV1MessagesIdReactionRoute,
   ApiV1PlansIdRatingRoute: ApiV1PlansIdRatingRoute,
@@ -8131,11 +8256,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachPostEventIndexRoute: ApiV1CoachPostEventIndexRoute,
   ApiV1CoachResourcesIndexRoute: ApiV1CoachResourcesIndexRoute,
   ApiV1CoachRosterIndexRoute: ApiV1CoachRosterIndexRoute,
+  ApiV1CoachSalesIndexRoute: ApiV1CoachSalesIndexRoute,
   ApiV1CoachStripeConnectIndexRoute: ApiV1CoachStripeConnectIndexRoute,
   ApiV1CoachWrapUpsIndexRoute: ApiV1CoachWrapUpsIndexRoute,
   ApiV1GuardianClaimIndexRoute: ApiV1GuardianClaimIndexRoute,
   ApiV1LiveActivitiesTokensIndexRoute: ApiV1LiveActivitiesTokensIndexRoute,
   ApiV1MarketplacePlansIndexRoute: ApiV1MarketplacePlansIndexRoute,
+  ApiV1MarketplacePurchasesIndexRoute: ApiV1MarketplacePurchasesIndexRoute,
   ApiV1MeCelebrationsIndexRoute: ApiV1MeCelebrationsIndexRoute,
   ApiV1ParentAthletesIndexRoute: ApiV1ParentAthletesIndexRoute,
   ApiV1ParentTeamIndexRoute: ApiV1ParentTeamIndexRoute,
@@ -8163,10 +8290,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachPostEventIdDismissRoute: ApiV1CoachPostEventIdDismissRoute,
   ApiV1CoachRosterAthletesAthleteIdRoute:
     ApiV1CoachRosterAthletesAthleteIdRoute,
+  ApiV1CoachSalesIdRestrictRoute: ApiV1CoachSalesIdRestrictRoute,
   ApiV1CoachStarterPlansIdAdoptRoute: ApiV1CoachStarterPlansIdAdoptRoute,
   ApiV1CoachVisibilityIdRespondRoute: ApiV1CoachVisibilityIdRespondRoute,
   ApiV1GuardianInvitesIdResendRoute: ApiV1GuardianInvitesIdResendRoute,
   ApiV1MarketplacePlansIdCheckoutRoute: ApiV1MarketplacePlansIdCheckoutRoute,
+  ApiV1MarketplacePlansIdViewRoute: ApiV1MarketplacePlansIdViewRoute,
+  ApiV1MarketplacePurchasesIdPayRoute: ApiV1MarketplacePurchasesIdPayRoute,
   ApiV1MeCelebrationsIdAckRoute: ApiV1MeCelebrationsIdAckRoute,
   ApiV1ParentAthletesIdGoalsRoute: ApiV1ParentAthletesIdGoalsRoute,
   ApiV1ParentAthletesIdPrimaryCoachRoute:
@@ -8192,6 +8322,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachLessonSlotsIdIndexRoute: ApiV1CoachLessonSlotsIdIndexRoute,
   ApiV1CoachRosterAthletesIndexRoute: ApiV1CoachRosterAthletesIndexRoute,
   ApiV1CoachVisibilityIdIndexRoute: ApiV1CoachVisibilityIdIndexRoute,
+  ApiV1MarketplacePurchasesIdIndexRoute: ApiV1MarketplacePurchasesIdIndexRoute,
   ApiV1ParentAthletesIdIndexRoute: ApiV1ParentAthletesIdIndexRoute,
   ApiV1ParentTeamGuardiansIndexRoute: ApiV1ParentTeamGuardiansIndexRoute,
   ApiV1PlansIdMovesIndexRoute: ApiV1PlansIdMovesIndexRoute,

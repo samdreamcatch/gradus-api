@@ -3,7 +3,11 @@ import {
   ageOn,
   athleteMayPurchase,
   fulfillPurchase,
+  listCoachSales,
+  listMyPlanPurchases,
+  payPlanPurchase,
   resolvePurchaseAthlete,
+  restrictPlanPurchase,
   splitPayment,
   startPlanCheckout,
   type PurchaseStripe,
@@ -25,10 +29,17 @@ function fakeAdmin(tables: Record<string, Row[]>, opts: { email?: string } = {})
     },
     from: (table: string) => {
       const filters: [string, unknown][] = [];
+      const inFilters: [string, unknown[]][] = [];
       let insertRows: Row[] | null = null;
       let patch: Row | null = null;
+      let remove = false;
       const all = () => (tables[table] ??= []);
-      const matching = () => all().filter((r) => filters.every(([c, v]) => r[c] === v));
+      const matching = () =>
+        all().filter(
+          (r) =>
+            filters.every(([c, v]) => r[c] === v) &&
+            inFilters.every(([c, vs]) => vs.includes(r[c])),
+        );
       const run = () => {
         if (insertRows) {
           const made = insertRows.map((r, i) => ({
@@ -47,13 +58,19 @@ function fakeAdmin(tables: Record<string, Row[]>, opts: { email?: string } = {})
           for (const r of hit) Object.assign(r, patch);
           return hit;
         }
+        if (remove) {
+          const hit = matching();
+          tables[table] = all().filter((r) => !hit.includes(r));
+          return hit;
+        }
         return matching();
       };
       const chain = {
         select: () => chain,
         order: () => chain,
         eq: (c: string, v: unknown) => (filters.push([c, v]), chain),
-        in: () => chain,
+        in: (c: string, vs: unknown[]) => (inFilters.push([c, vs]), chain),
+        delete: () => ((remove = true), chain),
         insert: (r: Row | Row[]) => ((insertRows = Array.isArray(r) ? r : [r]), chain),
         update: (p: Row) => ((patch = p), chain),
         single: async () => ({ data: run()[0] ?? null, error: null }),
@@ -191,19 +208,30 @@ describe("resolvePurchaseAthlete", () => {
 describe("startPlanCheckout", () => {
   const adultAthlete = { id: "a1", user_id: "u", account_state: "active", birthdate: "2000-01-01" };
 
-  it("refuses every buyer while the coach can't be paid out", async () => {
-    const admin = fakeAdmin({
+  it("delivers right away without paying while the coach isn't on Stripe yet", async () => {
+    const tables: Record<string, Row[]> = {
       plans: [listing({ ...readyCoach, stripe_connect_payouts_enabled: false })],
       athletes: [adultAthlete],
+      plan_purchases: [],
+      plan_moves: [],
+    };
+    const admin = fakeAdmin(tables);
+    const { stripe, calls } = fakeStripe();
+    const res = await startPlanCheckout(
+      { userId: "u", admin, stripe },
+      "p1",
+      {},
+      { origin: "https://gradus.test" },
+    );
+    expect(res.checkoutUrl).toBeNull();
+    expect(res.purchase).toMatchObject({
+      status: "fulfilled",
+      paymentStatus: "awaiting_coach_setup",
+      paymentDueAt: null,
+      overdue: false,
     });
-    await expect(
-      startPlanCheckout(
-        { userId: "u", admin, stripe: fakeStripe().stripe },
-        "p1",
-        {},
-        { origin: "https://gradus.test" },
-      ),
-    ).rejects.toMatchObject({ status: 409, code: "seller_not_ready" });
+    expect(res.purchase.copiedPlanId).not.toBeNull();
+    expect(calls.some((c) => c[0] === "sessions.create")).toBe(false);
   });
 
   it("records a pending purchase and opens Stripe Checkout for the plan's price", async () => {
@@ -259,6 +287,7 @@ describe("fulfillPurchase", () => {
           amount_cents: 2499,
           currency: "usd",
           status: "pending",
+          payment_status: "payment_due",
           stripe_checkout_session_id: "cs_1",
         },
       ],
@@ -283,7 +312,7 @@ describe("fulfillPurchase", () => {
     const { stripe, calls } = fakeStripe();
 
     const done = await fulfillPurchase(admin, stripe, "pur1");
-    expect(done).toMatchObject({ status: "fulfilled" });
+    expect(done).toMatchObject({ status: "fulfilled", payment_status: "paid" });
     expect(tables.plan_purchases[0]).toMatchObject({
       platform_fee_cents: 75,
       stripe_fee_cents: 102,
@@ -314,5 +343,147 @@ describe("fulfillPurchase", () => {
 
     await fulfillPurchase(admin, stripe, "pur1");
     expect(calls.filter((c) => c[0] === "transfers.create")).toHaveLength(1);
+  });
+});
+
+describe("pay later", () => {
+  const NOW = new Date("2026-11-20T12:00:00Z");
+  const daysAgo = (n: number) => new Date(NOW.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+  const sale = (over: Row = {}): Row => ({
+    id: "pur1",
+    plan_id: "p1",
+    coach_id: "c-seller",
+    buyer_user_id: "u",
+    athlete_id: "a1",
+    copied_plan_id: "copy1",
+    amount_cents: 2499,
+    currency: "usd",
+    status: "fulfilled",
+    payment_status: "payment_due",
+    payment_due_at: daysAgo(1),
+    paid_at: null,
+    platform_fee_cents: null,
+    stripe_fee_cents: null,
+    coach_payout_cents: null,
+    stripe_checkout_session_id: null,
+    created_at: daysAgo(5),
+    ...over,
+  });
+  const notReady = { ...readyCoach, user_id: "u-seller", stripe_connect_payouts_enabled: false };
+
+  it("won't take payment while the coach still isn't on Stripe", async () => {
+    const admin = fakeAdmin({
+      plan_purchases: [sale({ payment_status: "awaiting_coach_setup", payment_due_at: null })],
+      coach_profiles: [notReady],
+    });
+    await expect(
+      payPlanPurchase({ userId: "u", admin, stripe: fakeStripe().stripe }, "pur1", {
+        origin: "https://gradus.test",
+      }),
+    ).rejects.toMatchObject({ status: 409, code: "coach_not_ready" });
+  });
+
+  it("becomes due once the coach is on Stripe, and opens a checkout for the price", async () => {
+    const tables: Record<string, Row[]> = {
+      plan_purchases: [sale({ payment_status: "awaiting_coach_setup", payment_due_at: null })],
+      coach_profiles: [readyCoach],
+      plans: [{ id: "p1", title: "Edge Control", description: null }],
+    };
+    const admin = fakeAdmin(tables);
+    const { stripe, calls } = fakeStripe();
+    const res = await payPlanPurchase({ userId: "u", admin, stripe }, "pur1", {
+      origin: "https://gradus.test",
+    });
+    expect(res.checkoutUrl).toBe("https://checkout.stripe.test/cs_1");
+    expect(res.purchase.paymentStatus).toBe("payment_due");
+    expect(tables.plan_purchases[0].payment_due_at).not.toBeNull();
+    expect(calls.find((c) => c[0] === "sessions.create")![1]).toMatchObject({
+      line_items: [{ price_data: { unit_amount: 2499, product_data: { name: "Edge Control" } } }],
+    });
+  });
+
+  it("gives the coach received and pending totals, and flags a sale 3 days unpaid", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: [{ ...readyCoach, user_id: "u-seller" }],
+      plan_purchases: [
+        sale({
+          id: "paid1",
+          payment_status: "paid",
+          coach_payout_cents: 2322,
+          paid_at: daysAgo(4),
+        }),
+        sale({ id: "due1", payment_due_at: daysAgo(1) }),
+        sale({ id: "late1", payment_due_at: daysAgo(3) }),
+      ],
+      plans: [{ id: "p1", title: "Edge Control" }],
+      athletes: [{ id: "a1", first_name: "Jamie", last_name: "Gilmore" }],
+    });
+    const res = await listCoachSales({ userId: "u-seller", admin }, {}, NOW);
+    expect(res.totals).toEqual({ receivedCents: 2322, pendingCents: 4998, overdueCount: 1 });
+    const late = res.items.find((i) => i.id === "late1")!;
+    expect(late).toMatchObject({
+      overdue: true,
+      canRestrict: true,
+      athleteName: "Jamie G.",
+      planTitle: "Edge Control",
+    });
+    expect(res.items.find((i) => i.id === "due1")!.canRestrict).toBe(false);
+
+    const pending = await listCoachSales(
+      { userId: "u-seller", admin },
+      { paymentStatus: "pending" },
+      NOW,
+    );
+    expect(pending.items.map((i) => i.id).sort()).toEqual(["due1", "late1"]);
+  });
+
+  it("lists a buyer's own purchases with their payment status", async () => {
+    const admin = fakeAdmin({
+      plan_purchases: [
+        sale({ id: "mine" }),
+        sale({ id: "theirs", buyer_user_id: "someone-else" }),
+        sale({ id: "abandoned", status: "pending" }),
+      ],
+      coach_profiles: [{ ...readyCoach, first_name: "Tami", last_name: "Taylor" }],
+      plans: [{ id: "p1", title: "Edge Control" }],
+      athletes: [{ id: "a1", first_name: "Jamie", last_name: "Gilmore" }],
+    });
+    const res = await listMyPlanPurchases({ userId: "u", admin }, {}, NOW);
+    expect(res.items.map((i) => i.id)).toEqual(["mine"]);
+    expect(res.items[0]).toMatchObject({ paymentStatus: "payment_due", coachName: "Tami Taylor" });
+  });
+
+  it("lets the coach restrict only an overdue buyer, and removes their copy", async () => {
+    const tables: Record<string, Row[]> = {
+      coach_profiles: [{ ...readyCoach, user_id: "u-seller" }],
+      plan_purchases: [sale({ payment_due_at: daysAgo(1) })],
+      plans: [{ id: "copy1" }],
+      plan_moves: [{ plan_id: "copy1" }],
+    };
+    const admin = fakeAdmin(tables);
+    await expect(
+      restrictPlanPurchase({ userId: "u-seller", admin }, "pur1", NOW),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "not_overdue",
+    });
+
+    tables.plan_purchases[0].payment_due_at = daysAgo(3);
+    const res = await restrictPlanPurchase({ userId: "u-seller", admin }, "pur1", NOW);
+    expect(res).toMatchObject({ status: "restricted", copiedPlanId: null });
+    expect(tables.plans).toEqual([]);
+    expect(tables.plan_moves).toEqual([]);
+  });
+
+  it("won't let another coach restrict the sale", async () => {
+    const admin = fakeAdmin({
+      coach_profiles: [{ id: "c-other", user_id: "u-other" }],
+      plan_purchases: [sale({ payment_due_at: daysAgo(10) })],
+    });
+    await expect(
+      restrictPlanPurchase({ userId: "u-other", admin }, "pur1", NOW),
+    ).rejects.toMatchObject({
+      status: 404,
+    });
   });
 });
