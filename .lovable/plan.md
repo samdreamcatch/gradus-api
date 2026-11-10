@@ -9,7 +9,7 @@ Buy seats -> Club + admin created -> Invite coaches -> Coaches get Pro access
 
 ## Blockers (a real club cannot get through without these)
 
-1. **Staff setup screen for a sold club.** Sales reps close deals on custom contracts, and Gradus staff set up the club (that's intended). What's missing is one staff screen to do it in a single pass: club details, sports, seat count, contract dates and file, then send the first admin their invite. Today these steps are split up, and parts of them happen directly in the backend.
+1. **Finish club setup in the internal Gradus admin (Organizations page).** Sales and setup stay staff-led, by design. The Organizations page already lets staff create a club, edit its details and set seats and contract terms. The missing piece is naming the club's first admin: today staff can only switch on admin access for someone who already has an account, from that person's user page. Add "Invite club admin by email" to the club's row there. Also check that this switch writes to the same club-admin list the club panel reads from. Nothing about this goes in the club panel itself.
 2. **Seats don't control paid access.** A coach gets club-level access just by being attached to a club, not by holding a seat, and nothing checks contract end dates. Tie access to holding a seat in a club with an active contract; define what happens when the contract lapses (for example, coaches fall back to their own plan, like Family's read-only on lapse).
 3. **People controls unfinished.** Admins can't yet change roles, resend or cancel invites, or move a seat from one coach to another. Needed on day one.
 4. **Schedule import stops before the end.** Upload, coach matching and review work, but it can't match students to athletes who already exist, can't create the lessons, and doesn't hand off to the invite step. Only CSV is accepted.
@@ -37,5 +37,6 @@ Buy seats -> Club + admin created -> Invite coaches -> Coaches get Pro access
 ## Technical notes
 
 - Today `coach_effective_tier` returns `club` whenever `coach_profiles.organization_id` is set; it ignores `org_seats` and `organizations.contract_ends_on`.
-- Contract and seat fields are edited only via staff-only `updateClubContract`.
+- Contract and seat fields are edited via staff-only `updateClubContract` through `ClubContractEditor` on `/admin/organizations`.
+- `adminSetOrgAdmin` toggles `coach_profiles.is_org_admin` for existing users. Confirm this matches the `org_admins` table the club panel uses.
 - Lesson invites reuse `sendGuardianInvite`; nothing has been sent.
