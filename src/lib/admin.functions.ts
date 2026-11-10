@@ -2437,13 +2437,18 @@ export const adminListClubAdmins = createServerFn({ method: "POST" })
 export const adminAddClubAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ organizationId: z.string().uuid(), email: z.string().trim().email().max(255) }).parse(input),
+    z
+      .object({ organizationId: z.string().uuid(), email: z.string().trim().email().max(255) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email.toLowerCase();
-    const { data: found, error: findErr } = await supabaseAdmin.rpc("find_confirmed_user_by_email", { _email: email });
+    const { data: found, error: findErr } = await supabaseAdmin.rpc(
+      "find_confirmed_user_by_email",
+      { _email: email },
+    );
     if (findErr) dbError(findErr);
     let userId = (found as string | null) ?? null;
     let invited = false;
@@ -2452,7 +2457,8 @@ export const adminAddClubAdmin = createServerFn({ method: "POST" })
       const { data: inv, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${site}/org-admin`,
       });
-      if (invErr || !inv?.user) throw new Error(invErr?.message ?? "Could not invite that address.");
+      if (invErr || !inv?.user)
+        throw new Error(invErr?.message ?? "Could not invite that address.");
       userId = inv.user.id;
       invited = true;
     }
@@ -2460,20 +2466,21 @@ export const adminAddClubAdmin = createServerFn({ method: "POST" })
       .from("org_admins")
       .select("id", { count: "exact", head: true })
       .eq("organization_id", data.organizationId);
-    const { error } = await supabaseAdmin
-      .from("org_admins")
-      .upsert(
-        {
-          organization_id: data.organizationId,
-          user_id: userId,
-          created_by: context.userId,
-          // The first admin named by staff owns the club account.
-          club_role: (count ?? 0) === 0 ? "owner" : "admin",
-        } as never,
-        { onConflict: "organization_id,user_id", ignoreDuplicates: true },
-      );
+    const { error } = await supabaseAdmin.from("org_admins").upsert(
+      {
+        organization_id: data.organizationId,
+        user_id: userId,
+        created_by: context.userId,
+        // The first admin named by staff owns the club account.
+        club_role: (count ?? 0) === 0 ? "owner" : "admin",
+      } as never,
+      { onConflict: "organization_id,user_id", ignoreDuplicates: true },
+    );
     if (error) {
-      if (/capacity|admin seat/i.test(error.message)) throw new Error("This club has no admin seats left. Raise admin seats in the contract first.");
+      if (/capacity|admin seat/i.test(error.message))
+        throw new Error(
+          "This club has no admin seats left. Raise admin seats in the contract first.",
+        );
       dbError(error);
     }
     return { ok: true, invited };

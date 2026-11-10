@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminAddClubAdmin, adminListClubAdmins, adminRemoveClubAdmin } from "@/lib/admin.functions";
+import {
+  adminAddClubAdmin,
+  adminListClubAdmins,
+  adminRemoveClubAdmin,
+} from "@/lib/admin.functions";
 
 /** Staff-only: name the people who run a club's admin panel. */
 export function ClubAdminsEditor({ organizationId }: { organizationId: string }) {
@@ -23,7 +27,9 @@ export function ClubAdminsEditor({ organizationId }: { organizationId: string })
     setBusy(true);
     try {
       const r = await add({ data: { organizationId, email } });
-      toast.success(r.invited ? "Invite sent. They're a club admin once they sign in." : "Added as club admin.");
+      toast.success(
+        r.invited ? "Invite sent. They're a club admin once they sign in." : "Added as club admin.",
+      );
       setEmail("");
       await qc.invalidateQueries({ queryKey: key });
     } catch (err) {
@@ -48,13 +54,20 @@ export function ClubAdminsEditor({ organizationId }: { organizationId: string })
       {q.isLoading ? (
         <p className="text-sm text-text-secondary">Loading…</p>
       ) : (q.data?.admins.length ?? 0) === 0 ? (
-        <p className="text-sm text-text-secondary">No club admins yet. The first person you add becomes the owner.</p>
+        <p className="text-sm text-text-secondary">
+          No club admins yet. The first person you add becomes the owner.
+        </p>
       ) : (
         <ul className="divide-y divide-divider rounded-md border border-divider">
           {q.data!.admins.map((a) => (
-            <li key={a.userId} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+            <li
+              key={a.userId}
+              className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+            >
               <span className="truncate text-text-primary">{a.email ?? a.userId}</span>
-              <Button variant="ghost" size="sm" onClick={() => onRemove(a.userId)}>Remove</Button>
+              <Button variant="ghost" size="sm" onClick={() => onRemove(a.userId)}>
+                Remove
+              </Button>
             </li>
           ))}
         </ul>
@@ -62,10 +75,21 @@ export function ClubAdminsEditor({ organizationId }: { organizationId: string })
       <form onSubmit={onSubmit} className="space-y-2">
         <Label htmlFor="club-admin-email">Add club admin by email</Label>
         <div className="flex gap-2">
-          <Input id="club-admin-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="director@club.org" />
-          <Button type="submit" disabled={busy || !email.trim()}>Add</Button>
+          <Input
+            id="club-admin-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="director@club.org"
+          />
+          <Button type="submit" disabled={busy || !email.trim()}>
+            Add
+          </Button>
         </div>
-        <p className="text-xs text-text-tertiary">New addresses get the standard Gradus account invite.</p>
+        <p className="text-xs text-text-tertiary">
+          New addresses get the standard Gradus account invite.
+        </p>
       </form>
     </section>
   );

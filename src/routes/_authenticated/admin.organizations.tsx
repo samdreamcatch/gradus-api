@@ -42,13 +42,22 @@ type OrgRow = {
 };
 
 export const Route = createFileRoute("/_authenticated/admin/organizations")({
-  head: () => ({ meta: [
-    { title: "Organizations · Gradus Admin" },
-    { name: "description", content: "Manage Gradus club accounts, contracts and organization details." },
-    { property: "og:title", content: "Organizations · Gradus Admin" },
-    { property: "og:description", content: "Manage Gradus club accounts, contracts and organization details." },
-    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Organizations · Gradus Admin" },
+      {
+        name: "description",
+        content: "Manage Gradus club accounts, contracts and organization details.",
+      },
+      { property: "og:title", content: "Organizations · Gradus Admin" },
+      {
+        property: "og:description",
+        content: "Manage Gradus club accounts, contracts and organization details.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrganizationsPage,
 });
 
@@ -361,7 +370,13 @@ function OrgsTab() {
                         <div className="line-clamp-1 text-xs text-text-tertiary">{o.notes}</div>
                       )}
                       <div className="text-[11px] text-text-tertiary">/{o.slug}</div>
-                      <Button variant="link" className="min-h-11 text-text-primary" onClick={() => setContractOrg(o as OrgRow)}>Contract & admins</Button>
+                      <Button
+                        variant="link"
+                        className="min-h-11 text-text-primary"
+                        onClick={() => setContractOrg(o as OrgRow)}
+                      >
+                        Contract & admins
+                      </Button>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -430,11 +445,25 @@ function OrgsTab() {
           await qc.invalidateQueries({ queryKey: ["admin-organizations"] });
         }}
       />
-      <Sheet open={!!contractOrg} onOpenChange={(open) => { if (!open) setContractOrg(null); }}>
+      <Sheet
+        open={!!contractOrg}
+        onOpenChange={(open) => {
+          if (!open) setContractOrg(null);
+        }}
+      >
         <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader><SheetTitle>{contractOrg?.name} · Contract</SheetTitle><SheetDescription>Contracted seats and club terms</SheetDescription></SheetHeader>
-          {contractOrg && <Suspense fallback={<p className="py-6 text-text-secondary">Loading contract…</p>}><ClubContractEditor key={contractOrg.id} organizationId={contractOrg.id} /></Suspense>}
-          {contractOrg && <ClubAdminsEditor key={`admins-${contractOrg.id}`} organizationId={contractOrg.id} />}
+          <SheetHeader>
+            <SheetTitle>{contractOrg?.name} · Contract</SheetTitle>
+            <SheetDescription>Contracted seats and club terms</SheetDescription>
+          </SheetHeader>
+          {contractOrg && (
+            <Suspense fallback={<p className="py-6 text-text-secondary">Loading contract…</p>}>
+              <ClubContractEditor key={contractOrg.id} organizationId={contractOrg.id} />
+            </Suspense>
+          )}
+          {contractOrg && (
+            <ClubAdminsEditor key={`admins-${contractOrg.id}`} organizationId={contractOrg.id} />
+          )}
         </SheetContent>
       </Sheet>
     </>

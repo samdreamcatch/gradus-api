@@ -56,3 +56,12 @@
 - [x] Coaching page on shared grid (Fields/Sort/Group, totals footer, row opens coach profile); verified as Buddy
 - [x] Bulk-select bar on Resources (archive/restore/export) and Templates (send/archive/restore/export); archive+restore round-trip verified, no sends
 - [x] Post-publish check: Home, Notifications, Coaching, Policies, People, Schedule imports load live data; notification read receipt saves
+
+## Real paying club, end to end (plan Nov 10)
+- [x] Club access follows contract dates (club tier only while contract is active); app onboarding unchanged
+- [x] Internal admin → Organizations → "Contract & admins": add/remove club admins by email (first becomes owner); not test-sent
+- [ ] People: change roles, resend/cancel invites, move seats
+- [ ] Schedule import: match existing athletes, create lessons, hand off to invites
+- [ ] Real email test (coach invite, family invite, reminders template choice, verification on)
+- [ ] Settings contract card + "contact your rep"; Home first-run checklist; fresh-account end-to-end check; demo cleanup
+- [ ] Decide: what a coach sees when their club has no open seat (today joining is refused, unchanged)
