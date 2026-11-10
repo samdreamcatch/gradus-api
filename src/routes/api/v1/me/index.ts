@@ -1,3 +1,4 @@
+import { athleteMayPurchase } from "@/lib/plan-purchases.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { defineApiRoute } from "@/lib/api/define-route";
@@ -42,6 +43,14 @@ const outputSchema = z.object({
    * it never offers voice to a minor against an older server.
    */
   athleteVoiceToPlan: z.boolean().nullable().optional(),
+  /**
+   * Athlete only: whether this athlete may buy marketplace plans themselves
+   * (src/lib/plan-purchases.server.ts): an active account, 13 or older by
+   * birthdate. False when provisional, paused, under 13 or with no birthdate
+   * (their parent buys); `null` for other roles. Optional in the contract; an
+   * app treats a missing value as false.
+   */
+  athleteCanPurchase: z.boolean().nullable().optional(),
   /**
    * Sport keys this account touches (a coach's levels; a parent's or
    * athlete's goal and coached sports), sorted. The iOS shell shows the Live
@@ -180,6 +189,8 @@ export const Route = createFileRoute("/api/v1/me/")({
               : null,
             athleteVoiceToPlan:
               role === "athlete" && athleteRow ? !isMinorOrUnconfirmed(athleteRow.birthdate) : null,
+            athleteCanPurchase:
+              role === "athlete" && athleteRow ? athleteMayPurchase(athleteRow) : null,
             sports,
             aiConsent,
           };

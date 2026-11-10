@@ -274,6 +274,12 @@
                         "null"
                       ]
                     },
+                    "athleteCanPurchase": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
                     "sports": {
                       "type": "array",
                       "items": {
@@ -855,6 +861,30 @@
                         },
                         "billingPastDue": {
                           "type": "boolean"
+                        },
+                        "checklist": {
+                          "type": "object",
+                          "properties": {
+                            "identityVerification": {
+                              "type": "boolean"
+                            },
+                            "payoutSetup": {
+                              "type": "boolean"
+                            },
+                            "uploadProfilePhoto": {
+                              "type": "boolean"
+                            },
+                            "saveFirstPlan": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "identityVerification",
+                            "payoutSetup",
+                            "uploadProfilePhoto",
+                            "saveFirstPlan"
+                          ],
+                          "description": "Setup steps the coach has completed, as the app reported them (PATCH /api/v1/coach/profile)."
                         }
                       },
                       "required": [
@@ -881,7 +911,8 @@
                         "freeAccessUntil",
                         "trialNeedsCard",
                         "subscriptionEnvironment",
-                        "billingPastDue"
+                        "billingPastDue",
+                        "checklist"
                       ]
                     },
                     "levels": {
@@ -977,6 +1008,97 @@
                   },
                   "required": [
                     "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCoachChecklist",
+        "summary": "Mark setup checklist steps complete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "checklist": {
+                    "type": "object",
+                    "properties": {
+                      "identityVerification": {
+                        "type": "boolean"
+                      },
+                      "payoutSetup": {
+                        "type": "boolean"
+                      },
+                      "uploadProfilePhoto": {
+                        "type": "boolean"
+                      },
+                      "saveFirstPlan": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "checklist"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checklist": {
+                      "type": "object",
+                      "properties": {
+                        "identityVerification": {
+                          "type": "boolean"
+                        },
+                        "payoutSetup": {
+                          "type": "boolean"
+                        },
+                        "uploadProfilePhoto": {
+                          "type": "boolean"
+                        },
+                        "saveFirstPlan": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "identityVerification",
+                        "payoutSetup",
+                        "uploadProfilePhoto",
+                        "saveFirstPlan"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "checklist"
                   ]
                 }
               }
@@ -7890,6 +8012,70 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 160
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 99999999.99
+                  },
+                  "media": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 }
               }
@@ -8186,6 +8372,61 @@
                     },
                     "feedbackScope": {
                       "type": "string"
+                    },
+                    "price": {
+                      "type": "number"
+                    },
+                    "media": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "productType": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "plan",
+                        "program"
+                      ]
+                    },
+                    "selectedLevel": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "selectedLevelTo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "weeks": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "sessionsPerWeek": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "lessonCount": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
@@ -8324,6 +8565,70 @@
                       ]
                     },
                     "maxItems": 200
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 99999999.99
+                  },
+                  "media": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 },
                 "required": [
@@ -8418,6 +8723,70 @@
                       "plan",
                       "moves"
                     ]
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 99999999.99
+                  },
+                  "media": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "plan",
+                      "program"
+                    ]
+                  },
+                  "selectedLevel": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "selectedLevelTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "weeks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 52
+                  },
+                  "sessionsPerWeek": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 14
+                  },
+                  "lessonCount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 100
                   }
                 }
               }
@@ -8586,6 +8955,623 @@
                   },
                   "required": [
                     "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/rating": {
+      "put": {
+        "operationId": "ratePlan",
+        "summary": "Rate a plan, or change your rating",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "review": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "rating"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "review": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reviewer": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "First name and last initial, e.g. \"Greta S.\""
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "athlete",
+                            "parent"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "role"
+                      ]
+                    },
+                    "coachResponse": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "coachRespondedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "rating",
+                    "review",
+                    "reviewer",
+                    "coachResponse",
+                    "coachRespondedAt",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePlanRating",
+        "summary": "Remove your rating of a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings": {
+      "get": {
+        "operationId": "listPlanRatings",
+        "summary": "A plan's ratings and reviews",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "average": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "count": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "average",
+                        "count"
+                      ]
+                    },
+                    "myRating": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "rating": {
+                          "type": "number"
+                        },
+                        "review": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "reviewer": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "description": "First name and last initial, e.g. \"Greta S.\""
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "athlete",
+                                "parent"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "role"
+                          ]
+                        },
+                        "coachResponse": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "coachRespondedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "rating",
+                        "review",
+                        "reviewer",
+                        "coachResponse",
+                        "coachRespondedAt",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "description": "The caller's own rating of this plan, if any."
+                    },
+                    "canRate": {
+                      "type": "boolean",
+                      "description": "Whether the caller may rate (or re-rate) this plan."
+                    },
+                    "canRespond": {
+                      "type": "boolean",
+                      "description": "Whether the caller is the plan's coach, who may reply to ratings."
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rating": {
+                            "type": "number"
+                          },
+                          "review": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "reviewer": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "First name and last initial, e.g. \"Greta S.\""
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "athlete",
+                                  "parent"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "role"
+                            ]
+                          },
+                          "coachResponse": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "coachRespondedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rating",
+                          "review",
+                          "reviewer",
+                          "coachResponse",
+                          "coachRespondedAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "summary",
+                    "myRating",
+                    "canRate",
+                    "canRespond",
+                    "items",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings/summary": {
+      "get": {
+        "operationId": "getPlanRatingSummary",
+        "summary": "A plan's average rating",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "average": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "count": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "average",
+                    "count"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/ratings/{ratingId}/response": {
+      "put": {
+        "operationId": "respondToPlanRating",
+        "summary": "Reply to a rating of your plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "ratingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "response": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "response"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "review": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reviewer": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "First name and last initial, e.g. \"Greta S.\""
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "athlete",
+                            "parent"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "role"
+                      ]
+                    },
+                    "coachResponse": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "coachRespondedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "rating",
+                    "review",
+                    "reviewer",
+                    "coachResponse",
+                    "coachRespondedAt",
+                    "createdAt",
+                    "updatedAt"
                   ]
                 }
               }
@@ -19182,6 +20168,2212 @@
                   },
                   "required": [
                     "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans": {
+      "get": {
+        "operationId": "listMarketplacePlans",
+        "summary": "Active plans by Coach Pro coaches that the caller doesn't already have",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "minPrice",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "maxPrice",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "plan",
+                              "template"
+                            ]
+                          },
+                          "moveCount": {
+                            "type": "number"
+                          },
+                          "price": {
+                            "type": "number"
+                          },
+                          "productType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "plan",
+                              "program"
+                            ]
+                          },
+                          "selectedLevel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "selectedLevelTo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "weeks": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sessionsPerWeek": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "lessonCount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "rating": {
+                            "type": "object",
+                            "properties": {
+                              "average": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "average",
+                              "count"
+                            ]
+                          },
+                          "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sampleMove": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "targetKind": {
+                                "type": "string"
+                              },
+                              "targetValue": {
+                                "type": "number"
+                              },
+                              "cue": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "why": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "targetKind",
+                              "targetValue",
+                              "cue",
+                              "why"
+                            ]
+                          },
+                          "coach": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "verified": {
+                                "type": "boolean"
+                              },
+                              "photoUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "canSell": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "firstName",
+                              "lastName",
+                              "verified",
+                              "photoUrl",
+                              "canSell"
+                            ]
+                          },
+                          "isOwn": {
+                            "type": "boolean"
+                          },
+                          "purchases": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "athleteId": {
+                                  "type": "string"
+                                },
+                                "planId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "paymentStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "awaiting_coach_setup",
+                                    "payment_due",
+                                    "processing",
+                                    "paid"
+                                  ]
+                                },
+                                "purchaseId": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "athleteId",
+                                "planId",
+                                "paymentStatus",
+                                "purchaseId"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "moveCount",
+                          "price",
+                          "productType",
+                          "selectedLevel",
+                          "selectedLevelTo",
+                          "description",
+                          "weeks",
+                          "sessionsPerWeek",
+                          "lessonCount",
+                          "rating",
+                          "media",
+                          "createdAt",
+                          "updatedAt",
+                          "sampleMove",
+                          "coach",
+                          "isOwn",
+                          "purchases"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans/{id}/checkout": {
+      "post": {
+        "operationId": "startMarketplacePlanCheckout",
+        "summary": "Start buying a marketplace plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "purchase": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "fulfilling",
+                            "fulfilled",
+                            "canceled",
+                            "restricted"
+                          ]
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "awaiting_coach_setup",
+                            "payment_due",
+                            "processing",
+                            "paid"
+                          ]
+                        },
+                        "planId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "athleteId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "copiedPlanId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amountCents": {
+                          "type": "number"
+                        },
+                        "paymentDueAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paidAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "overdue": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "paymentStatus",
+                        "planId",
+                        "athleteId",
+                        "copiedPlanId",
+                        "amountCents",
+                        "paymentDueAt",
+                        "paidAt",
+                        "overdue"
+                      ]
+                    },
+                    "checkoutUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "purchase",
+                    "checkoutUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases": {
+      "get": {
+        "operationId": "listMyMarketplacePurchases",
+        "summary": "The caller's plan purchases and their payment status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "paid",
+                "pending",
+                "awaiting_coach_setup",
+                "payment_due"
+              ]
+            },
+            "required": false,
+            "name": "paymentStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "coachName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "coachName",
+                          "athleteName",
+                          "createdAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases/{id}": {
+      "get": {
+        "operationId": "getMarketplacePurchase",
+        "summary": "A plan purchase's status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "fulfilling",
+                        "fulfilled",
+                        "canceled",
+                        "restricted"
+                      ]
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_coach_setup",
+                        "payment_due",
+                        "processing",
+                        "paid"
+                      ]
+                    },
+                    "planId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "copiedPlanId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    },
+                    "paymentDueAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "overdue": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "paymentStatus",
+                    "planId",
+                    "athleteId",
+                    "copiedPlanId",
+                    "amountCents",
+                    "paymentDueAt",
+                    "paidAt",
+                    "overdue"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/purchases/{id}/pay": {
+      "post": {
+        "operationId": "payMarketplacePurchase",
+        "summary": "Complete payment for a plan bought before the coach was on Stripe",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "purchase": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "fulfilling",
+                            "fulfilled",
+                            "canceled",
+                            "restricted"
+                          ]
+                        },
+                        "paymentStatus": {
+                          "type": "string",
+                          "enum": [
+                            "awaiting_coach_setup",
+                            "payment_due",
+                            "processing",
+                            "paid"
+                          ]
+                        },
+                        "planId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "athleteId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "copiedPlanId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amountCents": {
+                          "type": "number"
+                        },
+                        "paymentDueAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "paidAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "overdue": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "paymentStatus",
+                        "planId",
+                        "athleteId",
+                        "copiedPlanId",
+                        "amountCents",
+                        "paymentDueAt",
+                        "paidAt",
+                        "overdue"
+                      ]
+                    },
+                    "checkoutUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "purchase",
+                    "checkoutUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/sales": {
+      "get": {
+        "operationId": "listCoachSales",
+        "summary": "The coach's plan sales: received and pending payments",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "paid",
+                "pending",
+                "awaiting_coach_setup",
+                "payment_due"
+              ]
+            },
+            "required": false,
+            "name": "paymentStatus",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "platformFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "stripeFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "coachPayoutCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "canRestrict": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "athleteName",
+                          "platformFeeCents",
+                          "stripeFeeCents",
+                          "coachPayoutCents",
+                          "canRestrict",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "receivedCents": {
+                          "type": "number"
+                        },
+                        "pendingCents": {
+                          "type": "number"
+                        },
+                        "overdueCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "receivedCents",
+                        "pendingCents",
+                        "overdueCount"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "totals"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/marketplace/dashboard": {
+      "get": {
+        "operationId": "getCoachMarketplaceDashboard",
+        "summary": "The coach's marketplace seller dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "connected": {
+                      "type": "boolean"
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "salesCount": {
+                          "type": "number"
+                        },
+                        "earnedCents": {
+                          "type": "number"
+                        },
+                        "pendingCents": {
+                          "type": "number"
+                        },
+                        "onTheWayCents": {
+                          "type": "number"
+                        },
+                        "stripeBalanceCents": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "paidOutCents": {
+                          "type": "number"
+                        },
+                        "views": {
+                          "type": "number"
+                        },
+                        "conversion": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ratingAverage": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ratingCount": {
+                          "type": "number"
+                        },
+                        "overdueCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "salesCount",
+                        "earnedCents",
+                        "pendingCents",
+                        "onTheWayCents",
+                        "stripeBalanceCents",
+                        "paidOutCents",
+                        "views",
+                        "conversion",
+                        "ratingAverage",
+                        "ratingCount",
+                        "overdueCount"
+                      ]
+                    },
+                    "monthlyEarnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "month": {
+                            "type": "string"
+                          },
+                          "cents": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "month",
+                          "cents"
+                        ]
+                      }
+                    },
+                    "sales": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "fulfilling",
+                              "fulfilled",
+                              "canceled",
+                              "restricted"
+                            ]
+                          },
+                          "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                              "awaiting_coach_setup",
+                              "payment_due",
+                              "processing",
+                              "paid"
+                            ]
+                          },
+                          "planId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "copiedPlanId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "paymentDueAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "paidAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean"
+                          },
+                          "planTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "athleteName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "platformFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "stripeFeeCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "coachPayoutCents": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "canRestrict": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "paymentStatus",
+                          "planId",
+                          "athleteId",
+                          "copiedPlanId",
+                          "amountCents",
+                          "paymentDueAt",
+                          "paidAt",
+                          "overdue",
+                          "planTitle",
+                          "athleteName",
+                          "platformFeeCents",
+                          "stripeFeeCents",
+                          "coachPayoutCents",
+                          "canRestrict",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "priceCents": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "soldCount": {
+                            "type": "number"
+                          },
+                          "views": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "priceCents",
+                          "status",
+                          "soldCount",
+                          "views"
+                        ]
+                      }
+                    },
+                    "weekly": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "weekStart": {
+                            "type": "string"
+                          },
+                          "weekEnd": {
+                            "type": "string"
+                          },
+                          "views": {
+                            "type": "number"
+                          },
+                          "sales": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "weekStart",
+                          "weekEnd",
+                          "views",
+                          "sales"
+                        ]
+                      }
+                    },
+                    "payouts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "arrivalDate": {
+                            "type": "string"
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "bankLast4": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "arrivalDate",
+                          "amountCents",
+                          "status",
+                          "bankLast4"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "connected",
+                    "totals",
+                    "monthlyEarnings",
+                    "sales",
+                    "plans",
+                    "weekly",
+                    "payouts"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans/{id}/view": {
+      "post": {
+        "operationId": "recordMarketplacePlanView",
+        "summary": "Count a view of a marketplace plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "counted": {
+                      "type": "boolean"
+                    },
+                    "viewCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "counted",
+                    "viewCount"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/sales/{id}/restrict": {
+      "post": {
+        "operationId": "restrictCoachSale",
+        "summary": "Restrict a buyer who hasn't paid for a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "fulfilling",
+                        "fulfilled",
+                        "canceled",
+                        "restricted"
+                      ]
+                    },
+                    "paymentStatus": {
+                      "type": "string",
+                      "enum": [
+                        "awaiting_coach_setup",
+                        "payment_due",
+                        "processing",
+                        "paid"
+                      ]
+                    },
+                    "planId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "athleteId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "copiedPlanId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    },
+                    "paymentDueAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "paidAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "overdue": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "paymentStatus",
+                    "planId",
+                    "athleteId",
+                    "copiedPlanId",
+                    "amountCents",
+                    "paymentDueAt",
+                    "paidAt",
+                    "overdue"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect": {
+      "get": {
+        "operationId": "getStripeConnectStatus",
+        "summary": "The coach's Stripe Connect status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "refresh",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "not_connected",
+                        "pending",
+                        "restricted",
+                        "active"
+                      ]
+                    },
+                    "accountId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detailsSubmitted": {
+                      "type": "boolean"
+                    },
+                    "chargesEnabled": {
+                      "type": "boolean"
+                    },
+                    "payoutsEnabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "accountId",
+                    "detailsSubmitted",
+                    "chargesEnabled",
+                    "payoutsEnabled"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect/onboarding": {
+      "post": {
+        "operationId": "startStripeConnectOnboarding",
+        "summary": "Start (or continue) connecting the coach's Stripe account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "returnUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "refreshUrl": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "returnUrl",
+                  "refreshUrl"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/stripe-connect/dashboard": {
+      "post": {
+        "operationId": "createStripeConnectDashboardLink",
+        "summary": "Open the coach's Stripe dashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/coaches/{id}": {
+      "get": {
+        "operationId": "getMarketplaceCoach",
+        "summary": "A marketplace coach's profile and listings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coach": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "firstName": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "verified": {
+                          "type": "boolean"
+                        },
+                        "photoUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "isMe": {
+                          "type": "boolean"
+                        },
+                        "onboardedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "sports": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "levels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sport": {
+                                "type": "string"
+                              },
+                              "levelKey": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "sport",
+                              "levelKey"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "firstName",
+                        "lastName",
+                        "verified",
+                        "photoUrl",
+                        "isMe",
+                        "onboardedAt",
+                        "sports",
+                        "levels"
+                      ]
+                    },
+                    "rating": {
+                      "type": "object",
+                      "properties": {
+                        "average": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "count": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "average",
+                        "count"
+                      ]
+                    },
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "plan",
+                              "template"
+                            ]
+                          },
+                          "moveCount": {
+                            "type": "number"
+                          },
+                          "price": {
+                            "type": "number"
+                          },
+                          "productType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "plan",
+                              "program"
+                            ]
+                          },
+                          "selectedLevel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "selectedLevelTo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "description": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "weeks": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "sessionsPerWeek": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "lessonCount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "rating": {
+                            "type": "object",
+                            "properties": {
+                              "average": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "average",
+                              "count"
+                            ]
+                          },
+                          "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "sampleMove": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "targetKind": {
+                                "type": "string"
+                              },
+                              "targetValue": {
+                                "type": "number"
+                              },
+                              "cue": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "why": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "targetKind",
+                              "targetValue",
+                              "cue",
+                              "why"
+                            ]
+                          },
+                          "coach": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string"
+                              },
+                              "verified": {
+                                "type": "boolean"
+                              },
+                              "photoUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "canSell": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "firstName",
+                              "lastName",
+                              "verified",
+                              "photoUrl",
+                              "canSell"
+                            ]
+                          },
+                          "isOwn": {
+                            "type": "boolean"
+                          },
+                          "purchases": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "athleteId": {
+                                  "type": "string"
+                                },
+                                "planId": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "paymentStatus": {
+                                  "type": "string",
+                                  "enum": [
+                                    "awaiting_coach_setup",
+                                    "payment_due",
+                                    "processing",
+                                    "paid"
+                                  ]
+                                },
+                                "purchaseId": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "athleteId",
+                                "planId",
+                                "paymentStatus",
+                                "purchaseId"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "moveCount",
+                          "price",
+                          "productType",
+                          "selectedLevel",
+                          "selectedLevelTo",
+                          "description",
+                          "weeks",
+                          "sessionsPerWeek",
+                          "lessonCount",
+                          "rating",
+                          "media",
+                          "createdAt",
+                          "updatedAt",
+                          "sampleMove",
+                          "coach",
+                          "isOwn",
+                          "purchases"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "coach",
+                    "rating",
+                    "plans"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/profile/photo": {
+      "put": {
+        "operationId": "setCoachProfilePhoto",
+        "summary": "Set or remove the coach's profile photo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                },
+                "required": [
+                  "photo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "photoUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "photoUrl"
                   ]
                 }
               }

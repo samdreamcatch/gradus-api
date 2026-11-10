@@ -8,12 +8,19 @@ import {
   getCoachProfile,
   saveCoachProfile,
 } from "@/lib/coach-onboarding.server";
+import {
+  coachSetupChecklistResponseSchema,
+  updateCoachSetupChecklist,
+  updateCoachSetupChecklistInput,
+} from "@/lib/coach-setup-checklist.server";
 
 /**
  * Thin wrappers over the shared `getCoachProfile` / `saveCoachProfile`
  * (src/lib/coach-onboarding.server.ts) — the web's server functions of the
  * same names (PRD §7.1 "Coach onboarding", Appendix A). Reading creates
  * the coach row on first sight, seeded from the token's name metadata.
+ * `PATCH` marks setup checklist steps (`profile.checklist`), usually one at a
+ * time: `{ "checklist": { "identityVerification": true } }`.
  */
 export const Route = createFileRoute("/api/v1/coach/profile")({
   server: {
@@ -35,6 +42,17 @@ export const Route = createFileRoute("/api/v1/coach/profile")({
         output: okSchema,
         handler: async ({ ctx, input }) =>
           saveCoachProfile(coachContext(requireContext(ctx)), input),
+      }),
+      ...defineApiRoute({
+        method: "PATCH",
+        path: "/api/v1/coach/profile",
+        operationId: "updateCoachChecklist",
+        auth: "user",
+        summary: "Mark setup checklist steps complete",
+        input: updateCoachSetupChecklistInput,
+        output: coachSetupChecklistResponseSchema,
+        handler: async ({ ctx, input }) =>
+          updateCoachSetupChecklist(requireContext(ctx).supabase, input),
       }),
     },
   },

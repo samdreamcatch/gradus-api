@@ -23,6 +23,7 @@ declare module "bun:test" {
     toBe(expected: unknown): void;
     toEqual(expected: unknown): void;
     toContain(expected: unknown): void;
+    toContainEqual(expected: unknown): void;
     toMatch(expected: unknown): void;
     toMatchObject(expected: Record<string, unknown>): void;
     toBeNull(): void;

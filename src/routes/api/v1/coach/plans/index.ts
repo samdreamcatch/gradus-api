@@ -4,7 +4,7 @@ import { defineApiRoute, weakETag } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
 import { planIdSchema, planListSchema } from "@/lib/api/plans-schema";
 import { requirePlansCoach } from "@/lib/plan-detail.server";
-import { createPlan, createPlanInput, listPlans, listPlansInput } from "@/lib/plans.server";
+import { createPlan, createPlanApiInput, listPlans, listPlansInput } from "@/lib/plans.server";
 
 /**
  * Thin wrappers over the shared `listPlans` and `createPlan` (PRD §7.3
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/v1/coach/plans/")({
         auth: "user",
         idempotent: true,
         summary: "Create a draft plan or a template, optionally cloned",
-        input: createPlanInput,
+        input: createPlanApiInput,
         output: planIdSchema,
         handler: async ({ ctx, input }) => {
           const coach = await requirePlansCoach(requireContext(ctx));

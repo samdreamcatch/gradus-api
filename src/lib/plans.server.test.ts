@@ -8,7 +8,10 @@ import {
   submitSessionInput,
 } from "./plan-sessions.server";
 import {
+  addLibraryMovesToPlan,
   createPlan,
+  createPlanApiInput,
+  createPlanInput,
   deletePlan,
   listCoachAthletes,
   removePlanMove,
@@ -565,6 +568,19 @@ describe("plan writes stay on the coach's roster", () => {
       expect(writes).toContain("plans.insert");
     });
 
+    it("editing a published marketplace plan (active, no athlete) keeps it on sale", async () => {
+      const payloads: unknown[] = [];
+      const supabase = fakeClient(
+        { ...coach, plans: { ...owned, status: "active", athlete_id: null } },
+        {},
+        { payloads },
+      );
+      await expect(
+        updatePlan({ userId: "u", supabase }, "p1", { title: "New title", weeks: 6 }),
+      ).resolves.toEqual({ ok: true });
+      expect((payloads[0] as Record<string, unknown>).status).toBeUndefined();
+    });
+
     it("editing a plan whose athlete has left the roster is 403, as the database would refuse it", async () => {
       const writes: string[] = [];
       const supabase = fakeClient({ ...coach, plans: owned }, {}, { writes });
@@ -1047,5 +1063,81 @@ describe("setPlanStatus and the guardian on file (decision #56)", () => {
     } finally {
       mock.module("./guardian.server", () => real);
     }
+  });
+});
+
+describe("createPlanApiInput", () => {
+  const required = { productType: "program" as const, selectedLevel: "Pre-Juvenile", price: 25 };
+
+  it("takes product type, price and level, each optional on a new plan", () => {
+    expect(createPlanApiInput.safeParse(required).success).toBe(true);
+    const { selectedLevel: _level, ...withoutLevel } = required;
+    expect(createPlanApiInput.safeParse(withoutLevel).success).toBe(true);
+  });
+
+  it("keeps the App Store app's create working: no product type is a plan, no price is free", () => {
+    const oldAppBody = { kind: "plan", athleteId: null };
+    const parsed = createPlanApiInput.safeParse(oldAppBody);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.productType).toBe("plan");
+    expect(parsed.data?.price).toBeUndefined();
+  });
+
+  it("lets a copy take its source's product type and price", () => {
+    const fromPlanId = "6a1f2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+    expect(createPlanApiInput.safeParse({ fromPlanId }).success).toBe(true);
+    expect(createPlanApiInput.safeParse({ fromPlanId }).data?.productType).toBeUndefined();
+    expect(createPlanApiInput.safeParse({ fromTemplateId: fromPlanId }).success).toBe(true);
+  });
+
+  it("takes only plan or program, any non-blank level, and an optional description", () => {
+    expect(createPlanApiInput.safeParse({ ...required, productType: "course" }).success).toBe(
+      false,
+    );
+    expect(createPlanApiInput.safeParse({ ...required, selectedLevel: "Any Level" }).success).toBe(
+      true,
+    );
+    expect(createPlanApiInput.safeParse({ ...required, selectedLevel: "  " }).success).toBe(false);
+    expect(createPlanApiInput.safeParse({ ...required, description: "Edges first." }).success).toBe(
+      true,
+    );
+  });
+
+  it("leaves the web app's create input as it was", () => {
+    expect(createPlanInput.safeParse({}).success).toBe(true);
+  });
+});
+
+describe("addLibraryMovesToPlan", () => {
+  const axel = {
+    id: "m1",
+    name: "Axel",
+    description: "",
+    cue: "",
+    why: "",
+    default_target_kind: "reps",
+    default_target_value: 5,
+  };
+  const draft = { id: "p1", kind: "plan", status: "draft", athlete_id: null };
+
+  it("refuses a move that's already in the plan, and writes nothing", async () => {
+    const writes: string[] = [];
+    const supabase = fakeClient(
+      { ...coach, plans: draft },
+      { moves: [axel], plan_moves: [{ move_id: "m1" }] },
+      { writes },
+    );
+    const err = await caught(() => addLibraryMovesToPlan({ userId: "u", supabase }, "p1", ["m1"]));
+    expect(err?.status).toBe(409);
+    expect(err?.code).toBe("move_already_in_plan");
+    expect(err?.message).toBe("Axel is already in this plan.");
+    expect(writes).toEqual([]);
+  });
+
+  it("adds a move sent twice only once", async () => {
+    const supabase = fakeClient({ ...coach, plans: draft }, { moves: [axel], plan_moves: [] });
+    await expect(
+      addLibraryMovesToPlan({ userId: "u", supabase }, "p1", ["m1", "m1"]),
+    ).resolves.toEqual({ inserted: 1 });
   });
 });
