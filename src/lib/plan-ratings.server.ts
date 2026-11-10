@@ -5,7 +5,10 @@
  *
  * Who may rate is the database's rule, `public.can_rate_plan()`: the athlete
  * the plan is assigned to and that athlete's parents or guardians, once the
- * plan is shared with them (active or benched). Writes go through the
+ * plan is shared with them (active or benched); and anyone who bought a
+ * marketplace plan (the buyer, the athlete it's for, or their parent),
+ * 20261111120900_plan_ratings_buyers. A buyer's own copy is rated as the
+ * listing it came from (`ratedPlanId`). Writes go through the
  * caller's RLS client, so the policies and column guards apply; this module
  * checks the same rule first only to answer with a clear 403.
  *
@@ -162,6 +165,23 @@ function toDto(row: RatingRow, reviewer: Reviewer | undefined): PlanRatingDTO {
   };
 }
 
+/**
+ * The plan whose ratings `planId` stands for: a buyer's own copy of a
+ * marketplace plan (20261111120800_plan_purchases) is rated as the coach's
+ * listing it was bought from, so ratings asked for from the athlete's Plans
+ * land where every buyer sees them. Any other plan is itself.
+ */
+async function ratedPlanId(ctx: PlanRatingsContext, planId: string): Promise<string> {
+  const { data, error } = await untyped(ctx.admin)
+    .from("plan_purchases")
+    .select("plan_id")
+    .eq("copied_plan_id", planId)
+    .eq("status", "fulfilled")
+    .maybeSingle();
+  if (error) dbError(error);
+  return (data?.plan_id as string | null | undefined) ?? planId;
+}
+
 async function canRatePlan(supabase: Client, planId: string): Promise<boolean> {
   const { data, error } = await untyped(supabase).rpc("can_rate_plan", { _plan_id: planId });
   if (error) dbError(error);
@@ -222,16 +242,17 @@ function toSummary(plan: PlanForRatings): PlanRatingSummary {
 /** A plan's average rating and how many ratings it has; `average` is null with none. */
 export async function getPlanRatingSummary(
   ctx: PlanRatingsContext,
-  planId: string,
+  requestedPlanId: string,
 ): Promise<PlanRatingSummary> {
-  return toSummary(await loadReadablePlan(ctx, planId));
+  return toSummary(await loadReadablePlan(ctx, await ratedPlanId(ctx, requestedPlanId)));
 }
 
 export async function listPlanRatings(
   ctx: PlanRatingsContext,
-  planId: string,
+  requestedPlanId: string,
   input: z.infer<typeof listPlanRatingsQuery>,
 ): Promise<PlanRatingsPageDTO> {
+  const planId = await ratedPlanId(ctx, requestedPlanId);
   const plan = await loadReadablePlan(ctx, planId);
   const after = input.cursor ? decodeRatingsCursor(input.cursor) : null;
 
@@ -284,10 +305,11 @@ export async function listPlanRatings(
 /** Rates the plan, or changes the caller's earlier rating of it. */
 export async function ratePlan(
   ctx: PlanRatingsContext,
-  planId: string,
+  requestedPlanId: string,
   input: z.infer<typeof ratePlanInput>,
   now: Date = new Date(),
 ): Promise<PlanRatingDTO> {
+  const planId = await ratedPlanId(ctx, requestedPlanId);
   if (!(await canRatePlan(ctx.supabase, planId))) {
     throw forbidden("Only the plan's athlete and their parents can rate it.");
   }
@@ -320,8 +342,9 @@ export async function ratePlan(
 /** Removes the caller's rating of the plan; none to remove is still a 200. */
 export async function deleteMyPlanRating(
   ctx: PlanRatingsContext,
-  planId: string,
+  requestedPlanId: string,
 ): Promise<{ ok: true }> {
+  const planId = await ratedPlanId(ctx, requestedPlanId);
   const { error } = await untyped(ctx.supabase)
     .from("plan_ratings")
     .delete()

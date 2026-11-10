@@ -158,6 +158,36 @@ describe("ratePlan", () => {
   });
 });
 
+describe("a buyer's own copy", () => {
+  const COPY = "8c3f4d5e-6f7a-4b8c-9dae-1f2a3b4c5d6e";
+  const purchases = {
+    plan_purchases: [{ plan_id: PLAN, copied_plan_id: COPY, status: "fulfilled" }],
+  };
+
+  it("is rated as the listing it was bought from", async () => {
+    const user = fakeClient({}, { can_rate_plan: true }, ratingRow({ review: null }));
+    const admin = fakeClient({ plans: [{ id: PLAN, athlete_id: null }], ...purchases, ...people });
+    await ratePlan({ userId: "u-parent", supabase: user.client, admin: admin.client }, COPY, {
+      rating: 4,
+    });
+    expect(user.calls.find((c) => c.op === "upsert")?.payload).toMatchObject({ plan_id: PLAN });
+  });
+
+  it("removes the caller's rating of the listing, not of the copy", async () => {
+    const user = fakeClient({});
+    const admin = fakeClient(purchases);
+    await deleteMyPlanRating(
+      { userId: "u-parent", supabase: user.client, admin: admin.client },
+      COPY,
+    );
+    expect(user.calls.find((c) => c.op === "delete")!.filters).toContainEqual([
+      "eq",
+      "plan_id",
+      PLAN,
+    ]);
+  });
+});
+
 describe("respondToPlanRating", () => {
   it("lets only the plan's coach reply", async () => {
     const { client } = fakeClient({}, { is_plan_coach: false });
