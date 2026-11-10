@@ -253,6 +253,13 @@
       "when": 1793810506946,
       "tag": "0035_shared_plan_gradus_byline",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794280659861,
+      "tag": "0036_club_tier_requires_active_contract",
+      "breakpoints": true
     }
   ]
 }
