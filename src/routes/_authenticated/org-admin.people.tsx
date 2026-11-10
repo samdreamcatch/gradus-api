@@ -303,7 +303,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["club-capacity", orgId] }),
         qc.invalidateQueries({ queryKey: ["club-seat-requests", orgId] }),
-        qc.invalidateQueries({ queryKey: ["org-roster"] }),
+        qc.invalidateQueries({ queryKey: ["org-people"] }),
       ]);
       toast.success(done);
       return true;
