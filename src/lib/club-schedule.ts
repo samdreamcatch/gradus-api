@@ -4,7 +4,42 @@ export type ClubScheduleRow = ImportRow & {
   coachName: string;
   coachId: string | null;
   age: number | null;
+  athleteId?: string | null;
+  startsOn?: string | null;
+  weeksOfMonth?: number[];
 };
+
+export type ClubScheduleStudent = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  coachIds: string[];
+};
+
+// Only match the selected coach's existing roster; duplicate names need a human decision.
+export function matchClubScheduleStudent(row: ClubScheduleRow, students: ClubScheduleStudent[]) {
+  const normalize = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+  const matches = students.filter((s) => row.coachId && s.coachIds.includes(row.coachId) &&
+    normalize(s.firstName) === normalize(row.firstName) && normalize(s.lastName) === normalize(row.lastName));
+  return matches.length === 1 ? matches[0]?.id ?? null : null;
+}
+
+export function clubScheduleCommitErrors(rows: ClubScheduleRow[]) {
+  const errors = clubScheduleErrors(rows);
+  for (const row of rows) {
+    if (!row.athleteId) errors[row.id]?.push("Match an existing student");
+    if (!row.startsOn || !/^\d{4}-\d{2}-\d{2}$/.test(row.startsOn) ||
+      Number.isNaN(Date.parse(`${row.startsOn}T00:00:00Z`)) ||
+      new Date(`${row.startsOn}T00:00:00Z`).toISOString().slice(0, 10) !== row.startsOn)
+      errors[row.id]?.push("Choose a start date");
+    const weeks = row.weeksOfMonth ?? [];
+    if ((row.frequency === "monthly" && weeks.length !== 1) ||
+      (row.frequency === "twice_monthly" && weeks.length !== 2) ||
+      new Set(weeks).size !== weeks.length || weeks.some((w) => !Number.isInteger(w) || w < 1 || w > 5))
+      errors[row.id]?.push("Choose recurrence weeks");
+  }
+  return errors;
+}
 
 export const CLUB_SCHEDULE_TEMPLATE = "coach_name,athlete_first_name,athlete_last_name,age,day,start_time,length_minutes,frequency,guardian_email,athlete_email,sport\nCasey Morgan,Avery,Reed,14,Mon,4:00 PM,45,weekly,parent@example.com,,figure_skating\n";
 

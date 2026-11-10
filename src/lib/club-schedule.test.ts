@@ -1,8 +1,29 @@
 import { describe, expect, it } from "bun:test";
-import { clubScheduleErrors, inviteDestination, parseClubSchedule, type ClubScheduleRow } from "./club-schedule";
+import { clubScheduleErrors, clubScheduleCommitErrors, matchClubScheduleStudent, inviteDestination, parseClubSchedule, type ClubScheduleRow } from "./club-schedule";
 
 const row: ClubScheduleRow = { id: "1", firstName: "Avery", lastName: "Reed", coachName: "Casey", coachId: "coach", age: 17, dayOfWeek: 1, startMinute: 960, lengthMinutes: 45, frequency: "weekly", sport: "figure_skating", guardianEmail: "parent@example.com", athleteEmail: "", };
 describe("Club schedule review", () => {
+  it("matches students only within their selected coach's roster", () => {
+    const students = [{ id: "a", firstName: " Avery ", lastName: "REED", coachIds: ["coach"] },
+      { id: "b", firstName: "Avery", lastName: "Reed", coachIds: ["other"] }];
+    expect(matchClubScheduleStudent(row, students)).toBe("a");
+    expect(matchClubScheduleStudent({ ...row, coachId: "unknown" }, students)).toBeNull();
+  });
+  it("does not auto-match duplicate student names", () => {
+    const student = { firstName: "Avery", lastName: "Reed", coachIds: ["coach"] };
+    expect(matchClubScheduleStudent(row, [{ ...student, id: "a" }, { ...student, id: "b" }])).toBeNull();
+  });
+  it("requires a student and real start date before creating lessons", () => {
+    expect(clubScheduleCommitErrors([row])["1"]).toContain("Match an existing student");
+    expect(clubScheduleCommitErrors([{ ...row, athleteId: "a", startsOn: "2026-02-30" }])["1"]).toContain("Choose a start date");
+    expect(clubScheduleCommitErrors([{ ...row, athleteId: "a", startsOn: "2026-11-10" }])["1"]).toEqual([]);
+  });
+  it("requires one week for monthly and two distinct weeks for twice-monthly lessons", () => {
+    const valid = { ...row, athleteId: "a", startsOn: "2026-11-10" };
+    expect(clubScheduleCommitErrors([{ ...valid, frequency: "monthly" }])["1"]).toContain("Choose recurrence weeks");
+    expect(clubScheduleCommitErrors([{ ...valid, frequency: "twice_monthly", weeksOfMonth: [1, 1] }])["1"]).toContain("Choose recurrence weeks");
+    expect(clubScheduleCommitErrors([{ ...valid, frequency: "twice_monthly", weeksOfMonth: [1, 3] }])["1"]).toEqual([]);
+  });
   it("routes under-18s to parents and 18-year-olds to adult athlete invitations", () => {
     expect(inviteDestination(row)).toBe("parent");
     expect(inviteDestination({ ...row, age: 18 })).toBe("adult athlete");
