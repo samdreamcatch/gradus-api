@@ -184,6 +184,79 @@ export const getStaffClubContract = createServerFn({ method: "POST" })
     return result.data;
   });
 
+export type ClubSeatRequest = {
+  id: string;
+  coach_id: string;
+  coach_name: string | null;
+  requested_at: string;
+};
+
+export const listClubSeatRequests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input))
+  .handler(async ({ data, context }): Promise<ClubSeatRequest[]> => {
+    const admin = await authorizedClient(context.supabase, context.userId, data.organizationId);
+    const result = await (admin as unknown as SupabaseClient)
+      .from("club_seat_requests")
+      .select("id,coach_id,coach_name,requested_at")
+      .eq("organization_id", data.organizationId)
+      .is("resolved_at", null)
+      .order("requested_at");
+    if (result.error) dbError(result.error);
+    return (result.data ?? []) as ClubSeatRequest[];
+  });
+
+async function clubRpc(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  organizationId: string,
+  fn: string,
+  args: Record<string, unknown>,
+) {
+  const admin = await authorizedClient(supabase, userId, organizationId);
+  const result = await (admin as unknown as SupabaseClient).rpc(fn, {
+    p_org_id: organizationId,
+    p_actor: userId,
+    ...args,
+  });
+  if (result.error) dbError(result.error);
+  return { ok: true };
+}
+
+export const setClubAdminRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    orgInput
+      .extend({ adminId: z.string().uuid(), role: z.enum(["owner", "admin"]) })
+      .parse(input),
+  )
+  .handler(({ data, context }) =>
+    clubRpc(context.supabase, context.userId, data.organizationId, "club_set_admin_role", {
+      p_admin_id: data.adminId,
+      p_role: data.role,
+    }),
+  );
+
+export const releaseClubCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ coachId: z.string().uuid() }).parse(input))
+  .handler(({ data, context }) =>
+    clubRpc(context.supabase, context.userId, data.organizationId, "club_release_coach", {
+      p_coach_id: data.coachId,
+    }),
+  );
+
+export const assignWaitingCoach = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    orgInput.extend({ requestId: z.string().uuid() }).parse(input),
+  )
+  .handler(({ data, context }) =>
+    clubRpc(context.supabase, context.userId, data.organizationId, "club_assign_waiting_coach", {
+      p_request_id: data.requestId,
+    }),
+  );
+
 export const removeClubAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => orgInput.extend({ adminId: z.string().uuid() }).parse(input))
