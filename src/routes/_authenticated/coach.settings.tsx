@@ -54,6 +54,7 @@ import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { requestSport } from "@/lib/sport-requests.functions";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
+import { PaymentsRow } from "@/components/settings/payments-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import { openExternal } from "@/lib/native";
 
@@ -106,6 +107,7 @@ function SettingsPage() {
 
         <SettingsGroup label="Payouts">
           <StripeConnectSection />
+          <PaymentsRow to="/coach/settings/payments" />
         </SettingsGroup>
 
         <SettingsGroup label="Plan">

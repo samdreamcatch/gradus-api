@@ -394,9 +394,13 @@ async function openCheckout(
   title: string,
   description: string | null,
   origin: string,
+  /** A web page to come back to (`/parent/settings/payments`); the app otherwise. */
+  returnTo?: string,
 ): Promise<string | null> {
   const stripe = ctx.stripe ?? createConnectStripeClient();
-  const complete = `${origin}/purchase/complete?purchase=${purchase.id}`;
+  const complete = `${origin}/purchase/complete?purchase=${purchase.id}${
+    returnTo ? `&return=${encodeURIComponent(returnTo)}` : ""
+  }`;
   const session = await stripe.checkout.sessions.create(
     {
       mode: "payment",
@@ -680,7 +684,7 @@ async function promoteWhenCoachReady(admin: Admin, rows: PurchaseRow[]): Promise
 export async function payPlanPurchase(
   ctx: PurchaseContext,
   purchaseId: string,
-  opts: { origin: string },
+  opts: { origin: string; returnTo?: string },
 ): Promise<PlanCheckoutDTO> {
   const found = await purchaseRow(ctx.admin, purchaseId);
   if (!found || found.buyer_user_id !== ctx.userId) throw purchaseNotFound();
@@ -710,7 +714,12 @@ export async function payPlanPurchase(
       const done = await fulfillPurchase(ctx.admin, stripe, row.id);
       return { purchase: toDTO(done ?? row), checkoutUrl: null };
     }
-    if (session.status === "open" && session.url) {
+    // Only when it comes back to the same place (the app, or this web page).
+    const returnParam = opts.returnTo ? `&return=${encodeURIComponent(opts.returnTo)}` : null;
+    const sameReturn = returnParam
+      ? session.success_url?.includes(returnParam) === true
+      : session.success_url?.includes("&return=") !== true;
+    if (session.status === "open" && session.url && sameReturn) {
       return { purchase: toDTO(row), checkoutUrl: session.url };
     }
   }
@@ -726,6 +735,7 @@ export async function payPlanPurchase(
     (plan?.title as string | undefined) ?? "Training plan",
     (plan?.description as string | null | undefined) ?? null,
     opts.origin,
+    opts.returnTo,
   );
   return { purchase: toDTO((await purchaseRow(ctx.admin, row.id)) ?? row), checkoutUrl: url };
 }
