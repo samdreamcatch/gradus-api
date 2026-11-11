@@ -335,7 +335,7 @@ export async function getCoachDashboard(
 }
 
 /** The coach's Stripe balance (not in their bank yet) and recent bank payouts; nulls if Stripe fails. */
-async function stripeMoney(
+export async function stripeMoney(
   ctx: DashboardContext,
   accountId: string,
 ): Promise<{

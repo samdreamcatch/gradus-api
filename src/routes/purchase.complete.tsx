@@ -4,15 +4,21 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 
+/** The web pages a checkout may come back to (`payMyPurchaseFn`); anything else goes to the app. */
+const WEB_RETURNS = ["/parent/settings/payments", "/athlete/settings/payments"] as const;
+
 const searchSchema = z.object({
   purchase: z.string().uuid().optional(),
   canceled: z.coerce.boolean().optional(),
+  return: z.enum(WEB_RETURNS).optional().catch(undefined),
 });
 
 /**
- * Where Stripe Checkout sends a buyer from the iOS app (src/lib/plan-purchases.server.ts):
- * hands them straight back to the app (`gradus://marketplace/purchases/<id>`), which
- * then checks the purchase and opens the plan. Public: Safari has no Gradus session.
+ * Where Stripe Checkout sends a buyer (src/lib/plan-purchases.server.ts). From
+ * the iOS app: straight back to the app (`gradus://marketplace/purchases/<id>`),
+ * which then checks the purchase and opens the plan. Public: Safari has no
+ * Gradus session. From the web payments page (`return`): back to that page,
+ * which records the payment.
  */
 export const Route = createFileRoute("/purchase/complete")({
   validateSearch: searchSchema,
@@ -20,10 +26,12 @@ export const Route = createFileRoute("/purchase/complete")({
 });
 
 function PurchaseCompletePage() {
-  const { purchase, canceled } = Route.useSearch();
-  const appUrl = purchase
-    ? `gradus://marketplace/purchases/${purchase}${canceled ? "?canceled=1" : ""}`
-    : "gradus://marketplace";
+  const { purchase, canceled, return: webReturn } = Route.useSearch();
+  const appUrl = webReturn
+    ? `${webReturn}${purchase ? `?purchase=${purchase}${canceled ? "&canceled=1" : ""}` : ""}`
+    : purchase
+      ? `gradus://marketplace/purchases/${purchase}${canceled ? "?canceled=1" : ""}`
+      : "gradus://marketplace";
 
   useEffect(() => {
     window.location.href = appUrl;

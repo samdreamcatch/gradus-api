@@ -23,6 +23,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
+import { PaymentsRow } from "@/components/settings/payments-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import { getAthleteSettings, updateAthleteSelf } from "@/lib/athlete-settings.functions";
 import { resendGuardianInvite } from "@/lib/guardian.functions";
@@ -147,6 +148,7 @@ function AthleteSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="Account">
+              <PaymentsRow to="/athlete/settings/payments" />
               <AccountSecurityRow to="/athlete/settings/account" />
             </SettingsGroup>
 

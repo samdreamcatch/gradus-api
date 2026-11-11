@@ -80,6 +80,7 @@ import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
+import { PaymentsRow } from "@/components/settings/payments-row";
 import { LegalSection } from "@/components/settings/legal-section";
 import {
   getParentSettings,
@@ -262,6 +263,7 @@ function ParentSettingsPage() {
             </SettingsGroup>
 
             <SettingsGroup label="Account">
+              <PaymentsRow to="/parent/settings/payments" />
               <AccountSecurityRow to="/parent/settings/account" />
             </SettingsGroup>
 

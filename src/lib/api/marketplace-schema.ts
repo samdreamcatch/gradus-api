@@ -86,6 +86,8 @@ export const marketplaceCoachSchema = z.object({
   }),
   /** Across all their active plans; `average` is null with no ratings. */
   rating: z.object({ average: z.number().nullable(), count: z.number() }),
+  /** Ratings of the coach themselves (`GET /api/v1/marketplace/coaches/{id}/ratings`); `average` is null with none. */
+  coachRating: z.object({ average: z.number().nullable(), count: z.number() }),
   plans: z.array(marketplacePlanSchema),
 });
 

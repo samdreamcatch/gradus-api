@@ -402,6 +402,27 @@ describe("pay later", () => {
     });
   });
 
+  it("sends a buyer paying on the web back to their payments page, the app otherwise", async () => {
+    const pay = async (returnTo?: string) => {
+      const admin = fakeAdmin({
+        plan_purchases: [sale()],
+        coach_profiles: [readyCoach],
+        plans: [{ id: "p1", title: "Edge Control", description: null }],
+      });
+      const { stripe, calls } = fakeStripe();
+      await payPlanPurchase({ userId: "u", admin, stripe }, "pur1", {
+        origin: "https://gradus.test",
+        returnTo,
+      });
+      return (calls.find((c) => c[0] === "sessions.create")![1] as { success_url: string })
+        .success_url;
+    };
+    expect(await pay("/parent/settings/payments")).toBe(
+      "https://gradus.test/purchase/complete?purchase=pur1&return=%2Fparent%2Fsettings%2Fpayments",
+    );
+    expect(await pay()).toBe("https://gradus.test/purchase/complete?purchase=pur1");
+  });
+
   it("gives the coach received and pending totals, and flags a sale 3 days unpaid", async () => {
     const admin = fakeAdmin({
       coach_profiles: [{ ...readyCoach, user_id: "u-seller" }],

@@ -122,13 +122,13 @@ export function reviewerName(firstName: string, lastName: string | null | undefi
   return initial ? `${firstName.trim()} ${initial.toUpperCase()}.` : firstName.trim();
 }
 
-type Reviewer = PlanRatingDTO["reviewer"];
+export type Reviewer = PlanRatingDTO["reviewer"];
 
 /**
  * Display names for these reviewers. Someone who is both an athlete and a
  * parent shows as the athlete when they're this plan's athlete.
  */
-async function loadReviewers(
+export async function loadReviewers(
   admin: Client,
   userIds: string[],
   planAthleteId: string | null,

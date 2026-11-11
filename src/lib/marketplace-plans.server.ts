@@ -15,6 +15,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { signedCoachPhotoUrl, signedCoachPhotoUrls } from "./coach-photo.server";
+import { coachRatingSummary } from "./coach-ratings.server";
 import { dbError } from "./db-error";
 import { listingCoverUrls } from "./plan-marketplace-fields.server";
 import { guardianAthleteAccess } from "./team.server";
@@ -429,6 +430,8 @@ export interface MarketplaceCoachDTO {
   };
   /** Across all their active plans, weighted by each plan's rating count; `average` is null with none. */
   rating: { average: number | null; count: number };
+  /** Ratings of the coach themselves (`coach_ratings`, src/lib/coach-ratings.server.ts); `average` is null with none. */
+  coachRating: { average: number | null; count: number };
   /** Their listings, as `GET /api/v1/marketplace/plans` shows them to the caller. */
   plans: MarketplacePlanDTO[];
 }
@@ -452,16 +455,19 @@ export async function getMarketplaceCoach(
   const coachRes = await admin
     .from("coach_profiles")
     .select(
-      "id, user_id, first_name, last_name, checklist, onboarded_at, subscription_tier, organization_id, photo_url",
+      "id, user_id, first_name, last_name, checklist, onboarded_at, subscription_tier, organization_id, photo_url, rating_avg, rating_count",
     )
     .eq("id", coachId)
     .maybeSingle();
   if (coachRes.error) dbError(coachRes.error);
-  // The generated types don't know photo_url yet (20261111120600_coach_profiles_photo).
+  // The generated types don't know photo_url (20261111120600_coach_profiles_photo) or the
+  // rating totals (20261111121200_coach_ratings) yet.
   const coach = coachRes.data as unknown as {
     id: string;
     user_id: string;
     photo_url: string | null;
+    rating_avg: number | string | null;
+    rating_count: number | null;
     first_name: string;
     last_name: string;
     checklist: { identityVerification?: unknown } | null;
@@ -531,6 +537,7 @@ export async function getMarketplaceCoach(
       levels,
     },
     rating: { average: count > 0 ? Math.round((weighted / count) * 100) / 100 : null, count },
+    coachRating: coachRatingSummary(coach),
     plans,
   };
 }
