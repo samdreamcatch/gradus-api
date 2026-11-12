@@ -879,7 +879,7 @@ function ClubSchedulePage() {
             <ToggleGroup
               type="single"
               value={view}
-              onValueChange={(v) => v && setSp({ view: v })}
+              onValueChange={(v) => (v === "calendar" || v === "grid") && setSp({ view: v })}
               aria-label="Lesson view"
             >
               <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3">
