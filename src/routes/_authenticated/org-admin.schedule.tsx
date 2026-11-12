@@ -1002,6 +1002,7 @@ function ClubSchedulePage() {
               <div key={h.coachId} className="border-b border-divider pb-4">
                 <h3 className="font-display text-h3">{coaches.find(c => c.coachId === h.coachId) ? `${coaches.find(c => c.coachId === h.coachId)?.firstName} ${coaches.find(c => c.coachId === h.coachId)?.lastName}` : h.coachName}</h3>
                 <p className="mb-2 text-sm text-text-secondary">{h.lessons} unmatched lessons</p>
+                {h.adultLessons > 0 && <p className="mb-2 text-sm text-text-secondary">{h.adultLessons} adult lessons: the coach should use the adult athlete invitation flow, not the guardian-only web CSV import.</p>}
                 <Button variant="outline" onClick={() => downloadCsv(`coach-new-students-${h.coachId.slice(0, 8)}.csv`, h.csv)}><Download className="size-4" />Download coach CSV</Button>
               </div>
             ))}

@@ -36,6 +36,7 @@ export function clubCoachHandoffs(rows: ClubScheduleRow[]) {
   return [...groups].map(([coachId, lessons]) => ({
     coachId,
     coachName: lessons[0]?.coachName ?? "Coach",
+    adultLessons: lessons.filter(r => r.age !== null && r.age >= 18).length,
     lessons: lessons.length,
     csv: toCsv(
       ["athlete_first_name", "athlete_last_name", "age", "day", "start_time", "length_minutes", "frequency", "guardian_email", "athlete_email", "sport"],
