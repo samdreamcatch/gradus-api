@@ -1,35 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { useState } from "react";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { getClubCoachWeeks } from "@/lib/club-coaches.functions";
 import { weekStart, targetPercent, sumCoachWeeks } from "@/lib/club-coach-metrics";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { PageTitle } from "@/components/page-title";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
-import { ClubGridToolbar, ClubGridCount } from "@/components/org-admin/club-grid-toolbar";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
+import { ClubWeekStepper } from "@/components/org-admin/club-week-stepper";
+import { ClubMeter } from "@/components/org-admin/club-meter";
+import { ClubNumber } from "@/components/org-admin/club-number";
+import { ClubPersonCell } from "@/components/org-admin/club-person-cell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FilterPill } from "@/components/ui/filter-pill";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/org-admin/coaches/")({
   head: () => ({
     meta: [
-      { title: "Coaches · Gradus Club" },
+      { title: "Coaching · Gradus Club" },
       { name: "description", content: "Club coach directory and private weekly practice totals." },
-      { property: "og:title", content: "Coaches · Gradus Club" },
+      { property: "og:title", content: "Coaching · Gradus Club" },
       {
         property: "og:description",
         content: "Club coach directory and private weekly practice totals.",
@@ -43,7 +36,13 @@ export const Route = createFileRoute("/_authenticated/org-admin/coaches/")({
 });
 
 type CoachRow = {
-  coach: { coachId: string; firstName: string; lastName: string; levels: { sport: string }[] };
+  coach: {
+    coachId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    levels: { sport: string }[];
+  };
   stats?: {
     students: number | null;
     practice_min: number | null;
@@ -52,8 +51,6 @@ type CoachRow = {
   };
 };
 const mono = "font-mono tabular-nums";
-const fmt = (value: number | null | undefined) =>
-  value == null ? "—" : Math.round(Number(value)).toLocaleString();
 const pctOf = (s: CoachRow["stats"]) =>
   s ? targetPercent(Number(s.practice_min), Number(s.target_min)) : null;
 const sportsOf = (r: CoachRow) => [
@@ -67,57 +64,72 @@ const COLUMNS: ClubColumn<CoachRow>[] = [
     key: "coach",
     label: "Coach",
     className: "min-w-48 font-medium",
-    render: (r) => `${r.coach.firstName} ${r.coach.lastName}`.trim() || "Coach profile",
+    render: (r) => (
+      <ClubPersonCell name={`${r.coach.firstName} ${r.coach.lastName}`} email={r.coach.email} />
+    ),
     sortValue: (r) => `${r.coach.lastName} ${r.coach.firstName}`.toLowerCase(),
   },
   {
     key: "sports",
     label: "Sports",
-    render: (r) => sportsOf(r).join(", ") || "Not set",
+    render: (r) =>
+      sportsOf(r).length ? (
+        sportsOf(r).join(", ")
+      ) : (
+        <Link
+          to="/org-admin/coaches/$coachId"
+          params={{ coachId: r.coach.coachId }}
+          className="underline underline-offset-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Set sport
+        </Link>
+      ),
     sortValue: (r) => sportsOf(r).join(", "),
-    groupValue: (r) => sportsOf(r)[0] ?? "Not set",
+    groupValue: (r) => sportsOf(r)[0] ?? "No sport",
   },
   {
     key: "students",
     label: "Students",
     align: "right",
     className: mono,
-    render: (r) => fmt(r.stats?.students),
+    numeric: (r) => r.stats?.students ?? null,
     sortValue: (r) => r.stats?.students ?? null,
-    footer: (rows) => (allStats(rows) ? fmt(totalsOf(rows).students) : "—"),
+    footer: (rows) => <ClubNumber value={allStats(rows) ? totalsOf(rows).students : null} />,
   },
   {
     key: "practice",
     label: "Practice min",
     align: "right",
     className: mono,
-    render: (r) => fmt(r.stats?.practice_min),
+    numeric: (r) => r.stats?.practice_min ?? null,
     sortValue: (r) => r.stats?.practice_min ?? null,
-    footer: (rows) => (allStats(rows) ? fmt(totalsOf(rows).practice) : "—"),
+    footer: (rows) => <ClubNumber value={allStats(rows) ? totalsOf(rows).practice : null} />,
   },
   {
     key: "target",
     label: "Target min",
     align: "right",
     className: mono,
-    render: (r) => fmt(r.stats?.target_min),
+    numeric: (r) => r.stats?.target_min ?? null,
     sortValue: (r) => r.stats?.target_min ?? null,
-    footer: (rows) => (allStats(rows) ? fmt(totalsOf(rows).target) : "—"),
+    footer: (rows) => <ClubNumber value={allStats(rows) ? totalsOf(rows).target : null} />,
   },
   {
     key: "pct",
     label: "% of target",
     align: "right",
     className: mono,
-    render: (r) => {
-      const v = pctOf(r.stats);
-      return v == null ? "—" : `${v}%`;
-    },
+    render: (r) => <ClubMeter value={r.stats?.practice_min} target={r.stats?.target_min} />,
     sortValue: (r) => pctOf(r.stats),
     footer: (rows) => {
       const t = totalsOf(rows);
-      const v = allStats(rows) ? targetPercent(t.practice, t.target) : null;
-      return v == null ? "—" : `${v}%`;
+      return (
+        <ClubMeter
+          value={allStats(rows) ? t.practice : null}
+          target={allStats(rows) ? t.target : null}
+        />
+      );
     },
   },
   {
@@ -125,17 +137,15 @@ const COLUMNS: ClubColumn<CoachRow>[] = [
     label: "Sessions / wk",
     align: "right",
     className: mono,
-    render: (r) => fmt(r.stats?.sessions),
+    numeric: (r) => r.stats?.sessions ?? null,
     sortValue: (r) => r.stats?.sessions ?? null,
-    footer: (rows) => (allStats(rows) ? fmt(totalsOf(rows).sessions) : "—"),
+    footer: (rows) => <ClubNumber value={allStats(rows) ? totalsOf(rows).sessions : null} />,
   },
 ];
 
-type SavedView = { name: string; search: string; sport: string; sort: string };
-
 function CoachesPage() {
   const {
-    data: { org, coaches, viewerId },
+    data: { org, coaches },
   } = useSuspenseQuery(clubCoachesOptions());
   const read = useServerFn(getClubCoachWeeks);
   const metrics = useQuery({
@@ -146,34 +156,8 @@ function CoachesPage() {
   const [period, setPeriod] = useState(weekStart());
   const [search, setSearch] = useState("");
   const [sport, setSport] = useState("all");
-  const sort = "name";
-  const [views, setViews] = useState<SavedView[]>([]);
-  const [view, setView] = useState("default");
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [viewName, setViewName] = useState("");
-  const storageKey = viewerId ? `gradus.club.views.${viewerId}.${org.id}.coaches` : null;
-  useEffect(() => {
-    if (!storageKey) return;
-    try {
-      const parsed: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-      if (Array.isArray(parsed))
-        setViews(
-          parsed.filter(
-            (v): v is SavedView =>
-              v &&
-              typeof v.name === "string" &&
-              typeof v.search === "string" &&
-              typeof v.sport === "string" &&
-              typeof v.sort === "string",
-          ),
-        );
-    } catch {
-      setViews([]);
-    }
-  }, [storageKey]);
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))].sort();
   const weeks = metrics.data?.weeks ?? [];
-  const periods = [...new Set([weekStart(), ...weeks.map((w) => w.week_start)])].sort().reverse();
   const rows = coaches
     .filter(
       (c) =>
@@ -215,95 +199,49 @@ function CoachesPage() {
       ),
     );
   }
-  function chooseView(value: string) {
-    setView(value);
-    const saved = views.find((v) => v.name === value);
-    setSearch(saved?.search ?? "");
-    setSport(saved?.sport ?? "all");
-  }
-  function saveView() {
-    if (!storageKey || !viewName.trim()) return;
-    const next = [
-      ...views.filter((v) => v.name !== viewName.trim()),
-      { name: viewName.trim(), search, sport, sort },
-    ];
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      setViews(next);
-      setView(viewName.trim());
-      setSaveOpen(false);
-      setViewName("");
-      toast.success("View saved.");
-    } catch {
-      toast.error("Could not save this view on this device.");
-    }
-  }
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle subtitle={org.name}>Coaching</PageTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportRows} disabled={!rows.length}>
-            <Download className="size-4" />
-            Export
-          </Button>
-          <Button asChild size="sm">
-            <Link to="/org-admin/roster">Invite a coach</Link>
-          </Button>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <ClubGridToolbar
-          search={search}
-          onSearchChange={setSearch}
-          searchLabel="Search coaches"
-          activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)}
-          onClear={() => {
-            setSearch("");
-            setSport("all");
-          }}
-        >
-          <FilterPill
-            aria-label="Period"
-            value={period}
-            onValueChange={setPeriod}
-            options={periods.map((p) => ({ value: p, label: `Week of ${p}` }))}
-            className="w-auto min-w-44"
-          />
-          <FilterPill
-            aria-label="Sport"
-            value={sport}
-            onValueChange={setSport}
-            options={[
-              { value: "all", label: "All sports" },
-              ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
-            ]}
-            className="w-auto min-w-40"
-          />
-          <FilterPill
-            aria-label="Saved view"
-            value={view}
-            onValueChange={chooseView}
-            options={[
-              { value: "default", label: "View: Default" },
-              ...views.map((v) => ({ value: v.name, label: `View: ${v.name}` })),
-            ]}
-            className="w-auto min-w-40"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="press-soft"
-            disabled={!storageKey}
-            onClick={() => setSaveOpen(true)}
-          >
-            Save view
-          </Button>
-          <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
-          {grid.menu}
-        </ClubGridToolbar>
-        <ClubGridCount shown={rows.length} total={coaches.length} noun="coaches" />
-      </div>
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 font-sans md:px-6 md:py-8">
+      <ClubPageHeader
+        title="Coaching"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={exportRows}
+              disabled={!rows.length}
+            >
+              Export
+            </Button>
+            <Button asChild className="min-h-11">
+              <Link to="/org-admin/roster">Invite a coach</Link>
+            </Button>
+          </>
+        }
+      />
+      <ClubGridToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchLabel="Search coaches"
+        activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)}
+        onClear={() => {
+          setSearch("");
+          setSport("all");
+        }}
+        end={grid.menu}
+      >
+        <ClubWeekStepper value={period} onValueChange={setPeriod} />
+        <FilterPill
+          aria-label="Sport"
+          value={sport}
+          onValueChange={setSport}
+          options={[
+            { value: "all", label: "All sports" },
+            ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
+          ]}
+          className="min-h-11 w-auto min-w-40 border-border-strong font-sans"
+        />
+      </ClubGridToolbar>
       {metrics.isError && (
         <p role="alert" className="text-sm text-text-secondary">
           Weekly practice records become available after this draft is accepted.
@@ -322,32 +260,9 @@ function CoachesPage() {
           setSport("all");
         }}
         empty="No coaches have joined this club yet."
+        noun={{ one: "coach", many: "coaches" }}
         showFooter
       />
-      <p className="text-xs text-text-secondary">
-        Weeks use UTC. Targets are recorded coach expectations. A dash means no recorded value.
-        Click a coach to open their profile.
-      </p>
-      <Sheet open={saveOpen} onOpenChange={setSaveOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Save view</SheetTitle>
-            <SheetDescription>Coaches</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-3">
-            <Label htmlFor="club-view-name">View name</Label>
-            <Input
-              id="club-view-name"
-              value={viewName}
-              maxLength={60}
-              onChange={(e) => setViewName(e.target.value)}
-            />
-            <Button onClick={saveView} disabled={!viewName.trim() || viewName.trim() === "default"}>
-              Save
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

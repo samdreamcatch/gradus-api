@@ -19,14 +19,19 @@ import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 type Item = { to: string; label: string; exact?: boolean };
 type Group = { label: string; items: Item[]; soon?: string[] };
 
-const GROUPS: Group[] = [{ label: "Club", items: [
-  { to: "/org-admin/coaches", label: "Coaching" },
-  { to: "/org-admin/resources", label: "Library" },
-  { to: "/org-admin/schedule", label: "Schedule" },
-  { to: "/org-admin/people", label: "Users" },
-  { to: "/org-admin/notifications", label: "Notifications" },
-  { to: "/org-admin/settings", label: "Settings" },
-] }];
+const GROUPS: Group[] = [
+  {
+    label: "Club",
+    items: [
+      { to: "/org-admin/coaches", label: "Coaching" },
+      { to: "/org-admin/resources", label: "Library" },
+      { to: "/org-admin/schedule", label: "Schedule" },
+      { to: "/org-admin/people", label: "Users" },
+      { to: "/org-admin/notifications", label: "Notifications" },
+      { to: "/org-admin/settings", label: "Settings" },
+    ],
+  },
+];
 
 export function OrgAdminSidebar({ onSignOut }: { onSignOut: () => void | Promise<void> }) {
   const { orgId, orgName } = useOrgId();
@@ -43,9 +48,14 @@ export function OrgAdminSidebar({ onSignOut }: { onSignOut: () => void | Promise
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
-    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
-      ? pathname === i.to || pathname === i.to + "/"
-      : pathname === i.to || pathname.startsWith(i.to + "/");
+    i.label === "Library" &&
+    ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) =>
+      pathname.startsWith(`/org-admin/${section}`),
+    )
+      ? true
+      : i.exact
+        ? pathname === i.to || pathname === i.to + "/"
+        : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -64,8 +74,24 @@ export function OrgAdminSidebar({ onSignOut }: { onSignOut: () => void | Promise
                 {group.items.map((item) => {
                   return (
                     <SidebarMenuItem key={item.to}>
-                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1 min-h-11 font-sans"><span>Storefront</span><span className="ml-auto font-sans text-xs text-text-tertiary">Not connected</span></SidebarMenuButton>}
-                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label} className="min-h-11 font-sans data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold">
+                      {item.label === "Settings" && (
+                        <SidebarMenuButton
+                          disabled
+                          tooltip="Storefront · not connected"
+                          className="mb-1 min-h-11 font-sans"
+                        >
+                          <span>Storefront</span>
+                          <span className="ml-auto font-sans text-xs text-text-tertiary">
+                            Not connected
+                          </span>
+                        </SidebarMenuButton>
+                      )}
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(item)}
+                        tooltip={item.label}
+                        className="min-h-11 font-sans data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold"
+                      >
                         <Link to={item.to as never}>
                           <span>{item.label}</span>
                           {item.to === "/org-admin/notifications" &&
@@ -93,7 +119,16 @@ export function OrgAdminSidebar({ onSignOut }: { onSignOut: () => void | Promise
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="p-4"><Button variant="ghost" onClick={onSignOut} className="min-h-11 justify-start font-sans text-text-primary" title="Sign out">Sign out</Button></SidebarFooter>
+      <SidebarFooter className="p-4">
+        <Button
+          variant="ghost"
+          onClick={onSignOut}
+          className="min-h-11 justify-start font-sans text-text-primary"
+          title="Sign out"
+        >
+          Sign out
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -43,7 +43,11 @@ export function ClubGridToolbar({
             aria-label="View"
           >
             {views.map((v) => (
-              <ToggleGroupItem key={v.value} value={v.value} className="min-h-11 press-soft px-3 font-sans">
+              <ToggleGroupItem
+                key={v.value}
+                value={v.value}
+                className="min-h-11 press-soft px-3 font-sans"
+              >
                 {v.label}
               </ToggleGroupItem>
             ))}
@@ -108,10 +112,7 @@ export function ClubGroupRow({
 }) {
   return (
     <TableRow className="club-group-row">
-      <TableCell
-        colSpan={colSpan}
-        className="py-2! text-sm text-text-secondary"
-      >
+      <TableCell colSpan={colSpan} className="py-2! text-sm text-text-secondary">
         <span className="font-semibold text-text-primary">{label}</span>
         <span className="ml-2 font-mono">{count}</span>
       </TableCell>

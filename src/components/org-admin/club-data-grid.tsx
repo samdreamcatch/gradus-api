@@ -84,7 +84,10 @@ export function useClubGrid<T>(
   };
 
   const byKey = new Map(columns.map((c) => [c.key, c]));
-  const shown = visibleKeys(keys, prefs.hidden).flatMap((k) => { const column = byKey.get(k); return column ? [column] : []; });
+  const shown = visibleKeys(keys, prefs.hidden).flatMap((k) => {
+    const column = byKey.get(k);
+    return column ? [column] : [];
+  });
   const sorted = useMemo(
     () => sortRows(rows, prefs.sort, (r, k) => byKey.get(k)?.sortValue?.(r)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,25 +98,48 @@ export function useClubGrid<T>(
   const menu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="min-h-11 border-border-strong font-sans press-soft">Columns</Button>
+        <Button variant="outline" className="min-h-11 border-border-strong font-sans press-soft">
+          Columns
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 font-sans">
         <DropdownMenuLabel>Show columns</DropdownMenuLabel>
         {columns.map((c, i) => (
-          <DropdownMenuCheckboxItem className="min-h-11" key={c.key} disabled={i === 0}
-            checked={i === 0 || !prefs.hidden.includes(c.key)} onSelect={(e) => e.preventDefault()}
-            onCheckedChange={(on) => setPrefs({ ...prefs, hidden: on ? prefs.hidden.filter((k) => k !== c.key) : [...prefs.hidden, c.key] })}>
+          <DropdownMenuCheckboxItem
+            className="min-h-11"
+            key={c.key}
+            disabled={i === 0}
+            checked={i === 0 || !prefs.hidden.includes(c.key)}
+            onSelect={(e) => e.preventDefault()}
+            onCheckedChange={(on) =>
+              setPrefs({
+                ...prefs,
+                hidden: on ? prefs.hidden.filter((k) => k !== c.key) : [...prefs.hidden, c.key],
+              })
+            }
+          >
             {c.label}
           </DropdownMenuCheckboxItem>
         ))}
-        {groupable.length > 0 && <>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Group by</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={prefs.group ?? "none"} onValueChange={(k) => setPrefs({ ...prefs, group: k === "none" ? null : k })}>
-            <DropdownMenuRadioItem className="min-h-11" value="none">No grouping</DropdownMenuRadioItem>
-            {groupable.map((k) => <DropdownMenuRadioItem className="min-h-11" key={k} value={k}>{byKey.get(k)?.label}</DropdownMenuRadioItem>)}
-          </DropdownMenuRadioGroup>
-        </>}
+        {groupable.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Group by</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={prefs.group ?? "none"}
+              onValueChange={(k) => setPrefs({ ...prefs, group: k === "none" ? null : k })}
+            >
+              <DropdownMenuRadioItem className="min-h-11" value="none">
+                No grouping
+              </DropdownMenuRadioItem>
+              {groupable.map((k) => (
+                <DropdownMenuRadioItem className="min-h-11" key={k} value={k}>
+                  {byKey.get(k)?.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -268,7 +294,11 @@ export function ClubDataGrid<T>({
                     i === 0 && "sticky left-0 z-[1]",
                   )}
                 >
-                  {c.footer ? c.footer(grid.rows) : i === 0 ? `${grid.rows.length} ${grid.rows.length === 1 ? noun.one : noun.many}` : null}
+                  {c.footer
+                    ? c.footer(grid.rows)
+                    : i === 0
+                      ? `${grid.rows.length} ${grid.rows.length === 1 ? noun.one : noun.many}`
+                      : null}
                 </TableCell>
               ))}
             </TableRow>
