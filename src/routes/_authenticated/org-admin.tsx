@@ -53,8 +53,8 @@ function OrgAdminLayout() {
       <div className="paper-surface min-h-screen flex w-full">
         <OrgAdminSidebar />
         <SidebarInset className="min-w-0 [&>div]:w-full [&>div]:min-w-0">
-          <header className="sticky top-0 z-30 border-b border-divider bg-card/85 backdrop-blur">
-            <div className="flex items-center gap-3 px-4 py-3">
+          <header className="sticky top-0 z-30 h-[69px] shrink-0 border-b border-divider bg-card/85 backdrop-blur">
+            <div className="flex h-full items-center gap-3 px-4 py-3">
               <SidebarTrigger />
               <div className="flex-1 min-w-0" />
               <Button

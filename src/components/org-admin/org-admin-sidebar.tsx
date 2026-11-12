@@ -60,12 +60,12 @@ export function OrgAdminSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-divider">
-        <div className="px-2 py-1">
+      <SidebarHeader className="h-[69px] shrink-0 justify-center border-b border-divider">
+        <div className="min-w-0 px-2 py-1">
           <Eyebrow size="small" tone="accent-ink">
             Club
           </Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">
+          <p className="truncate font-display text-h3 text-text-primary leading-tight">
             {orgName || "Gradus Club"}
           </p>
         </div>
