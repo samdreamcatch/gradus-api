@@ -11,7 +11,8 @@ import { dbError } from "./db-error";
 import { buildAppEmailPayload } from "./email-queue-payload";
 import { REPORT_REASON_LABELS, reportInput, type ReportReason } from "./safety-types";
 
-const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
+/** Who gets safety reports (people, messages, resources and plans). */
+export const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
@@ -213,7 +214,11 @@ export async function blockUser(
   input: z.infer<typeof blockInput>,
 ): Promise<{ ok: true }> {
   if (input.targetUserId === ctx.userId) {
-    throw new ApiError({ code: "unprocessable", status: 422, message: "You can't block yourself." });
+    throw new ApiError({
+      code: "unprocessable",
+      status: 422,
+      message: "You can't block yourself.",
+    });
   }
   const [me, them] = await Promise.all([
     resolveIdentity(ctx.admin, ctx.userId),
@@ -277,7 +282,11 @@ export async function submitReport(
   input: z.infer<typeof reportInput>,
 ): Promise<{ ok: true; blocked: boolean }> {
   if (input.targetUserId && input.targetUserId === ctx.userId) {
-    throw new ApiError({ code: "unprocessable", status: 422, message: "You can't report yourself." });
+    throw new ApiError({
+      code: "unprocessable",
+      status: 422,
+      message: "You can't report yourself.",
+    });
   }
   const admin = ctx.admin;
 
@@ -366,4 +375,3 @@ export async function submitReport(
 
   return { ok: true as const, blocked: alsoBlock };
 }
-
