@@ -1,5 +1,6 @@
 
 ## Open
+- [ ] Part 1 club visual pass: shared layout, sidebar, table/grid/toolbar and presentation components; restyle Coaching and show light/dark previews, then stop. No data or email changes.
 - [x] Apply 20261102120000_notifications_collapse_key.sql byte-for-byte as 0033_notifications_collapse_key; column, unique index and service-only function verified. All journal migrations applied; 26 notification/push tests pass, lint zero errors; no emails or pushes sent.
 - [x] Apply pending migrations: app notification inbox applied as 0032_notifications; club notifications already applied. Owner-only permissions and nightly 90-day cleanup verified; 20 notification tests pass, no emails or pushes sent.
 - [x] Replace club calendar coach/day summaries with individual lessons, recorded student/guardian contacts, and accurate schedule/invite tracking; nine lessons and details verified as club admin, ten tests pass. Missing contacts are explicit; club invite delivery remains the separate Stage 5 integration below.
