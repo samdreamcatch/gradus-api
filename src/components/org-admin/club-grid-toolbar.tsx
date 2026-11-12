@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -33,7 +33,7 @@ export function ClubGridToolbar({
   end?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-divider bg-elevated px-2 py-2">
+    <div className="flex flex-wrap items-center gap-2 font-sans [&_button]:min-h-11">
       {views && views.length > 1 && (
         <>
           <ToggleGroup
@@ -43,8 +43,11 @@ export function ClubGridToolbar({
             aria-label="View"
           >
             {views.map((v) => (
-              <ToggleGroupItem key={v.value} value={v.value} className="press-soft gap-1.5 px-3">
-                {v.icon}
+              <ToggleGroupItem
+                key={v.value}
+                value={v.value}
+                className="min-h-11 press-soft px-3 font-sans"
+              >
                 {v.label}
               </ToggleGroupItem>
             ))}
@@ -63,14 +66,13 @@ export function ClubGridToolbar({
             placeholder={searchLabel}
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 pl-9"
+            className="h-11 border-border-strong pl-9 font-sans"
           />
         </div>
       )}
       {children}
       {activeFilters > 0 && onClear && (
         <Button variant="ghost" size="sm" onClick={onClear}>
-          <X className="size-3.5" />
           Clear · {activeFilters}
         </Button>
       )}
@@ -110,10 +112,7 @@ export function ClubGroupRow({
 }) {
   return (
     <TableRow className="club-group-row">
-      <TableCell
-        colSpan={colSpan}
-        className="py-2! text-sm text-text-secondary"
-      >
+      <TableCell colSpan={colSpan} className="py-2! text-sm text-text-secondary">
         <span className="font-semibold text-text-primary">{label}</span>
         <span className="ml-2 font-mono">{count}</span>
       </TableCell>

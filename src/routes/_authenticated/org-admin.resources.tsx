@@ -13,7 +13,7 @@ import {
   ClubEmptyRow,
 } from "@/components/org-admin/club-grid-toolbar";
 import { supabase } from "@/integrations/supabase/client";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -296,8 +296,8 @@ function OrgResourcesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
-      <PageTitle>Resource library</PageTitle>
+    <div className="px-4 py-6 md:px-6 md:py-8 space-y-5 max-w-7xl">
+      <ClubPageHeader title="Resource library" />
       <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />

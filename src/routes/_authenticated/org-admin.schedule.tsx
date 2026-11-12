@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { StatusDot } from "@/components/org-admin/status-dot";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -397,8 +397,11 @@ function ClubSchedulePage() {
     setBusy(true);
     try {
       // Save the full review first, preserving unmatched students for later roster matching.
-      if (partition.waiting.length) await saveFn({ data: { organizationId: org.id, fileName, rows } });
-      const review = await saveFn({ data: { organizationId: org.id, fileName, rows: partition.ready } });
+      if (partition.waiting.length)
+        await saveFn({ data: { organizationId: org.id, fileName, rows } });
+      const review = await saveFn({
+        data: { organizationId: org.id, fileName, rows: partition.ready },
+      });
       const result = await commitFn({ data: { organizationId: org.id, importId: review.id } });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] }),
@@ -440,9 +443,9 @@ function ClubSchedulePage() {
     );
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8 [&_button]:min-h-11">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button]:min-h-11">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <PageTitle>Schedule</PageTitle>
+        <ClubPageHeader title="Schedule" />
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -733,13 +736,37 @@ function ClubSchedulePage() {
                       <Button disabled={!partition.ready.length || busy} onClick={createLessons}>
                         {busy ? "Creating…" : `Create lessons · ${partition.ready.length}`}
                       </Button>
-                      {!!handoffs.length && <Button variant="outline" onClick={() => setHandoffOpen(true)}><Download className="size-4" />New students · coach handoff</Button>}
-                      {!!partition.waiting.length && <span className="text-sm text-text-secondary">{partition.waiting.length} lessons remain in review.</span>}
-                      <Button variant="outline" disabled={busy || students.isFetching} onClick={async () => {
-                        const updated = await students.refetch();
-                        if (updated.error) { toast.error("Could not refresh coach rosters."); return; }
-                        setRows(current => current.map(r => ({ ...r, athleteId: r.athleteId ?? matchClubScheduleStudent(r, updated.data ?? []) })));
-                      }}>Refresh student matches</Button>
+                      {!!handoffs.length && (
+                        <Button variant="outline" onClick={() => setHandoffOpen(true)}>
+                          <Download className="size-4" />
+                          New students · coach handoff
+                        </Button>
+                      )}
+                      {!!partition.waiting.length && (
+                        <span className="text-sm text-text-secondary">
+                          {partition.waiting.length} lessons remain in review.
+                        </span>
+                      )}
+                      <Button
+                        variant="outline"
+                        disabled={busy || students.isFetching}
+                        onClick={async () => {
+                          const updated = await students.refetch();
+                          if (updated.error) {
+                            toast.error("Could not refresh coach rosters.");
+                            return;
+                          }
+                          setRows((current) =>
+                            current.map((r) => ({
+                              ...r,
+                              athleteId:
+                                r.athleteId ?? matchClubScheduleStudent(r, updated.data ?? []),
+                            })),
+                          );
+                        }}
+                      >
+                        Refresh student matches
+                      </Button>
                     </div>
                   )}
                   {committed && (
@@ -765,9 +792,7 @@ function ClubSchedulePage() {
           <section className="space-y-3">
             <h2 className="font-display text-h3">Past imports</h2>
             {history.isError ? (
-              <p className="text-sm text-text-secondary">
-                Could not load import history.
-              </p>
+              <p className="text-sm text-text-secondary">Could not load import history.</p>
             ) : (
               <ClubTable>
                 <TableHeader>
@@ -995,15 +1020,34 @@ function ClubSchedulePage() {
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>New students · coach handoff</SheetTitle>
-            <SheetDescription>Roster setup stays with each coach. No accounts or invitations are created here.</SheetDescription>
+            <SheetDescription>
+              Roster setup stays with each coach. No accounts or invitations are created here.
+            </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
-            {handoffs.map(h => (
+            {handoffs.map((h) => (
               <div key={h.coachId} className="border-b border-divider pb-4">
-                <h3 className="font-display text-h3">{coaches.find(c => c.coachId === h.coachId) ? `${coaches.find(c => c.coachId === h.coachId)?.firstName} ${coaches.find(c => c.coachId === h.coachId)?.lastName}` : h.coachName}</h3>
+                <h3 className="font-display text-h3">
+                  {coaches.find((c) => c.coachId === h.coachId)
+                    ? `${coaches.find((c) => c.coachId === h.coachId)?.firstName} ${coaches.find((c) => c.coachId === h.coachId)?.lastName}`
+                    : h.coachName}
+                </h3>
                 <p className="mb-2 text-sm text-text-secondary">{h.lessons} unmatched lessons</p>
-                {h.adultLessons > 0 && <p className="mb-2 text-sm text-text-secondary">{h.adultLessons} adult lessons: the coach should use the adult athlete invitation flow, not the guardian-only web CSV import.</p>}
-                <Button variant="outline" onClick={() => downloadCsv(`coach-new-students-${h.coachId.slice(0, 8)}.csv`, h.csv)}><Download className="size-4" />Download coach CSV</Button>
+                {h.adultLessons > 0 && (
+                  <p className="mb-2 text-sm text-text-secondary">
+                    {h.adultLessons} adult lessons: the coach should use the adult athlete
+                    invitation flow, not the guardian-only web CSV import.
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    downloadCsv(`coach-new-students-${h.coachId.slice(0, 8)}.csv`, h.csv)
+                  }
+                >
+                  <Download className="size-4" />
+                  Download coach CSV
+                </Button>
               </div>
             ))}
           </div>

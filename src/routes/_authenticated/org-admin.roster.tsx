@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Plus } from "lucide-react";
 import {
   Sheet,
@@ -133,9 +133,9 @@ function OrgRosterPage() {
   if (!orgId) return <div className="p-6 text-text-secondary">Loading…</div>;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <PageTitle>{`${orgName} — Roster`}</PageTitle>
+        <ClubPageHeader title="Roster" />
         <Button onClick={() => setInviting(true)} className="press">
           <Plus className="size-4" />
           Invite a coach
