@@ -1,43 +1,34 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Users,
-  BookOpen,
-  CalendarDays,
-  Settings,
-  Store,
-  Bell,
-  type LucideIcon,
-} from "lucide-react";
-import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { Button } from "@/components/ui/button";
 import { useOrgId } from "./org-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 
-type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
+type Item = { to: string; label: string; exact?: boolean };
 type Group = { label: string; items: Item[]; soon?: string[] };
 
 const GROUPS: Group[] = [{ label: "Club", items: [
-  { to: "/org-admin/coaches", label: "Coaching", icon: Users },
-  { to: "/org-admin/resources", label: "Library", icon: BookOpen },
-  { to: "/org-admin/schedule", label: "Schedule", icon: CalendarDays },
-  { to: "/org-admin/people", label: "Users", icon: Users },
-  { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
-  { to: "/org-admin/settings", label: "Settings", icon: Settings },
+  { to: "/org-admin/coaches", label: "Coaching" },
+  { to: "/org-admin/resources", label: "Library" },
+  { to: "/org-admin/schedule", label: "Schedule" },
+  { to: "/org-admin/people", label: "Users" },
+  { to: "/org-admin/notifications", label: "Notifications" },
+  { to: "/org-admin/settings", label: "Settings" },
 ] }];
 
-export function OrgAdminSidebar() {
+export function OrgAdminSidebar({ onSignOut }: { onSignOut: () => void | Promise<void> }) {
   const { orgId, orgName } = useOrgId();
   const countFn = useServerFn(getClubNotificationCounts);
   const counts = useQuery({
@@ -57,12 +48,9 @@ export function OrgAdminSidebar() {
       : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="h-[69px] shrink-0 justify-center border-b border-divider">
+    <Sidebar collapsible="offcanvas">
+      <SidebarHeader className="shrink-0 px-4 py-6">
         <div className="min-w-0 px-2 py-1">
-          <Eyebrow size="small" tone="accent-ink">
-            Club
-          </Eyebrow>
           <p className="truncate font-display text-h3 text-text-primary leading-tight">
             {orgName || "Gradus Club"}
           </p>
@@ -71,22 +59,19 @@ export function OrgAdminSidebar() {
       <SidebarContent>
         {GROUPS.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  const Icon = item.icon;
                   return (
                     <SidebarMenuItem key={item.to}>
-                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1"><Store className="size-4" /><span>Storefront</span><span className="ml-auto text-xs">Not connected</span></SidebarMenuButton>}
-                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label}>
+                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1 min-h-11 font-sans"><span>Storefront</span><span className="ml-auto font-sans text-xs text-text-tertiary">Not connected</span></SidebarMenuButton>}
+                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label} className="min-h-11 font-sans data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold">
                         <Link to={item.to as never}>
-                          <Icon className="size-4" />
                           <span>{item.label}</span>
                           {item.to === "/org-admin/notifications" &&
                             counts.data &&
                             counts.data.unread > 0 && (
-                              <span className="ml-auto font-mono text-xs">
+                              <span className="ml-auto font-sans text-xs">
                                 {counts.data.unread}
                               </span>
                             )}
@@ -99,7 +84,7 @@ export function OrgAdminSidebar() {
                   <SidebarMenuItem key={label}>
                     <div className="flex items-center justify-between px-2 py-1.5 text-sm text-text-tertiary group-data-[collapsible=icon]:hidden">
                       <span>{label}</span>
-                      <span className="font-mono text-nano uppercase">Soon</span>
+                      <span className="font-sans text-xs text-text-tertiary">Soon</span>
                     </div>
                   </SidebarMenuItem>
                 ))}
@@ -108,6 +93,7 @@ export function OrgAdminSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter className="p-4"><Button variant="ghost" onClick={onSignOut} className="min-h-11 justify-start font-sans text-text-primary" title="Sign out">Sign out</Button></SidebarFooter>
     </Sidebar>
   );
 }
