@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getOrgAdminContext } from "@/lib/org-admin.functions";
 import { getClubContract } from "@/lib/club-contract.functions";
 import { sportDisplayLabel } from "@/lib/coach-sports";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClubTable } from "@/components/org-admin/club-table";
@@ -57,9 +57,12 @@ function OrgSettings() {
   ];
   const contractRows = [
     ["Coach seats", String(club.coach_seats)],
-    ["Filled coach seats", String(seats.filter(s => s.coach_id).length)],
-    ["Reserved coach seats", String(seats.filter(s => !s.coach_id && s.reserved_invite_id).length)],
-    ["Open coach seats", String(seats.filter(s => !s.coach_id && !s.reserved_invite_id).length)],
+    ["Filled coach seats", String(seats.filter((s) => s.coach_id).length)],
+    [
+      "Reserved coach seats",
+      String(seats.filter((s) => !s.coach_id && s.reserved_invite_id).length),
+    ],
+    ["Open coach seats", String(seats.filter((s) => !s.coach_id && !s.reserved_invite_id).length)],
     ["Admin seats", String(club.admin_seats)],
     ["Storefront share", `${club.storefront_share_bps / 100}%`],
     ["Term", `${club.contract_starts_on ?? "Not set"} – ${club.contract_ends_on ?? "Not set"}`],
@@ -84,7 +87,7 @@ function OrgSettings() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <PageTitle>Settings</PageTitle>
+        <ClubPageHeader title="Settings" />
         <Button variant="outline" className="min-h-11" onClick={exportCsv}>
           Export CSV
         </Button>
@@ -144,9 +147,19 @@ function OrgSettings() {
       <section className="flex flex-wrap items-center justify-between gap-4 border-y border-divider py-5">
         <div className="min-w-0">
           <h2 className="font-display text-h3">Contract changes</h2>
-          <p className="mt-1 text-sm text-text-secondary">For more seats, renewals, or changes to your agreement, contact your Gradus representative.</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            For more seats, renewals, or changes to your agreement, contact your Gradus
+            representative.
+          </p>
         </div>
-        <Button asChild variant="outline"><a href={`mailto:${GRADUS_SUPPORT_EMAIL}?subject=${encodeURIComponent(`Club contract request · ${club.name}`)}`}><Mail className="size-4" />Contact Gradus</a></Button>
+        <Button asChild variant="outline">
+          <a
+            href={`mailto:${GRADUS_SUPPORT_EMAIL}?subject=${encodeURIComponent(`Club contract request · ${club.name}`)}`}
+          >
+            <Mail className="size-4" />
+            Contact Gradus
+          </a>
+        </Button>
       </section>
     </div>
   );

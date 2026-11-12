@@ -8,7 +8,7 @@ import { listPolicyMatrix } from "@/lib/trust-center.functions";
 import { coachPolicies } from "@/lib/club-people";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { Badge } from "@/components/ui/badge";
@@ -132,9 +132,9 @@ function PeoplePage() {
     URL.revokeObjectURL(url);
   }
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle subtitle={org.name}>Users</PageTitle>
+        <ClubPageHeader title="Users" />
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={exportRoster} disabled={!filtered.length}>
             <Download className="size-4" />
@@ -324,8 +324,8 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
         <section className="space-y-3">
           <h2 className="font-display text-h3">Waiting for a seat</h2>
           <p className="text-meta text-text-secondary">
-            These coaches joined with your club code when no seat was open. They are using
-            Gradus on their own plan until you give them a seat.
+            These coaches joined with your club code when no seat was open. They are using Gradus on
+            their own plan until you give them a seat.
           </p>
           <ClubTable>
             <TableHeader>
@@ -350,8 +350,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                       title={hasOpenSeat ? undefined : "Release a seat first"}
                       onClick={() =>
                         run(
-                          () =>
-                            assign({ data: { organizationId: orgId, requestId: request.id } }),
+                          () => assign({ data: { organizationId: orgId, requestId: request.id } }),
                           "Seat assigned.",
                         )
                       }
@@ -529,8 +528,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                 event.preventDefault();
                 if (!releasing) return;
                 const ok = await run(
-                  () =>
-                    release({ data: { organizationId: orgId, coachId: releasing.coachId } }),
+                  () => release({ data: { organizationId: orgId, coachId: releasing.coachId } }),
                   "Seat released.",
                 );
                 if (ok) setReleasing(null);

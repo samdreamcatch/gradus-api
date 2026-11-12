@@ -18,7 +18,7 @@ import {
 } from "@/lib/trust-center.functions";
 import { remindOutstandingAcks } from "@/lib/org-content.functions";
 import { useOrgId } from "@/components/org-admin/org-shared";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -197,10 +197,10 @@ function Policies() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <PageTitle>Policies</PageTitle>
+          <ClubPageHeader title="Policies" />
         </div>
         <Button className="press" onClick={() => setEditing("new")}>
           <Plus className="size-4" /> New policy pack

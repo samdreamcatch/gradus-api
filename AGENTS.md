@@ -21,3 +21,5 @@
 - Club admin grids use `useClubGrid`/`ClubDataGrid` (pure sort/group rules in `src/lib/club-grid.ts`, device-saved view settings) inside `ClubGridToolbar`; the club panel always follows the device light/dark setting.
 - Club admin database pages share `ClubGridToolbar` (view switch, search, filters, clear count) and `ClubTable`; calendar placement of recurring lessons is pure and tested in `club-lesson-calendar.ts`, so every page filters and reads the same way.
 - Club-level coach access is decided in `coach_effective_tier` (club membership, occupied seat and active contract dates); profile/billing DTOs use that result and fall back to personal entitlement. Staff name club admins into `org_admins` from internal Organizations; native onboarding stays untouched.
+
+- Club presentation primitives live under components/org-admin and wrap shared UI without changing it; headers include the mobile sidebar trigger, while grid Columns combines device-saved visibility and grouping.
