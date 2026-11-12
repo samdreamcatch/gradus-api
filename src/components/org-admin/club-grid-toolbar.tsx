@@ -109,10 +109,10 @@ export function ClubGroupRow({
   colSpan: number;
 }) {
   return (
-    <TableRow className="bg-elevated! hover:bg-elevated">
+    <TableRow className="club-group-row">
       <TableCell
         colSpan={colSpan}
-        className="py-1.5! text-caption uppercase tracking-wide text-text-secondary"
+        className="py-2! text-sm text-text-secondary"
       >
         <span className="font-semibold text-text-primary">{label}</span>
         <span className="ml-2 font-mono">{count}</span>

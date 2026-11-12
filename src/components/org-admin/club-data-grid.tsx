@@ -268,7 +268,7 @@ export function ClubDataGrid<T>({
           key={c.key}
           className={cn(
             c.align === "right" && "text-right font-mono tabular-nums",
-            i === 0 && "sticky left-0 z-[1] bg-popover font-medium text-text-primary",
+            i === 0 && "sticky left-0 z-[1] font-medium text-text-primary",
             c.className,
           )}
         >
@@ -294,7 +294,7 @@ export function ClubDataGrid<T>({
                   className={cn(
                     "whitespace-nowrap",
                     c.align === "right" && "text-right",
-                    i === 0 && "sticky left-0 z-[3] bg-popover!",
+                    i === 0 && "sticky left-0 z-[3]",
                   )}
                 >
                   {c.sortValue ? (
@@ -352,7 +352,7 @@ export function ClubDataGrid<T>({
                   key={c.key}
                   className={cn(
                     c.align === "right" && "text-right font-mono tabular-nums",
-                    i === 0 && "sticky left-0 z-[1] bg-popover",
+                    i === 0 && "sticky left-0 z-[1]",
                   )}
                 >
                   {c.footer ? c.footer(grid.rows) : i === 0 ? `${grid.rows.length} records` : null}
