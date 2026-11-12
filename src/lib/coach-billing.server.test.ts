@@ -12,6 +12,7 @@ function fakeClient(
   rows: Record<string, unknown | null>,
   lists: Record<string, unknown[]> = {},
   counts: Record<string, number> = {},
+  effectiveTier = "coach",
 ) {
   const calls: string[] = [];
   const chain = (table: string) => {
@@ -29,7 +30,7 @@ function fakeClient(
     return self;
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { client: { from: (table: string) => chain(table) } as any, calls };
+  return { client: { from: (table: string) => chain(table), rpc: async (name: string) => { calls.push(`rpc.${name}`); return { data: effectiveTier, error: null }; } } as any, calls };
 }
 
 async function caught(run: () => Promise<unknown>): Promise<ApiError | null> {
@@ -150,7 +151,7 @@ describe("getCoachBilling", () => {
     );
     const admin = fakeClient({
       promo_codes: { label: "Spring 20% off", percent_off: 20, active: true },
-    });
+    }, {}, {}, "club");
     const billing = await getCoachBilling({
       userId: "u",
       supabase: supabase.client,
