@@ -268,7 +268,7 @@ export function ClubDataGrid<T>({
           key={c.key}
           className={cn(
             c.align === "right" && "text-right font-mono tabular-nums",
-            i === 0 && "sticky left-0 z-[1] bg-card font-medium text-text-primary",
+            i === 0 && "sticky left-0 z-[1] bg-popover font-medium text-text-primary",
             c.className,
           )}
         >
