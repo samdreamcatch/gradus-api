@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, ArrowRight } from "lucide-react";
+import { getClubSetup } from "@/lib/club-setup.functions";
 import { getClubReadiness } from "@/lib/trust-center.functions";
 import { useOrgId } from "@/components/org-admin/org-shared";
 import { PageTitle } from "@/components/page-title";
@@ -34,6 +35,16 @@ const fmtWhen = (iso: string) =>
 
 function TrustCenter() {
   const { orgId } = useOrgId();
+  const setupFn = useServerFn(getClubSetup);
+  const setup = useQuery({
+    queryKey: ["club-setup", orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error("No club selected");
+      return setupFn({ data: { organizationId: orgId } });
+    },
+    enabled: !!orgId,
+    retry: false,
+  });
   const weeksFn = useServerFn(getClubCoachWeeks);
   const weeks = useQuery({
     queryKey: ["club-coach-weeks", orgId],
@@ -81,12 +92,30 @@ function TrustCenter() {
         </Button>
       </div>
 
+      {setup.data && !setup.data.every(s => s.done) && (
+        <section className="border-y border-divider py-4" aria-label="Club setup">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-h3">Club setup</h2>
+            <span className="font-mono text-sm text-text-secondary">{setup.data.filter(s => s.done).length} / {setup.data.length}</span>
+          </div>
+          <ol className="mt-3 divide-y divide-divider">
+            {setup.data.map(s => (
+              <li key={s.key} className="flex items-center justify-between gap-3 py-2">
+                <span className="flex items-center gap-2">{s.done ? <Check className="size-4 text-accent-ink" aria-label="Complete" /> : <span className="size-4 rounded-full border border-divider" aria-label="Incomplete" />}{s.title}</span>
+                <Button asChild variant="ghost" size="icon" aria-label={s.title}><Link to={s.to}><ArrowRight className="size-4" /></Link></Button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+      {setup.isError && <p role="alert" className="text-sm text-text-secondary">Could not load club setup. <Button variant="link" onClick={() => setup.refetch()}>Retry</Button></p>}
+
       <section className="border-y border-divider py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-h3">Practice · this week</h2>
-          <Button variant="outline" asChild><Link to="/org-admin/coaches">Coaches</Link></Button>
+          <Button variant="outline" asChild><Link to="/org-admin/coaches">Coaching</Link></Button>
         </div>
-        {weeks.isError ? <p role="alert" className="mt-3 text-sm text-text-secondary">Weekly practice records become available after this draft is accepted.</p> :
+        {weeks.isError ? <p role="alert" className="mt-3 text-sm text-text-secondary">Could not load weekly practice records.</p> :
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <div><p className="text-sm text-text-secondary">Practice / target minutes</p><p className="font-display text-h2">{weeks.data ? Math.round(practice.practice).toLocaleString() : "—"} / {weeks.data && practice.target !== null ? Math.round(practice.target).toLocaleString() : "—"}</p></div>
             <div><p className="text-sm text-text-secondary">Of recorded target</p><p className="font-display text-h2">{weeks.data && targetPercent(practice.practice, practice.target) !== null ? `${targetPercent(practice.practice, practice.target)}%` : "—"}</p></div>
@@ -96,8 +125,7 @@ function TrustCenter() {
 
       {q.isError ? (
         <p role="alert" className="text-text-secondary">
-          Could not load the club overview. New club records become available after this draft is
-          accepted.
+          Could not load the club overview.
         </p>
       ) : !r ? (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
