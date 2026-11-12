@@ -73,6 +73,9 @@
   --color-attention-ink: var(--attention-ink);
   --color-attention-foreground: var(--attention-foreground);
   --color-club-healthy: var(--pen-tennis-ink);
+  --color-club-table-row: var(--club-table-row);
+  --color-club-table-stripe: var(--club-table-stripe);
+  --color-club-table-header: var(--club-table-header);
 
   /* Surface simulations — see `:root` note. */
   --color-surface-athlete-screen: var(--surface-athlete-screen);
@@ -81,12 +84,31 @@
   --color-surface-code-block-foreground: var(--surface-code-block-foreground);
 }
 
-.club-table tbody tr {
-  background-color: transparent;
+.club-table {
+  --club-table-row: color-mix(in oklab, var(--popover) 72%, var(--background));
+  --club-table-stripe: color-mix(in oklab, var(--popover) 38%, var(--background));
+  --club-table-header: color-mix(in oklab, var(--popover) 18%, var(--background));
+  border-spacing: 0;
+  background-color: var(--club-table-row);
 }
 
+.club-table tbody tr {
+  --club-current-row: var(--club-table-row);
+  background-color: var(--club-current-row);
+}
 .club-table tbody tr:nth-child(even) {
-  background-color: color-mix(in oklab, var(--elevated) 50%, transparent);
+  --club-current-row: var(--club-table-stripe);
+  background-color: var(--club-current-row);
+}
+.club-table tbody td.sticky {
+  background-color: var(--club-current-row);
+}
+.club-table thead th,
+.club-table tfoot td {
+  background-color: var(--club-table-header);
+}
+.club-table .club-group-row td {
+  background-color: var(--club-table-header);
 }
 
 :root {
