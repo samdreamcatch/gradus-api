@@ -75,9 +75,9 @@ const peopleOptions = () =>
 export const Route = createFileRoute("/_authenticated/org-admin/people")({
   head: () => ({
     meta: [
-      { title: "People · Gradus Club Admin" },
+      { title: "Users · Gradus Club Admin" },
       { name: "description", content: "Club coaches, teaching levels and policy sign-offs." },
-      { property: "og:title", content: "People · Gradus Club Admin" },
+      { property: "og:title", content: "Users · Gradus Club Admin" },
       {
         property: "og:description",
         content: "Club coaches, teaching levels and policy sign-offs.",
@@ -134,7 +134,7 @@ function PeoplePage() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle subtitle={org.name}>People</PageTitle>
+        <PageTitle subtitle={org.name}>Users</PageTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={exportRoster} disabled={!filtered.length}>
             <Download className="size-4" />
