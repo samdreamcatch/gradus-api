@@ -32,7 +32,7 @@ const GROUPS: Group[] = [{ label: "Club", items: [
   { to: "/org-admin/coaches", label: "Coaching", icon: Users },
   { to: "/org-admin/resources", label: "Library", icon: BookOpen },
   { to: "/org-admin/schedule", label: "Schedule", icon: CalendarDays },
-  { to: "/org-admin/people", label: "People", icon: Users },
+  { to: "/org-admin/people", label: "Users", icon: Users },
   { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
   { to: "/org-admin/settings", label: "Settings", icon: Settings },
 ] }];
