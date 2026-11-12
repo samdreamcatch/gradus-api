@@ -95,8 +95,8 @@ export const Route = createFileRoute("/_authenticated/org-admin/schedule")({
   }),
   validateSearch: zodValidator(
     z.object({
-      tab: fallback(z.string(), "imports").default("imports"),
-      view: fallback(z.string(), "grid").default("grid"),
+      tab: fallback(z.string(), "calendar").default("calendar"),
+      view: fallback(z.enum(["grid", "calendar"]), "calendar").default("calendar"),
       range: fallback(z.string(), "week").default("week"),
       date: fallback(z.string(), "").default(""),
       coach: fallback(z.string(), "all").default("all"),
@@ -155,7 +155,7 @@ function ClubSchedulePage() {
   const navigate = useNavigate({ from: "/org-admin/schedule" });
   const setSp = (patch: Partial<typeof sp>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
-  const view = sp.view === "calendar" ? "calendar" : "grid";
+  const view = sp.view === "grid" ? "grid" : "calendar";
   const range = sp.range === "month" ? "month" : "week";
   const calDate = /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : toIso(new Date());
   const allLessons = calendar.data ?? [];
