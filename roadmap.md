@@ -58,12 +58,14 @@
 - [x] Post-publish check: Home, Notifications, Coaching, Policies, People, Schedule imports load live data; notification read receipt saves
 
 ## Real paying club, end to end (plan Nov 10)
-- [ ] Nov 12: finish first-run checklist and contract contact; new-student coach handoff and partial schedule commits; verify clean-club isolation and lesson round-trip without emails.
+- [x] Nov 12: Home setup checklist, Settings contract contact/seat counts, partial schedule commit and coach CSV handoff built. Existing-student lesson creation/readback, unmatched-row retention, CSV download, empty-club isolation and unauthorized access denial verified; 39 targeted tests pass, automatic checks build OK; no emails sent.
 - [x] Club access follows contract dates (club tier only while contract is active); app onboarding unchanged
 - [x] Internal admin → Organizations → "Contract & admins": add/remove club admins by email (first becomes owner); not test-sent
 - [x] People: change admin roles, release seats, give waiting coaches a seat (invite resend/cancel already on Roster)
 - [x] Schedule import: existing-roster student matching, explicit transactional lesson creation, duplicate protection and handoff to Lessons/invites. Buddy's existing-lesson import verified (0 added, 1 skipped); 20 tests pass, no emails sent.
-- [ ] Schedule import follow-up: fresh-lesson creation/readback and new-student onboarding; current import only accepts students already on the selected coach's roster.
+- [x] Schedule import follow-up: fresh lesson created/read back; new students handed to each coach's existing onboarding via CSV, then rosters can be refreshed/matched. Adult invitations stay with the adult flow. Temporary lesson/imports cleaned up.
 - [ ] Real email test (coach invite, family invite, reminders template choice, verification on)
-- [ ] Settings contract card + "contact your rep"; Home first-run checklist; fresh-account end-to-end check; demo cleanup
+- [x] Settings contract contact and Home checklist; empty-club isolation verified. Temporary empty QA club deactivated/unlisted because last-admin safeguards prevent deletion; original demo clubs preserved.
+- [ ] Fresh-account signup/invite end-to-end delivery check — blocked by the standing no-test-email instruction; no new signup or invitation was sent.
+- [x] Contract/seat access audit: database tier now requires an occupied seat; profile/billing reads authoritative tier and removes stale club entitlement without changing mobile signup.
 - [x] No open seat: coach finishes sign-up on their own plan; club admins get a "Coach joined without a seat" notice (clears when they get a seat)
