@@ -209,9 +209,6 @@ function TrustCenter() {
               </div>
             </aside>
           </div>
-          <p className="text-xs text-text-tertiary">
-            Readiness reflects the records in Gradus. It isn't a legal or certification judgement.
-          </p>
         </>
       )}
     </div>
