@@ -58,6 +58,7 @@
 - [x] Post-publish check: Home, Notifications, Coaching, Policies, People, Schedule imports load live data; notification read receipt saves
 
 ## Real paying club, end to end (plan Nov 10)
+- [ ] Nov 12: finish first-run checklist and contract contact; new-student coach handoff and partial schedule commits; verify clean-club isolation and lesson round-trip without emails.
 - [x] Club access follows contract dates (club tier only while contract is active); app onboarding unchanged
 - [x] Internal admin → Organizations → "Contract & admins": add/remove club admins by email (first becomes owner); not test-sent
 - [x] People: change admin roles, release seats, give waiting coaches a seat (invite resend/cancel already on Roster)
