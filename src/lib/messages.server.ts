@@ -22,6 +22,17 @@ import {
 import { NEVER_TRANSCRIBE, transcribeVoiceNote } from "./voice-transcripts.server";
 import { athleteVoiceAllowed } from "./minor-voice.server";
 import {
+  CONTENT_BLOCKED_MESSAGE,
+  MESSAGING_SUSPENDED_MESSAGE,
+  decideMessageCheck,
+} from "./message-flags";
+import {
+  isMessagingSuspended,
+  recordMessageFlag,
+  type RecordFlagInput,
+} from "./message-flags.server";
+import { checkMessage } from "./message-rules";
+import {
   athleteRoomGate,
   type AthleteRoomRestriction,
   ROOM_RESTRICTION_MESSAGES,
@@ -422,6 +433,11 @@ export const sendMessageInput = z.discriminatedUnion("kind", [
     planId: z.string().uuid().nullish(),
     /** The earlier message in this conversation that this one answers. */
     replyToId: z.string().uuid().nullish(),
+    /**
+     * "Send anyway" after a `content_blocked` refusal that offered it
+     * (`canSendAnyway`, PRD #64). Ignored where the refusal did not.
+     */
+    sendAnyway: z.boolean().optional(),
   }),
   z.object({
     roomId: z.string().uuid(),
@@ -455,6 +471,11 @@ export const sendMessageBody = z.discriminatedUnion("kind", [
     planId: z.string().uuid().nullish(),
     /** The earlier message in this conversation that this one answers. */
     replyToId: z.string().uuid().nullish(),
+    /**
+     * "Send anyway" after a `content_blocked` refusal that offered it
+     * (`canSendAnyway`, PRD #64). Ignored where the refusal did not.
+     */
+    sendAnyway: z.boolean().optional(),
     viewerRole: viewerRoleSchema.optional(),
   }),
   z.object({
@@ -529,7 +550,8 @@ export type MessageTargetDTO =
     };
 
 export type SendMessageResult =
-  | { ok: true; id: string }
+  /** `crisisLine`: show the sender the 988 line under the message (PRD #64). */
+  | { ok: true; id: string; crisisLine?: true }
   | {
       ok: false;
       reason:
@@ -539,8 +561,19 @@ export type SendMessageResult =
         | "provisional"
         | "paused"
         | "paused_by_parent"
-        | "text_only";
+        | "text_only"
+        | "messaging_suspended";
       message: string;
+    }
+  /** The message check held it (PRD #64). The text stays in the composer. */
+  | {
+      ok: false;
+      reason: "content_blocked";
+      message: string;
+      /** Whether resending with `sendAnyway: true` will deliver it. */
+      canSendAnyway: boolean;
+      /** Sender is under 18: also link the Safe Sport panel. */
+      showSafeSport: boolean;
     };
 
 /* ------------------------------------------------------------------------ */
@@ -1187,7 +1220,10 @@ async function requireMessageInRoom(messageId: string, room: InternalRoomRow, me
   if (!target) throw unprocessable(message);
 }
 
-type RoomRefusal = Extract<SendMessageResult, { ok: false }>;
+type RoomRefusal = Exclude<
+  Extract<SendMessageResult, { ok: false }>,
+  { reason: "content_blocked" }
+>;
 
 /**
  * Whether the viewer may add anything to this room right now (a message or a
@@ -1202,6 +1238,13 @@ async function roomContactGate(
   | { ok: true; gate: Awaited<ReturnType<typeof athleteRoomGate>> | null }
   | { ok: false; refusal: RoomRefusal }
 > {
+  // An admin paused this user's messaging (PRD #64).
+  if (await isMessagingSuspended(supabaseAdmin, userId)) {
+    return {
+      ok: false,
+      refusal: { ok: false, reason: "messaging_suspended", message: MESSAGING_SUSPENDED_MESSAGE },
+    };
+  }
   const { blockedUserIds } = await import("./safety.server");
   const blocked = await blockedUserIds(supabaseAdmin, userId);
   if (blocked.size > 0) {
@@ -1287,6 +1330,50 @@ export async function sendMessage(
       room,
       "The message you're replying to isn't in this conversation.",
     );
+
+  // The message check (PRD #64): typed text, and a voice note's device transcript.
+  const checkedText = data.kind === "text" ? data.body : (data.transcript ?? null);
+  const match = checkedText ? checkMessage(checkedText) : null;
+  let flag: Omit<RecordFlagInput, "messageId"> | null = null;
+  let crisisLine = false;
+  if (match && checkedText) {
+    const roomHasMinor = room.kind === "athlete" && contact.gate?.minor === true;
+    // Judged on the seat the sender is posting from: a login can hold a coach profile and an
+    // athlete row with no birthdate, and that must never unlock "Send anyway" for the coach.
+    const senderMinor =
+      role === "athlete" && (await athleteVoiceAllowed(supabaseAdmin, userId)) === false;
+    const decision = decideMessageCheck({
+      match,
+      senderMinor,
+      roomHasMinor,
+      sendAnyway: data.kind === "text" && data.sendAnyway === true,
+    });
+    flag = {
+      senderUserId: userId,
+      senderRole: role,
+      senderMinor,
+      roomId: room.id,
+      roomKind: room.kind,
+      roomHasMinor,
+      coachId: room.kind === "athlete" ? (room.coachId ?? null) : null,
+      body: checkedText,
+      match,
+      outcome: decision.outcome!,
+    };
+    if (decision.action === "refuse") {
+      const stopped = { ...flag, messageId: null };
+      await inBackground("flag:stopped", () => recordMessageFlag(supabaseAdmin, stopped));
+      return {
+        ok: false as const,
+        reason: "content_blocked" as const,
+        message: CONTENT_BLOCKED_MESSAGE,
+        // A voice note has no "Send anyway": it is typed instead.
+        canSendAnyway: data.kind === "text" && decision.canSendAnyway,
+        showSafeSport: decision.showSafeSport,
+      };
+    }
+    crisisLine = decision.outcome === "sent";
+  }
 
   // Plan tagging works in athlete-scoped rooms and coach↔coach direct rooms.
   const planId =
@@ -1399,6 +1486,29 @@ export async function sendMessage(
         })
       : null;
   if (serverTranscription) await inBackground("transcript:voice-note", () => serverTranscription);
+  // A voice note from an app version that still records them can't be held (nothing to read
+  // until it is transcribed), so its server transcript is checked afterwards and flagged.
+  if (serverTranscription) {
+    const noteId = inserted!.id as string;
+    await inBackground("flag:voice-note", async () => {
+      const words = await serverTranscription;
+      const heard = words ? checkMessage(words) : null;
+      if (!words || !heard) return;
+      await recordMessageFlag(supabaseAdmin, {
+        senderUserId: userId,
+        senderRole: role,
+        senderMinor: false,
+        roomId: room.id,
+        roomKind: room.kind,
+        roomHasMinor: room.kind === "athlete" && contact.gate?.minor === true,
+        coachId: room.kind === "athlete" ? (room.coachId ?? null) : null,
+        body: words,
+        match: heard,
+        outcome: "sent",
+        messageId: noteId,
+      });
+    });
+  }
   // The guardian mirror reads whichever transcript the note has.
   const transcription = deviceTranscript ? Promise.resolve(deviceTranscript) : serverTranscription;
 
@@ -1466,7 +1576,16 @@ export async function sendMessage(
     }
   });
 
-  return { ok: true as const, id: inserted!.id };
+  if (flag) {
+    const sent = { ...flag, messageId: inserted!.id as string };
+    await inBackground("flag:sent", () => recordMessageFlag(supabaseAdmin, sent));
+  }
+
+  return {
+    ok: true as const,
+    id: inserted!.id,
+    ...(crisisLine ? { crisisLine: true as const } : {}),
+  };
 }
 
 export const setReactionBody = z.object({

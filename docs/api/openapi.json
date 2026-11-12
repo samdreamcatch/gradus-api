@@ -15627,6 +15627,9 @@
                         ],
                         "format": "uuid"
                       },
+                      "sendAnyway": {
+                        "type": "boolean"
+                      },
                       "viewerRole": {
                         "type": "string",
                         "enum": [
@@ -15729,6 +15732,12 @@
                         },
                         "id": {
                           "type": "string"
+                        },
+                        "crisisLine": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
                         }
                       },
                       "required": [
@@ -15754,11 +15763,19 @@
                             "provisional",
                             "paused",
                             "paused_by_parent",
-                            "text_only"
+                            "text_only",
+                            "messaging_suspended",
+                            "content_blocked"
                           ]
                         },
                         "message": {
                           "type": "string"
+                        },
+                        "canSendAnyway": {
+                          "type": "boolean"
+                        },
+                        "showSafeSport": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
