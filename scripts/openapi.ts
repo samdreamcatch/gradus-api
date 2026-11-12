@@ -189,6 +189,7 @@ import "../src/routes/api/v1/marketplace/purchases/$id/pay";
 import "../src/routes/api/v1/coach/sales/index";
 import "../src/routes/api/v1/coach/marketplace/dashboard";
 import "../src/routes/api/v1/marketplace/plans/$id/view";
+import "../src/routes/api/v1/marketplace/plans/$id/report";
 import "../src/routes/api/v1/coach/sales/$id/restrict";
 import "../src/routes/api/v1/coach/stripe-connect/index";
 import "../src/routes/api/v1/coach/stripe-connect/onboarding";

@@ -362,6 +362,7 @@ import { Route as ApiV1CoachVisibilityIdRespondRouteImport } from './routes/api/
 import { Route as ApiV1GuardianInvitesIdResendRouteImport } from './routes/api/v1/guardian/invites/$id/resend'
 import { Route as ApiV1MarketplaceCoachesIdRatingRouteImport } from './routes/api/v1/marketplace/coaches/$id_/rating'
 import { Route as ApiV1MarketplacePlansIdCheckoutRouteImport } from './routes/api/v1/marketplace/plans/$id/checkout'
+import { Route as ApiV1MarketplacePlansIdReportRouteImport } from './routes/api/v1/marketplace/plans/$id/report'
 import { Route as ApiV1MarketplacePlansIdViewRouteImport } from './routes/api/v1/marketplace/plans/$id/view'
 import { Route as ApiV1MarketplacePurchasesIdIndexRouteImport } from './routes/api/v1/marketplace/purchases/$id/index'
 import { Route as ApiV1MarketplacePurchasesIdPayRouteImport } from './routes/api/v1/marketplace/purchases/$id/pay'
@@ -2353,6 +2354,12 @@ const ApiV1MarketplacePlansIdCheckoutRoute =
     path: '/api/v1/marketplace/plans/$id/checkout',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1MarketplacePlansIdReportRoute =
+  ApiV1MarketplacePlansIdReportRouteImport.update({
+    id: '/api/v1/marketplace/plans/$id/report',
+    path: '/api/v1/marketplace/plans/$id/report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1MarketplacePlansIdViewRoute =
   ApiV1MarketplacePlansIdViewRouteImport.update({
     id: '/api/v1/marketplace/plans/$id/view',
@@ -2916,6 +2923,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/coaches/$id/rating': typeof ApiV1MarketplaceCoachesIdRatingRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
@@ -3301,6 +3309,7 @@ export interface FileRoutesByTo {
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/coaches/$id/rating': typeof ApiV1MarketplaceCoachesIdRatingRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
@@ -3694,6 +3703,7 @@ export interface FileRoutesById {
   '/api/v1/guardian/invites/$id/resend': typeof ApiV1GuardianInvitesIdResendRoute
   '/api/v1/marketplace/coaches/$id_/rating': typeof ApiV1MarketplaceCoachesIdRatingRoute
   '/api/v1/marketplace/plans/$id/checkout': typeof ApiV1MarketplacePlansIdCheckoutRoute
+  '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
@@ -4087,6 +4097,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/coaches/$id/rating'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
@@ -4472,6 +4483,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/coaches/$id/rating'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
@@ -4864,6 +4876,7 @@ export interface FileRouteTypes {
     | '/api/v1/guardian/invites/$id/resend'
     | '/api/v1/marketplace/coaches/$id_/rating'
     | '/api/v1/marketplace/plans/$id/checkout'
+    | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
     | '/api/v1/me/celebrations/$id/ack'
@@ -5164,6 +5177,7 @@ export interface RootRouteChildren {
   ApiV1GuardianInvitesIdResendRoute: typeof ApiV1GuardianInvitesIdResendRoute
   ApiV1MarketplaceCoachesIdRatingRoute: typeof ApiV1MarketplaceCoachesIdRatingRoute
   ApiV1MarketplacePlansIdCheckoutRoute: typeof ApiV1MarketplacePlansIdCheckoutRoute
+  ApiV1MarketplacePlansIdReportRoute: typeof ApiV1MarketplacePlansIdReportRoute
   ApiV1MarketplacePlansIdViewRoute: typeof ApiV1MarketplacePlansIdViewRoute
   ApiV1MarketplacePurchasesIdPayRoute: typeof ApiV1MarketplacePurchasesIdPayRoute
   ApiV1MeCelebrationsIdAckRoute: typeof ApiV1MeCelebrationsIdAckRoute
@@ -7686,6 +7700,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MarketplacePlansIdCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/marketplace/plans/$id/report': {
+      id: '/api/v1/marketplace/plans/$id/report'
+      path: '/api/v1/marketplace/plans/$id/report'
+      fullPath: '/api/v1/marketplace/plans/$id/report'
+      preLoaderRoute: typeof ApiV1MarketplacePlansIdReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/marketplace/plans/$id/view': {
       id: '/api/v1/marketplace/plans/$id/view'
       path: '/api/v1/marketplace/plans/$id/view'
@@ -8512,6 +8533,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1GuardianInvitesIdResendRoute: ApiV1GuardianInvitesIdResendRoute,
   ApiV1MarketplaceCoachesIdRatingRoute: ApiV1MarketplaceCoachesIdRatingRoute,
   ApiV1MarketplacePlansIdCheckoutRoute: ApiV1MarketplacePlansIdCheckoutRoute,
+  ApiV1MarketplacePlansIdReportRoute: ApiV1MarketplacePlansIdReportRoute,
   ApiV1MarketplacePlansIdViewRoute: ApiV1MarketplacePlansIdViewRoute,
   ApiV1MarketplacePurchasesIdPayRoute: ApiV1MarketplacePurchasesIdPayRoute,
   ApiV1MeCelebrationsIdAckRoute: ApiV1MeCelebrationsIdAckRoute,
