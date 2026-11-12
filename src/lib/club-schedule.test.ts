@@ -6,6 +6,8 @@ import {
   inviteDestination,
   parseClubSchedule,
   type ClubScheduleRow,
+  partitionClubSchedule,
+  clubCoachHandoffs,
 } from "./club-schedule";
 
 const row: ClubScheduleRow = {
@@ -24,6 +26,18 @@ const row: ClubScheduleRow = {
   athleteEmail: "",
 };
 describe("Club schedule review", () => {
+  it("creates only ready existing-roster lessons and retains new students for follow-up", () => {
+    const ready = { ...row, athleteId: "a", startsOn: "2026-11-12" };
+    const waiting = { ...row, id: "2", firstName: "New", startsOn: "2026-11-12" };
+    expect(partitionClubSchedule([ready, waiting])).toEqual({ ready: [ready], waiting: [waiting] });
+  });
+  it("keeps new-student handoffs separate for each coach and excludes matched students", () => {
+    const handoffs = clubCoachHandoffs([row, { ...row, id: "2", coachId: "other", coachName: "Jordan" }, { ...row, id: "3", athleteId: "a" }, { ...row, id: "4", coachId: null }]);
+    expect(handoffs.map(h => [h.coachId, h.lessons])).toEqual([["coach", 1], ["other", 1]]);
+    const parsed = parseClubSchedule(`coach_name,${handoffs[0]?.csv.replace(/\r\n/g, "\r\nCasey,")}`);
+    expect(parsed.rows[0]?.guardianEmail).toBe("parent@example.com");
+    expect(parsed.rows[0]?.startMinute).toBe(960);
+  });
   it("matches students only within their selected coach's roster", () => {
     const students = [
       { id: "a", firstName: " Avery ", lastName: "REED", coachIds: ["coach"] },

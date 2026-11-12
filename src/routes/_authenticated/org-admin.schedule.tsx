@@ -39,6 +39,8 @@ import {
   clubScheduleErrors,
   clubScheduleCommitErrors,
   matchClubScheduleStudent,
+  partitionClubSchedule,
+  clubCoachHandoffs,
   inviteDestination,
   type ClubScheduleRow,
 } from "@/lib/club-schedule";
@@ -123,6 +125,7 @@ function ClubSchedulePage() {
     retry: false,
   });
   const [committed, setCommitted] = useState(false);
+  const [handoffOpen, setHandoffOpen] = useState(false);
   const [startDate, setStartDate] = useState(toIso(new Date()));
   const seats = useQuery({
     queryKey: ["club-schedule-seats", org.id],
@@ -305,6 +308,8 @@ function ClubSchedulePage() {
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))];
   const issues = step >= 2 ? clubScheduleCommitErrors(rows) : clubScheduleErrors(rows);
   const decisions = rows.filter((r) => (issues[r.id]?.length ?? 0) > 0).length;
+  const partition = partitionClubSchedule(rows);
+  const handoffs = clubCoachHandoffs(rows);
   const groups = [...new Set(rows.map((r) => r.coachName))];
   const shown = rows.filter(
     (r) =>
@@ -388,16 +393,25 @@ function ClubSchedulePage() {
     setStep(2);
   }
   async function createLessons() {
+    if (!partition.ready.length) return;
     setBusy(true);
     try {
-      const review = await saveFn({ data: { organizationId: org.id, fileName, rows } });
+      // Save the full review first, preserving unmatched students for later roster matching.
+      if (partition.waiting.length) await saveFn({ data: { organizationId: org.id, fileName, rows } });
+      const review = await saveFn({ data: { organizationId: org.id, fileName, rows: partition.ready } });
       const result = await commitFn({ data: { organizationId: org.id, importId: review.id } });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] }),
         qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] }),
       ]);
-      setCommitted(true);
-      setStep(3);
+      if (partition.waiting.length) {
+        setRows(partition.waiting);
+        setCommitted(false);
+        setStep(2);
+      } else {
+        setCommitted(true);
+        setStep(3);
+      }
       toast.success(
         `${result.added} lessons added · ${result.skipped} already scheduled. No emails sent.`,
       );
@@ -471,7 +485,7 @@ function ClubSchedulePage() {
         <TabsContent value="imports" className="space-y-6">
           {seats.isError && (
             <p role="status" className="text-sm text-text-secondary">
-              Seated-coach matching becomes available when this draft is accepted.
+              Could not load seated coaches. Retry by refreshing this page.
             </p>
           )}
           <ol
@@ -715,9 +729,18 @@ function ClubSchedulePage() {
                     </TableFooter>
                   </ClubTable>
                   {step === 2 && !committed && (
-                    <Button disabled={decisions > 0 || busy} onClick={createLessons}>
-                      {busy ? "Creating…" : "Create lessons"}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button disabled={!partition.ready.length || busy} onClick={createLessons}>
+                        {busy ? "Creating…" : `Create lessons · ${partition.ready.length}`}
+                      </Button>
+                      {!!handoffs.length && <Button variant="outline" onClick={() => setHandoffOpen(true)}><Download className="size-4" />New students · coach handoff</Button>}
+                      {!!partition.waiting.length && <span className="text-sm text-text-secondary">{partition.waiting.length} lessons remain in review.</span>}
+                      <Button variant="outline" disabled={busy || students.isFetching} onClick={async () => {
+                        const updated = await students.refetch();
+                        if (updated.error) { toast.error("Could not refresh coach rosters."); return; }
+                        setRows(current => current.map(r => ({ ...r, athleteId: r.athleteId ?? matchClubScheduleStudent(r, updated.data ?? []) })));
+                      }}>Refresh student matches</Button>
+                    </div>
                   )}
                   {committed && (
                     <div className="space-y-3 border-t border-divider pt-4">
@@ -743,7 +766,7 @@ function ClubSchedulePage() {
             <h2 className="font-display text-h3">Past imports</h2>
             {history.isError ? (
               <p className="text-sm text-text-secondary">
-                Import history becomes available when this draft is accepted.
+                Could not load import history.
               </p>
             ) : (
               <ClubTable>
@@ -968,6 +991,23 @@ function ClubSchedulePage() {
           )}
         </TabsContent>
       </Tabs>
+      <Sheet open={handoffOpen} onOpenChange={setHandoffOpen}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>New students · coach handoff</SheetTitle>
+            <SheetDescription>Roster setup stays with each coach. No accounts or invitations are created here.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            {handoffs.map(h => (
+              <div key={h.coachId} className="border-b border-divider pb-4">
+                <h3 className="font-display text-h3">{coaches.find(c => c.coachId === h.coachId) ? `${coaches.find(c => c.coachId === h.coachId)?.firstName} ${coaches.find(c => c.coachId === h.coachId)?.lastName}` : h.coachName}</h3>
+                <p className="mb-2 text-sm text-text-secondary">{h.lessons} unmatched lessons</p>
+                <Button variant="outline" onClick={() => downloadCsv(`coach-new-students-${h.coachId.slice(0, 8)}.csv`, h.csv)}><Download className="size-4" />Download coach CSV</Button>
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
       <Sheet
         open={!!selectedLesson}
         onOpenChange={(open) => {

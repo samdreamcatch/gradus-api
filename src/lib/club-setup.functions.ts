@@ -18,7 +18,7 @@ export const getClubSetup = createServerFn({ method: "POST" })
     const ids = (coaches.data ?? []).map(c => c.id);
     const [lessons, resources, requirements, archived] = await Promise.all([
       ids.length ? admin.from("athlete_lesson_slots").select("id", { count: "exact", head: true }).in("coach_id", ids) : Promise.resolve({ count: 0, error: null }),
-      admin.from("resources").select("id").eq("organization_id", data.organizationId).eq("is_org_template", true).eq("is_published", true).eq("review_state", "released"),
+      admin.from("resources").select("id").eq("organization_id", data.organizationId).eq("is_org_template", true).eq("published", true).eq("review_state", "released"),
       policyClient(admin).from("club_resource_ack_requirements").select("resource_id,audiences").eq("organization_id", data.organizationId),
       admin.from("org_resource_overrides").select("resource_id").eq("organization_id", data.organizationId).not("archived_at", "is", null),
     ]);

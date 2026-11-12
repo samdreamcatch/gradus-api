@@ -1,4 +1,6 @@
 import { parseScheduleCsv, splitCsv, validateRows, type ImportRow } from "./schedule-import";
+import { toCsv } from "./csv";
+import { IMPORT_DAYS, minutesToHHMM } from "./schedule-import";
 
 export type ClubScheduleRow = ImportRow & {
   coachName: string;
@@ -15,6 +17,32 @@ export type ClubScheduleStudent = {
   lastName: string;
   coachIds: string[];
 };
+
+// Leave unresolved students with their coach's existing onboarding flow, never impersonate a coach.
+export function partitionClubSchedule(rows: ClubScheduleRow[]) {
+  const errors = clubScheduleCommitErrors(rows);
+  return {
+    ready: rows.filter(r => !errors[r.id]?.length),
+    waiting: rows.filter(r => !!errors[r.id]?.length),
+  };
+}
+
+export function clubCoachHandoffs(rows: ClubScheduleRow[]) {
+  const groups = new Map<string, ClubScheduleRow[]>();
+  for (const row of rows) {
+    if (!row.coachId || row.athleteId) continue;
+    groups.set(row.coachId, [...(groups.get(row.coachId) ?? []), row]);
+  }
+  return [...groups].map(([coachId, lessons]) => ({
+    coachId,
+    coachName: lessons[0]?.coachName ?? "Coach",
+    lessons: lessons.length,
+    csv: toCsv(
+      ["athlete_first_name", "athlete_last_name", "age", "day", "start_time", "length_minutes", "frequency", "guardian_email", "athlete_email", "sport"],
+      lessons.map(r => [r.firstName, r.lastName, r.age, IMPORT_DAYS.find(d => d.value === r.dayOfWeek)?.long, r.startMinute === null ? null : minutesToHHMM(r.startMinute), r.lengthMinutes, r.frequency, r.guardianEmail, r.athleteEmail, r.sport]),
+    ),
+  }));
+}
 
 // Only match the selected coach's existing roster; duplicate names need a human decision.
 export function matchClubScheduleStudent(row: ClubScheduleRow, students: ClubScheduleStudent[]) {
