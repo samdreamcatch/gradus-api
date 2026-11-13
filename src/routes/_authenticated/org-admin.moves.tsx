@@ -132,12 +132,16 @@ function OrgMovesPage() {
           </span>
           <span className={m.archived ? "opacity-60" : undefined}>
             <span className="block">{m.name}</span>
-            {m.cue && (
-              <span className="block text-xs font-normal text-text-secondary">{m.cue}</span>
-            )}
           </span>
         </span>
       ),
+    },
+    {
+      key: "cue",
+      label: "Cue",
+      sortValue: (m) => m.cue,
+      className: "min-w-64 whitespace-normal text-text-secondary",
+      render: (m) => m.cue || "—",
     },
     {
       key: "category",
