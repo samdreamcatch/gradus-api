@@ -9,7 +9,7 @@ import {
   clubScheduleCommitErrors,
   type ClubScheduleRow,
 } from "./club-schedule";
-import { buildClubLessons } from "./club-lesson-calendar";
+import { buildClubLessons, practiceFor, weekStart, addDays, toIso } from "./club-lesson-calendar";
 
 type ImportRecord = {
   id: string;
@@ -270,7 +270,40 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" })
       ? await base.from("parent_profiles").select("id,first_name,last_name").in("id", parentIds)
       : { data: [], error: null };
     if (parents.error) dbError(parents.error);
-    return buildClubLessons({
+    // Last full week (Mon–Sun, UTC), matching the weekly coach snapshot rule.
+    const lastWeek = addDays(weekStart(toIso(new Date())), -7);
+    const [goals, primaries, levels, targets, plans] = await Promise.all([
+      base.from("athlete_goals").select("id,athlete_id,coach_id,sport,current_level_key,updated_at").in("athlete_id", athleteIds),
+      base.from("athlete_primary_coaches").select("athlete_id,sport,coach_id").in("athlete_id", athleteIds).in("coach_id", ids),
+      base.from("coach_levels").select("coach_id,sport,level_key,practice_hours_per_week").in("coach_id", ids),
+      base.from("coach_athlete_practice_targets").select("coach_id,athlete_id,sport,hours_per_week").in("coach_id", ids).in("athlete_id", athleteIds),
+      base.from("plans").select("id,coach_id,athlete_id").eq("kind", "plan").in("coach_id", ids).in("athlete_id", athleteIds),
+    ]);
+    for (const r of [goals, primaries, levels, targets, plans]) if (r.error) dbError(r.error);
+    const planIds = (plans.data ?? []).map((p) => p.id);
+    const sessions = planIds.length
+      ? await base
+          .from("plan_sessions")
+          .select("plan_id,athlete_id,duration_seconds")
+          .in("plan_id", planIds)
+          .gte("logged_at", `${lastWeek}T00:00:00Z`)
+          .lt("logged_at", `${addDays(lastWeek, 7)}T00:00:00Z`)
+      : { data: [], error: null };
+    if (sessions.error) dbError(sessions.error);
+    const planMap = new Map((plans.data ?? []).map((p) => [p.id, p]));
+    const practiceInput = {
+      goals: (goals.data ?? []) as never,
+      primaries: (primaries.data ?? []) as never,
+      levels: (levels.data ?? []) as never,
+      targets: (targets.data ?? []) as never,
+      sessions: (sessions.data ?? []).flatMap((s) => {
+        const plan = planMap.get(s.plan_id);
+        return plan && plan.coach_id && plan.athlete_id === s.athlete_id
+          ? [{ coach_id: plan.coach_id, athlete_id: s.athlete_id, duration_seconds: s.duration_seconds }]
+          : [];
+      }),
+    };
+    const lessons = buildClubLessons({
       slots: slots.data ?? [],
       students: students.data ?? [],
       coaches: coaches.data ?? [],
@@ -295,6 +328,7 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" })
         }),
       ],
     });
+    return lessons.map((l) => ({ ...l, ...practiceFor(l.coachId, l.athleteId, practiceInput) }));
   });
 /**
  * Sends (or re-sends) the existing family claim invite for club lessons. Only students linked to
