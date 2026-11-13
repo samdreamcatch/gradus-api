@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, AlertCircle, Mail, UserCheck, CheckCircle2, TrendingDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, Mail, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/lib/club-lesson-calendar";
 import { formatTimeLabel } from "@/lib/schedule-import";
 import { cn } from "@/lib/utils";
+import { LessonPracticeRing } from "./lesson-practice-ring";
 
 // Literal classes so Tailwind can see them; washes keep the page calm while telling coaches apart.
 const COACH_PENS = ["pool", "tennis", "iris", "orange", "pink"];
@@ -43,24 +44,19 @@ function LessonMarkers({ l, labels = false }: { l: ClubLesson; labels?: boolean 
     : l.invitationStatus === "Connected"
       ? { Icon: UserCheck, text: "Joined", tone: "" }
       : { Icon: Mail, text: "Invited", tone: "" };
-  const prac =
-    practice === "met"
-      ? { Icon: CheckCircle2, text: `${l.practiceMin}/${l.targetMin}m`, tone: "", label: `Met practice target last week (${l.practiceMin} of ${l.targetMin} min)` }
-      : practice === "below"
-        ? { Icon: TrendingDown, text: `${l.practiceMin}/${l.targetMin}m`, tone: "text-destructive", label: `Below practice target last week (${l.practiceMin} of ${l.targetMin} min)` }
-        : null;
-  const items = [
-    { ...invite, label: l.invitationStatus },
-    ...(prac ? [prac] : []),
-  ];
+  const joined = l.invitationStatus === "Connected";
+  const pct = l.targetMin ? Math.round(((l.practiceMin ?? 0) / l.targetMin) * 100) : null;
+  const ringText = !joined ? "—" : pct === null ? "No target" : `${pct}%`;
   return (
     <span className={cn("flex shrink-0 items-center", labels ? "flex-wrap gap-x-2 gap-y-0.5" : "gap-1")}>
-      {items.map(({ Icon, text, tone, label }) => (
-        <span key={label} className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", tone)}>
-          <Icon className="size-4 shrink-0" aria-label={label} />
-          {labels && <span>{text}</span>}
-        </span>
-      ))}
+      <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", invite.tone)}>
+        <invite.Icon className="size-4 shrink-0" aria-label={l.invitationStatus} />
+        {labels && <span>{invite.text}</span>}
+      </span>
+      <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", !joined && "text-text-disabled")}>
+        <LessonPracticeRing practiceMin={l.practiceMin} targetMin={l.targetMin} muted={!joined} size={labels ? 18 : 16} />
+        {labels && <span>{ringText}</span>}
+      </span>
     </span>
   );
 }
@@ -111,8 +107,6 @@ export function LessonCalendarLegend() {
     [UserCheck, "Family joined", ""],
     [Mail, "Invite awaiting acceptance", ""],
     [AlertCircle, "Not invited or contact missing", "text-destructive"],
-    [CheckCircle2, "Met practice target last week", ""],
-    [TrendingDown, "Below practice target last week", "text-destructive"],
   ] as const;
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 border-t border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
@@ -122,6 +116,14 @@ export function LessonCalendarLegend() {
           {label}
         </li>
       ))}
+      <li className="flex items-center gap-1.5">
+        <LessonPracticeRing practiceMin={60} targetMin={120} muted={false} size={16} />
+        Practice last week vs target
+      </li>
+      <li className="flex items-center gap-1.5">
+        <LessonPracticeRing practiceMin={null} targetMin={null} muted size={16} />
+        Greyed out until the family joins
+      </li>
     </ul>
   );
 }
