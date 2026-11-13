@@ -116,7 +116,7 @@ function OrgResourcesPage() {
     if (!sport && sports.length) setSport(sports[0]);
   }, [sports, sport]);
   const [showArchived, setShowArchived] = useState(false);
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("gallery");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<OrgResourceRow | "new" | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -307,8 +307,8 @@ function OrgResourcesPage() {
         <>
           <ClubGridToolbar
             views={[
-              { value: "grid", label: "Grid", icon: <Table2 className="size-4" /> },
               { value: "gallery", label: "Gallery", icon: <LayoutGrid className="size-4" /> },
+              { value: "grid", label: "Grid", icon: <Table2 className="size-4" /> },
             ]}
             view={view}
             onViewChange={setView}
