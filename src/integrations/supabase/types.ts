@@ -1156,6 +1156,62 @@ export type Database = {
         }
         Relationships: []
       }
+      club_contract_trueups: {
+        Row: {
+          actor_user_id: string
+          amount_cents: number
+          contract_ends_on: string
+          created_at: string
+          currency: string
+          effective_on: string
+          id: string
+          invoice_reference: string | null
+          organization_id: string
+          rate_cents: number
+          request_key: string
+          seats_added: number
+          status: string
+        }
+        Insert: {
+          actor_user_id: string
+          amount_cents: number
+          contract_ends_on: string
+          created_at?: string
+          currency: string
+          effective_on: string
+          id?: string
+          invoice_reference?: string | null
+          organization_id: string
+          rate_cents: number
+          request_key: string
+          seats_added: number
+          status?: string
+        }
+        Update: {
+          actor_user_id?: string
+          amount_cents?: number
+          contract_ends_on?: string
+          created_at?: string
+          currency?: string
+          effective_on?: string
+          id?: string
+          invoice_reference?: string | null
+          organization_id?: string
+          rate_cents?: number
+          request_key?: string
+          seats_added?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_contract_trueups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_notification_reads: {
         Row: {
           notification_id: string
@@ -4304,8 +4360,10 @@ export type Database = {
           city: string | null
           coach_seats: number
           content_version: number
+          contract_currency: string
           contract_ends_on: string | null
           contract_file_url: string | null
+          contract_seat_rate_cents: number | null
           contract_signed_on: string | null
           contract_starts_on: string | null
           created_at: string
@@ -4326,8 +4384,10 @@ export type Database = {
           city?: string | null
           coach_seats?: number
           content_version?: number
+          contract_currency?: string
           contract_ends_on?: string | null
           contract_file_url?: string | null
+          contract_seat_rate_cents?: number | null
           contract_signed_on?: string | null
           contract_starts_on?: string | null
           created_at?: string
@@ -4348,8 +4408,10 @@ export type Database = {
           city?: string | null
           coach_seats?: number
           content_version?: number
+          contract_currency?: string
           contract_ends_on?: string | null
           contract_file_url?: string | null
+          contract_seat_rate_cents?: number | null
           contract_signed_on?: string | null
           contract_starts_on?: string | null
           created_at?: string
@@ -5655,6 +5717,16 @@ export type Database = {
       club_commit_schedule_review: {
         Args: { p_import: string; p_org: string; p_user: string }
         Returns: Json
+      }
+      club_expand_contract: {
+        Args: {
+          p_actor: string
+          p_expected_amount: number
+          p_org_id: string
+          p_request_key: string
+          p_seats: number
+        }
+        Returns: string
       }
       club_open_seat_for: {
         Args: { p_org: string; p_user: string }

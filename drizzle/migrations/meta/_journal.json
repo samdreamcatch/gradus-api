@@ -288,6 +288,13 @@
       "when": 1794447965565,
       "tag": "0040_club_effective_tier_requires_seat",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794531882722,
+      "tag": "0041_club_seat_trueups",
+      "breakpoints": true
     }
   ]
 }
