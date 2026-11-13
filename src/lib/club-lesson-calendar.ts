@@ -231,7 +231,7 @@ export function practiceState(l: Pick<ClubLesson, "practiceMin" | "targetMin">):
   return l.practiceMin >= l.targetMin ? "met" : "below";
 }
 
-// ---- Compact week view: full rows for hours with lessons, short bands for empty stretches ----
+// ---- Compact week view: hour rows from the first to the last lesson of the week ----
 export type HourRow = { kind: "hour"; hour: number; top: number; height: number } | { kind: "gap"; from: number; to: number; top: number; height: number };
 export function compactHours(
   lessons: Pick<ClubLesson, "start" | "end">[],
@@ -247,6 +247,8 @@ export function compactHours(
     for (let h = Math.floor(l.start / 60); h < Math.max(Math.ceil(l.end / 60), Math.floor(l.start / 60) + 1); h++) busy.add(h);
   const first = Math.min(...busy);
   const last = Math.max(...busy);
+  // Keep the working day continuous; only trim before the first and after the last lesson.
+  for (let h = first; h <= last; h++) busy.add(h);
   const rows: HourRow[] = [];
   let top = 0;
   for (let h = first; h <= last; ) {
