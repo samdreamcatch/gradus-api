@@ -575,7 +575,7 @@ function ClubSchedulePage() {
                             <TableCell className="font-mono text-right">{group.length}</TableCell>
                             <TableCell>
                               <Button asChild variant="ghost">
-                                <Link to="/org-admin/roster">Invite a coach</Link>
+                                <Link to="/org-admin/people" search={{ tab: "coaches", invite: true }}>Invite a coach</Link>
                               </Button>
                             </TableCell>
                           </TableRow>
