@@ -7,7 +7,7 @@ import { toIso } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
@@ -447,6 +447,12 @@ function ClubSchedulePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ClubPageHeader title="Schedule" />
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/org-admin/people" search={{ tab: "students", add: true }}>
+              <UserPlus className="size-4" />
+              Add students
+            </Link>
+          </Button>
           <Button
             variant="outline"
             onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}
@@ -900,6 +906,27 @@ function ClubSchedulePage() {
               Export CSV
             </Button>
           </div>
+          {inviteable.length ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
+              <p className="text-sm text-text-primary">
+                {inviteable.length} {inviteable.length === 1 ? "student hasn't" : "students haven't"} been invited yet.
+              </p>
+              <div className="flex gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/org-admin/people" search={{ tab: "students" }}>
+                    Review
+                  </Link>
+                </Button>
+                <Button
+                  disabled={sending}
+                  onClick={() => setConfirmSend(inviteable.map((l) => l.athleteId))}
+                >
+                  <Send className="size-4" />
+                  Send {inviteable.length}
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-divider bg-elevated px-2 py-2">
             <ToggleGroup
               type="single"
@@ -962,15 +989,6 @@ function ClubSchedulePage() {
                 {lessonGrid.menu}
               </>
             )}
-            <Button
-              size="sm"
-              className="ml-auto"
-              disabled={!inviteable.length || sending}
-              onClick={() => setConfirmSend(inviteable.map((l) => l.athleteId))}
-            >
-              <Send className="size-3.5" />
-              Send invites · {inviteable.length}
-            </Button>
             {view === "calendar" && !!lessonCoaches.length && (
               <div className="ml-auto flex flex-wrap gap-1.5">
                 {lessonCoaches.map(([id, name]) => (
