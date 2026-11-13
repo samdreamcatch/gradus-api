@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, AlertCircle, Mail, UserCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -37,20 +37,21 @@ const GAP_PX = 22;
 
 /** Invite + last-week practice markers shown on each lesson. */
 function LessonMarkers({ l, labels = false }: { l: ClubLesson; labels?: boolean }) {
+  // Joined/invited are implied by the ring (greyed until joined); only problems get a marker.
   const invite = needsAttention(l)
     ? { Icon: AlertCircle, text: l.invitationStatus === "Contact missing" ? "No contact" : "Not invited", tone: "text-destructive" }
-    : l.invitationStatus === "Connected"
-      ? { Icon: UserCheck, text: "Joined", tone: "" }
-      : { Icon: Mail, text: "Invited", tone: "" };
+    : null;
   const joined = l.invitationStatus === "Connected";
   const pct = l.targetMin ? Math.round(((l.practiceMin ?? 0) / l.targetMin) * 100) : null;
   const ringText = !joined ? "—" : pct === null ? "No target" : `${pct}%`;
   return (
     <span className={cn("flex shrink-0 items-center", labels ? "flex-wrap gap-x-2 gap-y-0.5" : "gap-1")}>
-      <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", invite.tone)}>
-        <invite.Icon className="size-4 shrink-0" aria-label={l.invitationStatus} />
-        {labels && <span>{invite.text}</span>}
-      </span>
+      {invite && (
+        <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", invite.tone)}>
+          <invite.Icon className="size-4 shrink-0" aria-label={l.invitationStatus} />
+          {labels && <span>{invite.text}</span>}
+        </span>
+      )}
       <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", !joined && "text-text-disabled")}>
         <LessonPracticeRing practiceMin={l.practiceMin} targetMin={l.targetMin} muted={!joined} size={labels ? 18 : 16} />
         {labels && <span>{ringText}</span>}
@@ -102,8 +103,6 @@ function LessonCardBody({ l, layout, tall }: { l: ClubLesson; layout: CardLayout
 
 export function LessonCalendarLegend() {
   const items = [
-    [UserCheck, "Family joined", ""],
-    [Mail, "Invite awaiting acceptance", ""],
     [AlertCircle, "Not invited or contact missing", "text-destructive"],
   ] as const;
   return (
