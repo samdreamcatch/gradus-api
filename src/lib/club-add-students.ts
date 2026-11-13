@@ -2,6 +2,8 @@
  * Pure rules for the club "Add students" sheet: row checks, spreadsheet paste parsing and
  * invite status. Shared by the sheet (live row checks) and the server (final say).
  */
+import { readClubCsv } from "./club-csv";
+
 export type StudentFrequency = "weekly" | "biweekly" | "twice_monthly" | "monthly";
 
 export type StudentRow = {
@@ -130,7 +132,7 @@ export function normalizeStart(value: string): string {
   const m = /^(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m?\.?$/i.exec(value.trim());
   if (m) {
     let h = Number(m[1]) % 12;
-    if (m[3]!.toLowerCase() === "p") h += 12;
+    if (m[3]?.toLowerCase() === "p") h += 12;
     const min = Number(m[2] ?? "0");
     if (min > 59) return "";
     return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
@@ -144,13 +146,9 @@ export function normalizeStart(value: string): string {
  * A header row is skipped. Missing cells stay blank for the admin to fill in.
  */
 export function parsePastedStudents(text: string, coachId: string): StudentRow[] {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const lines = readClubCsv(text);
   const rows: StudentRow[] = [];
-  for (const line of lines) {
-    const cells = (line.includes("\t") ? line.split("\t") : line.split(",")).map((c) => c.trim());
+  for (const cells of lines) {
     if (/^first/i.test(cells[0] ?? "")) continue;
     const row = blankStudentRow(coachId);
     row.firstName = cells[0] ?? "";
