@@ -6,7 +6,7 @@ import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-adm
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, Loader2, Upload } from "lucide-react";
+import { Download, Loader2, Plus, Upload } from "lucide-react";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,7 +90,7 @@ function OrgMovesPage() {
     queryFn: () => listFn({ data: { organizationId: orgId! } }),
     enabled: !!orgId,
   });
-  const sports = q.data?.sports ?? [];
+  const sports = useMemo(() => q.data?.sports ?? [], [q.data?.sports]);
   const [sport, setSport] = useState("");
   useEffect(() => {
     if (!sport && sports.length) setSport(sports[0]);
@@ -101,6 +101,7 @@ function OrgMovesPage() {
   const [editing, setEditing] = useState<OrgMoveRow | null>(null);
   const [bulkEdit, setBulkEdit] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
 
   const rows = useMemo(() => {
@@ -214,9 +215,14 @@ function OrgMovesPage() {
             activeFilters={search ? 1 : 0}
             onClear={() => setSearch("")}
             end={
-              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                <Upload /> Bulk upload (CSV)
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                  <Upload /> Bulk upload (CSV)
+                </Button>
+                <Button size="sm" onClick={() => setAddOpen(true)}>
+                  <Plus /> Add move
+                </Button>
+              </>
             }
           >
             <SportFilter sports={sports} value={sport} onChange={setSport} />
@@ -280,6 +286,17 @@ function OrgMovesPage() {
         }}
       />
       {orgId && (
+        <AddMoveSheet
+          orgId={orgId}
+          sport={sport}
+          sports={sports}
+          moves={q.data?.moves ?? []}
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          onDone={() => qc.invalidateQueries({ queryKey: ["org-moves", orgId] })}
+        />
+      )}
+      {orgId && (
         <ImportSheet
           orgId={orgId}
           sports={sports}
@@ -308,6 +325,180 @@ function OrgMovesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function AddMoveSheet({
+  orgId,
+  sport,
+  sports,
+  moves,
+  open,
+  onOpenChange,
+  onDone,
+}: {
+  orgId: string;
+  sport: string;
+  sports: string[];
+  moves: OrgMoveRow[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
+  const saveFn = useServerFn(importOrgMoves);
+  const [selectedSport, setSelectedSport] = useState(sport);
+  const [fields, setFields] = useState({
+    name: "",
+    category: "",
+    cue: "",
+    why: "",
+    description: "",
+  });
+  const [kind, setKind] = useState<"reps" | "mins">("reps");
+  const [value, setValue] = useState("10");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setSelectedSport(sport);
+    setFields({ name: "", category: "", cue: "", why: "", description: "" });
+    setKind("reps");
+    setValue("10");
+  }, [open, sport]);
+  const categories = [
+    ...new Set(moves.filter((m) => m.sport === selectedSport).map((m) => m.category)),
+  ].sort();
+  const duplicate = moves.some(
+    (m) =>
+      m.sport === selectedSport && m.name.trim().toLowerCase() === fields.name.trim().toLowerCase(),
+  );
+  const target = Number(value);
+  const valid =
+    sports.includes(selectedSport) &&
+    !!fields.name.trim() &&
+    !!fields.category.trim() &&
+    !duplicate &&
+    value.trim() !== "" &&
+    Number.isFinite(target) &&
+    target >= 0 &&
+    target <= 10000;
+  const save = async () => {
+    if (!valid || busy) return;
+    setBusy(true);
+    try {
+      const result = await saveFn({
+        data: {
+          organizationId: orgId,
+          moves: [
+            {
+              ...fields,
+              name: fields.name.trim(),
+              category: fields.category.trim(),
+              sport: selectedSport,
+              defaultTargetKind: kind,
+              defaultTargetValue: target,
+            },
+          ],
+        },
+      });
+      if (!result.created && !result.updated) throw new Error("Couldn't add this move.");
+      toast.success("Move saved");
+      onDone();
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't save this move.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Add move</SheetTitle>
+        </SheetHeader>
+        <form
+          className="mt-6 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save();
+          }}
+        >
+          <fieldset disabled={busy} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Sport</Label>
+              <SportFilter
+                sports={sports}
+                value={selectedSport}
+                onChange={(next) => {
+                  setSelectedSport(next);
+                  setFields((f) => ({ ...f, category: "" }));
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-move-name">Name</Label>
+              <Input
+                id="new-move-name"
+                required
+                maxLength={120}
+                value={fields.name}
+                onChange={(e) => setFields({ ...fields, name: e.target.value })}
+              />
+            </div>
+            {duplicate && (
+              <p className="text-sm text-destructive">
+                A move with this name already exists in this sport.
+              </p>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="new-move-category">Category</Label>
+              <Input
+                id="new-move-category"
+                list="move-category-options"
+                required
+                maxLength={64}
+                placeholder="Choose or enter a new category"
+                value={fields.category}
+                onChange={(e) => setFields({ ...fields, category: e.target.value })}
+              />
+              <datalist id="move-category-options">
+                {categories.map((category) => (
+                  <option key={category} value={category} />
+                ))}
+              </datalist>
+            </div>
+            {(["cue", "why", "description"] as const).map((key) => (
+              <div key={key} className="space-y-1.5">
+                <Label htmlFor={`new-move-${key}`}>
+                  {key === "cue" ? "Cue" : key === "why" ? "Why" : "Description"}
+                </Label>
+                <Textarea
+                  id={`new-move-${key}`}
+                  rows={2}
+                  maxLength={key === "description" ? 2000 : 1000}
+                  value={fields[key]}
+                  onChange={(e) => setFields({ ...fields, [key]: e.target.value })}
+                />
+              </div>
+            ))}
+            <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
+          </fieldset>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy || !valid}>
+              {busy ? "Saving…" : "Add move"}
+            </Button>
+          </div>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
 
