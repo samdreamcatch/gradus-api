@@ -12,10 +12,16 @@ import { buildDesignTokens } from "./lib/design-tokens";
 const cssPath = resolve(__dirname, "../src/styles.css");
 const outPath = resolve(__dirname, "../docs/api/design-tokens.json");
 
-const tokens = buildDesignTokens(readFileSync(cssPath, "utf8"));
+const skipped: string[] = [];
+const tokens = buildDesignTokens(readFileSync(cssPath, "utf8"), undefined, skipped);
 mkdirSync(dirname(outPath), { recursive: true });
 writeFileSync(outPath, JSON.stringify(tokens, null, 2) + "\n");
 
 console.log(
   `Wrote ${outPath} (${Object.keys(tokens.colors).length} colors, ${Object.keys(tokens.numbers).length} numbers)`,
 );
+if (skipped.length > 0) {
+  console.log(
+    `Left out ${skipped.length} alias(es) with no app-wide colour behind them: ${skipped.sort().join(", ")}`,
+  );
+}
