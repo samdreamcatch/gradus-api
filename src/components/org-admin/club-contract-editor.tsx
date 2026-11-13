@@ -31,7 +31,6 @@ export function ClubContractEditor({ organizationId }: { organizationId: string 
             data: {
               organizationId,
               coach_seats: values.coach_seats,
-              admin_seats: values.admin_seats,
               contract_seat_rate_cents: values.contract_seat_rate_cents,
               contract_currency: values.contract_currency,
               storefront_share_bps: values.storefront_share_bps,
@@ -55,7 +54,6 @@ export function ClubContractEditor({ organizationId }: { organizationId: string 
       {(
         [
           ["coach_seats", "Coach seats", 0, 10000],
-          ["admin_seats", "Admin seats", 1, 1000],
           ["storefront_share_bps", "Club share (basis points)", 0, 10000],
         ] as const
       ).map(([key, label, min, max]) => (
