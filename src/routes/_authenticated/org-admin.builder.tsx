@@ -21,12 +21,12 @@ import type { BuilderDraft } from "@/lib/resource-builder";
 export const Route = createFileRoute("/_authenticated/org-admin/builder")({
   head: () => ({
     meta: [
-      { title: "Resource builder · Gradus Club" },
+      { title: "Custom resource builder · Gradus Club" },
       {
         name: "description",
         content: "Write club-branded PDF handouts with AI and add them to your library.",
       },
-      { property: "og:title", content: "Resource builder · Gradus Club" },
+      { property: "og:title", content: "Custom resource builder · Gradus Club" },
       {
         property: "og:description",
         content: "Write club-branded PDF handouts with AI and add them to your library.",
@@ -117,7 +117,7 @@ function BuilderPage() {
 
   return (
     <div className="px-4 py-6 md:px-6 md:py-8 space-y-5 max-w-3xl">
-      <ClubPageHeader title="Resource builder" />
+      <ClubPageHeader title="Custom resource builder" />
       <ClubLibraryNav />
       {sportsQ.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />

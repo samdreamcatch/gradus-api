@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 
 const pages = [
   { to: "/org-admin/resources", label: "Resources" },
+  { to: "/org-admin/builder", label: "Custom resource builder" },
   { to: "/org-admin/policies", label: "Acknowledgements" },
   { to: "/org-admin/moves", label: "Moves" },
   { to: "/org-admin/templates", label: "Template plans" },
-  { to: "/org-admin/builder", label: "Builder" },
   { to: "/org-admin/levels", label: "Levels" },
 ] as const;
 
