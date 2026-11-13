@@ -156,7 +156,7 @@ function OrgRosterPage() {
   if (!orgId)
     return (
       <div className="px-4 py-6 md:px-6 md:py-8">
-        <ClubPageHeader title="Roster" />
+        <ClubPageHeader title="Roster" back={{ to: "/org-admin/people", label: "Back to Users" }} />
         <p className="mt-5 text-text-secondary">Loading…</p>
       </div>
     );
@@ -164,7 +164,7 @@ function OrgRosterPage() {
   return (
     <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <ClubPageHeader title="Roster" />
+        <ClubPageHeader title="Roster" back={{ to: "/org-admin/people", label: "Back to Users" }} />
         <Button onClick={() => setInviting(true)} className="press">
           Invite a coach
         </Button>
