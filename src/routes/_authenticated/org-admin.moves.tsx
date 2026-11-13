@@ -216,12 +216,12 @@ function OrgMovesPage() {
             onClear={() => setSearch("")}
             end={
               <>
-              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                <Upload /> Bulk upload (CSV)
-              </Button>
-              <Button size="sm" onClick={() => setAddOpen(true)}>
-                <Plus /> Add move
-              </Button>
+                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                  <Upload /> Bulk upload (CSV)
+                </Button>
+                <Button size="sm" onClick={() => setAddOpen(true)}>
+                  <Plus /> Add move
+                </Button>
               </>
             }
           >
@@ -328,7 +328,15 @@ function OrgMovesPage() {
   );
 }
 
-function AddMoveSheet({ orgId, sport, sports, moves, open, onOpenChange, onDone }: {
+function AddMoveSheet({
+  orgId,
+  sport,
+  sports,
+  moves,
+  open,
+  onOpenChange,
+  onDone,
+}: {
   orgId: string;
   sport: string;
   sports: string[];
@@ -339,7 +347,13 @@ function AddMoveSheet({ orgId, sport, sports, moves, open, onOpenChange, onDone 
 }) {
   const saveFn = useServerFn(importOrgMoves);
   const [selectedSport, setSelectedSport] = useState(sport);
-  const [fields, setFields] = useState({ name: "", category: "", cue: "", why: "", description: "" });
+  const [fields, setFields] = useState({
+    name: "",
+    category: "",
+    cue: "",
+    why: "",
+    description: "",
+  });
   const [kind, setKind] = useState<"reps" | "mins">("reps");
   const [value, setValue] = useState("10");
   const [busy, setBusy] = useState(false);
@@ -350,39 +364,142 @@ function AddMoveSheet({ orgId, sport, sports, moves, open, onOpenChange, onDone 
     setKind("reps");
     setValue("10");
   }, [open, sport]);
-  const categories = [...new Set(moves.filter((m) => m.sport === selectedSport).map((m) => m.category))].sort();
-  const duplicate = moves.some((m) => m.sport === selectedSport && m.name.trim().toLowerCase() === fields.name.trim().toLowerCase());
+  const categories = [
+    ...new Set(moves.filter((m) => m.sport === selectedSport).map((m) => m.category)),
+  ].sort();
+  const duplicate = moves.some(
+    (m) =>
+      m.sport === selectedSport && m.name.trim().toLowerCase() === fields.name.trim().toLowerCase(),
+  );
   const target = Number(value);
-  const valid = sports.includes(selectedSport) && !!fields.name.trim() && !!fields.category.trim() && !duplicate && value.trim() !== "" && Number.isFinite(target) && target >= 0 && target <= 10000;
+  const valid =
+    sports.includes(selectedSport) &&
+    !!fields.name.trim() &&
+    !!fields.category.trim() &&
+    !duplicate &&
+    value.trim() !== "" &&
+    Number.isFinite(target) &&
+    target >= 0 &&
+    target <= 10000;
   const save = async () => {
     if (!valid || busy) return;
     setBusy(true);
     try {
-      const result = await saveFn({ data: { organizationId: orgId, moves: [{ ...fields, name: fields.name.trim(), category: fields.category.trim(), sport: selectedSport, defaultTargetKind: kind, defaultTargetValue: target }] } });
+      const result = await saveFn({
+        data: {
+          organizationId: orgId,
+          moves: [
+            {
+              ...fields,
+              name: fields.name.trim(),
+              category: fields.category.trim(),
+              sport: selectedSport,
+              defaultTargetKind: kind,
+              defaultTargetValue: target,
+            },
+          ],
+        },
+      });
       if (!result.created && !result.updated) throw new Error("Couldn't add this move.");
       toast.success("Move saved");
       onDone();
       onOpenChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't save this move.");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
-  return <Sheet open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
-    <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-      <SheetHeader><SheetTitle>Add move</SheetTitle></SheetHeader>
-      <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-        <fieldset disabled={busy} className="space-y-4">
-          <div className="space-y-1.5"><Label>Sport</Label><SportFilter sports={sports} value={selectedSport} onChange={(next) => { setSelectedSport(next); setFields((f) => ({ ...f, category: "" })); }} /></div>
-          <div className="space-y-1.5"><Label htmlFor="new-move-name">Name</Label><Input id="new-move-name" required maxLength={120} value={fields.name} onChange={(e) => setFields({ ...fields, name: e.target.value })} /></div>
-          {duplicate && <p className="text-sm text-destructive">A move with this name already exists in this sport.</p>}
-          <div className="space-y-1.5"><Label htmlFor="new-move-category">Category</Label><Input id="new-move-category" list="move-category-options" required maxLength={64} placeholder="Choose or enter a new category" value={fields.category} onChange={(e) => setFields({ ...fields, category: e.target.value })} /><datalist id="move-category-options">{categories.map((category) => <option key={category} value={category} />)}</datalist></div>
-          {(["cue", "why", "description"] as const).map((key) => <div key={key} className="space-y-1.5"><Label htmlFor={`new-move-${key}`}>{key === "cue" ? "Cue" : key === "why" ? "Why" : "Description"}</Label><Textarea id={`new-move-${key}`} rows={2} maxLength={key === "description" ? 2000 : 1000} value={fields[key]} onChange={(e) => setFields({ ...fields, [key]: e.target.value })} /></div>)}
-          <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
-        </fieldset>
-        <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="ghost" disabled={busy} onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" disabled={busy || !valid}>{busy ? "Saving…" : "Add move"}</Button></div>
-      </form>
-    </SheetContent>
-  </Sheet>;
+  return (
+    <Sheet open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Add move</SheetTitle>
+        </SheetHeader>
+        <form
+          className="mt-6 space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void save();
+          }}
+        >
+          <fieldset disabled={busy} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Sport</Label>
+              <SportFilter
+                sports={sports}
+                value={selectedSport}
+                onChange={(next) => {
+                  setSelectedSport(next);
+                  setFields((f) => ({ ...f, category: "" }));
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-move-name">Name</Label>
+              <Input
+                id="new-move-name"
+                required
+                maxLength={120}
+                value={fields.name}
+                onChange={(e) => setFields({ ...fields, name: e.target.value })}
+              />
+            </div>
+            {duplicate && (
+              <p className="text-sm text-destructive">
+                A move with this name already exists in this sport.
+              </p>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="new-move-category">Category</Label>
+              <Input
+                id="new-move-category"
+                list="move-category-options"
+                required
+                maxLength={64}
+                placeholder="Choose or enter a new category"
+                value={fields.category}
+                onChange={(e) => setFields({ ...fields, category: e.target.value })}
+              />
+              <datalist id="move-category-options">
+                {categories.map((category) => (
+                  <option key={category} value={category} />
+                ))}
+              </datalist>
+            </div>
+            {(["cue", "why", "description"] as const).map((key) => (
+              <div key={key} className="space-y-1.5">
+                <Label htmlFor={`new-move-${key}`}>
+                  {key === "cue" ? "Cue" : key === "why" ? "Why" : "Description"}
+                </Label>
+                <Textarea
+                  id={`new-move-${key}`}
+                  rows={2}
+                  maxLength={key === "description" ? 2000 : 1000}
+                  value={fields[key]}
+                  onChange={(e) => setFields({ ...fields, [key]: e.target.value })}
+                />
+              </div>
+            ))}
+            <TargetFields kind={kind} value={value} onKind={setKind} onValue={setValue} />
+          </fieldset>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy || !valid}>
+              {busy ? "Saving…" : "Add move"}
+            </Button>
+          </div>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
 }
 
 function TargetFields({
