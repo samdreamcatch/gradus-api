@@ -32,3 +32,4 @@
 - Plan-copy reads and writes use a local plansTable schema extension to cover migration fields without editing generated clients or changing caller authorization.
 - Coach invitations live in the Users table (pending invites as "Invited" rows) with the shared ClubInviteCoachSheet; the old Roster URL only redirects there, so there is one place to manage coaches.
 - Club student and coach CSV controls share ClubCsvControls and Papa Parse; coach imports review rows before using the existing authorized invite action, retaining only failed rows for retry.
+- Manual club move entry reuses the authorized move import action; category names live on moves, so a new category is saved with its first move rather than a separate taxonomy.
