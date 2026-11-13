@@ -8,7 +8,9 @@ import { toIso, lessonInvitationReview } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send, Bell, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { lessonReminderRecipients } from "@/lib/club-lesson-reminders";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
@@ -181,6 +183,42 @@ function ClubSchedulePage() {
   const sendFn = useServerFn(sendClubLessonInvites);
   const [sending, setSending] = useState(false);
   const [confirmSend, setConfirmSend] = useState<string[] | null>(null);
+  const [reminderSelection, setReminderSelection] = useState<Set<string>>(new Set());
+  const [reminderReview, setReminderReview] = useState<ClubLesson[] | null>(null);
+  const [reminding, setReminding] = useState(false);
+  const pendingReminders = lessonReminderRecipients(lessons);
+  const selectedReminders = pendingReminders.filter((r) => reminderSelection.has(r.athleteId));
+  function selectReminders(rows: ClubLesson[], on: boolean) {
+    setReminderSelection((prev) => {
+      const next = new Set(prev);
+      for (const r of lessonReminderRecipients(rows)) {
+        if (on) next.add(r.athleteId);
+        else next.delete(r.athleteId);
+      }
+      return next;
+    });
+  }
+  function reminderControl(rows: ClubLesson[], label: string) {
+    const eligible = lessonReminderRecipients(rows);
+    const count = eligible.filter((r) => reminderSelection.has(r.athleteId)).length;
+    return <Checkbox aria-label={label} disabled={!eligible.length}
+      checked={count > 0 && count === eligible.length ? true : count > 0 ? "indeterminate" : false}
+      onCheckedChange={(on) => selectReminders(rows, on === true)} />;
+  }
+  async function sendReminders() {
+    if (!reminderReview?.length) return;
+    setReminding(true);
+    try {
+      const result = await sendFn({ data: { organizationId: org.id,
+        athleteIds: lessonReminderRecipients(reminderReview).map((r) => r.athleteId) } });
+      await qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] });
+      toast.success(`${result.sent} invitation reminders queued${result.skipped ? ` · ${result.skipped} skipped` : ""}.`);
+      setReminderReview(null);
+      setReminderSelection(new Set());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send reminders.");
+    } finally { setReminding(false); }
+  }
   async function sendInvites(ids: string[]) {
     setSending(true);
     try {
@@ -202,8 +240,14 @@ function ClubSchedulePage() {
     {
       key: "student",
       label: "Student",
+      headerControl: <label className="mr-3 inline-flex items-center gap-2">
+        {reminderControl(lessons, "Select all pending invitations")}<span>Select all</span>
+      </label>,
       render: (r) => (
         <span className="flex items-center gap-2">
+          <span onClick={(e) => e.stopPropagation()}>
+            {reminderControl([r], `Select ${r.studentName} for reminder`)}
+          </span>
           <LessonPracticeRing
             practiceMin={r.practiceMin}
             targetMin={r.targetMin}
@@ -293,6 +337,16 @@ function ClubSchedulePage() {
       sortValue: (r) => r.invitationStatus,
       groupValue: (r) => r.invitationStatus,
       className: "min-w-48",
+    },
+    {
+      key: "remind",
+      label: "",
+      render: (r) => lessonReminderRecipients([r]).length > 0 && (
+        <Button variant="ghost" size="sm" aria-label={`Remind ${r.studentName}`}
+          onClick={(e) => { e.stopPropagation(); setReminderReview([r]); }}>
+          <Bell className="size-4" /> Remind
+        </Button>
+      ),
     },
     {
       key: "invitedAt",
@@ -454,7 +508,7 @@ function ClubSchedulePage() {
     );
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button]:min-h-11">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button:not([role=checkbox])]:min-h-11">
       <ClubPageHeader
         title="Schedule"
         actions={
@@ -1032,8 +1086,20 @@ function ClubSchedulePage() {
             <p role="alert">Could not load the club calendar.</p>
           ) : (
             view === "grid" && (
+              <>
+              {selectedReminders.length > 0 && <div className="flex items-center gap-3 py-2">
+                <span className="font-mono text-sm">{selectedReminders.length} selected</span>
+                <Button onClick={() => setReminderReview(selectedReminders)}><Bell className="size-4" /> Remind selected</Button>
+                <Button variant="ghost" onClick={() => setReminderSelection(new Set())}>Clear selection</Button>
+              </div>}
               <ClubDataGrid
                 grid={lessonGrid}
+                groupControl={(label, rows) => reminderControl(rows, `Select pending invitations for ${label}`)}
+                groupActions={(_label, rows) => <Button variant="outline"
+                  disabled={!lessonReminderRecipients(rows).length}
+                  onClick={() => setReminderReview(lessonReminderRecipients(rows))}>
+                  <Bell className="size-4" /> Remind outstanding
+                </Button>}
                 rowKey={(r) => r.id}
                 onRowClick={setSelectedLesson}
                 rowLabel={(r) => `lesson for ${r.studentName}`}
@@ -1044,10 +1110,30 @@ function ClubSchedulePage() {
                 }}
                 empty={calendar.isPending ? "Loading lessons…" : "No recurring lessons."}
               />
+              </>
             )
           )}
         </TabsContent>
       </Tabs>
+      <Sheet open={!!reminderReview} onOpenChange={(open) => !open && !reminding && setReminderReview(null)}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Review reminders</SheetTitle>
+            <SheetDescription>{reminderReview?.length ?? 0} students awaiting acceptance. Resend their existing invitation to the recipient below.</SheetDescription>
+          </SheetHeader>
+          <ul className="my-4 divide-y divide-divider">
+            {reminderReview?.map((r) => <li key={r.athleteId} className="py-3">
+              <p className="font-semibold">{r.studentName}</p>
+              <p className="text-sm text-text-secondary">{r.coachName}</p>
+              <p className="break-all text-sm text-text-secondary">{r.recipient} · {r.contactEmail}</p>
+            </li>)}
+          </ul>
+          <Button disabled={reminding || !reminderReview?.length} onClick={sendReminders}>
+            {reminding ? <Loader2 className="size-4 animate-spin" /> : <Bell className="size-4" />}
+            {reminding ? "Sending…" : "Send reminders"}
+          </Button>
+        </SheetContent>
+      </Sheet>
       <Sheet open={invitationReviewOpen} onOpenChange={setInvitationReviewOpen}>
         <SheetContent className="overflow-y-auto sm:max-w-5xl">
           <SheetHeader>
