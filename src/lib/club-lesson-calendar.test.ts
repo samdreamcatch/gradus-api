@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { buildClubLessons, type CalendarSlot, type CalendarStudent } from "./club-lesson-calendar";
+import { buildClubLessons, lessonInvitationReview, type CalendarSlot, type CalendarStudent } from "./club-lesson-calendar";
 
 const student: CalendarStudent = {
   id: "student",
@@ -35,6 +35,28 @@ const input = {
   guardians: [],
 };
 describe("Club lesson calendar", () => {
+  it("counts each uninvited student once while retaining all scheduled lessons for review", () => {
+    const review = lessonInvitationReview(buildClubLessons({
+      ...input,
+      slots: [slot, { ...slot, id: "second", day_of_week: 6 }],
+    }));
+    expect(review.notInvited.map((lesson) => lesson.athleteId)).toEqual(["student"]);
+    expect(review.lessons.map((lesson) => lesson.id)).toEqual(["morning", "second"]);
+  });
+  it("separates recorded invitations from the unsent bulk invitation list", () => {
+    const review = lessonInvitationReview(buildClubLessons({
+      ...input,
+      students: [{ ...student, guardian_invited_at: "2026-11-01T00:00:00Z" }],
+    }));
+    expect(review.notInvited).toEqual([]);
+    expect(review.awaitingAcceptance.map((lesson) => lesson.athleteId)).toEqual(["student"]);
+  });
+  it("excludes connected and paused students from actionable invitation review", () => {
+    for (const changed of [{ parent_id: "parent" }, { account_state: "paused" }]) {
+      const review = lessonInvitationReview(buildClubLessons({ ...input, students: [{ ...student, ...changed }] }));
+      expect(review.lessons).toEqual([]);
+    }
+  });
   it("returns one row per lesson with its own start and end instead of a daily span", () => {
     const lessons = buildClubLessons({
       ...input,

@@ -1,5 +1,6 @@
 
 ## Open
+- [x] Correct Schedule invitation review: exact scheduled lessons/recipients, deduplicated student counts and unsent-only bulk action. Test Club review verified: 0 unsent, 3 awaiting acceptance across 4 lessons; 13 tests pass, targeted lint zero errors and build OK. No emails sent; full lint timed out.
 - [x] CSV uploads for students and coaches: shared import/template controls and editable review; authenticated upload/duplicate validation verified, 12 tests pass, targeted lint zero errors and build OK. No records or emails created; full lint timed out.
 - [x] Unified Users table: Coach/Admin/Unassigned, filtered all-user export, additional seats with confirmed prorated contract cost, persistent awaiting-invoice true-up and internal staff rate setup. Single table, missing-rate block and mobile verified; eight tests pass. No test bills or emails sent.
 - [ ] Contract true-up invoice delivery: needs real contract rates and the club billing recipient/payment arrangement; balances are recorded awaiting invoicing, not sent or charged. Test Club has no agreed rate, so its seat increase remains blocked.

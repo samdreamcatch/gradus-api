@@ -3,7 +3,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { LessonCalendar, coachTone } from "@/components/org-admin/lesson-calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { toIso } from "@/lib/club-lesson-calendar";
+import { toIso, lessonInvitationReview } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
@@ -174,9 +174,8 @@ function ClubSchedulePage() {
   );
   const activeFilters =
     (sp.coach !== "all" ? 1 : 0) + (sp.invite !== "all" ? 1 : 0) + (lessonSearch ? 1 : 0);
-  const inviteable = [
-    ...new Map(lessons.filter((l) => l.canInvite).map((l) => [l.athleteId, l])).values(),
-  ];
+  const invitationReview = lessonInvitationReview(lessons);
+  const [invitationReviewOpen, setInvitationReviewOpen] = useState(false);
   const sendFn = useServerFn(sendClubLessonInvites);
   const [sending, setSending] = useState(false);
   const [confirmSend, setConfirmSend] = useState<string[] | null>(null);
@@ -906,25 +905,22 @@ function ClubSchedulePage() {
               Export CSV
             </Button>
           </div>
-          {inviteable.length ? (
+          {invitationReview.lessons.length ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
               <p className="text-sm text-text-primary">
-                {inviteable.length}{" "}
-                {inviteable.length === 1 ? "student hasn't" : "students haven't"} been invited yet.
+                {invitationReview.notInvited.length} not invited · {invitationReview.awaitingAcceptance.length} awaiting acceptance
               </p>
               <div className="flex gap-2">
-                <Button asChild variant="outline">
-                  <Link to="/org-admin/people" search={{ tab: "students" }}>
-                    Review
-                  </Link>
+                <Button variant="outline" onClick={() => setInvitationReviewOpen(true)}>
+                  Review
                 </Button>
-                <Button
+                {invitationReview.notInvited.length > 0 && <Button
                   disabled={sending}
-                  onClick={() => setConfirmSend(inviteable.map((l) => l.athleteId))}
+                  onClick={() => setConfirmSend(invitationReview.notInvited.map((l) => l.athleteId))}
                 >
                   <Send className="size-4" />
-                  Send {inviteable.length}
-                </Button>
+                  Send {invitationReview.notInvited.length}
+                </Button>}
               </div>
             </div>
           ) : null}
@@ -1035,6 +1031,54 @@ function ClubSchedulePage() {
           )}
         </TabsContent>
       </Tabs>
+      <Sheet open={invitationReviewOpen} onOpenChange={setInvitationReviewOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-5xl">
+          <SheetHeader>
+            <SheetTitle>Scheduled student invitations</SheetTitle>
+            <SheetDescription>
+              {invitationReview.notInvited.length} not invited · {invitationReview.awaitingAcceptance.length} awaiting acceptance
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 overflow-x-auto">
+            <ClubTable>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Coach</TableHead>
+                  <TableHead>Lesson</TableHead>
+                  <TableHead>Recipient</TableHead>
+                  <TableHead>Invitation</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitationReview.lessons.map((lesson) => (
+                  <TableRow key={lesson.id}>
+                    <TableCell>{lesson.studentName}</TableCell>
+                    <TableCell>{lesson.coachName}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div>{dayName(lesson.day)} · {formatTimeLabel(lesson.start)}–{formatTimeLabel(lesson.end)}</div>
+                      <div className="text-xs text-text-secondary">{recurrence(lesson)}</div>
+                    </TableCell>
+                    <TableCell className="min-w-48 whitespace-normal break-words">
+                      <div>{lesson.recipient === "Guardian" ? lesson.guardianName : lesson.studentName} · {lesson.recipient}</div>
+                      <div className="text-xs text-text-secondary">{lesson.contactEmail}</div>
+                    </TableCell>
+                    <TableCell className="min-w-44">
+                      <StatusDot status={lesson.invitedAt ? "informational" : "attention"} label={lesson.invitedAt ? "Awaiting acceptance" : "Not invited"} />
+                      {lesson.invitedAt && <div className="mt-1 text-xs text-text-secondary">Invite recorded {lesson.invitedAt.slice(0, 10)}</div>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </ClubTable>
+          </div>
+          {invitationReview.notInvited.length > 0 && (
+            <Button className="mt-6" disabled={sending} onClick={() => setConfirmSend(invitationReview.notInvited.map((lesson) => lesson.athleteId))}>
+              <Send className="size-4" />Send {invitationReview.notInvited.length} invites
+            </Button>
+          )}
+        </SheetContent>
+      </Sheet>
       <Sheet open={handoffOpen} onOpenChange={setHandoffOpen}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>

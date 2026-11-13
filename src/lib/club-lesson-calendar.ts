@@ -116,6 +116,17 @@ export function buildClubLessons(input: {
 }
 
 // ---- Calendar placement (pure; dates are ISO yyyy-mm-dd, computed in UTC to avoid DST drift) ----
+/** Review only actionable scheduled families; count students once but retain every lesson. */
+export function lessonInvitationReview(lessons: ClubLesson[]) {
+  const reviewLessons = lessons.filter((lesson) => lesson.canInvite);
+  const students = [...new Map(reviewLessons.map((lesson) => [lesson.athleteId, lesson])).values()];
+  return {
+    lessons: reviewLessons,
+    notInvited: students.filter((lesson) => !lesson.invitedAt),
+    awaitingAcceptance: students.filter((lesson) => !!lesson.invitedAt),
+  };
+}
+
 const DAY_MS = 86_400_000;
 const toDate = (iso: string) => new Date(`${iso}T00:00:00Z`);
 export const toIso = (d: Date) => d.toISOString().slice(0, 10);
