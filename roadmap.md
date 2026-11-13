@@ -1,6 +1,6 @@
 
 ## Open
-- [ ] Coach profile: horizontal Profile, Sports & levels, Students, Practice tabs and authorized student-parent roster; no emails or account edits.
+- [x] Coach profile: horizontal Profile, Sports & levels, Students, Practice tabs and authorized student-parent roster; seven students and parent relationships verified, all tabs exercised, mobile has no page overflow. No emails or account edits.
 - [x] Part 2 Group A: coach profile, Users and Roster sections/person cells/dates/numbers and confirmation sheets complete; both themes, 390px/1280px and destructive-confirm cancellation verified. Nine tests and targeted lint pass; automatic build OK, full lint timed out. Admin identity remains unavailable in the existing DTO; no data or emails changed. Stop for review before Group B.
 - [x] Part 1 club visual pass: shared layout, sidebar, table/grid/toolbar and presentation components; Coaching light/dark and mobile checked, Columns/week/profile controls verified; stop for visual review. No data or email changes. Full-project lint exceeded runner timeout; targeted lint has no errors.
 - [x] Apply 20261102120000_notifications_collapse_key.sql byte-for-byte as 0033_notifications_collapse_key; column, unique index and service-only function verified. All journal migrations applied; 26 notification/push tests pass, lint zero errors; no emails or pushes sent.
