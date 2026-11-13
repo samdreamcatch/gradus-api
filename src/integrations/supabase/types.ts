@@ -3645,8 +3645,10 @@ export type Database = {
           invite_code: string
           invite_token: string
           invited_by: string | null
+          levels: Json
           organization_id: string
           phone: string | null
+          sports: string[]
           status: string
           updated_at: string
         }
@@ -3660,8 +3662,10 @@ export type Database = {
           invite_code: string
           invite_token: string
           invited_by?: string | null
+          levels?: Json
           organization_id: string
           phone?: string | null
+          sports?: string[]
           status?: string
           updated_at?: string
         }
@@ -3675,8 +3679,10 @@ export type Database = {
           invite_code?: string
           invite_token?: string
           invited_by?: string | null
+          levels?: Json
           organization_id?: string
           phone?: string | null
+          sports?: string[]
           status?: string
           updated_at?: string
         }
