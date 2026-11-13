@@ -11,6 +11,7 @@
 - Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
 - App notification inbox storage is separate from club notifications, uses plain user UUIDs and server-only writes, and allows owners only read, clear, or read-state updates; this prevents client-authored alerts and auth-schema foreign-key coupling.
 - Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
+- Coach profile Students tabs use a separate authorized, coach-and-club-scoped roster DTO containing names and relationship state only; family identities never enter aggregate analytics responses.
 - Club schedule review uses org-scoped snapshots and explicit transactional lesson commit, restricted to active students on seated coaches' existing rosters; parsing/saving never create lessons, commit is idempotent and never emails, and invitations remain a separate action.
 - Club schedule commits partition ready lessons from unresolved rows, preserving the complete review; unmatched student CSV handoffs return roster onboarding to the coach instead of impersonating them.
 - Home setup completion uses authorized club-scoped aggregate counts of real coaches, lessons, released resources and live policy requirements; demo data and family identities never enter its DTO.
