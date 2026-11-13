@@ -134,3 +134,34 @@ describe("Club lesson calendar placement", () => {
     expect(lessonOccursOn(l, "2026-11-03")).toBe(false);
   });
 });
+
+import { compactHours, practiceFor, practiceState } from "./club-lesson-calendar";
+describe("lesson practice to target", () => {
+  const base = {
+    goals: [{ id: "g", athlete_id: "a", coach_id: "c", sport: "skate", current_level_key: "bronze", updated_at: "2026-01-01" }],
+    primaries: [{ athlete_id: "a", sport: "skate", coach_id: "c" }],
+    levels: [{ coach_id: "c", sport: "skate", level_key: "bronze", practice_hours_per_week: 2 }],
+    targets: [],
+    sessions: [{ coach_id: "c", athlete_id: "a", duration_seconds: 3600 }],
+  };
+  it("uses the level target and last week's practice", () => {
+    const p = practiceFor("c", "a", base);
+    expect(p).toEqual({ practiceMin: 60, targetMin: 120 });
+    expect(practiceState(p)).toBe("below");
+  });
+  it("prefers the coach's own target for the student", () => {
+    const p = practiceFor("c", "a", { ...base, targets: [{ coach_id: "c", athlete_id: "a", sport: "skate", hours_per_week: 1 }] });
+    expect(practiceState(p)).toBe("met");
+  });
+  it("reports no target when a sport has none", () => {
+    const p = practiceFor("c", "a", { ...base, levels: [] });
+    expect(practiceState(p)).toBe("no_target");
+  });
+});
+describe("compact week hours", () => {
+  it("keeps only busy hours and collapses empty stretches", () => {
+    const { rows } = compactHours([{ start: 360, end: 420 }, { start: 1020, end: 1080 }], 56, 24);
+    expect(rows.map((r) => r.kind)).toEqual(["hour", "gap", "hour"]);
+    expect(rows[1]).toMatchObject({ from: 7, to: 17 });
+  });
+});
