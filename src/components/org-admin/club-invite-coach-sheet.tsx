@@ -15,6 +15,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClubCsvControls } from "./club-csv-controls";
+import { coachCsvDetails, readCoachCsv, type CoachCsvRow } from "@/lib/club-csv";
 
 const chip = (on: boolean) =>
   "press-soft min-h-9 rounded-pill border px-3 text-sm " +
@@ -40,6 +42,32 @@ export function ClubInviteCoachSheet({
   const [email, setEmail] = useState("");
   const [sports, setSports] = useState<string[]>([]);
   const [levels, setLevels] = useState<{ sport: string; levelKey: string }[]>([]);
+  const [csvRows, setCsvRows] = useState<CoachCsvRow[]>([]);
+  const [sendingCsv, setSendingCsv] = useState(false);
+  const [csvResults, setCsvResults] = useState<string[]>([]);
+  const csvDetails = csvRows.map((row) => coachCsvDetails(row, csvRows));
+  async function sendCsv() {
+    if (sendingCsv || csvDetails.some((row) => row.problems.length)) return;
+    setSendingCsv(true);
+    const remaining: CoachCsvRow[] = [];
+    const results: string[] = [];
+    try {
+      for (const [index, details] of csvDetails.entries()) {
+        try {
+          const { problems: _problems, ...data } = details;
+          const result = await create({ data: { organizationId: orgId, ...data } });
+          results.push(`${details.email}: ${result.emailed ? "Invite emailed" : "Invite created; email not sent"} — code ${result.code}`);
+        } catch (error) {
+          const row = csvRows[index];
+          if (row) remaining.push(row);
+          results.push(`${details.email}: ${error instanceof Error ? error.message : "Couldn't create invite"}`);
+        }
+      }
+      setCsvRows(remaining);
+      setCsvResults(results);
+      await qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
+    } finally { setSendingCsv(false); }
+  }
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const invite = useMutation({
@@ -59,13 +87,13 @@ export function ClubInviteCoachSheet({
   });
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(value) => { if (!sendingCsv) onOpenChange(value); }}>
       <SheetContent
         side={mobile ? "bottom" : "right"}
         className={
           mobile
             ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
-            : "w-full overflow-y-auto p-6 font-sans sm:max-w-md"
+            : csvRows.length || csvResults.length ? "w-full overflow-y-auto p-6 font-sans sm:max-w-2xl" : "w-full overflow-y-auto p-6 font-sans sm:max-w-md"
         }
       >
         <SheetHeader>
@@ -77,6 +105,34 @@ export function ClubInviteCoachSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-6">
+          <ClubCsvControls
+            filename="coaches-template.csv"
+            template={'Email,Sports,Levels\ncoach@example.com,Tennis,Tennis:NTRP 3.0\nsecond@example.com,Tennis;Golf,\n'}
+            disabled={sendingCsv || invite.isPending}
+            onImport={(text) => {
+              const rows = readCoachCsv(text);
+              if (!rows.length) throw new Error("No coaches found in this CSV.");
+              setCsvRows(rows);
+              setCsvResults([]);
+            }}
+          />
+          {csvResults.length > 0 && <div role="status" className="space-y-2 text-sm text-text-primary">{csvResults.map((result, i) => <p key={i}>{result}</p>)}</div>}
+          {csvRows.length > 0 ? <div className="space-y-4">
+            <h3 className="font-semibold text-text-primary">Review {csvRows.length} coaches</h3>
+            {csvRows.map((row, index) => <fieldset key={index} disabled={sendingCsv} className="space-y-2 border-b border-divider pb-4">
+              <legend className="text-meta text-text-secondary">Coach {index + 1}</legend>
+              {(["email", "sports", "levels"] as const).map((field) => <div key={field} className="space-y-1">
+                <Label htmlFor={`csv-${index}-${field}`}>{field === "email" ? "Email" : field === "sports" ? "Sports" : "Levels (optional)"}</Label>
+                <Input id={`csv-${index}-${field}`} value={row[field]} onChange={(e) => setCsvRows((rows) => rows.map((r, i) => i === index ? { ...r, [field]: e.target.value } : r))} />
+              </div>)}
+              {csvDetails[index]?.problems.length ? <p className="text-meta text-destructive">{csvDetails[index]?.problems.join(" · ")}</p> : null}
+              <Button variant="ghost" disabled={sendingCsv} className="press min-h-11" onClick={() => setCsvRows((rows) => rows.filter((_, i) => i !== index))}>Remove row</Button>
+            </fieldset>)}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" disabled={sendingCsv} className="press min-h-11" onClick={() => setCsvRows([])}>Cancel import</Button>
+              <Button className="press min-h-11" disabled={sendingCsv || csvDetails.some((r) => r.problems.length > 0)} onClick={() => void sendCsv()}>{sendingCsv ? "Sending…" : `Send ${csvRows.length} invites`}</Button>
+            </div>
+          </div> : csvResults.length ? <Button className="press min-h-11" onClick={() => { setCsvResults([]); onOpenChange(false); }}>Done</Button> : <>
           <div className="space-y-1">
             <Label htmlFor="inv-email">Email</Label>
             <Input
@@ -161,6 +217,7 @@ export function ClubInviteCoachSheet({
               {invite.isPending ? "Sending…" : "Send invite"}
             </Button>
           </div>
+          </>}
         </div>
       </SheetContent>
     </Sheet>
