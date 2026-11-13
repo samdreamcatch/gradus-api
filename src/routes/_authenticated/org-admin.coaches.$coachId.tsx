@@ -125,11 +125,12 @@ function CoachProfile() {
         }
         actions={
           <>
-            <Button variant="outline" className="min-h-11" asChild>
+            <Button variant="outline" className="h-11 rounded-md" asChild>
               <Link to="/org-admin/people">Open in Users</Link>
             </Button>
             <Button
               variant="outline"
+              className="h-11 rounded-md"
               disabled={!weeks.length}
               onClick={() =>
                 downloadCsv(
