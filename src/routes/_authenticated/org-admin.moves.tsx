@@ -717,7 +717,16 @@ function ImportSheet({
   const downloadTemplate = () => {
     const csv = toCsv(
       ["sport", "category", "name", "cue", "why", "description", "target", "target_kind"],
-      moves.map((move) => [move.sport, move.category, move.name, move.cue, move.why, move.description, move.defaultTargetValue, move.defaultTargetKind]),
+      moves.map((move) => [
+        move.sport,
+        move.category,
+        move.name,
+        move.cue,
+        move.why,
+        move.description,
+        move.defaultTargetValue,
+        move.defaultTargetKind,
+      ]),
     );
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
