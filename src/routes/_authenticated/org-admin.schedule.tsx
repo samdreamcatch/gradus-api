@@ -483,11 +483,11 @@ function ClubSchedulePage() {
         className="min-w-0"
       >
         <TabsList className="h-auto">
-          <TabsTrigger value="imports" className="min-h-11 press-soft">
-            Imports
-          </TabsTrigger>
           <TabsTrigger value="calendar" className="min-h-11 press-soft">
             Lessons
+          </TabsTrigger>
+          <TabsTrigger value="imports" className="min-h-11 press-soft">
+            Imports
           </TabsTrigger>
         </TabsList>
         <TabsContent value="imports" className="space-y-6">
