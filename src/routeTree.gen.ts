@@ -87,6 +87,7 @@ import { Route as AuthenticatedOrgAdminResourcesRouteImport } from './routes/_au
 import { Route as AuthenticatedOrgAdminRosterRouteImport } from './routes/_authenticated/org-admin.roster'
 import { Route as AuthenticatedOrgAdminScheduleRouteImport } from './routes/_authenticated/org-admin.schedule'
 import { Route as AuthenticatedOrgAdminSettingsRouteImport } from './routes/_authenticated/org-admin.settings'
+import { Route as AuthenticatedOrgAdminStorefrontRouteImport } from './routes/_authenticated/org-admin.storefront'
 import { Route as AuthenticatedOrgAdminTemplatesRouteImport } from './routes/_authenticated/org-admin.templates'
 import { Route as AuthenticatedParentIndexRouteImport } from './routes/_authenticated/parent.index'
 import { Route as AuthenticatedParentSettingsRouteImport } from './routes/_authenticated/parent.settings'
@@ -801,6 +802,12 @@ const AuthenticatedOrgAdminSettingsRoute =
   AuthenticatedOrgAdminSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminStorefrontRoute =
+  AuthenticatedOrgAdminStorefrontRouteImport.update({
+    id: '/storefront',
+    path: '/storefront',
     getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedOrgAdminTemplatesRoute =
@@ -2456,6 +2463,7 @@ export interface FileRoutesByFullPath {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/schedule': typeof AuthenticatedOrgAdminScheduleRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/storefront': typeof AuthenticatedOrgAdminStorefrontRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
@@ -2813,6 +2821,7 @@ export interface FileRoutesByTo {
   '/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/org-admin/schedule': typeof AuthenticatedOrgAdminScheduleRoute
   '/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/org-admin/storefront': typeof AuthenticatedOrgAdminStorefrontRoute
   '/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/parent/team': typeof AuthenticatedParentTeamRoute
@@ -3178,6 +3187,7 @@ export interface FileRoutesById {
   '/_authenticated/org-admin/roster': typeof AuthenticatedOrgAdminRosterRoute
   '/_authenticated/org-admin/schedule': typeof AuthenticatedOrgAdminScheduleRoute
   '/_authenticated/org-admin/settings': typeof AuthenticatedOrgAdminSettingsRoute
+  '/_authenticated/org-admin/storefront': typeof AuthenticatedOrgAdminStorefrontRoute
   '/_authenticated/org-admin/templates': typeof AuthenticatedOrgAdminTemplatesRoute
   '/_authenticated/parent/settings': typeof AuthenticatedParentSettingsRoute
   '/_authenticated/parent/team': typeof AuthenticatedParentTeamRoute
@@ -3543,6 +3553,7 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/schedule'
     | '/org-admin/settings'
+    | '/org-admin/storefront'
     | '/org-admin/templates'
     | '/parent/settings'
     | '/parent/team'
@@ -3900,6 +3911,7 @@ export interface FileRouteTypes {
     | '/org-admin/roster'
     | '/org-admin/schedule'
     | '/org-admin/settings'
+    | '/org-admin/storefront'
     | '/org-admin/templates'
     | '/parent/settings'
     | '/parent/team'
@@ -4264,6 +4276,7 @@ export interface FileRouteTypes {
     | '/_authenticated/org-admin/roster'
     | '/_authenticated/org-admin/schedule'
     | '/_authenticated/org-admin/settings'
+    | '/_authenticated/org-admin/storefront'
     | '/_authenticated/org-admin/templates'
     | '/_authenticated/parent/settings'
     | '/_authenticated/parent/team'
@@ -5375,6 +5388,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/org-admin/settings'
       preLoaderRoute: typeof AuthenticatedOrgAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/storefront': {
+      id: '/_authenticated/org-admin/storefront'
+      path: '/storefront'
+      fullPath: '/org-admin/storefront'
+      preLoaderRoute: typeof AuthenticatedOrgAdminStorefrontRouteImport
       parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/org-admin/templates': {
@@ -7547,6 +7567,7 @@ interface AuthenticatedOrgAdminRouteChildren {
   AuthenticatedOrgAdminRosterRoute: typeof AuthenticatedOrgAdminRosterRoute
   AuthenticatedOrgAdminScheduleRoute: typeof AuthenticatedOrgAdminScheduleRoute
   AuthenticatedOrgAdminSettingsRoute: typeof AuthenticatedOrgAdminSettingsRoute
+  AuthenticatedOrgAdminStorefrontRoute: typeof AuthenticatedOrgAdminStorefrontRoute
   AuthenticatedOrgAdminTemplatesRoute: typeof AuthenticatedOrgAdminTemplatesRoute
   AuthenticatedOrgAdminIndexRoute: typeof AuthenticatedOrgAdminIndexRoute
   AuthenticatedOrgAdminCoachesCoachIdRoute: typeof AuthenticatedOrgAdminCoachesCoachIdRoute
@@ -7566,6 +7587,7 @@ const AuthenticatedOrgAdminRouteChildren: AuthenticatedOrgAdminRouteChildren = {
   AuthenticatedOrgAdminRosterRoute: AuthenticatedOrgAdminRosterRoute,
   AuthenticatedOrgAdminScheduleRoute: AuthenticatedOrgAdminScheduleRoute,
   AuthenticatedOrgAdminSettingsRoute: AuthenticatedOrgAdminSettingsRoute,
+  AuthenticatedOrgAdminStorefrontRoute: AuthenticatedOrgAdminStorefrontRoute,
   AuthenticatedOrgAdminTemplatesRoute: AuthenticatedOrgAdminTemplatesRoute,
   AuthenticatedOrgAdminIndexRoute: AuthenticatedOrgAdminIndexRoute,
   AuthenticatedOrgAdminCoachesCoachIdRoute:
