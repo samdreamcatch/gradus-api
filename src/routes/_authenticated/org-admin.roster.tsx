@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
-import { Plus } from "lucide-react";
+import { ClubSection } from "@/components/org-admin/club-section";
+import { ClubPersonCell } from "@/components/org-admin/club-person-cell";
+import { ClubNumber } from "@/components/org-admin/club-number";
 import {
   Sheet,
   SheetContent,
@@ -34,12 +36,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ClubGridToolbar, ClubGridCount } from "@/components/org-admin/club-grid-toolbar";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { StatusDot } from "@/components/org-admin/status-dot";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/_authenticated/org-admin/roster")({
+  head: () => ({
+    meta: [
+      { title: "Roster · Gradus Club" },
+      { name: "description", content: "Club coach roster and invitation management." },
+      { property: "og:title", content: "Roster · Gradus Club" },
+      { property: "og:description", content: "Club coach roster and invitation management." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrgRosterPage,
 });
 
@@ -57,20 +69,27 @@ function OrgRosterPage() {
   const orgId = ctxQ.data?.organizations[0]?.id;
   const orgName = ctxQ.data?.organizations[0]?.name ?? "";
 
+  function requireOrgId() {
+    if (!orgId) throw new Error("No club is available.");
+    return orgId;
+  }
   const rosterQ = useQuery({
     queryKey: ["org-roster", orgId],
-    queryFn: () => rosterFn({ data: { organizationId: orgId! } }),
+    queryFn: () => rosterFn({ data: { organizationId: requireOrgId() } }),
     enabled: !!orgId,
   });
   const invitesQ = useQuery({
     queryKey: ["org-invites", orgId],
-    queryFn: () => invitesFn({ data: { organizationId: orgId! } }),
+    queryFn: () => invitesFn({ data: { organizationId: requireOrgId() } }),
     enabled: !!orgId,
   });
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
+  const [selectedInvite, setSelectedInvite] = useState<Invite | null>(null);
+  const [revoking, setRevoking] = useState<Invite | null>(null);
   const [removing, setRemoving] = useState<Coach | null>(null);
   const [search, setSearch] = useState("");
   const mobile = useIsMobile();
@@ -83,7 +102,7 @@ function OrgRosterPage() {
   );
 
   const createInvite = useMutation({
-    mutationFn: () => createInviteFn({ data: { organizationId: orgId!, email, phone } }),
+    mutationFn: () => createInviteFn({ data: { organizationId: requireOrgId(), email, phone } }),
     onSuccess: (res) => {
       toast.success(
         res.emailed ? `Invite emailed — code ${res.code}` : `Invite created — code ${res.code}`,
@@ -97,12 +116,14 @@ function OrgRosterPage() {
   });
 
   const revokeInvite = useMutation({
-    mutationFn: (id: string) => revokeInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
+    mutationFn: (id: string) =>
+      revokeInviteFn({ data: { organizationId: requireOrgId(), inviteId: id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org-invites", orgId] }),
   });
 
   const resendInvite = useMutation({
-    mutationFn: (id: string) => resendInviteFn({ data: { organizationId: orgId!, inviteId: id } }),
+    mutationFn: (id: string) =>
+      resendInviteFn({ data: { organizationId: requireOrgId(), inviteId: id } }),
     onSuccess: (res) => {
       if (res.ok) toast.success(`Invite re-sent to ${res.email}`);
       else toast.error(res.error);
@@ -111,33 +132,40 @@ function OrgRosterPage() {
   });
 
   const removeCoach = useMutation({
-    mutationFn: (coachId: string) => removeFn({ data: { organizationId: orgId!, coachId } }),
+    mutationFn: (coachId: string) =>
+      removeFn({ data: { organizationId: requireOrgId(), coachId } }),
     onSuccess: () => {
       toast.success("Coach removed from the club");
       setRemoving(null);
+      setSelectedCoach(null);
       qc.invalidateQueries({ queryKey: ["org-roster", orgId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const coachGrid = useClubGrid<Coach>("roster-coaches", coachColumns(setRemoving), coaches);
+  const coachGrid = useClubGrid<Coach>("roster-coaches", coachColumns(setSelectedCoach), coaches);
   const inviteGrid = useClubGrid<Invite>(
     "roster-invites",
     inviteColumns({
       resend: (id) => resendInvite.mutate(id),
-      revoke: (id) => revokeInvite.mutate(id),
+      revoke: (id) => setSelectedInvite(invites.find((invite) => invite.id === id) ?? null),
       busy: resendInvite.isPending || revokeInvite.isPending,
     }),
     invites,
   );
 
-  if (!orgId) return <div className="p-6 text-text-secondary">Loading…</div>;
+  if (!orgId)
+    return (
+      <div className="px-4 py-6 md:px-6 md:py-8">
+        <ClubPageHeader title="Roster" />
+        <p className="mt-5 text-text-secondary">Loading…</p>
+      </div>
+    );
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ClubPageHeader title="Roster" />
         <Button onClick={() => setInviting(true)} className="press">
-          <Plus className="size-4" />
           Invite a coach
         </Button>
       </div>
@@ -151,44 +179,30 @@ function OrgRosterPage() {
         <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
         {coachGrid.menu}
       </ClubGridToolbar>
-      <section className="space-y-2">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-h3">Coaches</h2>
-          <ClubGridCount
-            shown={coaches.length}
-            total={rosterQ.data?.coaches.length ?? 0}
-            noun="coaches"
-          />
-        </div>
+      <ClubSection title="Coaches">
         <ClubDataGrid
           grid={coachGrid}
+          onRowClick={setSelectedCoach}
+          rowLabel={(c) => `${c.firstName} ${c.lastName}`.trim() || c.email || "Coach"}
+          noun={{ one: "coach", many: "coaches" }}
           rowKey={(c) => c.coachId}
           filtered={!!search}
           onClear={() => setSearch("")}
           empty={rosterQ.isPending ? "Loading coaches…" : "No coaches yet."}
           showFooter
         />
-      </section>
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-display text-h3">Coach invites</h2>
-          <div className="flex items-center gap-2">
-            {inviteGrid.menu}
-            <ClubGridCount
-              shown={invites.length}
-              total={invitesQ.data?.invites.length ?? 0}
-              noun="invites"
-            />
-          </div>
-        </div>
+      </ClubSection>
+      <ClubSection title="Coach invites" actions={inviteGrid.menu}>
         <ClubDataGrid
           grid={inviteGrid}
+          noun={{ one: "invite", many: "invites" }}
+          showFooter
           rowKey={(i) => i.id}
           filtered={!!search}
           onClear={() => setSearch("")}
           empty="No invites yet."
         />
-      </section>
+      </ClubSection>
 
       <Sheet open={inviting} onOpenChange={setInviting}>
         <SheetContent
@@ -200,15 +214,18 @@ function OrgRosterPage() {
           }
         >
           <SheetHeader>
-            <SheetTitle className="font-display text-h2">Invite a coach</SheetTitle>
-            <SheetDescription>
-              They get an 8-character code to join {orgName}. Add an email to send it for you.
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              Invite a coach
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Create a coach invitation with an 8-character code.
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-4">
             <div className="space-y-1">
               <Label htmlFor="inv-email">Email</Label>
               <Input
+                className="min-h-11"
                 id="inv-email"
                 type="email"
                 value={email}
@@ -219,6 +236,7 @@ function OrgRosterPage() {
             <div className="space-y-1">
               <Label htmlFor="inv-phone">Phone (optional)</Label>
               <Input
+                className="min-h-11"
                 id="inv-phone"
                 type="tel"
                 value={phone}
@@ -227,7 +245,14 @@ function OrgRosterPage() {
               />
             </div>
             <Button
-              className="w-full press"
+              variant="outline"
+              className="min-h-11 w-full"
+              onClick={() => setInviting(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="min-h-11 w-full press"
               onClick={() => createInvite.mutate()}
               disabled={createInvite.isPending || (!email && !phone)}
             >
@@ -237,15 +262,119 @@ function OrgRosterPage() {
         </SheetContent>
       </Sheet>
 
+      <Sheet
+        open={!!selectedCoach}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCoach(null);
+        }}
+      >
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
+              : "w-full overflow-y-auto p-6 font-sans sm:max-w-md"
+          }
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              <ClubPersonCell
+                name={selectedCoach ? `${selectedCoach.firstName} ${selectedCoach.lastName}` : null}
+                email={selectedCoach?.email}
+              />
+            </SheetTitle>
+            <SheetDescription className="sr-only">Coach membership actions</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11 text-destructive"
+              onClick={() => {
+                if (selectedCoach) setRemoving(selectedCoach);
+              }}
+            >
+              Remove
+            </Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setSelectedCoach(null)}>
+              Close
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <Sheet
+        open={!!selectedInvite}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInvite(null);
+        }}
+      >
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
+              : "w-full overflow-y-auto p-6 font-sans sm:max-w-md"
+          }
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              Coach invite
+            </SheetTitle>
+            <SheetDescription className="sr-only">Invitation actions</SheetDescription>
+          </SheetHeader>
+          <p className="mt-6 font-mono tabular-nums">{selectedInvite?.code}</p>
+          <div className="mt-5 flex gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11 text-destructive"
+              onClick={() => setRevoking(selectedInvite)}
+            >
+              Revoke
+            </Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setSelectedInvite(null)}>
+              Close
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog
+        open={!!revoking}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null);
+        }}
+      >
+        <AlertDialogContent className="z-[70]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-h3">
+              Revoke this invite?
+            </AlertDialogTitle>
+            <AlertDialogDescription>The code will no longer be usable.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={revokeInvite.isPending}
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!revoking) return;
+                await revokeInvite.mutateAsync(revoking.id);
+                setRevoking(null);
+                setSelectedInvite(null);
+              }}
+            >
+              Revoke invite
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog
         open={!!removing}
         onOpenChange={(o) => {
           if (!o && !removeCoach.isPending) setRemoving(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[70]">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="font-display text-h3">
               Remove {removing?.firstName} {removing?.lastName} from {orgName}?
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -253,7 +382,7 @@ function OrgRosterPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeCoach.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={removeCoach.isPending}>Close</AlertDialogCancel>
             <AlertDialogAction
               disabled={removeCoach.isPending}
               onClick={(e) => {
@@ -281,13 +410,13 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
     {
       key: "name",
       label: "Coach",
-      render: (c) => `${c.firstName} ${c.lastName}`,
+      render: (c) => <ClubPersonCell name={`${c.firstName} ${c.lastName}`} email={c.email} />,
       sortValue: (c) => `${c.firstName} ${c.lastName}`,
     },
     {
       key: "email",
       label: "Email",
-      render: (c) => c.email ?? <span className="text-text-tertiary">No email</span>,
+      render: (c) => c.email || <ClubNumber value={null} />,
       sortValue: (c) => c.email,
       className: "min-w-48 text-text-secondary",
     },
@@ -295,7 +424,7 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
       key: "athletes",
       label: "Athletes",
       align: "right",
-      render: (c) => c.athleteCount,
+      numeric: (c) => c.athleteCount,
       sortValue: (c) => c.athleteCount,
       footer: (r) => sum(r, "athleteCount"),
     },
@@ -303,7 +432,7 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
       key: "parents",
       label: "Parents",
       align: "right",
-      render: (c) => c.parentCount,
+      numeric: (c) => c.parentCount,
       sortValue: (c) => c.parentCount,
       footer: (r) => sum(r, "parentCount"),
     },
@@ -311,7 +440,7 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
       key: "adults",
       label: "Adult athletes",
       align: "right",
-      render: (c) => c.adultAthleteCount,
+      numeric: (c) => c.adultAthleteCount,
       sortValue: (c) => c.adultAthleteCount,
       footer: (r) => sum(r, "adultAthleteCount"),
     },
@@ -320,15 +449,15 @@ function coachColumns(onRemove: (c: Coach) => void): ClubColumn<Coach>[] {
       label: "Action",
       render: (c) => (
         <Button
-          variant="link"
+          variant="outline"
           size="sm"
-          className="text-text-primary"
+          className="min-h-11 text-text-primary"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(c);
           }}
         >
-          Remove
+          View
         </Button>
       ),
     },
@@ -379,9 +508,9 @@ function inviteColumns(a: {
           <span className="flex gap-1">
             {i.email && (
               <Button
-                variant="link"
+                variant="outline"
                 size="sm"
-                className="text-text-primary"
+                className="min-h-11 text-text-primary"
                 disabled={a.busy}
                 onClick={() => a.resend(i.id)}
               >
@@ -389,13 +518,13 @@ function inviteColumns(a: {
               </Button>
             )}
             <Button
-              variant="link"
+              variant="outline"
               size="sm"
-              className="text-text-primary"
+              className="min-h-11 text-text-primary"
               disabled={a.busy}
               onClick={() => a.revoke(i.id)}
             >
-              Revoke
+              View
             </Button>
           </span>
         ) : null,
