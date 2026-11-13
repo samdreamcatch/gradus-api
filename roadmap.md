@@ -1,5 +1,6 @@
 
 ## Open
+- [ ] Refine the club top menu into an aligned single desktop line with understated active tabs and subordinate Library links; verify desktop, narrow screens and both themes without changing data.
 - [x] Move shared club navigation to the top; sidebar width and mobile trigger removed. Schedule/Users navigation, 1074px/390px layouts without page overflow, and dark appearance verified; targeted lint zero errors and build OK, full lint timed out.
 - [x] Correct Schedule invitation review: exact scheduled lessons/recipients, deduplicated student counts and unsent-only bulk action. Test Club review verified: 0 unsent, 3 awaiting acceptance across 4 lessons; 13 tests pass, targeted lint zero errors and build OK. No emails sent; full lint timed out.
 - [x] CSV uploads for students and coaches: shared import/template controls and editable review; authenticated upload/duplicate validation verified, 12 tests pass, targeted lint zero errors and build OK. No records or emails created; full lint timed out.

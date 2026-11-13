@@ -48,7 +48,7 @@ function OrgAdminLayout() {
   return (
       <div className="paper-surface min-h-screen flex w-full min-w-0 flex-col">
         <OrgAdminNavigation onSignOut={handleSignOut} />
-        <main className="w-full min-w-0 flex-1 [&>div]:w-full [&>div]:min-w-0">
+        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 [&>div]:w-full [&>div]:min-w-0">
           <Outlet />
         </main>
       </div>

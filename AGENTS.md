@@ -25,7 +25,7 @@
 - Club admin database pages share `ClubGridToolbar` (view switch, search, filters, clear count) and `ClubTable`; calendar placement of recurring lessons is pure and tested in `club-lesson-calendar.ts`, so every page filters and reads the same way.
 - Club-level coach access is decided in `coach_effective_tier` (club membership, occupied seat and active contract dates); profile/billing DTOs use that result and fall back to personal entitlement. Staff name club admins into `org_admins` from internal Organizations; native onboarding stays untouched.
 
-- Club presentation primitives live under components/org-admin and wrap shared UI without changing it; the club layout owns shared top navigation with horizontally scrollable narrow-screen tabs, while page headers have no sidebar dependency and grid Columns combines device-saved visibility and grouping.
+- Club presentation primitives live under components/org-admin and wrap shared UI without changing it; the club layout aligns its single-line desktop navigation and page content in one max-width container, with scrollable tabs below the identity on narrow screens and subordinate Library text tabs, to preserve page space and hierarchy. Page headers have no sidebar dependency and grid Columns combines device-saved visibility and grouping.
 
 - Settings and Users share ClubAddSeats for the existing seat-increase confirmation, so pricing and refreshed seat counts stay consistent across entry points.
 
