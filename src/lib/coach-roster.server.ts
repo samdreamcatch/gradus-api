@@ -499,7 +499,9 @@ export async function addAthleteWithGuardian(
   ctx: RosterContext,
   data: z.infer<typeof addAthleteInput>,
   now: Date = new Date(),
+  options: { sendInvite?: boolean } = {},
 ): Promise<AddAthleteResult> {
+  const sendInvite = options.sendInvite ?? true;
   const { admin, userId } = ctx;
   const coachRow = await admin
     .from("coach_profiles")
@@ -569,7 +571,7 @@ export async function addAthleteWithGuardian(
         data.emailRecipient === "guardian" ? data.guardianFirstName || null : null,
       guardian_last_name: data.emailRecipient === "guardian" ? data.guardianLastName || null : null,
       guardian_claim_token: token,
-      guardian_invited_at: guardianEmail ? now.toISOString() : null,
+      guardian_invited_at: guardianEmail && sendInvite ? now.toISOString() : null,
       added_by_coach_id: coachId,
       invite_recipient: data.emailRecipient,
     })
@@ -595,7 +597,7 @@ export async function addAthleteWithGuardian(
     if (sportIns.error) console.error("[roster] sport link failed", sportIns.error);
   }
 
-  if (guardianEmail && token) {
+  if (guardianEmail && token && sendInvite) {
     const coach = await admin
       .from("coach_profiles")
       .select("first_name, last_name")
