@@ -10,6 +10,7 @@ type Item = { to: string; label: string; exact?: boolean };
 const ITEMS: Item[] = [
   { to: "/org-admin/schedule", label: "Schedule" },
   { to: "/org-admin/people", label: "Users" },
+  { to: "/org-admin/insights", label: "Insights" },
   { to: "/org-admin/resources", label: "Library" },
   { to: "/org-admin/storefront", label: "Storefront" },
   { to: "/org-admin/settings", label: "Settings" },

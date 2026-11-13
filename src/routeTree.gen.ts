@@ -78,6 +78,7 @@ import { Route as AuthenticatedCoachSettingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedOrgAdminIndexRouteImport } from './routes/_authenticated/org-admin.index'
 import { Route as AuthenticatedOrgAdminBuilderRouteImport } from './routes/_authenticated/org-admin.builder'
 import { Route as AuthenticatedOrgAdminCalendarRouteImport } from './routes/_authenticated/org-admin.calendar'
+import { Route as AuthenticatedOrgAdminInsightsRouteImport } from './routes/_authenticated/org-admin.insights'
 import { Route as AuthenticatedOrgAdminLevelsRouteImport } from './routes/_authenticated/org-admin.levels'
 import { Route as AuthenticatedOrgAdminMovesRouteImport } from './routes/_authenticated/org-admin.moves'
 import { Route as AuthenticatedOrgAdminNotificationsRouteImport } from './routes/_authenticated/org-admin.notifications'
@@ -748,6 +749,12 @@ const AuthenticatedOrgAdminCalendarRoute =
   AuthenticatedOrgAdminCalendarRouteImport.update({
     id: '/calendar',
     path: '/calendar',
+    getParentRoute: () => AuthenticatedOrgAdminRoute,
+  } as any)
+const AuthenticatedOrgAdminInsightsRoute =
+  AuthenticatedOrgAdminInsightsRouteImport.update({
+    id: '/insights',
+    path: '/insights',
     getParentRoute: () => AuthenticatedOrgAdminRoute,
   } as any)
 const AuthenticatedOrgAdminLevelsRoute =
@@ -2454,6 +2461,7 @@ export interface FileRoutesByFullPath {
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/org-admin/builder': typeof AuthenticatedOrgAdminBuilderRoute
   '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/insights': typeof AuthenticatedOrgAdminInsightsRoute
   '/org-admin/levels': typeof AuthenticatedOrgAdminLevelsRoute
   '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
   '/org-admin/notifications': typeof AuthenticatedOrgAdminNotificationsRoute
@@ -2812,6 +2820,7 @@ export interface FileRoutesByTo {
   '/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/org-admin/builder': typeof AuthenticatedOrgAdminBuilderRoute
   '/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/org-admin/insights': typeof AuthenticatedOrgAdminInsightsRoute
   '/org-admin/levels': typeof AuthenticatedOrgAdminLevelsRoute
   '/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
   '/org-admin/notifications': typeof AuthenticatedOrgAdminNotificationsRoute
@@ -3178,6 +3187,7 @@ export interface FileRoutesById {
   '/_authenticated/coach/settings': typeof AuthenticatedCoachSettingsRoute
   '/_authenticated/org-admin/builder': typeof AuthenticatedOrgAdminBuilderRoute
   '/_authenticated/org-admin/calendar': typeof AuthenticatedOrgAdminCalendarRoute
+  '/_authenticated/org-admin/insights': typeof AuthenticatedOrgAdminInsightsRoute
   '/_authenticated/org-admin/levels': typeof AuthenticatedOrgAdminLevelsRoute
   '/_authenticated/org-admin/moves': typeof AuthenticatedOrgAdminMovesRoute
   '/_authenticated/org-admin/notifications': typeof AuthenticatedOrgAdminNotificationsRoute
@@ -3544,6 +3554,7 @@ export interface FileRouteTypes {
     | '/coach/settings'
     | '/org-admin/builder'
     | '/org-admin/calendar'
+    | '/org-admin/insights'
     | '/org-admin/levels'
     | '/org-admin/moves'
     | '/org-admin/notifications'
@@ -3902,6 +3913,7 @@ export interface FileRouteTypes {
     | '/coach/settings'
     | '/org-admin/builder'
     | '/org-admin/calendar'
+    | '/org-admin/insights'
     | '/org-admin/levels'
     | '/org-admin/moves'
     | '/org-admin/notifications'
@@ -4267,6 +4279,7 @@ export interface FileRouteTypes {
     | '/_authenticated/coach/settings'
     | '/_authenticated/org-admin/builder'
     | '/_authenticated/org-admin/calendar'
+    | '/_authenticated/org-admin/insights'
     | '/_authenticated/org-admin/levels'
     | '/_authenticated/org-admin/moves'
     | '/_authenticated/org-admin/notifications'
@@ -5325,6 +5338,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/org-admin/calendar'
       preLoaderRoute: typeof AuthenticatedOrgAdminCalendarRouteImport
+      parentRoute: typeof AuthenticatedOrgAdminRoute
+    }
+    '/_authenticated/org-admin/insights': {
+      id: '/_authenticated/org-admin/insights'
+      path: '/insights'
+      fullPath: '/org-admin/insights'
+      preLoaderRoute: typeof AuthenticatedOrgAdminInsightsRouteImport
       parentRoute: typeof AuthenticatedOrgAdminRoute
     }
     '/_authenticated/org-admin/levels': {
@@ -7558,6 +7578,7 @@ const AuthenticatedCoachRouteWithChildren =
 interface AuthenticatedOrgAdminRouteChildren {
   AuthenticatedOrgAdminBuilderRoute: typeof AuthenticatedOrgAdminBuilderRoute
   AuthenticatedOrgAdminCalendarRoute: typeof AuthenticatedOrgAdminCalendarRoute
+  AuthenticatedOrgAdminInsightsRoute: typeof AuthenticatedOrgAdminInsightsRoute
   AuthenticatedOrgAdminLevelsRoute: typeof AuthenticatedOrgAdminLevelsRoute
   AuthenticatedOrgAdminMovesRoute: typeof AuthenticatedOrgAdminMovesRoute
   AuthenticatedOrgAdminNotificationsRoute: typeof AuthenticatedOrgAdminNotificationsRoute
@@ -7577,6 +7598,7 @@ interface AuthenticatedOrgAdminRouteChildren {
 const AuthenticatedOrgAdminRouteChildren: AuthenticatedOrgAdminRouteChildren = {
   AuthenticatedOrgAdminBuilderRoute: AuthenticatedOrgAdminBuilderRoute,
   AuthenticatedOrgAdminCalendarRoute: AuthenticatedOrgAdminCalendarRoute,
+  AuthenticatedOrgAdminInsightsRoute: AuthenticatedOrgAdminInsightsRoute,
   AuthenticatedOrgAdminLevelsRoute: AuthenticatedOrgAdminLevelsRoute,
   AuthenticatedOrgAdminMovesRoute: AuthenticatedOrgAdminMovesRoute,
   AuthenticatedOrgAdminNotificationsRoute:
