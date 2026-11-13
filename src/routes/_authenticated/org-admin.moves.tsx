@@ -6,7 +6,7 @@ import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-adm
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
+import { Download, Loader2, Upload } from "lucide-react";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -583,6 +583,11 @@ function ImportSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
+          <Button variant="outline" className="min-h-11 press" asChild>
+            <a href="/downloads/gradus-moves-template.csv" download="gradus-moves-template.csv">
+              <Download className="size-4" /> Download template
+            </a>
+          </Button>
           <Input type="file" accept=".csv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} />
           {problems.length > 0 && (
             <div className="rounded-lg border border-destructive/50 p-3 text-xs text-destructive space-y-1">
