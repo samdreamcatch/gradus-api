@@ -8,12 +8,13 @@ import { toIso, lessonInvitationReview } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send, UserPlus } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send } from "lucide-react";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { StatusDot } from "@/components/org-admin/status-dot";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
+import { ClubPrimaryAction } from "@/components/org-admin/club-primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -454,40 +455,16 @@ function ClubSchedulePage() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button]:min-h-11">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <ClubPageHeader title="Schedule" />
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link to="/org-admin/people" search={{ tab: "students", add: true }}>
-              <UserPlus className="size-4" />
-              Add students
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}
-          >
-            <Download className="size-4" />
-            CSV template
-          </Button>
-          <Button onClick={() => fileRef.current?.click()}>
-            <Upload className="size-4" />
-            Import CSV
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.tsv,text/csv,text/tab-separated-values"
-            className="hidden"
-            aria-label="Upload club schedule CSV"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload(file);
-              e.target.value = "";
-            }}
+      <ClubPageHeader
+        title="Schedule"
+        actions={
+          <ClubPrimaryAction
+            label="Add students"
+            to="/org-admin/people"
+            search={{ tab: "students", add: true }}
           />
-        </div>
-      </div>
+        }
+      />
       <Tabs
         value={sp.tab === "calendar" ? "calendar" : "imports"}
         onValueChange={(v) => setSp({ tab: v })}
@@ -502,6 +479,35 @@ function ClubSchedulePage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="imports" className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-h3">Import lessons</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-11 min-h-11"
+                onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}
+              >
+                <Download className="size-4" />
+                Download template
+              </Button>
+              <Button className="h-11 min-h-11" onClick={() => fileRef.current?.click()}>
+                <Upload className="size-4" />
+                Import lesson CSV
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.tsv,text/csv,text/tab-separated-values"
+                className="hidden"
+                aria-label="Upload club schedule CSV"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void upload(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
           {seats.isError && (
             <p role="status" className="text-sm text-text-secondary">
               Could not load seated coaches. Retry by refreshing this page.
