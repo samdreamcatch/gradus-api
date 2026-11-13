@@ -22261,6 +22261,21 @@
                           "bankLast4"
                         ]
                       }
+                    },
+                    "promoCodes": {
+                      "type": "object",
+                      "properties": {
+                        "active": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "active",
+                        "total"
+                      ]
                     }
                   },
                   "required": [
@@ -22270,7 +22285,8 @@
                     "sales",
                     "plans",
                     "weekly",
-                    "payouts"
+                    "payouts",
+                    "promoCodes"
                   ]
                 }
               }
@@ -22562,7 +22578,7 @@
     "/api/v1/marketplace/plans/{id}/promo-code": {
       "post": {
         "operationId": "previewMarketplacePlanPromoCode",
-        "summary": "Check a promo code on a marketplace plan and show the discounted price",
+        "summary": "Check a promo code on a marketplace plan and show the price with it",
         "security": [
           {
             "bearerAuth": []
@@ -22605,34 +22621,70 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "discountType": {
+                    "state": {
                       "type": "string",
                       "enum": [
-                        "percent",
-                        "fixed"
+                        "valid",
+                        "invalid",
+                        "expired",
+                        "exhausted",
+                        "wrong_plan",
+                        "already_used",
+                        "below_minimum"
                       ]
                     },
-                    "discountValue": {
-                      "type": "number"
+                    "message": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "originalAmountCents": {
                       "type": "number"
                     },
+                    "code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "discountType": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "percent",
+                        "fixed",
+                        "free"
+                      ]
+                    },
+                    "discountValue": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "discountCents": {
-                      "type": "number"
+                      "type": [
+                        "number",
+                        "null"
+                      ]
                     },
                     "amountCents": {
-                      "type": "number"
+                      "type": [
+                        "number",
+                        "null"
+                      ]
                     }
                   },
                   "required": [
+                    "state",
+                    "message",
+                    "originalAmountCents",
                     "code",
                     "discountType",
                     "discountValue",
-                    "originalAmountCents",
                     "discountCents",
                     "amountCents"
                   ]
@@ -22685,41 +22737,42 @@
                             "type": "string",
                             "enum": [
                               "percent",
-                              "fixed"
+                              "fixed",
+                              "free"
                             ]
                           },
                           "discountValue": {
-                            "type": "number"
-                          },
-                          "planIds": {
                             "type": [
-                              "array",
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "plan": {
+                            "type": [
+                              "object",
                               "null"
                             ],
-                            "items": {
-                              "type": "string"
-                            }
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title"
+                            ]
                           },
                           "maxRedemptions": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
-                          },
-                          "maxPerUser": {
-                            "type": [
-                              "integer",
-                              "null"
-                            ]
+                            "type": "integer"
                           },
                           "redemptionCount": {
                             "type": "integer"
                           },
-                          "startsAt": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
+                          "revenueCents": {
+                            "type": "integer"
                           },
                           "expiresAt": {
                             "type": [
@@ -22730,12 +22783,14 @@
                           "active": {
                             "type": "boolean"
                           },
+                          "isActive": {
+                            "type": "boolean"
+                          },
                           "state": {
                             "type": "string",
                             "enum": [
                               "active",
-                              "paused",
-                              "scheduled",
+                              "disabled",
                               "expired",
                               "used_up"
                             ]
@@ -22752,13 +22807,13 @@
                           "code",
                           "discountType",
                           "discountValue",
-                          "planIds",
+                          "plan",
                           "maxRedemptions",
-                          "maxPerUser",
                           "redemptionCount",
-                          "startsAt",
+                          "revenueCents",
                           "expiresAt",
                           "active",
+                          "isActive",
                           "state",
                           "createdAt",
                           "updatedAt"
@@ -22806,47 +22861,29 @@
                     "type": "string",
                     "enum": [
                       "percent",
-                      "fixed"
+                      "fixed",
+                      "free"
                     ]
                   },
                   "discountValue": {
-                    "type": "number",
+                    "type": [
+                      "number",
+                      "null"
+                    ],
                     "exclusiveMinimum": 0,
                     "maximum": 100000
                   },
-                  "planIds": {
-                    "type": [
-                      "array",
-                      "null"
-                    ],
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "minItems": 1,
-                    "maxItems": 200
-                  },
-                  "maxRedemptions": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "exclusiveMinimum": 0
-                  },
-                  "maxPerUser": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "exclusiveMinimum": 0,
-                    "default": 1
-                  },
-                  "startsAt": {
+                  "planId": {
                     "type": [
                       "string",
                       "null"
                     ],
-                    "format": "date-time"
+                    "format": "uuid"
+                  },
+                  "maxRedemptions": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 999
                   },
                   "expiresAt": {
                     "type": [
@@ -22854,16 +22891,12 @@
                       "null"
                     ],
                     "format": "date-time"
-                  },
-                  "active": {
-                    "type": "boolean",
-                    "default": true
                   }
                 },
                 "required": [
                   "code",
                   "discountType",
-                  "discountValue"
+                  "maxRedemptions"
                 ]
               }
             }
@@ -22887,41 +22920,42 @@
                       "type": "string",
                       "enum": [
                         "percent",
-                        "fixed"
+                        "fixed",
+                        "free"
                       ]
                     },
                     "discountValue": {
-                      "type": "number"
-                    },
-                    "planIds": {
                       "type": [
-                        "array",
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "plan": {
+                      "type": [
+                        "object",
                         "null"
                       ],
-                      "items": {
-                        "type": "string"
-                      }
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title"
+                      ]
                     },
                     "maxRedemptions": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
-                    },
-                    "maxPerUser": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": "integer"
                     },
                     "redemptionCount": {
                       "type": "integer"
                     },
-                    "startsAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                    "revenueCents": {
+                      "type": "integer"
                     },
                     "expiresAt": {
                       "type": [
@@ -22932,12 +22966,14 @@
                     "active": {
                       "type": "boolean"
                     },
+                    "isActive": {
+                      "type": "boolean"
+                    },
                     "state": {
                       "type": "string",
                       "enum": [
                         "active",
-                        "paused",
-                        "scheduled",
+                        "disabled",
                         "expired",
                         "used_up"
                       ]
@@ -22954,13 +22990,13 @@
                     "code",
                     "discountType",
                     "discountValue",
-                    "planIds",
+                    "plan",
                     "maxRedemptions",
-                    "maxPerUser",
                     "redemptionCount",
-                    "startsAt",
+                    "revenueCents",
                     "expiresAt",
                     "active",
+                    "isActive",
                     "state",
                     "createdAt",
                     "updatedAt"
@@ -22983,9 +23019,142 @@
       }
     },
     "/api/v1/coach/promo-codes/{id}": {
+      "get": {
+        "operationId": "getCoachPromoCode",
+        "summary": "One promo code, with its uses and revenue",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "discountType": {
+                      "type": "string",
+                      "enum": [
+                        "percent",
+                        "fixed",
+                        "free"
+                      ]
+                    },
+                    "discountValue": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "plan": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title"
+                      ]
+                    },
+                    "maxRedemptions": {
+                      "type": "integer"
+                    },
+                    "redemptionCount": {
+                      "type": "integer"
+                    },
+                    "revenueCents": {
+                      "type": "integer"
+                    },
+                    "expiresAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "disabled",
+                        "expired",
+                        "used_up"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "code",
+                    "discountType",
+                    "discountValue",
+                    "plan",
+                    "maxRedemptions",
+                    "redemptionCount",
+                    "revenueCents",
+                    "expiresAt",
+                    "active",
+                    "isActive",
+                    "state",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
         "operationId": "updateCoachPromoCode",
-        "summary": "Change or pause a promo code",
+        "summary": "Change or disable a promo code",
         "security": [
           {
             "bearerAuth": []
@@ -23014,46 +23183,29 @@
                     "type": "string",
                     "enum": [
                       "percent",
-                      "fixed"
+                      "fixed",
+                      "free"
                     ]
                   },
                   "discountValue": {
-                    "type": "number",
+                    "type": [
+                      "number",
+                      "null"
+                    ],
                     "exclusiveMinimum": 0,
                     "maximum": 100000
                   },
-                  "planIds": {
-                    "type": [
-                      "array",
-                      "null"
-                    ],
-                    "items": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "minItems": 1,
-                    "maxItems": 200
-                  },
-                  "maxRedemptions": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "exclusiveMinimum": 0
-                  },
-                  "maxPerUser": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ],
-                    "exclusiveMinimum": 0
-                  },
-                  "startsAt": {
+                  "planId": {
                     "type": [
                       "string",
                       "null"
                     ],
-                    "format": "date-time"
+                    "format": "uuid"
+                  },
+                  "maxRedemptions": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 999
                   },
                   "expiresAt": {
                     "type": [
@@ -23088,41 +23240,42 @@
                       "type": "string",
                       "enum": [
                         "percent",
-                        "fixed"
+                        "fixed",
+                        "free"
                       ]
                     },
                     "discountValue": {
-                      "type": "number"
-                    },
-                    "planIds": {
                       "type": [
-                        "array",
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "plan": {
+                      "type": [
+                        "object",
                         "null"
                       ],
-                      "items": {
-                        "type": "string"
-                      }
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title"
+                      ]
                     },
                     "maxRedemptions": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
-                    },
-                    "maxPerUser": {
-                      "type": [
-                        "integer",
-                        "null"
-                      ]
+                      "type": "integer"
                     },
                     "redemptionCount": {
                       "type": "integer"
                     },
-                    "startsAt": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                    "revenueCents": {
+                      "type": "integer"
                     },
                     "expiresAt": {
                       "type": [
@@ -23133,12 +23286,14 @@
                     "active": {
                       "type": "boolean"
                     },
+                    "isActive": {
+                      "type": "boolean"
+                    },
                     "state": {
                       "type": "string",
                       "enum": [
                         "active",
-                        "paused",
-                        "scheduled",
+                        "disabled",
                         "expired",
                         "used_up"
                       ]
@@ -23155,13 +23310,13 @@
                     "code",
                     "discountType",
                     "discountValue",
-                    "planIds",
+                    "plan",
                     "maxRedemptions",
-                    "maxPerUser",
                     "redemptionCount",
-                    "startsAt",
+                    "revenueCents",
                     "expiresAt",
                     "active",
+                    "isActive",
                     "state",
                     "createdAt",
                     "updatedAt"

@@ -11,7 +11,7 @@ import {
 /**
  * Thin wrappers over `listCoachPromoCodes` and `createCoachPromoCode` in
  * `src/lib/coach-promo-codes.server.ts`: the coach's promo codes for their
- * marketplace plans, with their uses, and making a new one. 409
+ * marketplace plans, with their uses and revenue, and making a new one. 409
  * `promo_code_taken` when the coach already has the code.
  */
 export const Route = createFileRoute("/api/v1/coach/promo-codes/")({

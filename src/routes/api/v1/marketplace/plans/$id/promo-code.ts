@@ -8,10 +8,11 @@ import { previewPlanPromoCode } from "@/lib/plan-purchases.server";
 
 /**
  * Thin wrapper over `previewPlanPromoCode` in `src/lib/plan-purchases.server.ts`:
- * what one of the coach's promo codes takes off this listing for the caller,
- * before they buy. Nothing is saved; pass the code as `promoCode` to checkout.
- * 404 `promo_code_invalid`; 422 `promo_code_expired`, `promo_code_not_applicable`,
- * `promo_code_used_up`, `promo_code_already_used`, `promo_code_below_minimum`.
+ * whether one of the coach's promo codes works on this listing for the
+ * caller, and the price with it, before they buy. A code that doesn't work
+ * comes back as a `state` (invalid, expired, exhausted, wrong_plan,
+ * already_used, below_minimum) with a `message`, not an error. Nothing is
+ * saved; pass the code as `promoCode` to checkout.
  */
 export const Route = createFileRoute("/api/v1/marketplace/plans/$id/promo-code")({
   server: {
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/api/v1/marketplace/plans/$id/promo-code")
       path: "/api/v1/marketplace/plans/{id}/promo-code",
       operationId: "previewMarketplacePlanPromoCode",
       auth: "user",
-      summary: "Check a promo code on a marketplace plan and show the discounted price",
+      summary: "Check a promo code on a marketplace plan and show the price with it",
       input: applyPromoCodeInput,
       output: planPromoPreviewSchema,
       handler: async ({ ctx, input, params }) => {

@@ -211,42 +211,64 @@ export const coachDashboardSchema = z.object({
       bankLast4: z.string().nullable(),
     }),
   ),
+  /** The coach's promo codes: usable now (the "N active" card), of all they have. */
+  promoCodes: z.object({ active: z.number().int(), total: z.number().int() }),
 });
 
 /** `POST /api/v1/marketplace/plans/{id}/promo-code` (src/lib/plan-purchases.server.ts `PlanPromoPreviewDTO`). */
 export const planPromoPreviewSchema = z.object({
-  /** The code as the coach saved it. */
-  code: z.string(),
-  discountType: z.enum(["percent", "fixed"]),
-  /** percent: 1–100; fixed: USD. */
-  discountValue: z.number(),
+  /**
+   * valid, or why not: invalid (no such code, or disabled), expired,
+   * exhausted (no uses left), wrong_plan (another plan, or this plan is
+   * free), already_used (by this buyer: once each), below_minimum (would
+   * leave less than $0.50 to pay).
+   */
+  state: z.enum([
+    "valid",
+    "invalid",
+    "expired",
+    "exhausted",
+    "wrong_plan",
+    "already_used",
+    "below_minimum",
+  ]),
+  /** Why not, to show the buyer; null when valid. */
+  message: z.string().nullable(),
+  /** The plan's price. */
   originalAmountCents: z.number(),
-  discountCents: z.number(),
+  /** The rest is null unless valid. The code as the coach saved it. */
+  code: z.string().nullable(),
+  discountType: z.enum(["percent", "fixed", "free"]).nullable(),
+  /** percent: 1–100; fixed: USD; free: null. */
+  discountValue: z.number().nullable(),
+  discountCents: z.number().nullable(),
   /** What the buyer would pay; 0 is free (delivered with no checkout). */
-  amountCents: z.number(),
+  amountCents: z.number().nullable(),
 });
 
 /** One of the coach's promo codes (src/lib/coach-promo-codes.server.ts `CoachPromoCodeDTO`). */
 export const coachPromoCodeSchema = z.object({
   id: z.string(),
   code: z.string(),
-  discountType: z.enum(["percent", "fixed"]),
-  /** percent: 1–100; fixed: USD. */
-  discountValue: z.number(),
-  /** The coach's plans it applies to; null is all of them. */
-  planIds: z.array(z.string()).nullable(),
-  /** Total uses allowed; null is unlimited. */
-  maxRedemptions: z.number().int().nullable(),
-  /** Uses per buyer; null is unlimited. */
-  maxPerUser: z.number().int().nullable(),
-  /** Purchases delivered with it. */
+  /** percent: % off; fixed: $ off; free: the plan costs nothing. */
+  discountType: z.enum(["percent", "fixed", "free"]),
+  /** percent: 1–100; fixed: USD; free: null. */
+  discountValue: z.number().nullable(),
+  /** The one plan it applies to; null is all of the coach's plans. */
+  plan: z.object({ id: z.string(), title: z.string() }).nullable(),
+  /** Total uses allowed (1–999). Each buyer may use a code once. */
+  maxRedemptions: z.number().int(),
+  /** Purchases delivered with it ("14 of 50 uses"). */
   redemptionCount: z.number().int(),
-  startsAt: z.string().nullable(),
+  /** What buyers paid with it, on paid purchases. */
+  revenueCents: z.number().int(),
   expiresAt: z.string().nullable(),
-  /** false: paused by the coach. */
+  /** false: the coach disabled it. */
   active: z.boolean(),
-  /** active: usable now; paused; scheduled: not started; expired; used_up: maxRedemptions reached. */
-  state: z.enum(["active", "paused", "scheduled", "expired", "used_up"]),
+  /** Usable now: the Active tab; everything else is Ended. */
+  isActive: z.boolean(),
+  /** active; disabled (turned off); expired (past its end date); used_up (no uses left). */
+  state: z.enum(["active", "disabled", "expired", "used_up"]),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

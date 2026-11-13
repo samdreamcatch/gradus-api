@@ -40,8 +40,11 @@ import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import {
   applyPromoCodeInput,
+  checkPromoForPlan,
   resolvePromoForPlan,
   type AppliedPromo,
+  type PromoCheckState,
+  type PromoDiscountType,
 } from "./coach-promo-codes.server";
 import { dbError } from "./db-error";
 import { createConnectStripeClient } from "./stripe-connect.server";
@@ -329,21 +332,27 @@ async function buyerEmail(admin: Admin, userId: string): Promise<string | undefi
 }
 
 export interface PlanPromoPreviewDTO {
-  /** The code as the coach saved it. */
-  code: string;
-  discountType: "percent" | "fixed";
-  /** percent: 1–100; fixed: USD. */
-  discountValue: number;
+  /** `valid`, or why the code can't be used (see `PromoCheckState`). */
+  state: PromoCheckState;
+  /** Why not, to show the buyer; null when valid. */
+  message: string | null;
+  /** The plan's price. */
   originalAmountCents: number;
-  discountCents: number;
+  /** The rest is null unless `valid`. The code as the coach saved it. */
+  code: string | null;
+  discountType: PromoDiscountType | null;
+  /** percent: 1–100; fixed: USD; free: null. */
+  discountValue: number | null;
+  discountCents: number | null;
   /** What the buyer would pay; 0 is free (no checkout). */
-  amountCents: number;
+  amountCents: number | null;
 }
 
 /**
- * `POST /api/v1/marketplace/plans/{id}/promo-code`: what a promo code takes
- * off this listing for the caller, before they buy. Changes nothing; the code
- * is checked again at checkout. Errors as `resolvePromoForPlan`.
+ * `POST /api/v1/marketplace/plans/{id}/promo-code`: whether a promo code
+ * works on this listing for the caller, and the price with it, before they
+ * buy. A code that doesn't work is a `state`, not an error. Changes nothing;
+ * the code is checked again at checkout.
  */
 export async function previewPlanPromoCode(
   ctx: PurchaseContext,
@@ -354,18 +363,34 @@ export async function previewPlanPromoCode(
   if (plan.coach.user_id === ctx.userId) {
     throw conflict("own_plan", "This is your own plan.");
   }
-  const promo = await resolvePromoForPlan(ctx.admin, {
+  const originalAmountCents = Math.round(Number(plan.price) * 100);
+  const check = await checkPromoForPlan(ctx.admin, {
     coachId: plan.coach.id,
     planId,
-    originalAmountCents: Math.round(Number(plan.price) * 100),
+    originalAmountCents,
     buyerUserId: ctx.userId,
     code: input.code,
   });
+  if (check.state !== "valid") {
+    return {
+      state: check.state,
+      message: check.message,
+      originalAmountCents,
+      code: null,
+      discountType: null,
+      discountValue: null,
+      discountCents: null,
+      amountCents: null,
+    };
+  }
+  const { promo } = check;
   return {
+    state: "valid",
+    message: null,
+    originalAmountCents,
     code: promo.code,
     discountType: promo.discountType,
     discountValue: promo.discountValue,
-    originalAmountCents: promo.originalAmountCents,
     discountCents: promo.discountCents,
     amountCents: promo.amountCents,
   };

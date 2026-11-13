@@ -1,10 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
+  checkPromoForPlan,
   createCoachPromoCode,
   createPromoCodeInput,
   deleteCoachPromoCode,
   discountedCents,
+  getCoachPromoCode,
   listCoachPromoCodes,
+  promoCodeCounts,
   resolvePromoForPlan,
   updateCoachPromoCode,
   updatePromoCodeInput,
@@ -32,6 +35,8 @@ function fakeAdmin(tables: Record<string, Row[]>) {
         if (insertRows) {
           const made = insertRows.map((r, i) => ({
             id: `${table}-${all().length + i + 1}`,
+            active: true,
+            plan: null,
             created_at: "2026-11-13T00:00:00Z",
             updated_at: "2026-11-13T00:00:00Z",
             ...r,
@@ -81,128 +86,142 @@ const promo = (over: Row = {}): Row => ({
   code: "SUMMER10",
   discount_type: "percent",
   discount_value: "10.00",
-  plan_ids: null,
-  max_redemptions: null,
-  max_per_user: 1,
-  starts_at: null,
+  plan_id: null,
+  plan: null,
+  max_redemptions: 50,
   expires_at: null,
   active: true,
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
   ...over,
 });
-const use = (buyer: string, status = "fulfilled"): Row => ({
+const use = (buyer: string, status = "fulfilled", amount = 2249, paid = true): Row => ({
   promo_code_id: "promo1",
   buyer_user_id: buyer,
   status,
+  amount_cents: amount,
+  payment_status: paid ? "paid" : "payment_due",
 });
-const apply = (
+const args = (over: Partial<Parameters<typeof checkPromoForPlan>[1]> = {}) => ({
+  coachId: "c1",
+  planId: PLAN,
+  originalAmountCents: 2499,
+  buyerUserId: "u",
+  code: "summer10",
+  ...over,
+});
+const check = (
   tables: Record<string, Row[]>,
-  over: Partial<Parameters<typeof resolvePromoForPlan>[1]> = {},
-) =>
-  resolvePromoForPlan(
-    fakeAdmin(tables),
-    {
-      coachId: "c1",
-      planId: PLAN,
-      originalAmountCents: 2499,
-      buyerUserId: "u",
-      code: "summer10",
-      ...over,
-    },
-    NOW,
-  );
+  over: Partial<Parameters<typeof checkPromoForPlan>[1]> = {},
+) => checkPromoForPlan(fakeAdmin(tables), args(over), NOW);
 
 describe("discountedCents", () => {
-  it("rounds a percent off to the cent and never goes below 0", () => {
+  it("rounds a percent off to the cent, never goes below 0, and is 0 when free", () => {
     expect(discountedCents(2499, "percent", 15)).toBe(2124);
     expect(discountedCents(2499, "percent", 100)).toBe(0);
     expect(discountedCents(2499, "fixed", 5)).toBe(1999);
     expect(discountedCents(2499, "fixed", 50)).toBe(0);
+    expect(discountedCents(2499, "free", null)).toBe(0);
+  });
+});
+
+describe("checkPromoForPlan", () => {
+  it("applies a code typed in any case", async () => {
+    expect(await check({ coach_promo_codes: [promo()], plan_purchases: [] })).toEqual({
+      state: "valid",
+      promo: {
+        promoCodeId: "promo1",
+        code: "SUMMER10",
+        discountType: "percent",
+        discountValue: 10,
+        originalAmountCents: 2499,
+        discountCents: 250,
+        amountCents: 2249,
+      },
+    });
+  });
+
+  it("makes the plan free with a Free code", async () => {
+    const res = await check({
+      coach_promo_codes: [promo({ discount_type: "free", discount_value: null })],
+      plan_purchases: [],
+    });
+    expect(res).toMatchObject({ state: "valid", promo: { amountCents: 0, discountCents: 2499 } });
+  });
+
+  it("calls an unknown or disabled code invalid", async () => {
+    for (const tables of [
+      { coach_promo_codes: [promo({ coach_id: "someone-else" })] },
+      { coach_promo_codes: [promo({ active: false })] },
+    ]) {
+      expect(await check(tables)).toMatchObject({ state: "invalid" });
+    }
+  });
+
+  it("refuses an expired code, or one for another plan or a free plan", async () => {
+    expect(
+      await check({ coach_promo_codes: [promo({ expires_at: "2026-11-13T00:00:00Z" })] }),
+    ).toMatchObject({ state: "expired", message: "This promo code has expired." });
+    expect(await check({ coach_promo_codes: [promo({ plan_id: OTHER_PLAN })] })).toMatchObject({
+      state: "wrong_plan",
+    });
+    expect(await check({ coach_promo_codes: [promo()] }, { originalAmountCents: 0 })).toMatchObject(
+      { state: "wrong_plan", message: "This plan is already free." },
+    );
+  });
+
+  it("counts delivered uses against max uses, and lets each buyer use it once", async () => {
+    expect(
+      await check({
+        coach_promo_codes: [promo({ max_redemptions: 2 })],
+        plan_purchases: [use("a"), use("b", "restricted")],
+      }),
+    ).toMatchObject({ state: "exhausted" });
+    expect(await check({ coach_promo_codes: [promo()], plan_purchases: [use("u")] })).toMatchObject(
+      { state: "already_used" },
+    );
+    // An open or abandoned checkout isn't a use.
+    expect(
+      await check({
+        coach_promo_codes: [promo()],
+        plan_purchases: [use("u", "pending"), use("u", "canceled")],
+      }),
+    ).toMatchObject({ state: "valid" });
+  });
+
+  it("refuses a discount that leaves less than Stripe's $0.50 but more than free", async () => {
+    expect(
+      await check({
+        coach_promo_codes: [promo({ discount_type: "fixed", discount_value: "24.70" })],
+        plan_purchases: [],
+      }),
+    ).toMatchObject({ state: "below_minimum" });
   });
 });
 
 describe("resolvePromoForPlan", () => {
-  it("applies a code typed in any case", async () => {
-    expect(await apply({ coach_promo_codes: [promo()], plan_purchases: [] })).toEqual({
-      promoCodeId: "promo1",
-      code: "SUMMER10",
-      discountType: "percent",
-      discountValue: 10,
-      originalAmountCents: 2499,
-      discountCents: 250,
-      amountCents: 2249,
-    });
-  });
-
-  it("makes the plan free at 100% off", async () => {
-    const res = await apply({
-      coach_promo_codes: [promo({ discount_value: "100.00" })],
-      plan_purchases: [],
-    });
-    expect(res.amountCents).toBe(0);
-  });
-
-  it("treats an unknown, paused, or not-yet-started code as invalid", async () => {
-    for (const tables of [
-      { coach_promo_codes: [promo({ coach_id: "someone-else" })] },
-      { coach_promo_codes: [promo({ active: false })] },
-      { coach_promo_codes: [promo({ starts_at: "2026-12-01T00:00:00Z" })] },
-    ]) {
-      await expect(apply(tables)).rejects.toMatchObject({
-        status: 404,
-        code: "promo_code_invalid",
-      });
-    }
-  });
-
-  it("refuses an expired code", async () => {
+  it("turns a refusal into the checkout error", async () => {
     await expect(
-      apply({ coach_promo_codes: [promo({ expires_at: "2026-11-13T00:00:00Z" })] }),
-    ).rejects.toMatchObject({ status: 422, code: "promo_code_expired" });
-  });
-
-  it("refuses a code for other plans, or on a free plan", async () => {
+      resolvePromoForPlan(fakeAdmin({ coach_promo_codes: [] }), args(), NOW),
+    ).rejects.toMatchObject({ status: 404, code: "promo_code_invalid" });
     await expect(
-      apply({ coach_promo_codes: [promo({ plan_ids: [OTHER_PLAN] })] }),
-    ).rejects.toMatchObject({ code: "promo_code_not_applicable" });
-    await expect(
-      apply({ coach_promo_codes: [promo()] }, { originalAmountCents: 0 }),
-    ).rejects.toMatchObject({ code: "promo_code_not_applicable" });
-  });
-
-  it("counts delivered uses against the total and per-buyer limits, not open checkouts", async () => {
-    await expect(
-      apply({
-        coach_promo_codes: [promo({ max_redemptions: 2, max_per_user: null })],
-        plan_purchases: [use("a"), use("b", "restricted")],
-      }),
-    ).rejects.toMatchObject({ code: "promo_code_used_up" });
-    await expect(
-      apply({ coach_promo_codes: [promo()], plan_purchases: [use("u")] }),
-    ).rejects.toMatchObject({ code: "promo_code_already_used" });
-    const res = await apply({
-      coach_promo_codes: [promo()],
-      plan_purchases: [use("u", "pending"), use("u", "canceled")],
-    });
-    expect(res.amountCents).toBe(2249);
-  });
-
-  it("refuses a discount that leaves less than Stripe's $0.50 but more than free", async () => {
-    await expect(
-      apply({
-        coach_promo_codes: [promo({ discount_type: "fixed", discount_value: "24.70" })],
-        plan_purchases: [],
-      }),
-    ).rejects.toMatchObject({ code: "promo_code_below_minimum" });
+      resolvePromoForPlan(
+        fakeAdmin({
+          coach_promo_codes: [promo({ max_redemptions: 1 })],
+          plan_purchases: [use("a")],
+        }),
+        args(),
+        NOW,
+      ),
+    ).rejects.toMatchObject({ status: 422, code: "promo_code_used_up" });
   });
 });
 
-describe("coach promo code CRUD", () => {
+describe("coach promo codes", () => {
   const coach = { id: "c1", user_id: "u-coach" };
   const ctx = (tables: Record<string, Row[]>) => ({ userId: "u-coach", admin: fakeAdmin(tables) });
 
-  it("saves a new code upper-case with its defaults", async () => {
+  it("saves a new code upper-case, for one of the coach's plans", async () => {
     const tables: Record<string, Row[]> = {
       coach_profiles: [coach],
       plans: [{ id: PLAN, coach_id: "c1" }],
@@ -214,85 +233,137 @@ describe("coach promo code CRUD", () => {
         code: " spring-25 ",
         discountType: "fixed",
         discountValue: 5,
-        planIds: [PLAN],
+        planId: PLAN,
+        maxRedemptions: 50,
       }),
+      NOW,
     );
     expect(res).toMatchObject({
       code: "SPRING-25",
       discountType: "fixed",
       discountValue: 5,
-      planIds: [PLAN],
-      maxPerUser: 1,
-      maxRedemptions: null,
+      maxRedemptions: 50,
       redemptionCount: 0,
-      active: true,
+      revenueCents: 0,
+      expiresAt: null,
+      isActive: true,
       state: "active",
     });
+    expect(tables.coach_promo_codes[0]).toMatchObject({ plan_id: PLAN });
   });
 
-  it("rejects a code with spaces, and a percent over 100", async () => {
-    expect(
-      createPromoCodeInput.safeParse({ code: "TWO WORDS", discountType: "fixed", discountValue: 5 })
-        .success,
-    ).toBe(false);
-    await expect(
-      createCoachPromoCode(
-        ctx({ coach_profiles: [coach] }),
-        createPromoCodeInput.parse({ code: "HALF", discountType: "percent", discountValue: 150 }),
-      ),
-    ).rejects.toMatchObject({ status: 400 });
+  it("saves a Free code with no value", async () => {
+    const tables: Record<string, Row[]> = { coach_profiles: [coach], coach_promo_codes: [] };
+    const res = await createCoachPromoCode(
+      ctx(tables),
+      createPromoCodeInput.parse({
+        code: "GIVEAWAY",
+        discountType: "free",
+        discountValue: 20,
+        maxRedemptions: 10,
+      }),
+      NOW,
+    );
+    expect(res).toMatchObject({ discountType: "free", discountValue: null });
   });
 
-  it("only applies a code to the coach's own plans", async () => {
-    await expect(
-      createCoachPromoCode(
-        ctx({ coach_profiles: [coach], plans: [{ id: OTHER_PLAN, coach_id: "c2" }] }),
-        createPromoCodeInput.parse({
-          code: "MINE",
-          discountType: "percent",
-          discountValue: 10,
-          planIds: [OTHER_PLAN],
-        }),
-      ),
-    ).rejects.toMatchObject({ status: 400 });
+  it("rejects a bad code, max uses out of 1–999, a missing or too-big value, a past end, or another coach's plan", async () => {
+    const base = { code: "HALF", discountType: "percent", discountValue: 10, maxRedemptions: 50 };
+    expect(createPromoCodeInput.safeParse({ ...base, code: "TWO WORDS" }).success).toBe(false);
+    expect(createPromoCodeInput.safeParse({ ...base, maxRedemptions: 1000 }).success).toBe(false);
+    expect(createPromoCodeInput.safeParse({ ...base, maxRedemptions: undefined }).success).toBe(
+      false,
+    );
+    for (const input of [
+      { ...base, discountValue: 150 },
+      { ...base, discountValue: undefined },
+      { ...base, expiresAt: "2026-11-01T00:00:00Z" },
+      { ...base, planId: OTHER_PLAN },
+    ]) {
+      await expect(
+        createCoachPromoCode(
+          ctx({ coach_profiles: [coach], plans: [{ id: OTHER_PLAN, coach_id: "c2" }] }),
+          createPromoCodeInput.parse(input),
+          NOW,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
+    }
   });
 
-  it("lists codes with their delivered uses and state", async () => {
+  it("lists codes with uses, revenue from paid purchases, and Active / Ended", async () => {
     const res = await listCoachPromoCodes(
       ctx({
         coach_profiles: [coach],
-        coach_promo_codes: [promo({ max_redemptions: 2 })],
-        plan_purchases: [use("a"), use("b"), use("c", "pending")],
+        coach_promo_codes: [
+          promo({ max_redemptions: 3, plan: { id: PLAN, title: "Edge Control" }, plan_id: PLAN }),
+          promo({ id: "promo2", code: "OLD", active: false }),
+        ],
+        plan_purchases: [use("a"), use("b", "fulfilled", 2249, false), use("c", "pending")],
       }),
+      NOW,
     );
-    expect(res.items).toHaveLength(1);
-    expect(res.items[0]).toMatchObject({ redemptionCount: 2, state: "used_up" });
+    expect(res.items[0]).toMatchObject({
+      plan: { id: PLAN, title: "Edge Control" },
+      redemptionCount: 2,
+      revenueCents: 2249,
+      isActive: true,
+      state: "active",
+    });
+    expect(res.items[1]).toMatchObject({ isActive: false, state: "disabled" });
   });
 
-  it("checks a change against the saved code, and only the coach's own", async () => {
+  it("gets one code, and counts usable ones for the dashboard", async () => {
     const tables = {
       coach_profiles: [coach],
-      coach_promo_codes: [promo({ discount_type: "fixed", discount_value: "150.00" })],
+      coach_promo_codes: [
+        promo(),
+        promo({ id: "promo2", code: "DONE", max_redemptions: 1 }),
+        promo({ id: "promo3", code: "LATE", expires_at: "2026-11-01T00:00:00Z" }),
+      ],
+      plan_purchases: [{ ...use("a"), promo_code_id: "promo2" }],
     };
-    await expect(
-      updateCoachPromoCode(
+    expect(await getCoachPromoCode(ctx(tables), "promo2")).toMatchObject({
+      redemptionCount: 1,
+      state: "used_up",
+    });
+    expect(await promoCodeCounts(fakeAdmin(tables), "c1", NOW)).toEqual({ active: 1, total: 3 });
+  });
+
+  it("disables a code, clears the value when switched to Free, and only touches the coach's own", async () => {
+    const tables = { coach_profiles: [coach], coach_promo_codes: [promo()] };
+    expect(
+      await updateCoachPromoCode(
         ctx(tables),
         "promo1",
+        updatePromoCodeInput.parse({ active: false }),
+        NOW,
+      ),
+    ).toMatchObject({ active: false, isActive: false, state: "disabled" });
+    expect(
+      await updateCoachPromoCode(
+        ctx(tables),
+        "promo1",
+        updatePromoCodeInput.parse({ discountType: "free" }),
+        NOW,
+      ),
+    ).toMatchObject({ discountType: "free", discountValue: null });
+    await expect(
+      updateCoachPromoCode(
+        ctx({
+          coach_profiles: [coach],
+          coach_promo_codes: [promo({ discount_type: "free", discount_value: null })],
+        }),
+        "promo1",
         updatePromoCodeInput.parse({ discountType: "percent" }),
+        NOW,
       ),
     ).rejects.toMatchObject({ status: 400 });
-    const paused = await updateCoachPromoCode(
-      ctx(tables),
-      "promo1",
-      updatePromoCodeInput.parse({ active: false }),
-    );
-    expect(paused).toMatchObject({ active: false, state: "paused" });
-
     await expect(
       updateCoachPromoCode(
         ctx({ coach_profiles: [coach], coach_promo_codes: [promo({ coach_id: "c2" })] }),
         "promo1",
         updatePromoCodeInput.parse({ active: false }),
+        NOW,
       ),
     ).rejects.toMatchObject({ status: 404 });
   });

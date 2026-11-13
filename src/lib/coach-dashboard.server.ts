@@ -10,12 +10,14 @@
  *     other than the coach opens a plan's marketplace page;
  *   - money on the way to the coach's bank and their bank payouts: their
  *     Stripe Connect account (balance and payouts), when they're connected.
- * Marketplace promo codes don't exist yet, so there are none to report.
+ *   - promo codes: how many of the coach's codes are usable now, of all
+ *     they have (src/lib/coach-promo-codes.server.ts).
  */
 import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
+import { promoCodeCounts } from "./coach-promo-codes.server";
 import { dbError } from "./db-error";
 import { listCoachSales, type CoachSaleDTO } from "./plan-purchases.server";
 import { createConnectStripeClient } from "./stripe-connect.server";
@@ -155,6 +157,8 @@ export interface CoachDashboardDTO {
     status: string;
     bankLast4: string | null;
   }[];
+  /** The coach's promo codes: usable now, of all they have. */
+  promoCodes: { active: number; total: number };
 }
 
 type PlanRow = {
@@ -198,7 +202,7 @@ export async function getCoachDashboard(
     throw new ApiError({ code: "not_found", status: 404, message: "Coach profile not found." });
   }
 
-  const [sales, plansRes, ratedRes] = await Promise.all([
+  const [sales, plansRes, ratedRes, promoCodes] = await Promise.all([
     listCoachSales({ userId: ctx.userId, admin: ctx.admin }, {}, now),
     untyped(ctx.admin)
       .from("plans")
@@ -214,6 +218,7 @@ export async function getCoachDashboard(
       .select("rating_avg, rating_count")
       .eq("coach_id", coach.id)
       .gt("rating_count", 0),
+    promoCodeCounts(ctx.admin, coach.id, now),
   ]);
   if (plansRes.error) dbError(plansRes.error);
   if (ratedRes.error) dbError(ratedRes.error);
@@ -331,6 +336,7 @@ export async function getCoachDashboard(
     })),
     weekly,
     payouts: money.payouts,
+    promoCodes,
   };
 }
 
