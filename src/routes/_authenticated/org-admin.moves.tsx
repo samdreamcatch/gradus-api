@@ -125,12 +125,22 @@ function OrgMovesPage() {
           <Checkbox
             aria-label="Select all moves"
             disabled={!rows.length}
-            checked={rows.length > 0 && selectedVisible === rows.length ? true : selectedVisible > 0 ? "indeterminate" : false}
-            onCheckedChange={(checked) => setSelected((current) => {
-              const next = new Set(current);
-              rows.forEach((move) => checked === true ? next.add(move.key) : next.delete(move.key));
-              return next;
-            })}
+            checked={
+              rows.length > 0 && selectedVisible === rows.length
+                ? true
+                : selectedVisible > 0
+                  ? "indeterminate"
+                  : false
+            }
+            onCheckedChange={(checked) =>
+              setSelected((current) => {
+                const next = new Set(current);
+                rows.forEach((move) =>
+                  checked === true ? next.add(move.key) : next.delete(move.key),
+                );
+                return next;
+              })
+            }
           />
           Select all
         </label>
