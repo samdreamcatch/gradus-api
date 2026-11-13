@@ -11,6 +11,7 @@ const ITEMS: Item[] = [
   { to: "/org-admin/schedule", label: "Schedule" },
   { to: "/org-admin/people", label: "Users" },
   { to: "/org-admin/resources", label: "Library" },
+  { to: "/org-admin/storefront", label: "Storefront" },
   { to: "/org-admin/settings", label: "Settings" },
 ];
 
