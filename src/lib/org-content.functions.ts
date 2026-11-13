@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import { dbError } from "./db-error";
 import { policyClient } from "./club-policy-schema";
+import { selectedOutstandingSigners } from "./club-policy";
 
 type Client = SupabaseClient<Database>;
 
@@ -400,10 +401,11 @@ async function notifyOutstanding(
   title: string,
   audiences: string[],
   version: number,
+  signerKeys?: string[],
 ): Promise<number> {
   const { ackRoster, outstandingUserIds } = await import("./org-content.server");
   const roster = await ackRoster(admin, orgId, resourceId, audiences as never, version);
-  const ids = await outstandingUserIds(admin, roster);
+  const ids = await outstandingUserIds(admin, selectedOutstandingSigners(roster, signerKeys));
   if (!ids.length) return 0;
   try {
     const { notifyUsers } = await import("./push-notify.server");
@@ -461,7 +463,7 @@ export const getResourceAckStatus = createServerFn({ method: "POST" })
 
 export const remindOutstandingAcks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => orgOnly.extend({ resourceId: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) => orgOnly.extend({ resourceId: z.string().uuid(), signerKeys: z.array(z.string().min(1)).max(10000).optional() }).parse(i))
   .handler(async ({ data, context }) => {
     const orgId = data.organizationId;
     const admin = await assertOrgAdmin(context.supabase as Client, context.userId, orgId);
@@ -482,6 +484,7 @@ export const remindOutstandingAcks = createServerFn({ method: "POST" })
         res.title,
         req.audiences,
         req.version,
+        data.signerKeys,
       ),
     };
   });

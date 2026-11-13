@@ -1,5 +1,6 @@
 
 ## Open
+- [x] Rework acknowledgements into document-grouped selectable records, individual/document reminder review, CSV export and document-specific PDF downloads; verified 3-record group/1-record individual review, 13-row CSV and single-document PDF, no notifications sent. Twelve policy tests pass; full lint timed out.
 - [x] Add manual move entry with existing or new categories; authenticated creation and edit readback verified, temporary QA move removed, targeted lint clean and build OK. Categories are saved with their first move.
 - [x] Refine the club top menu into an aligned 56px desktop line with understated active tabs, no disabled Storefront placeholder and subordinate Library links. Authenticated Schedule/Library navigation and 1074px/1440px/390px light/dark layouts verified without page overflow or runtime errors; targeted lint clean, build OK, full lint timed out. No data, emails or publishing changed.
 - [x] Move shared club navigation to the top; sidebar width and mobile trigger removed. Schedule/Users navigation, 1074px/390px layouts without page overflow, and dark appearance verified; targeted lint zero errors and build OK, full lint timed out.
