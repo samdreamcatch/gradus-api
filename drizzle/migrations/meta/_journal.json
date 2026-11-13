@@ -295,6 +295,13 @@
       "when": 1794531882722,
       "tag": "0041_club_seat_trueups",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794533071910,
+      "tag": "0042_unlimited_club_admins",
+      "breakpoints": true
     }
   ]
 }
