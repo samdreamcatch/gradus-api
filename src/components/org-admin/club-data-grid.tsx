@@ -163,6 +163,7 @@ export function ClubDataGrid<T>({
   rowKey,
   onRowClick,
   rowLabel,
+  groupControl,
   empty,
   filtered,
   onClear,
@@ -174,6 +175,7 @@ export function ClubDataGrid<T>({
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
   rowLabel?: (row: T) => string;
+  groupControl?: (label: string, rows: T[]) => ReactNode;
   empty: ReactNode;
   filtered: boolean;
   onClear?: () => void;
@@ -269,7 +271,7 @@ export function ClubDataGrid<T>({
             ? grid.groups.flatMap((g) => [
                 <ClubGroupRow
                   key={`g-${g.label}`}
-                  label={g.label}
+                  label={groupControl ? <span className="inline-flex items-center gap-3">{groupControl(g.label, g.rows)}{g.label}</span> : g.label}
                   count={g.rows.length}
                   colSpan={cols.length}
                 />,
