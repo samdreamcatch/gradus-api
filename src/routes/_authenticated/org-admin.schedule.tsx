@@ -1144,6 +1144,12 @@ function ClubSchedulePage() {
                 ["Contact email", selectedLesson.contactEmail ?? "Not recorded"],
                 ["Invitation", selectedLesson.invitationStatus],
                 [
+                  "Practice last week",
+                  selectedLesson.targetMin === null
+                    ? `${selectedLesson.practiceMin ?? 0} min · no target set`
+                    : `${selectedLesson.practiceMin ?? 0} of ${selectedLesson.targetMin} min`,
+                ],
+                [
                   "Invite recorded at",
                   selectedLesson.invitedAt
                     ? new Date(selectedLesson.invitedAt).toLocaleString()
