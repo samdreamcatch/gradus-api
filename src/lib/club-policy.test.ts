@@ -4,10 +4,25 @@ import {
   isClubPolicyResource,
   matchesPolicyAcknowledgement,
   policyDeadline,
+  selectedOutstandingSigners,
 } from "./club-policy";
 import { computeReadiness } from "./trust-center";
 
 describe("club policy rules", () => {
+  const roster = [
+    { key: "parent:1", acknowledgedAt: null },
+    { key: "parent:2", acknowledgedAt: null },
+    { key: "parent:3", acknowledgedAt: "2026-11-12T12:00:00Z" },
+  ];
+  it("individual reminders target only the selected outstanding person", () => {
+    expect(selectedOutstandingSigners(roster, ["parent:2", "parent:3", "outside-club"])).toEqual([roster[1]]);
+  });
+  it("document reminders include all and only outstanding people", () => {
+    expect(selectedOutstandingSigners(roster)).toEqual([roster[0], roster[1]]);
+  });
+  it("an empty individual selection never reminds the whole document", () => {
+    expect(selectedOutstandingSigners(roster, [])).toEqual([]);
+  });
   it("uses the earliest deadline from active packs for the document", () => {
     expect(
       policyDeadline("safe-sport", [
