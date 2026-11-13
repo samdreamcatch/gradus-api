@@ -508,7 +508,7 @@ function ClubSchedulePage() {
     );
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button]:min-h-11">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button:not([role=checkbox])]:min-h-11">
       <ClubPageHeader
         title="Schedule"
         actions={
