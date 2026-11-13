@@ -12,15 +12,6 @@ import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
 
-import {
-  TableHeader,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableFooter,
-} from "@/components/ui/table";
-
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import {
   Sheet,
@@ -41,9 +32,13 @@ import {
   releaseClubCoach,
   removeClubAdmin,
   setClubAdminRole,
+  expandClubContract,
 } from "@/lib/club-contract.functions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { proratedSeatCost, clubUserType } from "@/lib/club-contract-quote";
 import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
-import { ClubTable } from "@/components/org-admin/club-table";
+
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { StatusDot } from "@/components/org-admin/status-dot";
 import { toast } from "sonner";
@@ -93,18 +88,7 @@ function PeoplePage() {
   const {
     data: { org, coaches },
   } = useSuspenseQuery(peopleOptions());
-  const [search, setSearch] = useState("");
-  const [sport, setSport] = useState("all");
-  const [selected, setSelected] = useState<RosterCoach | null>(null);
-  const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))].sort();
-  const filtered = coaches.filter(
-    (c) =>
-      `${c.firstName} ${c.lastName} ${c.email ?? ""}`
-        .toLowerCase()
-        .includes(search.trim().toLowerCase()) &&
-      (sport === "all" || c.levels.some((l) => l.sport === sport)),
-  );
-  const grid = useClubGrid<RosterCoach>("people-coaches", PEOPLE_COLUMNS, filtered);
+  const filtered = coaches;
   function exportRoster() {
     const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const rows = [
@@ -149,130 +133,73 @@ function PeoplePage() {
           </Button>
         </div>
       </div>
-      <div className="space-y-2">
-        <ClubGridToolbar
-          search={search}
-          onSearchChange={setSearch}
-          searchLabel="Search coaches"
-          activeFilters={(search ? 1 : 0) + (sport !== "all" ? 1 : 0)}
-          onClear={() => {
-            setSearch("");
-            setSport("all");
-          }}
-        >
-          <FilterPill
-            aria-label="Sport"
-            value={sport}
-            onValueChange={setSport}
-            className="w-auto min-w-40"
-            options={[
-              { value: "all", label: "All sports" },
-              ...sports.map((s) => ({ value: s, label: sportDisplayLabel(s) })),
-            ]}
-          />
-          <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
-          {grid.menu}
-        </ClubGridToolbar>
-      </div>
-      <ClubDataGrid
-        grid={grid}
-        rowKey={(c) => c.coachId}
-        onRowClick={setSelected}
-        rowLabel={(c) => `${c.firstName} ${c.lastName}`}
-        filtered={!!coaches.length}
-        onClear={() => {
-          setSearch("");
-          setSport("all");
-        }}
-        noun={{ one: "coach", many: "coaches" }}
-        empty="No coaches have joined this club yet."
-        showFooter
-      />
       <ClubCapacity orgId={org.id} coaches={coaches} />
-      <CoachSheet coach={selected} orgId={org.id} onClose={() => setSelected(null)} />
     </div>
   );
 }
 
-const coachSports = (c: RosterCoach) => [...new Set(c.levels.map((l) => l.sport))];
-const total = (rows: RosterCoach[], k: "athleteCount" | "parentCount") =>
-  rows.reduce((n, r) => n + r[k], 0);
-const PEOPLE_COLUMNS: ClubColumn<RosterCoach>[] = [
+type UnifiedUser = {
+  id: string;
+  name: string;
+  email: string | null;
+  type: "Coach" | "Admin" | "Unassigned";
+  coach?: RosterCoach;
+  admin?: ClubAdmin;
+  request?: ClubSeatRequest;
+  joined: string | null;
+};
+const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
   {
-    key: "coach",
-    label: "Coach",
-    sortValue: (c) => `${c.firstName} ${c.lastName}`,
-    className: "min-w-44",
-    render: (c) => <ClubPersonCell name={`${c.firstName} ${c.lastName}`} email={c.email} />,
+    key: "name",
+    label: "User",
+    render: (u) => <ClubPersonCell name={u.name} email={u.email} />,
+    sortValue: (u) => u.name,
   },
   {
-    key: "email",
-    label: "Email",
-    sortValue: (c) => c.email,
-    className: "min-w-48 text-text-secondary",
-    render: (c) => c.email || <ClubNumber value={null} />,
+    key: "type",
+    label: "User type",
+    render: (u) => u.type,
+    sortValue: (u) => u.type,
+    groupValue: (u) => u.type,
   },
+  { key: "email", label: "Email", render: (u) => u.email ?? "—", sortValue: (u) => u.email },
   {
     key: "sports",
     label: "Sports",
-    className: "min-w-40",
-    groupValue: (c) => (coachSports(c)[0] ? sportDisplayLabel(coachSports(c)[0] ?? "") : null),
-    sortValue: (c) => coachSports(c).map(sportDisplayLabel).join(", "),
-    render: (c) =>
-      coachSports(c).length ? (
-        coachSports(c).map(sportDisplayLabel).join(", ")
-      ) : (
-        <Link
-          to="/org-admin/coaches/$coachId"
-          params={{ coachId: c.coachId }}
-          className="underline underline-offset-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          Set sport
-        </Link>
-      ),
+    render: (u) =>
+      u.coach
+        ? [...new Set(u.coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || "—"
+        : "—",
   },
   {
-    key: "levels",
-    label: "Levels",
+    key: "students",
+    label: "Students",
     align: "right",
-    sortValue: (c) => c.levels.length,
-    numeric: (c) => c.levels.length,
-    footer: (r) => r.reduce((n, c) => n + c.levels.length, 0),
-  },
-  {
-    key: "athletes",
-    label: "Athletes",
-    align: "right",
-    sortValue: (c) => c.athleteCount,
-    numeric: (c) => c.athleteCount,
-    footer: (r) => total(r, "athleteCount"),
-  },
-  {
-    key: "parents",
-    label: "Parents",
-    align: "right",
-    sortValue: (c) => c.parentCount,
-    numeric: (c) => c.parentCount,
-    footer: (r) => total(r, "parentCount"),
+    numeric: (u) => u.coach?.athleteCount ?? null,
   },
   {
     key: "joined",
     label: "Joined",
-    sortValue: (c) => c.joinedAt,
-    className: "whitespace-nowrap",
-    render: (c) => displayDate(c.joinedAt),
+    render: (u) => displayDate(u.joined),
+    sortValue: (u) => u.joined,
   },
 ];
 
 function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {
   const read = useServerFn(getClubContract);
+  const expand = useServerFn(expandClubContract);
+  const [userSearch, setUserSearch] = useState("");
+  const [userType, setUserType] = useState("all");
+  const [expansion, setExpansion] = useState(false);
+  const [extraSeats, setExtraSeats] = useState(1);
+  const [expansionKey, setExpansionKey] = useState("");
   const remove = useServerFn(removeClubAdmin);
   const setRole = useServerFn(setClubAdminRole);
   const release = useServerFn(releaseClubCoach);
   const assign = useServerFn(assignWaitingCoach);
   const readRequests = useServerFn(listClubSeatRequests);
   const qc = useQueryClient();
+  const [policyCoach, setPolicyCoach] = useState<RosterCoach | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [releasing, setReleasing] = useState<RosterCoach | null>(null);
   const [busy, setBusy] = useState(false);
@@ -315,216 +242,180 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
     const s = clubSeatStatus(seat);
     return s === "open" || s === "grace";
   });
+  const users: UnifiedUser[] = coaches.map((coach) => {
+    const admin = data.admins.find((a) => a.user_id === coach.userId);
+    const seat = data.seats.find(
+      (seat) => seat.coach_id === coach.coachId && clubSeatStatus(seat) === "filled",
+    );
+    return {
+      id: coach.userId,
+      name: `${coach.firstName} ${coach.lastName}`.trim(),
+      email: coach.email,
+      type: clubUserType(!!admin, !!seat),
+      coach,
+      admin,
+      joined: coach.joinedAt,
+    };
+  });
+  for (const admin of data.admins)
+    if (!users.some((u) => u.id === admin.user_id))
+      users.push({
+        id: admin.user_id,
+        name: "Club admin",
+        email: null,
+        type: "Admin",
+        admin,
+        joined: admin.created_at,
+      });
+  for (const request of requests.data ?? [])
+    if (!users.some((u) => u.coach?.coachId === request.coach_id))
+      users.push({
+        id: request.id,
+        name: request.coach_name ?? "Unassigned user",
+        email: null,
+        type: "Unassigned",
+        request,
+        joined: request.requested_at,
+      });
+  const visibleUsers = users.filter(
+    (u) =>
+      (userType === "all" || u.type === userType) &&
+      `${u.name} ${u.email ?? ""}`.toLowerCase().includes(userSearch.trim().toLowerCase()),
+  );
+  const userGrid = useClubGrid<UnifiedUser>("club-users", USER_COLUMNS, visibleUsers);
+  const quote =
+    data.club.contract_seat_rate_cents == null ||
+    !data.club.contract_starts_on ||
+    !data.club.contract_ends_on
+      ? null
+      : proratedSeatCost(
+          data.club.contract_seat_rate_cents,
+          extraSeats,
+          data.club.contract_starts_on,
+          data.club.contract_ends_on,
+          new Date().toISOString().slice(0, 10),
+        );
   return (
     <div className="space-y-6">
-      {(requests.data?.length ?? 0) > 0 && (
-        <ClubSection title="Waiting for a seat">
-          <ClubTable>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Coach</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(requests.data ?? []).map((request) => (
-                <TableRow
-                  key={request.id}
-                  className="cursor-pointer press"
-                  onClick={() => setDetail({ request })}
-                >
-                  <TableCell>
-                    <Button
-                      variant="link"
-                      className="min-h-11 px-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetail({ request });
-                      }}
-                    >
-                      <ClubPersonCell name={request.coach_name} />
-                    </Button>
-                  </TableCell>
-                  <TableCell>{displayDate(request.requested_at)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      className="min-h-11"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetail({ request });
-                      }}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </ClubTable>
-        </ClubSection>
-      )}
-      <ClubSection
-        title={
-          <>
-            Coach seats · <ClubNumber value={data.club.coach_seats} /> in contract
-          </>
-        }
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-text-secondary">
+          {data.seats.filter((s) => clubSeatStatus(s) === "filled").length} /{" "}
+          {data.club.coach_seats} coach seats · {data.admins.length} admins
+        </p>
+        <Button
+          variant="outline"
+          className="h-11"
+          onClick={() => {
+            setExpansion(true);
+            setExpansionKey(crypto.randomUUID());
+          }}
+        >
+          Add seats
+        </Button>
+      </div>
+      <ClubGridToolbar
+        search={userSearch}
+        onSearchChange={setUserSearch}
+        searchLabel="Search users"
+        activeFilters={(userSearch ? 1 : 0) + (userType !== "all" ? 1 : 0)}
+        onClear={() => {
+          setUserSearch("");
+          setUserType("all");
+        }}
       >
-        <ClubTable>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Seat</TableHead>
-              <TableHead>Coach</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Sports</TableHead>
-              <TableHead>Seat since</TableHead>
-              <TableHead className="text-right">Students</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.seats.map((seat) => {
-              const coach = coaches.find((person) => person.coachId === seat.coach_id);
-              const status = clubSeatStatus(seat);
-              return (
-                <TableRow
-                  key={seat.id}
-                  className={coach ? "cursor-pointer press" : undefined}
-                  onClick={() => {
-                    if (coach) setDetail({ coach });
-                  }}
-                >
-                  <TableCell className="font-mono text-right tabular-nums">
-                    {seat.seat_no}
-                  </TableCell>
-                  <TableCell>
-                    {coach ? (
-                      <Button
-                        variant="link"
-                        className="min-h-11 px-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDetail({ coach });
-                        }}
-                      >
-                        <ClubPersonCell
-                          name={`${coach.firstName} ${coach.lastName}`}
-                          email={coach.email}
-                        />
-                      </Button>
-                    ) : (
-                      <ClubNumber value={null} />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusDot
-                      status={
-                        status === "filled"
-                          ? "healthy"
-                          : status === "grace"
-                            ? "attention"
-                            : "informational"
-                      }
-                      label={status}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {coach
-                      ? [
-                          ...new Set(coach.levels.map((level) => sportDisplayLabel(level.sport))),
-                        ].join(", ")
-                      : "—"}
-                  </TableCell>
-                  <TableCell>{displayDate(seat.filled_at)}</TableCell>
-                  <TableCell className="font-mono text-right tabular-nums">
-                    <ClubNumber value={coach?.athleteCount} />
-                  </TableCell>
-                  <TableCell>
-                    {coach && status === "filled" ? (
-                      <Button
-                        variant="link"
-                        className="min-h-11 text-text-primary"
-                        disabled={busy}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDetail({ coach });
-                        }}
-                      >
-                        View
-                      </Button>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </ClubTable>
-      </ClubSection>
-      <ClubSection
-        title={
-          <>
-            Admins · <ClubNumber value={data.club.admin_seats} /> in contract
-          </>
-        }
-      >
-        <ClubTable>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Person</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Role at the club</TableHead>
-              <TableHead>Added</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.admins.map((admin) => {
-              const coach = coaches.find((person) => person.userId === admin.user_id);
-              return (
-                <TableRow
-                  key={admin.id}
-                  className="cursor-pointer press"
-                  onClick={() => setDetail({ admin, coach })}
-                >
-                  <TableCell>
-                    <Button
-                      variant="link"
-                      className="min-h-11 px-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetail({ admin, coach });
-                      }}
-                    >
-                      <ClubPersonCell
-                        name={coach ? `${coach.firstName} ${coach.lastName}` : null}
-                      />
-                    </Button>
-                  </TableCell>
-                  <TableCell>{admin.club_role === "owner" ? "Owner" : "Admin"}</TableCell>
-                  <TableCell>{admin.club_title || <ClubNumber value={null} />}</TableCell>
-                  <TableCell>{displayDate(admin.created_at)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      className="min-h-11"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetail({ admin, coach });
-                      }}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </ClubTable>
-      </ClubSection>
+        <FilterPill
+          aria-label="User type"
+          value={userType}
+          onValueChange={setUserType}
+          options={[
+            { value: "all", label: "All user types" },
+            ...(["Coach", "Admin", "Unassigned"] as const).map((value) => ({
+              value,
+              label: value,
+            })),
+          ]}
+        />
+        {userGrid.menu}
+      </ClubGridToolbar>
+      <ClubDataGrid
+        grid={userGrid}
+        rowKey={(u) => u.id}
+        rowLabel={(u) => u.name}
+        onRowClick={(u) => setDetail({ coach: u.coach, admin: u.admin, request: u.request })}
+        noun={{ one: "user", many: "users" }}
+        empty="No users found."
+        filtered={true}
+        onClear={() => {
+          setUserSearch("");
+          setUserType("all");
+        }}
+      />
+      <Sheet open={expansion} onOpenChange={setExpansion}>
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={mobile ? "paper-surface p-6" : "p-6"}
+        >
+          <SheetHeader>
+            <SheetTitle>Add contract seats</SheetTitle>
+            <SheetDescription>
+              Additional seats take effect immediately. The remaining contract term is billed at
+              your agreed rate.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            <Label htmlFor="extra-seats">Additional coach seats</Label>
+            <Input
+              id="extra-seats"
+              type="number"
+              min={1}
+              max={1000}
+              value={extraSeats}
+              onChange={(e) => setExtraSeats(Number(e.target.value))}
+            />
+            {quote == null ? (
+              <p className="text-sm text-text-secondary">
+                Gradus must set your contract rate and active term before seats can be added.
+              </p>
+            ) : (
+              <ClubKeyValueTable
+                rows={[
+                  [
+                    "True-up balance",
+                    new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: data.club.contract_currency,
+                    }).format(quote / 100),
+                  ],
+                  ["Term ends", displayDate(data.club.contract_ends_on)],
+                  ["Seats after increase", data.club.coach_seats + extraSeats],
+                ]}
+              />
+            )}
+            <Button
+              disabled={busy || quote == null}
+              className="h-11"
+              onClick={async () => {
+                if (quote == null) return;
+                const ok = await run(
+                  () =>
+                    expand({
+                      data: {
+                        organizationId: orgId,
+                        seats: extraSeats,
+                        expectedAmount: quote,
+                        requestKey: expansionKey,
+                      },
+                    }),
+                  "Seats added. True-up balance recorded for invoicing.",
+                );
+                if (ok) setExpansion(false);
+              }}
+            >
+              Confirm seat increase
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
       <Sheet
         open={!!detail}
         onOpenChange={(open) => {
@@ -548,7 +439,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                 name={
                   detail?.coach
                     ? `${detail.coach.firstName} ${detail.coach.lastName}`
-                    : detail?.request?.coach_name
+                    : (detail?.request?.coach_name ?? "Club admin")
                 }
                 email={detail?.coach?.email}
               />
@@ -575,6 +466,25 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                       ]
               }
             />
+            {detail?.coach && (
+              <Button
+                variant="outline"
+                className="h-11"
+                onClick={() => {
+                  setPolicyCoach(detail.coach ?? null);
+                  setDetail(null);
+                }}
+              >
+                Policy sign-offs
+              </Button>
+            )}
+            {detail?.coach && (
+              <Button asChild variant="outline" className="h-11">
+                <Link to="/org-admin/coaches/$coachId" params={{ coachId: detail.coach.coachId }}>
+                  Open coach profile
+                </Link>
+              </Button>
+            )}
             <div className="flex flex-wrap gap-2">
               {detail?.request && (
                 <Button
@@ -686,6 +596,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </div>
         </SheetContent>
       </Sheet>
+      <CoachSheet coach={policyCoach} orgId={orgId} onClose={() => setPolicyCoach(null)} />
       <AlertDialog
         open={!!releasing}
         onOpenChange={(open) => {

@@ -230,9 +230,7 @@ async function clubRpc(
 export const setClubAdminRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    orgInput
-      .extend({ adminId: z.string().uuid(), role: z.enum(["owner", "admin"]) })
-      .parse(input),
+    orgInput.extend({ adminId: z.string().uuid(), role: z.enum(["owner", "admin"]) }).parse(input),
   )
   .handler(({ data, context }) =>
     clubRpc(context.supabase, context.userId, data.organizationId, "club_set_admin_role", {
@@ -276,10 +274,24 @@ export const removeClubAdmin = createServerFn({ method: "POST" })
 
 export const expandClubContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => orgInput.extend({ seats: z.number().int().min(1).max(1000), expectedAmount: z.number().int().min(0), requestKey: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) =>
+    orgInput
+      .extend({
+        seats: z.number().int().min(1).max(1000),
+        expectedAmount: z.number().int().min(0),
+        requestKey: z.string().uuid(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const admin = await authorizedClient(context.supabase, context.userId, data.organizationId);
-    const result = await (admin as unknown as SupabaseClient).rpc("club_expand_contract", { p_org_id: data.organizationId, p_actor: context.userId, p_seats: data.seats, p_expected_amount: data.expectedAmount, p_request_key: data.requestKey });
+    const result = await (admin as unknown as SupabaseClient).rpc("club_expand_contract", {
+      p_org_id: data.organizationId,
+      p_actor: context.userId,
+      p_seats: data.seats,
+      p_expected_amount: data.expectedAmount,
+      p_request_key: data.requestKey,
+    });
     if (result.error) dbError(result.error);
     return { id: result.data as string };
   });
