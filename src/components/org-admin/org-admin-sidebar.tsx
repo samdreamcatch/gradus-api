@@ -15,7 +15,7 @@ const ITEMS: Item[] = [
 ];
 
 export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Promise<void> }) {
-  const { orgId, orgName } = useOrgId();
+  const { orgId } = useOrgId();
   const countFn = useServerFn(getClubNotificationCounts);
   const counts = useQuery({
     queryKey: ["club-notification-counts", orgId],
@@ -41,16 +41,10 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
 
   return (
     <header className="sticky top-0 z-30 w-full min-w-0 border-b border-divider bg-popover">
-      <div className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-5">
-        <p
-          title={orgName || "Gradus Club"}
-          className="max-w-56 truncate py-3 font-sans text-base font-semibold leading-tight text-text-primary lg:max-w-40 lg:border-r lg:border-divider lg:pr-5"
-        >
-          {orgName || "Gradus Club"}
-        </p>
+      <div className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 md:px-6 lg:gap-x-5">
         <nav
           aria-label="Club menu"
-          className="col-span-2 row-start-2 flex min-w-0 gap-1 overflow-x-auto lg:col-span-1 lg:col-start-2 lg:row-start-1"
+          className="col-start-1 row-start-1 flex min-w-0 gap-1 overflow-x-auto"
         >
           {ITEMS.map((item) => {
             return (
@@ -67,7 +61,7 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
             );
           })}
         </nav>
-        <div className="col-start-2 row-start-1 flex items-center gap-2 lg:col-start-3">
+        <div className="col-start-2 row-start-1 flex items-center gap-2">
         <ClubNotificationTray unread={counts.data?.unread ?? 0} />
         <Button
           variant="ghost"
