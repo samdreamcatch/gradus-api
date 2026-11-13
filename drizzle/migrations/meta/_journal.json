@@ -302,6 +302,13 @@
       "when": 1794533071910,
       "tag": "0042_unlimited_club_admins",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794535019604,
+      "tag": "0043_coach_invite_sports",
+      "breakpoints": true
     }
   ]
 }

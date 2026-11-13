@@ -8,6 +8,7 @@ import { listPolicyMatrix } from "@/lib/trust-center.functions";
 import { coachPolicies } from "@/lib/club-people";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClubPrimaryAction } from "@/components/org-admin/club-primary-action";
 import { ClubAddSeats } from "@/components/org-admin/club-add-seats";
 import { ClubStudentsPanel } from "@/components/org-admin/club-students-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,11 +104,6 @@ function PeoplePage() {
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <ClubPageHeader title="Users" />
-        <div className="flex gap-2">
-          <Button asChild size="sm" className="min-h-11">
-            <Link to="/org-admin/roster">Invite a coach</Link>
-          </Button>
-        </div>
       </div>
       <Tabs
         value={tab}
@@ -300,7 +296,10 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           {data.seats.filter((s) => clubSeatStatus(s) === "filled").length} /{" "}
           {data.club.coach_seats} coach seats · {data.admins.length} admins
         </p>
-        <ClubAddSeats club={data.club} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ClubAddSeats club={data.club} />
+          <ClubPrimaryAction label="Add coach" to="/org-admin/roster" search={{ invite: true }} />
+        </div>
       </div>
       <Button
         variant="outline"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { toast } from "sonner";
 import type { RosterCoach } from "@/lib/org-admin.functions";
 import { getClubStudents, type ClubStudent } from "@/lib/club-students.functions";
@@ -13,6 +13,7 @@ import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import { ClubPersonCell } from "@/components/org-admin/club-person-cell";
 import { StatusDot, type ClubStatus } from "@/components/org-admin/status-dot";
+import { ClubPrimaryAction } from "@/components/org-admin/club-primary-action";
 import { ClubAddStudentsSheet } from "@/components/org-admin/club-add-students-sheet";
 import {
   AlertDialog,
@@ -138,9 +139,11 @@ export function ClubStudentsPanel({
         <p className="text-sm text-text-secondary">
           {all.length} {all.length === 1 ? "student" : "students"} across club coaches
         </p>
-        <Button className="min-h-11 press" onClick={() => setOpen(true)} disabled={!seats.data}>
-          <Plus className="size-4" /> Add students
-        </Button>
+        <ClubPrimaryAction
+          label="Add students"
+          onClick={() => setOpen(true)}
+          disabled={!seats.data}
+        />
       </div>
       {waiting.length ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
