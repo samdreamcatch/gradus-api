@@ -380,6 +380,8 @@ function Policies() {
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Loader2 className="size-4 animate-spin" /> Loading…
           </div>
+        ) : matrix.isError ? (
+          <p className="text-sm text-destructive">Acknowledgement records could not be loaded. Try again.</p>
         ) : !docs.length ? (
           <p className="rounded-lg border border-divider bg-card p-6 text-sm text-text-secondary">
             No documents require acknowledgement yet. Turn it on for a club document in the Resource
