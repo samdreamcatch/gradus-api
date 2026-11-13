@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { LessonCalendar, coachTone } from "@/components/org-admin/lesson-calendar";
+import { LessonPracticeRing } from "@/components/org-admin/lesson-practice-ring";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toIso, lessonInvitationReview } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -200,7 +201,17 @@ function ClubSchedulePage() {
     {
       key: "student",
       label: "Student",
-      render: (r) => r.studentName,
+      render: (r) => (
+        <span className="flex items-center gap-2">
+          <LessonPracticeRing
+            practiceMin={r.practiceMin}
+            targetMin={r.targetMin}
+            muted={r.invitationStatus !== "Connected"}
+            size={24}
+          />
+          <span>{r.studentName}</span>
+        </span>
+      ),
       sortValue: (r) => r.studentName,
     },
     {
