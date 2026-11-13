@@ -88,6 +88,8 @@ function OrgRosterPage() {
   const [phone, setPhone] = useState("");
   const [inviting, setInviting] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
+  const [selectedInvite, setSelectedInvite] = useState<Invite | null>(null);
+  const [revoking, setRevoking] = useState<Invite | null>(null);
   const [removing, setRemoving] = useState<Coach | null>(null);
   const [search, setSearch] = useState("");
   const mobile = useIsMobile();
@@ -145,7 +147,7 @@ function OrgRosterPage() {
     "roster-invites",
     inviteColumns({
       resend: (id) => resendInvite.mutate(id),
-      revoke: (id) => revokeInvite.mutate(id),
+      revoke: (id) => setSelectedInvite(invites.find((invite) => invite.id === id) ?? null),
       busy: resendInvite.isPending || revokeInvite.isPending,
     }),
     invites,
@@ -295,6 +297,69 @@ function OrgRosterPage() {
           </div>
         </SheetContent>
       </Sheet>
+      <Sheet
+        open={!!selectedInvite}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInvite(null);
+        }}
+      >
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
+              : "w-full overflow-y-auto p-6 font-sans sm:max-w-md"
+          }
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2">Coach invite</SheetTitle>
+            <SheetDescription className="sr-only">Invitation actions</SheetDescription>
+          </SheetHeader>
+          <p className="mt-6 font-mono tabular-nums">{selectedInvite?.code}</p>
+          <div className="mt-5 flex gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11 text-destructive"
+              onClick={() => setRevoking(selectedInvite)}
+            >
+              Revoke
+            </Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setSelectedInvite(null)}>
+              Close
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog
+        open={!!revoking}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-h3">
+              Revoke this invite?
+            </AlertDialogTitle>
+            <AlertDialogDescription>The code will no longer be usable.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={revokeInvite.isPending}
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!revoking) return;
+                await revokeInvite.mutateAsync(revoking.id);
+                setRevoking(null);
+                setSelectedInvite(null);
+              }}
+            >
+              Revoke invite
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog
         open={!!removing}
         onOpenChange={(o) => {
@@ -453,7 +518,7 @@ function inviteColumns(a: {
               disabled={a.busy}
               onClick={() => a.revoke(i.id)}
             >
-              Revoke
+              View
             </Button>
           </span>
         ) : null,
