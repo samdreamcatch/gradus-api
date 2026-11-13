@@ -164,6 +164,7 @@ export function ClubDataGrid<T>({
   onRowClick,
   rowLabel,
   groupControl,
+  groupActions,
   empty,
   filtered,
   onClear,
@@ -176,6 +177,7 @@ export function ClubDataGrid<T>({
   onRowClick?: (row: T) => void;
   rowLabel?: (row: T) => string;
   groupControl?: (label: string, rows: T[]) => ReactNode;
+  groupActions?: (label: string, rows: T[]) => ReactNode;
   empty: ReactNode;
   filtered: boolean;
   onClear?: () => void;
@@ -282,6 +284,7 @@ export function ClubDataGrid<T>({
                     )
                   }
                   count={g.rows.length}
+                  actions={groupActions?.(g.label, g.rows)}
                   colSpan={cols.length}
                 />,
                 ...g.rows.map(renderRow),
