@@ -68,7 +68,7 @@ export const CARD_LAYOUTS: { value: CardLayout; label: string }[] = [
 
 /** Start time is implied by placement, so cards never repeat it. */
 function LessonCardBody({ l, layout, tall }: { l: ClubLesson; layout: CardLayout; tall: boolean }) {
-  if (layout === "minimal" || layout === "status")
+  if (layout === "minimal" || (layout === "status" && !tall))
     return (
       <div className="flex items-center justify-between gap-1 font-semibold">
         <span className="truncate">{l.studentName}</span>
