@@ -21,9 +21,7 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 
-import {
-  ClubGridToolbar,
-} from "@/components/org-admin/club-grid-toolbar";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import {
   Sheet,
   SheetContent,
@@ -138,14 +136,10 @@ function PeoplePage() {
         <ClubPageHeader title="Users" />
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={exportRoster} disabled={!filtered.length}>
-            
             Export
           </Button>
           <Button asChild size="sm">
-            <Link to="/org-admin/roster">
-              
-              Invite a coach
-            </Link>
+            <Link to="/org-admin/roster">Invite a coach</Link>
           </Button>
         </div>
       </div>
@@ -218,7 +212,19 @@ const PEOPLE_COLUMNS: ClubColumn<RosterCoach>[] = [
     className: "min-w-40",
     groupValue: (c) => (coachSports(c)[0] ? sportDisplayLabel(coachSports(c)[0] ?? "") : null),
     sortValue: (c) => coachSports(c).map(sportDisplayLabel).join(", "),
-    render: (c) => coachSports(c).length ? coachSports(c).map(sportDisplayLabel).join(", ") : <Link to="/org-admin/coaches/$coachId" params={{ coachId: c.coachId }} className="underline underline-offset-4" onClick={(e) => e.stopPropagation()}>Set sport</Link>,
+    render: (c) =>
+      coachSports(c).length ? (
+        coachSports(c).map(sportDisplayLabel).join(", ")
+      ) : (
+        <Link
+          to="/org-admin/coaches/$coachId"
+          params={{ coachId: c.coachId }}
+          className="underline underline-offset-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Set sport
+        </Link>
+      ),
   },
   {
     key: "levels",
@@ -265,7 +271,11 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
   const [releasing, setReleasing] = useState<RosterCoach | null>(null);
   const [busy, setBusy] = useState(false);
   const mobile = useIsMobile();
-  const [detail, setDetail] = useState<{ coach?: RosterCoach; admin?: ClubAdmin; request?: ClubSeatRequest } | null>(null);
+  const [detail, setDetail] = useState<{
+    coach?: RosterCoach;
+    admin?: ClubAdmin;
+    request?: ClubSeatRequest;
+  } | null>(null);
   const [confirm, setConfirm] = useState<"role" | "assign" | null>(null);
   const { data } = useSuspenseQuery(
     queryOptions({
@@ -313,11 +323,35 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
             </TableHeader>
             <TableBody>
               {(requests.data ?? []).map((request) => (
-                <TableRow key={request.id} className="cursor-pointer press" onClick={() => setDetail({ request })}>
-                  <TableCell><Button variant="link" className="min-h-11 px-0" onClick={(e) => { e.stopPropagation(); setDetail({ request }); }}><ClubPersonCell name={request.coach_name} /></Button></TableCell>
+                <TableRow
+                  key={request.id}
+                  className="cursor-pointer press"
+                  onClick={() => setDetail({ request })}
+                >
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="min-h-11 px-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetail({ request });
+                      }}
+                    >
+                      <ClubPersonCell name={request.coach_name} />
+                    </Button>
+                  </TableCell>
                   <TableCell>{displayDate(request.requested_at)}</TableCell>
                   <TableCell>
-                    <Button variant="outline" className="min-h-11" onClick={(e) => { e.stopPropagation(); setDetail({ request }); }}>View</Button>
+                    <Button
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetail({ request });
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -325,7 +359,13 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </ClubTable>
         </ClubSection>
       )}
-      <ClubSection title={<>Coach seats · <ClubNumber value={data.club.coach_seats} /> in contract</>}>
+      <ClubSection
+        title={
+          <>
+            Coach seats · <ClubNumber value={data.club.coach_seats} /> in contract
+          </>
+        }
+      >
         <ClubTable>
           <TableHeader>
             <TableRow>
@@ -343,12 +383,34 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
               const coach = coaches.find((person) => person.coachId === seat.coach_id);
               const status = clubSeatStatus(seat);
               return (
-                <TableRow key={seat.id} className={coach ? "cursor-pointer press" : undefined} onClick={() => { if (coach) setDetail({ coach }); }}>
+                <TableRow
+                  key={seat.id}
+                  className={coach ? "cursor-pointer press" : undefined}
+                  onClick={() => {
+                    if (coach) setDetail({ coach });
+                  }}
+                >
                   <TableCell className="font-mono text-right tabular-nums">
                     {seat.seat_no}
                   </TableCell>
                   <TableCell>
-                    {coach ? <Button variant="link" className="min-h-11 px-0" onClick={(e) => { e.stopPropagation(); setDetail({ coach }); }}><ClubPersonCell name={`${coach.firstName} ${coach.lastName}`} email={coach.email} /></Button> : <ClubNumber value={null} />}
+                    {coach ? (
+                      <Button
+                        variant="link"
+                        className="min-h-11 px-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetail({ coach });
+                        }}
+                      >
+                        <ClubPersonCell
+                          name={`${coach.firstName} ${coach.lastName}`}
+                          email={coach.email}
+                        />
+                      </Button>
+                    ) : (
+                      <ClubNumber value={null} />
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusDot
@@ -379,7 +441,10 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                         variant="link"
                         className="min-h-11 text-text-primary"
                         disabled={busy}
-                        onClick={(e) => { e.stopPropagation(); setDetail({ coach }); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetail({ coach });
+                        }}
                       >
                         View
                       </Button>
@@ -393,7 +458,13 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </TableBody>
         </ClubTable>
       </ClubSection>
-      <ClubSection title={<>Admins · <ClubNumber value={data.club.admin_seats} /> in contract</>}>
+      <ClubSection
+        title={
+          <>
+            Admins · <ClubNumber value={data.club.admin_seats} /> in contract
+          </>
+        }
+      >
         <ClubTable>
           <TableHeader>
             <TableRow>
@@ -408,17 +479,39 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
             {data.admins.map((admin) => {
               const coach = coaches.find((person) => person.userId === admin.user_id);
               return (
-                <TableRow key={admin.id} className="cursor-pointer press" onClick={() => setDetail({ admin, coach })}>
+                <TableRow
+                  key={admin.id}
+                  className="cursor-pointer press"
+                  onClick={() => setDetail({ admin, coach })}
+                >
                   <TableCell>
-                    <Button variant="link" className="min-h-11 px-0" onClick={(e) => { e.stopPropagation(); setDetail({ admin, coach }); }}><ClubPersonCell name={coach ? `${coach.firstName} ${coach.lastName}` : null} /></Button>
+                    <Button
+                      variant="link"
+                      className="min-h-11 px-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetail({ admin, coach });
+                      }}
+                    >
+                      <ClubPersonCell
+                        name={coach ? `${coach.firstName} ${coach.lastName}` : null}
+                      />
+                    </Button>
                   </TableCell>
-                  <TableCell>
-                    {admin.club_role === "owner" ? "Owner" : "Admin"}
-                  </TableCell>
+                  <TableCell>{admin.club_role === "owner" ? "Owner" : "Admin"}</TableCell>
                   <TableCell>{admin.club_title ?? "—"}</TableCell>
                   <TableCell>{displayDate(admin.created_at)}</TableCell>
                   <TableCell>
-                    <Button variant="outline" className="min-h-11" onClick={(e) => { e.stopPropagation(); setDetail({ admin, coach }); }}>View</Button>
+                    <Button
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetail({ admin, coach });
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               );
@@ -426,27 +519,161 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </TableBody>
         </ClubTable>
       </ClubSection>
-      <Sheet open={!!detail} onOpenChange={(open) => { if (!open) setDetail(null); }}>
-        <SheetContent side={mobile ? "bottom" : "right"} className={mobile ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans" : "w-full overflow-y-auto p-6 font-sans sm:max-w-lg"}>
-          <SheetHeader><SheetTitle className="font-display text-h2"><ClubPersonCell name={detail?.coach ? `${detail.coach.firstName} ${detail.coach.lastName}` : detail?.request?.coach_name} email={detail?.coach?.email} /></SheetTitle><SheetDescription className="sr-only">Club membership details</SheetDescription></SheetHeader>
+      <Sheet
+        open={!!detail}
+        onOpenChange={(open) => {
+          if (!open) setDetail(null);
+        }}
+      >
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
+              : "w-full overflow-y-auto p-6 font-sans sm:max-w-lg"
+          }
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2">
+              <ClubPersonCell
+                name={
+                  detail?.coach
+                    ? `${detail.coach.firstName} ${detail.coach.lastName}`
+                    : detail?.request?.coach_name
+                }
+                email={detail?.coach?.email}
+              />
+            </SheetTitle>
+            <SheetDescription className="sr-only">Club membership details</SheetDescription>
+          </SheetHeader>
           <div className="mt-6 space-y-5">
-            <ClubKeyValueTable rows={detail?.admin ? [["Role", detail.admin.club_role === "owner" ? "Owner" : "Admin"], ["Role at the club", detail.admin.club_title || <ClubNumber value={null} />], ["Added", displayDate(detail.admin.created_at)]] : detail?.request ? [["Joined", displayDate(detail.request.requested_at)], ["Seat", "Waiting"]] : [["Seat", "Filled"], ["Students", <ClubNumber value={detail?.coach?.athleteCount} />]]} />
+            <ClubKeyValueTable
+              rows={
+                detail?.admin
+                  ? [
+                      ["Role", detail.admin.club_role === "owner" ? "Owner" : "Admin"],
+                      ["Role at the club", detail.admin.club_title || <ClubNumber value={null} />],
+                      ["Added", displayDate(detail.admin.created_at)],
+                    ]
+                  : detail?.request
+                    ? [
+                        ["Joined", displayDate(detail.request.requested_at)],
+                        ["Seat", "Waiting"],
+                      ]
+                    : [
+                        ["Seat", "Filled"],
+                        ["Students", <ClubNumber value={detail?.coach?.athleteCount} />],
+                      ]
+              }
+            />
             <div className="flex flex-wrap gap-2">
-              {detail?.request && <Button variant="outline" className="min-h-11" disabled={busy || !hasOpenSeat} title={hasOpenSeat ? undefined : "Release a seat first"} onClick={() => setConfirm("assign")}>Give seat</Button>}
-              {detail?.coach && !detail.admin && <Button variant="outline" className="min-h-11" disabled={busy} onClick={() => setReleasing(detail.coach ?? null)}>Release seat</Button>}
-              {detail?.admin && <>
-                <Button variant="outline" className="min-h-11" disabled={busy || (detail.admin.club_role === "owner" && !data.admins.some((other) => other.id !== detail.admin?.id && other.club_role === "owner"))} onClick={() => setConfirm("role")}>{detail.admin.club_role === "owner" ? "Make admin" : "Make owner"}</Button>
-                <Button variant="outline" className="min-h-11 text-destructive" disabled={busy || !canRemoveClubAdmin(data.admins, detail.admin.id)} onClick={() => setRemoving(detail.admin?.id ?? null)}>Remove</Button>
-              </>}
-              <Button variant="outline" className="min-h-11" onClick={() => setDetail(null)}>Close</Button>
+              {detail?.request && (
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={busy || !hasOpenSeat}
+                  title={hasOpenSeat ? undefined : "Release a seat first"}
+                  onClick={() => setConfirm("assign")}
+                >
+                  Give seat
+                </Button>
+              )}
+              {detail?.coach && !detail.admin && (
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={busy}
+                  onClick={() => setReleasing(detail.coach ?? null)}
+                >
+                  Release seat
+                </Button>
+              )}
+              {detail?.admin && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={
+                      busy ||
+                      (detail.admin.club_role === "owner" &&
+                        !data.admins.some(
+                          (other) => other.id !== detail.admin?.id && other.club_role === "owner",
+                        ))
+                    }
+                    onClick={() => setConfirm("role")}
+                  >
+                    {detail.admin.club_role === "owner" ? "Make admin" : "Make owner"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="min-h-11 text-destructive"
+                    disabled={busy || !canRemoveClubAdmin(data.admins, detail.admin.id)}
+                    onClick={() => setRemoving(detail.admin?.id ?? null)}
+                  >
+                    Remove
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" className="min-h-11" onClick={() => setDetail(null)}>
+                Close
+              </Button>
             </div>
-            {confirm && <div className="space-y-3 border-t border-divider pt-4" role="group" aria-label="Confirm membership change">
-              <p className="text-sm">{confirm === "role" ? "Change this person's club role?" : "Give this coach an open seat?"}</p>
-              <div className="flex gap-2"><Button variant="outline" className="min-h-11" disabled={busy} onClick={async () => {
-                const ok = confirm === "role" && detail?.admin ? await run(() => setRole({ data: { organizationId: orgId, adminId: detail.admin?.id ?? "", role: detail.admin?.club_role === "owner" ? "admin" : "owner" } }), "Role updated.") : detail?.request ? await run(() => assign({ data: { organizationId: orgId, requestId: detail.request?.id ?? "" } }), "Seat assigned.") : false;
-                if (ok) { setConfirm(null); setDetail(null); }
-              }}>Confirm</Button><Button variant="ghost" className="min-h-11" onClick={() => setConfirm(null)}>Close</Button></div>
-            </div>}
+            {confirm && (
+              <div
+                className="space-y-3 border-t border-divider pt-4"
+                role="group"
+                aria-label="Confirm membership change"
+              >
+                <p className="text-sm">
+                  {confirm === "role"
+                    ? "Change this person's club role?"
+                    : "Give this coach an open seat?"}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={busy}
+                    onClick={async () => {
+                      const ok =
+                        confirm === "role" && detail?.admin
+                          ? await run(
+                              () =>
+                                setRole({
+                                  data: {
+                                    organizationId: orgId,
+                                    adminId: detail.admin?.id ?? "",
+                                    role: detail.admin?.club_role === "owner" ? "admin" : "owner",
+                                  },
+                                }),
+                              "Role updated.",
+                            )
+                          : detail?.request
+                            ? await run(
+                                () =>
+                                  assign({
+                                    data: {
+                                      organizationId: orgId,
+                                      requestId: detail.request?.id ?? "",
+                                    },
+                                  }),
+                                "Seat assigned.",
+                              )
+                            : false;
+                      if (ok) {
+                        setConfirm(null);
+                        setDetail(null);
+                      }
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                  <Button variant="ghost" className="min-h-11" onClick={() => setConfirm(null)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -478,7 +705,10 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                   () => release({ data: { organizationId: orgId, coachId: releasing.coachId } }),
                   "Seat released.",
                 );
-                if (ok) { setReleasing(null); setDetail(null); }
+                if (ok) {
+                  setReleasing(null);
+                  setDetail(null);
+                }
               }}
             >
               {busy ? "Releasing…" : "Release seat"}
@@ -494,7 +724,9 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display text-h3">Remove this club admin?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display text-h3">
+              Remove this club admin?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               They will no longer have access to the club panel. Their coach account and coach seat
               are unchanged.
@@ -566,9 +798,14 @@ function CoachSheet({
       >
         <SheetHeader>
           <SheetTitle className="pr-6 font-display text-h2">
-            <ClubPersonCell name={coach ? `${coach.firstName} ${coach.lastName}` : null} email={coach?.email} />
+            <ClubPersonCell
+              name={coach ? `${coach.firstName} ${coach.lastName}` : null}
+              email={coach?.email}
+            />
           </SheetTitle>
-          <SheetDescription className="sr-only">Coach details and policy sign-offs</SheetDescription>
+          <SheetDescription className="sr-only">
+            Coach details and policy sign-offs
+          </SheetDescription>
         </SheetHeader>
         {coach && (
           <div className="mt-6 space-y-6">
@@ -583,7 +820,16 @@ function CoachSheet({
               </div>
               <div>
                 <dt className="text-text-secondary">Joined</dt>
-                <dd>{coach.joinedAt ? new Date(coach.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "—"}</dd>
+                <dd>
+                  {coach.joinedAt
+                    ? new Date(coach.joinedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })
+                    : "—"}
+                </dd>
               </div>
             </dl>
             <ClubSection title="Sports & levels">
@@ -607,11 +853,14 @@ function CoachSheet({
                 <p className="text-sm text-text-secondary">No teaching levels set.</p>
               )}
             </ClubSection>
-            <ClubSection title="Policy sign-offs" actions={
+            <ClubSection
+              title="Policy sign-offs"
+              actions={
                 <Button asChild variant="link" size="sm">
                   <Link to="/org-admin/policies">Policies</Link>
                 </Button>
-              }>
+              }
+            >
               {q.isError ? (
                 <div className="space-y-2">
                   <p className="text-sm text-destructive">Policy records are unavailable.</p>
@@ -640,7 +889,22 @@ function CoachSheet({
                                 : ""}
                           </p>
                         </div>
-                        <StatusDot status={p.status === "signed" ? "healthy" : p.status === "overdue" ? "attention" : "informational"} label={p.status === "signed" ? "Signed" : p.status === "overdue" ? "Overdue" : "Outstanding"} />
+                        <StatusDot
+                          status={
+                            p.status === "signed"
+                              ? "healthy"
+                              : p.status === "overdue"
+                                ? "attention"
+                                : "informational"
+                          }
+                          label={
+                            p.status === "signed"
+                              ? "Signed"
+                              : p.status === "overdue"
+                                ? "Overdue"
+                                : "Outstanding"
+                          }
+                        />
                       </li>
                     ))}
                   </ul>
@@ -650,7 +914,9 @@ function CoachSheet({
                 </>
               )}
             </ClubSection>
-            <Button variant="outline" className="min-h-11" onClick={onClose}>Close</Button>
+            <Button variant="outline" className="min-h-11" onClick={onClose}>
+              Close
+            </Button>
           </div>
         )}
       </SheetContent>
@@ -660,5 +926,10 @@ function CoachSheet({
 
 function displayDate(value?: string | null) {
   if (!value) return <ClubNumber value={null} />;
-  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }

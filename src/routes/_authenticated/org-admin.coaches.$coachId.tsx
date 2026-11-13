@@ -89,41 +89,68 @@ function CoachProfile() {
     ["Club", org.name],
     [
       "Sports",
-      [...new Set(coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || <Link to="/org-admin/people" className="underline underline-offset-4">Set sport</Link>,
+      [...new Set(coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || (
+        <Link to="/org-admin/people" className="underline underline-offset-4">
+          Set sport
+        </Link>
+      ),
     ],
-    ["Joined", coach.joinedAt ? new Date(coach.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : <ClubNumber value={null} />],
+    [
+      "Joined",
+      coach.joinedAt ? (
+        new Date(coach.joinedAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "UTC",
+        })
+      ) : (
+        <ClubNumber value={null} />
+      ),
+    ],
   ];
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <ClubPageHeader
         back={{ to: "/org-admin/coaches", label: "Coaching" }}
-        title={coach.firstName.trim() || coach.lastName.trim() ? `${coach.firstName} ${coach.lastName}`.trim() : <span className="inline-flex flex-wrap items-center gap-2">{coach.email || <ClubNumber value={null} />}<ClubTag>Invited</ClubTag></span>}
-        actions={<>
-          <Button variant="outline" className="min-h-11" asChild>
-            <Link to="/org-admin/people">Open in Users</Link>
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!weeks.length}
-            onClick={() =>
-              downloadCsv(
-                "coach-practice.csv",
-                toCsv(
-                  ["Week (UTC)", "Students", "Practice min", "Target min", "Sessions"],
-                  weeks.map((w) => [
-                    w.week_start,
-                    w.students,
-                    w.practice_min,
-                    w.target_min,
-                    w.sessions,
-                  ]),
-                ),
-              )
-            }
-          >
-            Export CSV
-          </Button>
-        </>}
+        title={
+          coach.firstName.trim() || coach.lastName.trim() ? (
+            `${coach.firstName} ${coach.lastName}`.trim()
+          ) : (
+            <span className="inline-flex flex-wrap items-center gap-2">
+              {coach.email || <ClubNumber value={null} />}
+              <ClubTag>Invited</ClubTag>
+            </span>
+          )
+        }
+        actions={
+          <>
+            <Button variant="outline" className="min-h-11" asChild>
+              <Link to="/org-admin/people">Open in Users</Link>
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!weeks.length}
+              onClick={() =>
+                downloadCsv(
+                  "coach-practice.csv",
+                  toCsv(
+                    ["Week (UTC)", "Students", "Practice min", "Target min", "Sessions"],
+                    weeks.map((w) => [
+                      w.week_start,
+                      w.students,
+                      w.practice_min,
+                      w.target_min,
+                      w.sessions,
+                    ]),
+                  ),
+                )
+              }
+            >
+              Export CSV
+            </Button>
+          </>
+        }
       />
       <div className="grid gap-4 border-y border-divider py-4 sm:grid-cols-3">
         {stats.map(([label, value, reference]) => (
@@ -151,7 +178,9 @@ function CoachProfile() {
               <TableRow key={`${l.sport}:${l.key}`}>
                 <TableCell>{sportDisplayLabel(l.sport)}</TableCell>
                 <TableCell>{l.label}</TableCell>
-                <TableCell className="text-right"><ClubNumber value={l.practiceHours} /></TableCell>
+                <TableCell className="text-right">
+                  <ClubNumber value={l.practiceHours} />
+                </TableCell>
               </TableRow>
             ))}
             {!coach.levels.length && (
@@ -167,8 +196,12 @@ function CoachProfile() {
       <ClubSection title="Practice · last 8 weeks">
         {metrics.isError ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="text-sm text-text-secondary">Practice records couldn't load.</p>
-            <Button variant="outline" className="min-h-11" onClick={() => metrics.refetch()}>Try again</Button>
+            <p role="alert" className="text-sm text-text-secondary">
+              Practice records couldn't load.
+            </p>
+            <Button variant="outline" className="min-h-11" onClick={() => metrics.refetch()}>
+              Try again
+            </Button>
           </div>
         ) : (
           <ClubTable>
@@ -192,13 +225,21 @@ function CoachProfile() {
               {weeks.map((w) => (
                 <TableRow key={w.week_start}>
                   <TableCell>{formatWeek(w.week_start)}</TableCell>
-                  <TableCell className="text-right font-mono"><ClubNumber value={w.students} /></TableCell>
-                  <TableCell className="text-right font-mono"><ClubNumber value={w.practice_min} /></TableCell>
-                  <TableCell className="text-right font-mono"><ClubNumber value={w.target_min} /></TableCell>
+                  <TableCell className="text-right font-mono">
+                    <ClubNumber value={w.students} />
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    <ClubNumber value={w.practice_min} />
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    <ClubNumber value={w.target_min} />
+                  </TableCell>
                   <TableCell className="text-right font-mono">
                     <ClubMeter value={w.practice_min} target={w.target_min} />
                   </TableCell>
-                  <TableCell className="text-right font-mono"><ClubNumber value={w.sessions} /></TableCell>
+                  <TableCell className="text-right font-mono">
+                    <ClubNumber value={w.sessions} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -223,7 +264,9 @@ function CoachProfile() {
 
 function formatWeek(iso: string) {
   const start = new Date(`${iso}T00:00:00Z`);
-  const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
-  const format = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const format = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   return `${format(start)}–${start.getUTCMonth() === end.getUTCMonth() ? end.getUTCDate() : format(end)}`;
 }
