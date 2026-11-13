@@ -115,10 +115,36 @@ function OrgMovesPage() {
   }, [q.data, sport, search, showArchived]);
 
   useEffect(() => setSelected(new Set()), [sport]);
+  const selectedVisible = rows.filter((move) => selected.has(move.key)).length;
   const columns: ClubColumn<OrgMoveRow>[] = [
     {
       key: "name",
       label: "Move",
+      headerControl: (
+        <label className="mr-4 inline-flex min-h-11 items-center gap-3 align-middle font-sans text-xs font-semibold press-soft">
+          <Checkbox
+            aria-label="Select all moves"
+            disabled={!rows.length}
+            checked={
+              rows.length > 0 && selectedVisible === rows.length
+                ? true
+                : selectedVisible > 0
+                  ? "indeterminate"
+                  : false
+            }
+            onCheckedChange={(checked) =>
+              setSelected((current) => {
+                const next = new Set(current);
+                rows.forEach((move) =>
+                  checked === true ? next.add(move.key) : next.delete(move.key),
+                );
+                return next;
+              })
+            }
+          />
+          Select all
+        </label>
+      ),
       sortValue: (m) => m.name,
       className: "min-w-56",
       render: (m) => (
