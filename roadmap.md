@@ -1,5 +1,6 @@
 
 ## Open
+- [ ] CSV uploads for students and coaches: shared import/template controls, review and validation before sending.
 - [x] Unified Users table: Coach/Admin/Unassigned, filtered all-user export, additional seats with confirmed prorated contract cost, persistent awaiting-invoice true-up and internal staff rate setup. Single table, missing-rate block and mobile verified; eight tests pass. No test bills or emails sent.
 - [ ] Contract true-up invoice delivery: needs real contract rates and the club billing recipient/payment arrangement; balances are recorded awaiting invoicing, not sent or charged. Test Club has no agreed rate, so its seat increase remains blocked.
 - [x] Coach profile: horizontal Profile, Sports & levels, Students, Practice tabs and authorized student-parent roster; seven students and parent relationships verified, all tabs exercised, mobile has no page overflow. No emails or account edits.

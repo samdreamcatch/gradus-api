@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useMemo, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, FileUp, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Copy, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ClubCsvControls } from "./club-csv-controls";
 import { toast } from "sonner";
 import type { RosterCoach } from "@/lib/org-admin.functions";
 import {
@@ -94,7 +95,6 @@ export function ClubAddStudentsSheet({
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<ClubAddStudentResult[] | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const existing = useMemo(() => {
     const byName = new Map(coaches.map((c) => [coachName(c), c.coachId]));
@@ -148,9 +148,6 @@ export function ClubAddStudentsSheet({
       e.preventDefault();
       addRow(row);
     }
-  }
-  async function onFile(file: File) {
-    replaceWith(parsePastedStudents(await file.text(), defaultCoach));
   }
 
   async function submit() {
@@ -282,24 +279,10 @@ export function ClubAddStudentsSheet({
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                  variant="outline"
-                  className="min-h-11 press"
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <FileUp className="size-4" /> Import a .csv
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".csv,.tsv,.txt,text/csv"
-                  className="sr-only"
-                  aria-label="Import a .csv"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void onFile(f);
-                    e.target.value = "";
-                  }}
+                <ClubCsvControls
+                  filename="students-template.csv"
+                  template={'First,Last,Email,Age,Day,Start,Length,Guardian first,Guardian last\nAlex,Rivera,parent@example.com,Under 18,Mon,16:00,30,Sam,Rivera\n'}
+                  onImport={(text) => replaceWith(parsePastedStudents(text, defaultCoach))}
                 />
                 <p className="text-meta text-text-tertiary">
                   Paste columns: first, last, email, under/over 18, day, start, length, guardian
