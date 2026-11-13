@@ -2,7 +2,9 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
-import { getClubCoachWeeks } from "@/lib/club-coaches.functions";
+import { getClubCoachWeeks, getClubCoachStudents } from "@/lib/club-coaches.functions";
+import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { practiceAdherence, weekStart } from "@/lib/club-coach-metrics";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { downloadCsv, toCsv } from "@/lib/csv";
@@ -29,12 +31,12 @@ export const Route = createFileRoute("/_authenticated/org-admin/coaches/$coachId
       { title: "Coach profile · Gradus Club" },
       {
         name: "description",
-        content: "Coach profile, teaching levels and aggregate practice history.",
+        content: "Coach profile, teaching levels, students and parents, and practice adherence.",
       },
       { property: "og:title", content: "Coach profile · Gradus Club" },
       {
         property: "og:description",
-        content: "Coach profile, teaching levels and aggregate practice history.",
+        content: "Coach profile, teaching levels, students and parents, and practice adherence.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -54,6 +56,14 @@ function CoachProfile() {
   } = useSuspenseQuery(clubCoachesOptions());
   const coach = coaches.find((c) => c.coachId === coachId);
   const read = useServerFn(getClubCoachWeeks);
+  const [tab, setTab] = useState("profile");
+  const readStudents = useServerFn(getClubCoachStudents);
+  const students = useQuery({
+    queryKey: ["club-coach-students", org.id, coachId],
+    queryFn: () => readStudents({ data: { organizationId: org.id, coachId } }),
+    enabled: tab === "students",
+    retry: false,
+  });
   const metrics = useQuery({
     queryKey: ["club-coach-weeks", org.id],
     queryFn: () => read({ data: { organizationId: org.id } }),
@@ -166,9 +176,20 @@ function CoachProfile() {
           </div>
         ))}
       </div>
+      <Tabs value={tab} onValueChange={setTab} className="min-w-0">
+        <div className="overflow-x-auto border-b border-divider">
+          <TabsList aria-label="Coach profile sections" className="h-auto justify-start gap-2 rounded-none bg-transparent p-0">
+            {[["profile", "Profile"], ["levels", "Sports & levels"], ["students", "Students"], ["practice", "Practice"]].map(([value, label]) => (
+              <TabsTrigger key={value} value={value} className="press-soft min-h-11 shrink-0 rounded-none border-b-2 border-transparent px-3 data-[state=active]:border-accent-ink data-[state=active]:bg-transparent data-[state=active]:text-accent-ink data-[state=active]:shadow-none">{label}</TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      <TabsContent value="profile" className="pt-3">
       <ClubSection title="Profile">
         <ClubKeyValueTable rows={profile} />
       </ClubSection>
+      </TabsContent>
+      <TabsContent value="levels" className="pt-3">
       <ClubSection title="Sports & levels">
         <ClubTable>
           <TableHeader>
@@ -198,6 +219,33 @@ function CoachProfile() {
           </TableBody>
         </ClubTable>
       </ClubSection>
+      </TabsContent>
+      <TabsContent value="students" className="pt-3">
+        <ClubSection title="Students">
+          {students.isPending ? <p role="status" className="text-sm text-text-secondary">Loading students…</p> : students.isError ? (
+            <div className="flex items-center gap-3">
+              <p role="alert" className="text-sm text-text-secondary">Students couldn't load.</p>
+              <Button variant="outline" className="h-11" onClick={() => students.refetch()}>Try again</Button>
+            </div>
+          ) : (
+            <ClubTable>
+              <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Parents / guardians</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {(students.data ?? []).map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell>{student.name || "Unnamed student"}</TableCell>
+                    <TableCell>
+                      {student.parents.length ? student.parents.join(", ") : student.selfManaged ? "Self-managed" : student.pendingParent ? `${student.pendingParent} · Not linked` : "No parent linked"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!students.data?.length && <TableRow><TableCell colSpan={2} className="text-text-secondary">No active students linked.</TableCell></TableRow>}
+              </TableBody>
+            </ClubTable>
+          )}
+        </ClubSection>
+      </TabsContent>
+      <TabsContent value="practice" className="pt-3">
       <ClubSection title="Practice · last 8 weeks">
         {metrics.isError ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -256,6 +304,8 @@ function CoachProfile() {
           </ClubTable>
         )}
       </ClubSection>
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
