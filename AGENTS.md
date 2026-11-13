@@ -25,3 +25,5 @@
 - Club-level coach access is decided in `coach_effective_tier` (club membership, occupied seat and active contract dates); profile/billing DTOs use that result and fall back to personal entitlement. Staff name club admins into `org_admins` from internal Organizations; native onboarding stays untouched.
 
 - Club presentation primitives live under components/org-admin and wrap shared UI without changing it; headers include the mobile sidebar trigger, while grid Columns combines device-saved visibility and grouping.
+
+- Settings and Users share ClubAddSeats for the existing seat-increase confirmation, so pricing and refreshed seat counts stay consistent across entry points.

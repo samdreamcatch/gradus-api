@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubStatusLegend } from "@/components/org-admin/status-dot";
 import { TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
-import { Mail } from "lucide-react";
-import { GRADUS_SUPPORT_EMAIL } from "@/lib/safe-sport-content";
+import { ClubAddSeats } from "@/components/org-admin/club-add-seats";
 
 const settingsOptions = () =>
   queryOptions({
@@ -130,7 +129,14 @@ function OrgSettings() {
                         section.name === "Contract" ? "font-mono tabular-nums" : "break-words"
                       }
                     >
-                      {value}
+                      {key === "Coach seats" ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <span>{value}</span>
+                          <ClubAddSeats club={club} />
+                        </div>
+                      ) : (
+                        value
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -144,23 +150,6 @@ function OrgSettings() {
           </section>
         ))}
       </div>
-      <section className="flex flex-wrap items-center justify-between gap-4 border-y border-divider py-5">
-        <div className="min-w-0">
-          <h2 className="font-display text-h3">Contract changes</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            For more seats, renewals, or changes to your agreement, contact your Gradus
-            representative.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <a
-            href={`mailto:${GRADUS_SUPPORT_EMAIL}?subject=${encodeURIComponent(`Club contract request · ${club.name}`)}`}
-          >
-            <Mail className="size-4" />
-            Contact Gradus
-          </a>
-        </Button>
-      </section>
     </div>
   );
 }
