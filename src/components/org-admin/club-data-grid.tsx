@@ -37,6 +37,7 @@ import { ClubNumber } from "./club-number";
 export type ClubColumn<T> = {
   key: string;
   label: string;
+  headerControl?: ReactNode;
   render?: (row: T) => ReactNode;
   numeric?: (row: T) => number | null;
   /** Value used to sort; omit to make the column unsortable. */
@@ -235,6 +236,7 @@ export function ClubDataGrid<T>({
                     i === 0 && "sticky left-0 z-[3]",
                   )}
                 >
+                  {c.headerControl}
                   {c.sortValue ? (
                     <Button
                       variant="ghost"
