@@ -122,7 +122,6 @@ export const updateClubContract = createServerFn({ method: "POST" })
       .object({
         organizationId: z.string().uuid(),
         coach_seats: z.number().int().min(0).max(10000),
-        admin_seats: z.number().int().min(1).max(1000),
         contract_seat_rate_cents: z.number().int().min(0).max(100000000).nullable(),
         contract_currency: z.string().regex(/^[a-z]{3}$/),
         storefront_share_bps: z.number().int().min(0).max(10000),

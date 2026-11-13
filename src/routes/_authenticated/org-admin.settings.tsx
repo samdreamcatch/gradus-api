@@ -62,7 +62,7 @@ function OrgSettings() {
       String(seats.filter((s) => !s.coach_id && s.reserved_invite_id).length),
     ],
     ["Open coach seats", String(seats.filter((s) => !s.coach_id && !s.reserved_invite_id).length)],
-    ["Admin seats", String(club.admin_seats)],
+    ["Administrators", "Unlimited"],
     ["Storefront share", `${club.storefront_share_bps / 100}%`],
     ["Term", `${club.contract_starts_on ?? "Not set"} – ${club.contract_ends_on ?? "Not set"}`],
     ["Signed", club.contract_signed_on ?? "Not set"],
