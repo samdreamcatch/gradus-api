@@ -119,7 +119,7 @@ export function LessonCalendarLegend() {
       </li>
       <li className="flex items-center gap-1.5">
         <LessonPracticeRing practiceMin={null} targetMin={null} muted size={16} />
-        Greyed out until the family joins
+        Invited, not yet joined
       </li>
     </ul>
   );
