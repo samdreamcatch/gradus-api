@@ -33,7 +33,7 @@ export function ClubGridToolbar({
   end?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 font-sans [&_button]:min-h-11">
+    <div className="flex flex-wrap items-center gap-2 font-sans [&_button:not([role=switch])]:min-h-11">
       {views && views.length > 1 && (
         <>
           <ToggleGroup
