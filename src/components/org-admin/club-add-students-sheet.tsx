@@ -167,7 +167,10 @@ export function ClubAddStudentsSheet({
         const left = rs.filter((r) => !okIds.has(r.id) && !isBlankRow(r));
         return left.length ? left : [blankStudentRow(defaultCoach)];
       });
-      await qc.invalidateQueries({ queryKey: ["org-admin"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["club-students", orgId] }),
+        qc.invalidateQueries({ queryKey: ["org-people"] }),
+      ]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't add students.");
     } finally {

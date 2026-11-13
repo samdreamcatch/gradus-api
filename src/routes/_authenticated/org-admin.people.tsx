@@ -9,6 +9,9 @@ import { coachPolicies } from "@/lib/club-people";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ClubAddSeats } from "@/components/org-admin/club-add-seats";
+import { ClubStudentsPanel } from "@/components/org-admin/club-students-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { z } from "zod";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
@@ -81,6 +84,10 @@ export const Route = createFileRoute("/_authenticated/org-admin/people")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: z.object({
+    tab: z.enum(["coaches", "students"]).optional(),
+    add: z.coerce.boolean().optional(),
+  }),
   loader: ({ context }) => context.queryClient.ensureQueryData(peopleOptions()),
   component: PeoplePage,
 });
@@ -89,6 +96,9 @@ function PeoplePage() {
   const {
     data: { org, coaches },
   } = useSuspenseQuery(peopleOptions());
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const tab = search.tab ?? "coaches";
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -99,7 +109,28 @@ function PeoplePage() {
           </Button>
         </div>
       </div>
-      <ClubCapacity orgId={org.id} coaches={coaches} />
+      <Tabs
+        value={tab}
+        onValueChange={(v) =>
+          void navigate({ search: { tab: v as "coaches" | "students" }, replace: true })
+        }
+      >
+        <TabsList>
+          <TabsTrigger value="coaches">Coaches</TabsTrigger>
+          <TabsTrigger value="students">Students &amp; families</TabsTrigger>
+        </TabsList>
+        <TabsContent value="coaches" className="mt-5">
+          <ClubCapacity orgId={org.id} coaches={coaches} />
+        </TabsContent>
+        <TabsContent value="students" className="mt-5">
+          <ClubStudentsPanel
+            orgId={org.id}
+            coaches={coaches}
+            startOpen={Boolean(search.add)}
+            onOpened={() => void navigate({ search: { tab: "students" }, replace: true })}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
