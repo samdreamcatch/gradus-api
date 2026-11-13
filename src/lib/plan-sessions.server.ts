@@ -10,6 +10,7 @@ import { generateObject } from "ai";
 import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
+import { chunks, readAll } from "./db-batch";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
@@ -56,23 +57,39 @@ export async function loadSessionsByPlanIds(
   if (planIds.length === 0) return map;
 
   // Fetch each plan's current athlete_id so we can exclude sessions left over
-  // from a previous athlete after the plan was reassigned.
-  const { data: plans, error: pErr } = await supabase
-    .from("plans")
-    .select("id, athlete_id")
-    .in("id", planIds);
-  if (pErr) dbError(pErr);
-  const planAthlete = new Map<string, string | null>(
-    (plans ?? []).map((p) => [p.id, p.athlete_id]),
-  );
+  // from a previous athlete after the plan was reassigned. A hundred plans at
+  // a time and every page of each: a plan shared with a squad puts hundreds of
+  // plan ids and thousands of sessions behind one list.
+  const planAthlete = new Map<string, string | null>();
+  type SessionRow = { plan_id: string; athlete_id: string; state_index: number };
+  const data: SessionRow[] = [];
+  for (const ids of chunks(Array.from(new Set(planIds)))) {
+    const { data: plans, error: pErr } = await supabase
+      .from("plans")
+      .select("id, athlete_id")
+      .in("id", ids);
+    if (pErr) dbError(pErr);
+    for (const p of plans ?? []) planAthlete.set(p.id, p.athlete_id);
 
-  const { data, error } = await supabase
-    .from("plan_sessions")
-    .select("plan_id, athlete_id, state_index")
-    .in("plan_id", planIds);
-  if (error) dbError(error);
+    data.push(
+      ...(await readAll<SessionRow>(
+        (from, to) =>
+          supabase
+            .from("plan_sessions")
+            .select("plan_id, athlete_id, state_index", { count: "exact" })
+            .in("plan_id", ids)
+            .order("id", { ascending: true })
+            .range(from, to) as unknown as PromiseLike<{
+            data: SessionRow[] | null;
+            error: { message?: string; code?: string } | null;
+            count: number | null;
+          }>,
+        dbError,
+      )),
+    );
+  }
 
-  for (const row of data ?? []) {
+  for (const row of data) {
     if (planAthlete.get(row.plan_id) !== row.athlete_id) continue;
     const entry = map.get(row.plan_id);
     if (!entry) continue;

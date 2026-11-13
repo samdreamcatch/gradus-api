@@ -38,6 +38,7 @@ export function recordingClient(
     }
     self.order = () => self;
     self.limit = () => self;
+    self.range = () => self;
     self.maybeSingle = async () => {
       calls.push(call);
       return settle("one");

@@ -51,13 +51,19 @@ export async function teamPlanActive(admin: Admin, parentId: string): Promise<bo
     .select("subscription_status, current_period_end")
     .eq("id", parentId)
     .maybeSingle();
-  const row = res.data as {
-    subscription_status: string | null;
-    current_period_end: string | null;
-  } | null;
+  return teamPlanActiveFrom(
+    res.data as { subscription_status: string | null; current_period_end: string | null } | null,
+  );
+}
+
+/** The Team plan rule on an already-loaded parent row (shared with the batched household lookup). */
+export function teamPlanActiveFrom(
+  row: { subscription_status: string | null; current_period_end: string | null } | null,
+  now: number = Date.now(),
+): boolean {
   if (!row?.subscription_status) return false;
   const end = row.current_period_end ? new Date(row.current_period_end).getTime() : null;
-  const notExpired = end === null || end > Date.now();
+  const notExpired = end === null || end > now;
   if (["active", "trialing", "past_due"].includes(row.subscription_status)) return notExpired;
   if (row.subscription_status === "canceled") return notExpired;
   return false;

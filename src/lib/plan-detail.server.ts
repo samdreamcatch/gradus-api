@@ -14,6 +14,7 @@ import { ATHLETE_SOURCE, getAuthoredPlanDetail } from "./athlete-authoring.serve
 import { getParentPlan } from "./parent-plans.server";
 import { getPlanSessionCounts } from "./plan-sessions.server";
 import { getPlan, type PlanKind, type PlanMoveDTO, type PlanStatus } from "./plans.server";
+import { loadUpdatedMoves, type PendingChangeDTO, type PlanShareDTO } from "./plan-sharing.server";
 
 type Client = SupabaseClient<Database>;
 
@@ -59,6 +60,13 @@ export interface RoleAwarePlanDetailDTO {
   authorFirstName?: string | null;
   /** "plan" or "moves": what the athlete rates after practice. Optional on the wire. */
   feedbackScope?: string;
+  /** One plan for several athletes (decision #66); all optional on the wire. */
+  sharedCount?: number;
+  sharedFromId?: string;
+  sharedWith?: PlanShareDTO[];
+  pendingChanges?: PendingChangeDTO[];
+  /** Parent and athlete: what the coach's last update changed (plan move id → tag). */
+  updatedMoves?: Record<string, string>;
 }
 
 /**
@@ -162,6 +170,14 @@ export async function getPlanForViewer(
       sessionsTotal: plan.sessionsTotal,
       feedbackScope: plan.feedbackScope,
       ...(source ? { source, authorFirstName } : {}),
+      ...(plan.sharedWith
+        ? {
+            sharedCount: plan.sharedCount,
+            sharedWith: plan.sharedWith,
+            pendingChanges: plan.pendingChanges ?? [],
+          }
+        : {}),
+      ...(plan.sharedFromId ? { sharedFromId: plan.sharedFromId } : {}),
     };
   }
 
@@ -171,7 +187,12 @@ export async function getPlanForViewer(
       : await getAthletePlan(withAuthored, id);
   // Parents read counts through RLS; athletes through the admin client, as their list does.
   const sessions = await getPlanSessionCounts(role === "parent" ? ctx.supabase : ctx.admin, id);
+  // The loader above already decided this caller may read the plan. A coach's
+  // plan only: an athlete's own plan is never anyone's copy.
+  const updatedMoves =
+    plan.source === ATHLETE_SOURCE ? null : await loadUpdatedMoves(ctx.admin, plan.id);
   return {
+    ...(updatedMoves ? { updatedMoves } : {}),
     id: plan.id,
     title: plan.title,
     notes: plan.notes,

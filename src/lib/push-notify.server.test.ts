@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test";
 import type { ApnsConfig, ApnsOutcome, ApnsRequest } from "./apns.server";
 import {
   athleteHouseholdUserIds,
+  householdsUserIds,
   MESSAGE_CATEGORY,
+  notifyMany,
   notifyUsers,
   pushPayload,
   roomMessagePush,
@@ -415,5 +417,88 @@ describe("notifyUsers never throws", () => {
     expect(sent[1].expiration).toBe(0);
     expect(sent[2].expiration).toBeGreaterThanOrEqual(before + 60);
     expect(sent[2].expiration).toBeLessThan(before + 120);
+  });
+});
+
+describe("a whole squad at once (a plan shared with several athletes)", () => {
+  const future = new Date(Date.now() + 86_400_000).toISOString();
+  const tables = () => ({
+    athletes: [
+      { id: "a1", user_id: "u-a1", parent_id: "p1" },
+      { id: "a2", user_id: null, parent_id: "p2" },
+      { id: "a3", user_id: "u-a3", parent_id: null },
+    ],
+    parent_profiles: [
+      { id: "p1", user_id: "u-p1", subscription_status: "active", current_period_end: future },
+      { id: "p2", user_id: "u-p2", subscription_status: null, current_period_end: null },
+      { id: "p3", user_id: "u-p3", subscription_status: null, current_period_end: null },
+      { id: "p4", user_id: "u-p4", subscription_status: null, current_period_end: null },
+    ],
+    athlete_guardians: [
+      { athlete_id: "a1", parent_id: "p3" },
+      { athlete_id: "a2", parent_id: "p4" },
+    ],
+  });
+
+  it("resolves every household by the same rule as one at a time", async () => {
+    const { admin } = fakeAdmin(tables());
+    const bulk = await householdsUserIds(admin, ["a1", "a2", "a3", "a1", "nobody"]);
+    for (const id of ["a1", "a2", "a3"]) {
+      const single = await athleteHouseholdUserIds(fakeAdmin(tables()).admin, id);
+      expect([...(bulk.get(id) ?? [])].sort()).toEqual([...single].sort());
+    }
+    // Co-guardians only while the primary parent's Team plan is active.
+    expect([...(bulk.get("a1") ?? [])].sort()).toEqual(["u-a1", "u-p1", "u-p3"]);
+    expect(bulk.get("a2")).toEqual(["u-p2"]);
+    expect(bulk.has("nobody")).toBe(false);
+  });
+
+  it("records each inbox row, reads tokens once, and sends each device its own message", async () => {
+    const { admin, rpcs, deleted } = fakeAdmin({
+      device_tokens: [
+        { user_id: "u1", token: "tok-u1", platform: "ios" },
+        { user_id: "u2", token: "tok-u2", platform: "ios" },
+        { user_id: "u2", token: "tok-u2-dead", platform: "ios" },
+      ],
+    });
+    const { send, sent } = sendSpy((req) =>
+      req.token === "tok-u2-dead"
+        ? { ok: false, status: 410, reason: "Unregistered", dead: true }
+        : { ok: true, apnsId: null },
+    );
+    const report = await notifyMany(
+      admin,
+      [
+        {
+          userIds: ["u1"],
+          message: { type: "plan_updated", route: "plans/copy-1", title: "Plan updated", body: "A" },
+        },
+        {
+          userIds: ["u2", "u2", ""],
+          message: { type: "plan_updated", route: "plans/copy-2", title: "Plan updated", body: "B" },
+        },
+        { userIds: [], message: { type: "plan_updated", route: "plans/copy-3", title: "x" } },
+      ],
+      { config, send },
+    );
+
+    expect(report).toEqual({ recipients: 2, tokens: 3, sent: 2, failed: 1, pruned: 1 });
+    expect(rpcs.map((r) => r.args.p_route)).toEqual(["plans/copy-1", "plans/copy-2"]);
+    const routeFor = (token: string) =>
+      (sent.find((r) => r.token === token)!.payload.gradus as Record<string, unknown>).route;
+    expect(routeFor("tok-u1")).toBe("plans/copy-1");
+    expect(routeFor("tok-u2")).toBe("plans/copy-2");
+    expect(deleted).toEqual([{ table: "device_tokens", col: "token", vals: ["tok-u2-dead"] }]);
+  });
+
+  it("still records the inbox rows when push is not configured", async () => {
+    const { admin, rpcs } = fakeAdmin({ device_tokens: [] });
+    const report = await notifyMany(
+      admin,
+      [{ userIds: ["u1"], message: { type: "plan_assigned", route: "plans/p", title: "New plan" } }],
+      { config: null },
+    );
+    expect(report.skipped).toBe("no_config");
+    expect(rpcs.length).toBe(1);
   });
 });

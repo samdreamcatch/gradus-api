@@ -349,6 +349,8 @@ import { Route as ApiV1ParentAthletesIdResetPasswordRouteImport } from './routes
 import { Route as ApiV1ParentAthletesIdScheduleRouteImport } from './routes/api/v1/parent/athletes/$id/schedule'
 import { Route as ApiV1ParentTeamGuardiansIndexRouteImport } from './routes/api/v1/parent/team/guardians/index'
 import { Route as ApiV1ParentTeamGuardiansIdRouteImport } from './routes/api/v1/parent/team/guardians/$id'
+import { Route as ApiV1PlansIdCopiesIndexRouteImport } from './routes/api/v1/plans/$id/copies/index'
+import { Route as ApiV1PlansIdCopiesUpdateRouteImport } from './routes/api/v1/plans/$id/copies/update'
 import { Route as ApiV1PlansIdMovesIndexRouteImport } from './routes/api/v1/plans/$id/moves/index'
 import { Route as ApiV1PlansIdMovesMoveIdRouteImport } from './routes/api/v1/plans/$id/moves/$moveId'
 import { Route as ApiV1PlansIdMovesFromLibraryRouteImport } from './routes/api/v1/plans/$id/moves/from-library'
@@ -2251,6 +2253,17 @@ const ApiV1ParentTeamGuardiansIdRoute =
     path: '/api/v1/parent/team/guardians/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1PlansIdCopiesIndexRoute = ApiV1PlansIdCopiesIndexRouteImport.update({
+  id: '/api/v1/plans/$id/copies/',
+  path: '/api/v1/plans/$id/copies/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PlansIdCopiesUpdateRoute =
+  ApiV1PlansIdCopiesUpdateRouteImport.update({
+    id: '/api/v1/plans/$id/copies/update',
+    path: '/api/v1/plans/$id/copies/update',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1PlansIdMovesIndexRoute = ApiV1PlansIdMovesIndexRouteImport.update({
   id: '/api/v1/plans/$id/moves/',
   path: '/api/v1/plans/$id/moves/',
@@ -2697,6 +2710,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
   '/api/v1/parent/athletes/$id/schedule': typeof ApiV1ParentAthletesIdScheduleRoute
   '/api/v1/parent/team/guardians/$id': typeof ApiV1ParentTeamGuardiansIdRoute
+  '/api/v1/plans/$id/copies/update': typeof ApiV1PlansIdCopiesUpdateRoute
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
@@ -2713,6 +2727,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
+  '/api/v1/plans/$id/copies/': typeof ApiV1PlansIdCopiesIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
   '/api/v1/plans/$id/sessions/': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
@@ -3052,6 +3067,7 @@ export interface FileRoutesByTo {
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
   '/api/v1/parent/athletes/$id/schedule': typeof ApiV1ParentAthletesIdScheduleRoute
   '/api/v1/parent/team/guardians/$id': typeof ApiV1ParentTeamGuardiansIdRoute
+  '/api/v1/plans/$id/copies/update': typeof ApiV1PlansIdCopiesUpdateRoute
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
@@ -3068,6 +3084,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/visibility/$id': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/parent/athletes/$id': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians': typeof ApiV1ParentTeamGuardiansIndexRoute
+  '/api/v1/plans/$id/copies': typeof ApiV1PlansIdCopiesIndexRoute
   '/api/v1/plans/$id/moves': typeof ApiV1PlansIdMovesIndexRoute
   '/api/v1/plans/$id/sessions': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
@@ -3415,6 +3432,7 @@ export interface FileRoutesById {
   '/api/v1/parent/athletes/$id/reset-password': typeof ApiV1ParentAthletesIdResetPasswordRoute
   '/api/v1/parent/athletes/$id/schedule': typeof ApiV1ParentAthletesIdScheduleRoute
   '/api/v1/parent/team/guardians/$id': typeof ApiV1ParentTeamGuardiansIdRoute
+  '/api/v1/plans/$id/copies/update': typeof ApiV1PlansIdCopiesUpdateRoute
   '/api/v1/plans/$id/moves/$moveId': typeof ApiV1PlansIdMovesMoveIdRoute
   '/api/v1/plans/$id/moves/from-library': typeof ApiV1PlansIdMovesFromLibraryRoute
   '/api/v1/plans/$id/moves/order': typeof ApiV1PlansIdMovesOrderRoute
@@ -3431,6 +3449,7 @@ export interface FileRoutesById {
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
+  '/api/v1/plans/$id/copies/': typeof ApiV1PlansIdCopiesIndexRoute
   '/api/v1/plans/$id/moves/': typeof ApiV1PlansIdMovesIndexRoute
   '/api/v1/plans/$id/sessions/': typeof ApiV1PlansIdSessionsIndexRoute
   '/api/v1/athlete/plans/$id/moves/$moveId': typeof ApiV1AthletePlansIdMovesMoveIdRoute
@@ -3778,6 +3797,7 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id/reset-password'
     | '/api/v1/parent/athletes/$id/schedule'
     | '/api/v1/parent/team/guardians/$id'
+    | '/api/v1/plans/$id/copies/update'
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
@@ -3794,6 +3814,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/visibility/$id/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
+    | '/api/v1/plans/$id/copies/'
     | '/api/v1/plans/$id/moves/'
     | '/api/v1/plans/$id/sessions/'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
@@ -4133,6 +4154,7 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id/reset-password'
     | '/api/v1/parent/athletes/$id/schedule'
     | '/api/v1/parent/team/guardians/$id'
+    | '/api/v1/plans/$id/copies/update'
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
@@ -4149,6 +4171,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/visibility/$id'
     | '/api/v1/parent/athletes/$id'
     | '/api/v1/parent/team/guardians'
+    | '/api/v1/plans/$id/copies'
     | '/api/v1/plans/$id/moves'
     | '/api/v1/plans/$id/sessions'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
@@ -4495,6 +4518,7 @@ export interface FileRouteTypes {
     | '/api/v1/parent/athletes/$id/reset-password'
     | '/api/v1/parent/athletes/$id/schedule'
     | '/api/v1/parent/team/guardians/$id'
+    | '/api/v1/plans/$id/copies/update'
     | '/api/v1/plans/$id/moves/$moveId'
     | '/api/v1/plans/$id/moves/from-library'
     | '/api/v1/plans/$id/moves/order'
@@ -4511,6 +4535,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/visibility/$id/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
+    | '/api/v1/plans/$id/copies/'
     | '/api/v1/plans/$id/moves/'
     | '/api/v1/plans/$id/sessions/'
     | '/api/v1/athlete/plans/$id/moves/$moveId'
@@ -4768,6 +4793,7 @@ export interface RootRouteChildren {
   ApiV1ParentAthletesIdResetPasswordRoute: typeof ApiV1ParentAthletesIdResetPasswordRoute
   ApiV1ParentAthletesIdScheduleRoute: typeof ApiV1ParentAthletesIdScheduleRoute
   ApiV1ParentTeamGuardiansIdRoute: typeof ApiV1ParentTeamGuardiansIdRoute
+  ApiV1PlansIdCopiesUpdateRoute: typeof ApiV1PlansIdCopiesUpdateRoute
   ApiV1PlansIdMovesMoveIdRoute: typeof ApiV1PlansIdMovesMoveIdRoute
   ApiV1PlansIdMovesFromLibraryRoute: typeof ApiV1PlansIdMovesFromLibraryRoute
   ApiV1PlansIdMovesOrderRoute: typeof ApiV1PlansIdMovesOrderRoute
@@ -4784,6 +4810,7 @@ export interface RootRouteChildren {
   ApiV1CoachVisibilityIdIndexRoute: typeof ApiV1CoachVisibilityIdIndexRoute
   ApiV1ParentAthletesIdIndexRoute: typeof ApiV1ParentAthletesIdIndexRoute
   ApiV1ParentTeamGuardiansIndexRoute: typeof ApiV1ParentTeamGuardiansIndexRoute
+  ApiV1PlansIdCopiesIndexRoute: typeof ApiV1PlansIdCopiesIndexRoute
   ApiV1PlansIdMovesIndexRoute: typeof ApiV1PlansIdMovesIndexRoute
   ApiV1PlansIdSessionsIndexRoute: typeof ApiV1PlansIdSessionsIndexRoute
   ApiV1AthletePlansIdMovesMoveIdRoute: typeof ApiV1AthletePlansIdMovesMoveIdRoute
@@ -7184,6 +7211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ParentTeamGuardiansIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/plans/$id/copies/': {
+      id: '/api/v1/plans/$id/copies/'
+      path: '/api/v1/plans/$id/copies'
+      fullPath: '/api/v1/plans/$id/copies/'
+      preLoaderRoute: typeof ApiV1PlansIdCopiesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/plans/$id/copies/update': {
+      id: '/api/v1/plans/$id/copies/update'
+      path: '/api/v1/plans/$id/copies/update'
+      fullPath: '/api/v1/plans/$id/copies/update'
+      preLoaderRoute: typeof ApiV1PlansIdCopiesUpdateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/plans/$id/moves/': {
       id: '/api/v1/plans/$id/moves/'
       path: '/api/v1/plans/$id/moves'
@@ -7870,6 +7911,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiV1ParentAthletesIdResetPasswordRoute,
   ApiV1ParentAthletesIdScheduleRoute: ApiV1ParentAthletesIdScheduleRoute,
   ApiV1ParentTeamGuardiansIdRoute: ApiV1ParentTeamGuardiansIdRoute,
+  ApiV1PlansIdCopiesUpdateRoute: ApiV1PlansIdCopiesUpdateRoute,
   ApiV1PlansIdMovesMoveIdRoute: ApiV1PlansIdMovesMoveIdRoute,
   ApiV1PlansIdMovesFromLibraryRoute: ApiV1PlansIdMovesFromLibraryRoute,
   ApiV1PlansIdMovesOrderRoute: ApiV1PlansIdMovesOrderRoute,
@@ -7888,6 +7930,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachVisibilityIdIndexRoute: ApiV1CoachVisibilityIdIndexRoute,
   ApiV1ParentAthletesIdIndexRoute: ApiV1ParentAthletesIdIndexRoute,
   ApiV1ParentTeamGuardiansIndexRoute: ApiV1ParentTeamGuardiansIndexRoute,
+  ApiV1PlansIdCopiesIndexRoute: ApiV1PlansIdCopiesIndexRoute,
   ApiV1PlansIdMovesIndexRoute: ApiV1PlansIdMovesIndexRoute,
   ApiV1PlansIdSessionsIndexRoute: ApiV1PlansIdSessionsIndexRoute,
   ApiV1AthletePlansIdMovesMoveIdRoute: ApiV1AthletePlansIdMovesMoveIdRoute,

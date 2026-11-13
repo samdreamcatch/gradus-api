@@ -7800,6 +7800,14 @@
                           },
                           "sessionsTotal": {
                             "type": "integer"
+                          },
+                          "sharedCount": {
+                            "type": "integer",
+                            "description": "On a plan given to several athletes: how many have a copy. Its session counts are the copies', summed."
+                          },
+                          "sharedFromId": {
+                            "type": "string",
+                            "description": "On one athlete's copy: the plan it was copied from."
                           }
                         },
                         "required": [
@@ -8186,6 +8194,91 @@
                     },
                     "feedbackScope": {
                       "type": "string"
+                    },
+                    "sharedCount": {
+                      "type": "integer"
+                    },
+                    "sharedFromId": {
+                      "type": "string"
+                    },
+                    "sharedWith": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "planId": {
+                            "type": "string",
+                            "description": "That athlete's own copy: an ordinary plan the coach can open."
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "The copy's status: active, benched, or draft. A plain string."
+                          },
+                          "sessionsTotal": {
+                            "type": "integer"
+                          },
+                          "tailored": {
+                            "type": "boolean",
+                            "description": "The coach changed this copy on its own, so sending it an update replaces those edits."
+                          },
+                          "behind": {
+                            "type": "boolean",
+                            "description": "The plan has changes this copy has not received."
+                          }
+                        },
+                        "required": [
+                          "athleteId",
+                          "name",
+                          "planId",
+                          "status",
+                          "sessionsTotal",
+                          "tailored",
+                          "behind"
+                        ]
+                      },
+                      "description": "Owning coach only: the athletes who each have a copy of this plan."
+                    },
+                    "pendingChanges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "planMoveId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The plan's move; null for a removed move or a change to the plan itself."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The move's name; empty for a change to the plan itself."
+                          },
+                          "change": {
+                            "type": "string",
+                            "description": "A plain string, never an enum: new, minutes, reps, changed, removed, title, notes, feedback, or order."
+                          }
+                        },
+                        "required": [
+                          "planMoveId",
+                          "name",
+                          "change"
+                        ]
+                      },
+                      "description": "With sharedWith: what changed since the copies last received this plan."
+                    },
+                    "updatedMoves": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Parent and athlete only: what the coach's last update changed on this plan, as plan move id to new, minutes, reps, or changed. Sent until practice is next logged on the plan."
                     }
                   },
                   "required": [
@@ -12182,6 +12275,175 @@
                   },
                   "required": [
                     "token"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/copies": {
+      "post": {
+        "operationId": "sharePlanWithAthletes",
+        "summary": "Give each chosen athlete their own copy of a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "description": "The athletes who each get their own copy. An athlete who already has a copy of this plan is left as they are; nobody is removed by leaving them out."
+                  },
+                  "activate": {
+                    "type": "boolean",
+                    "description": "true: the copies go live now and each athlete's household is told. false: the copies are saved as drafts for the coach to adjust first."
+                  }
+                },
+                "required": [
+                  "athleteIds",
+                  "activate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The plan the coach keeps editing; its sharedWith lists the copies."
+                    },
+                    "shared": {
+                      "type": "integer",
+                      "description": "How many athletes now have a copy."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "shared"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/copies/update": {
+      "post": {
+        "operationId": "updatePlanCopies",
+        "summary": "Send the plan's changes to chosen athletes' copies",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "description": "The athletes whose copies are replaced with the plan as it is now. A copy the coach edited on its own loses those edits. Athletes left out keep their copy as it is."
+                  }
+                },
+                "required": [
+                  "athleteIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "description": "How many copies actually changed."
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "updated"
                   ]
                 }
               }

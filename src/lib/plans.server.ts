@@ -12,9 +12,25 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
+import { chunks, readAll } from "./db-batch";
 import { dbError } from "./db-error";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-events.server";
+import {
+  announcePlansActivated,
+  cascadeStatusToCopies,
+  type MovedCopy,
+  deleteDraftCopies,
+  loadCopyIdsByPlan,
+  loadShareInfo,
+  sharePlanFor,
+  sharePlanInput,
+  updateCopiesFor,
+  updateCopiesInput,
+  type PendingChangeDTO,
+  type PlanShareDTO,
+  type ShareAnnouncers,
+} from "./plan-sharing.server";
 
 export type PlanKind = "plan" | "template";
 export type PlanStatus = "active" | "benched" | "draft";
@@ -70,8 +86,42 @@ const loadAdminClient: LoadAdmin = async () =>
  */
 function planWriteError(error: { message?: string; code?: string }): never {
   if (error.code === "42501") throw forbidden(NOT_ON_ROSTER);
+  // `plans_one_copy_per_athlete`: a copy of a shared plan moved to an athlete who has one.
+  if (error.code === "23505") {
+    throw new ApiError({
+      code: "conflict",
+      status: 409,
+      message: "This athlete already has this plan.",
+    });
+  }
   dbError(error);
 }
+
+/** Whether any athlete holds a copy of this plan (decision #66). */
+async function hasCopies(supabase: Client, coachId: string, planId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id")
+    .eq("shared_from_id", planId)
+    .eq("coach_id", coachId)
+    .limit(1);
+  if (error) dbError(error);
+  return (data ?? []).length > 0;
+}
+
+/**
+ * A plan several athletes hold has no athlete of its own; who has it changes
+ * only through its copies. Builds that predate decision #66 show it as an
+ * unassigned plan and would otherwise hand it to one athlete, or file it as a
+ * template, and strand the copies.
+ */
+const sharedPlanRefusal = () =>
+  new ApiError({
+    code: "conflict",
+    status: 409,
+    message:
+      "This plan is shared with several athletes. Open it in the latest Gradus app to change who has it.",
+  });
 
 /** The caller's coach id, creating the profile on first use; parents are refused. */
 export async function ensureCoachId(supabase: Client, userId: string): Promise<string> {
@@ -142,6 +192,14 @@ export interface PlanSummaryDTO {
   updatedAt: string;
   sessionsByState: SessionsByState;
   sessionsTotal: number;
+  /**
+   * One plan for several athletes (PRD decision #66). On the plan the coach
+   * keeps editing: how many athletes have a copy (its sessions are theirs,
+   * summed). Omitted for every other plan.
+   */
+  sharedCount?: number;
+  /** On an athlete's copy: the plan it was copied from. Omitted otherwise. */
+  sharedFromId?: string;
 }
 
 export interface PlanDetailDTO extends PlanSummaryDTO {
@@ -152,6 +210,10 @@ export interface PlanDetailDTO extends PlanSummaryDTO {
   feedbackScope: FeedbackScope;
   /** False when another coach who shares the athlete is reading it. */
   isOwner: boolean;
+  /** The athletes who each have a copy of this plan (owner only); omitted when there are none. */
+  sharedWith?: PlanShareDTO[];
+  /** With `sharedWith`: what changed since the copies last received this plan. */
+  pendingChanges?: PendingChangeDTO[];
 }
 
 export interface AthleteOptionDTO {
@@ -226,41 +288,102 @@ export async function listPlans(
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
-  let q = supabase
-    .from("plans")
-    .select("id, title, kind, status, athlete_id, updated_at")
-    .eq("coach_id", coachId)
-    .order("updated_at", { ascending: false });
+  // Paged and chunked throughout (`db-batch.ts`): one plan shared with a squad
+  // adds a plan row per athlete, which takes this list past the database's
+  // row cap and its id filters past the URL length.
+  type ListedPlan = {
+    id: string;
+    title: string;
+    kind: string;
+    status: string;
+    athlete_id: string | null;
+    updated_at: string;
+    shared_from_id: string | null;
+  };
+  type Paged<T> = PromiseLike<{
+    data: T[] | null;
+    error: { message?: string; code?: string } | null;
+    count: number | null;
+  }>;
+  const plans = await readAll<ListedPlan>((from, to) => {
+    let q = supabase
+      .from("plans")
+      .select("id, title, kind, status, athlete_id, updated_at, shared_from_id", {
+        count: "exact",
+      })
+      .eq("coach_id", coachId);
+    if (data.kind) q = q.eq("kind", data.kind);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.athleteId) q = q.eq("athlete_id", data.athleteId);
+    return q
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, to) as unknown as Paged<ListedPlan>;
+  }, dbError);
 
-  if (data.kind) q = q.eq("kind", data.kind);
-  if (data.status) q = q.eq("status", data.status);
-  if (data.athleteId) q = q.eq("athlete_id", data.athleteId);
-
-  const { data: plans, error } = await q;
-  if (error) dbError(error);
-
-  const planIds = (plans ?? []).map((p) => p.id);
+  const planIds = plans.map((p) => p.id);
   const athleteIds = Array.from(
-    new Set((plans ?? []).map((p) => p.athlete_id).filter((x): x is string => !!x)),
+    new Set(plans.map((p) => p.athlete_id).filter((x): x is string => !!x)),
   );
 
-  const [movesRes, athletesRes, goalsRes] = await Promise.all([
-    planIds.length
-      ? supabase
-          .from("plan_moves")
-          .select("plan_id, target_kind, target_value, move_id")
-          .in("plan_id", planIds)
-      : Promise.resolve({ data: [], error: null }),
-    athleteIds.length
-      ? supabase.from("athletes").select("id, first_name, last_name").in("id", athleteIds)
-      : Promise.resolve({ data: [], error: null }),
-    data.sport && athleteIds.length
-      ? supabase.from("athlete_goals").select("athlete_id, sport").in("athlete_id", athleteIds)
-      : Promise.resolve({ data: [], error: null }),
+  type ListedMove = {
+    id: string;
+    plan_id: string;
+    target_kind: string;
+    target_value: number;
+    move_id: string | null;
+  };
+  const loadListMoves = async () => {
+    const rows: ListedMove[] = [];
+    for (const ids of chunks(planIds)) {
+      rows.push(
+        ...(await readAll<ListedMove>(
+          (from, to) =>
+            supabase
+              .from("plan_moves")
+              .select("id, plan_id, target_kind, target_value, move_id", { count: "exact" })
+              .in("plan_id", ids)
+              .order("id", { ascending: true })
+              .range(from, to) as unknown as Paged<ListedMove>,
+          dbError,
+        )),
+      );
+    }
+    return rows;
+  };
+  const loadListAthletes = async () => {
+    const rows: { id: string; first_name: string; last_name: string }[] = [];
+    for (const ids of chunks(athleteIds)) {
+      const res = await supabase
+        .from("athletes")
+        .select("id, first_name, last_name")
+        .in("id", ids);
+      if (res.error) dbError(res.error);
+      rows.push(...(res.data ?? []));
+    }
+    return rows;
+  };
+  const loadListGoals = async () => {
+    const rows: { athlete_id: string; sport: string }[] = [];
+    if (!data.sport) return rows;
+    for (const ids of chunks(athleteIds)) {
+      const res = await supabase
+        .from("athlete_goals")
+        .select("athlete_id, sport")
+        .in("athlete_id", ids);
+      if (res.error) dbError(res.error);
+      rows.push(...(res.data ?? []));
+    }
+    return rows;
+  };
+  const [moveRowsAll, athleteRows, goalRows] = await Promise.all([
+    loadListMoves(),
+    loadListAthletes(),
+    loadListGoals(),
   ]);
-  if (movesRes.error) dbError(movesRes.error);
-  if (athletesRes.error) dbError(athletesRes.error);
-  if (goalsRes.error) dbError(goalsRes.error);
+  const movesRes = { data: moveRowsAll };
+  const athletesRes = { data: athleteRows };
+  const goalsRes = { data: goalRows };
 
   // When filtering by sport, look up each referenced move's sport in a second query.
   const moveSportMap = new Map<string, string>();
@@ -268,11 +391,11 @@ export async function listPlans(
     const moveIds = Array.from(
       new Set((movesRes.data ?? []).map((m) => m.move_id).filter((x): x is string => !!x)),
     );
-    if (moveIds.length) {
+    for (const ids of chunks(moveIds)) {
       const { data: moveRows, error: moveErr } = await supabase
         .from("moves")
         .select("id, sport")
-        .in("id", moveIds);
+        .in("id", ids);
       if (moveErr) dbError(moveErr);
       for (const m of moveRows ?? []) moveSportMap.set(m.id, m.sport);
     }
@@ -299,7 +422,7 @@ export async function listPlans(
     nameOf.set(a.id, `${a.first_name} ${a.last_name}`.trim());
   }
 
-  let filteredPlans = plans ?? [];
+  let filteredPlans = plans;
   if (data.sport) {
     const wanted = data.sport;
     filteredPlans = filteredPlans.filter((p) => {
@@ -311,18 +434,33 @@ export async function listPlans(
     });
   }
 
+  // A plan given to several athletes has no athlete of its own: it counts its
+  // copies, and shows the practice logged on them.
+  const copyIdsByPlan = await loadCopyIdsByPlan(
+    supabase,
+    coachId,
+    filteredPlans.filter((p) => p.kind === "plan" && !p.athlete_id).map((p) => p.id),
+  );
+  // Each copy is counted once, whether or not it is also on this list.
   const sessionsByPlan = await loadSessionsByPlanIds(
     supabase,
-    filteredPlans.map((p) => p.id),
+    Array.from(
+      new Set([...filteredPlans.map((p) => p.id), ...Array.from(copyIdsByPlan.values()).flat()]),
+    ),
   );
 
   return filteredPlans.map((p) => {
     const agg = byPlan.get(p.id) ?? { count: 0, minutes: 0 };
-    const sessions = sessionsByPlan.get(p.id) ?? {
-      sessionsByState: emptySessionsByState(),
-      sessionsTotal: 0,
-    };
+    const copyIds = copyIdsByPlan.get(p.id);
+    const sessions = copyIds
+      ? sumSessions(copyIds.map((id) => sessionsByPlan.get(id)))
+      : (sessionsByPlan.get(p.id) ?? {
+          sessionsByState: emptySessionsByState(),
+          sessionsTotal: 0,
+        });
     return {
+      ...(copyIds ? { sharedCount: copyIds.length } : {}),
+      ...(p.shared_from_id ? { sharedFromId: p.shared_from_id } : {}),
       id: p.id,
       title: p.title,
       kind: p.kind as PlanKind,
@@ -338,6 +476,21 @@ export async function listPlans(
   });
 }
 
+/** Practice across several plans as one set of counts (a shared plan's copies). */
+function sumSessions(
+  parts: Array<{ sessionsByState: SessionsByState; sessionsTotal: number } | undefined>,
+) {
+  const total = { sessionsByState: emptySessionsByState(), sessionsTotal: 0 };
+  for (const part of parts) {
+    if (!part) continue;
+    total.sessionsTotal += part.sessionsTotal;
+    for (const key of Object.keys(total.sessionsByState) as Array<keyof SessionsByState>) {
+      total.sessionsByState[key] += part.sessionsByState[key];
+    }
+  }
+  return total;
+}
+
 /* ---------------- get plan ---------------- */
 
 export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetailDTO> {
@@ -347,7 +500,7 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
   const { data: plan, error } = await supabase
     .from("plans")
     .select(
-      "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope",
+      "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope, shared_from_id, shared_synced",
     )
     .eq("id", id)
     .maybeSingle();
@@ -426,12 +579,28 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
     .filter((m) => m.targetKind === "mins")
     .reduce((s, m) => s + m.targetValue, 0);
 
-  const sessionsMap = await loadSessionsByPlanIds(supabase, [plan.id]);
-  const sessions = sessionsMap.get(plan.id) ?? {
-    sessionsByState: emptySessionsByState(),
-    sessionsTotal: 0,
-  };
+  // A plan given to several athletes (decision #66): its copies, what they have
+  // not received yet, and their practice in place of its own (it has none).
+  const share =
+    isOwner && plan.kind === "plan" && !plan.athlete_id
+      ? await loadShareInfo(supabase, coachId, plan, moves ?? [])
+      : null;
+
+  const sessionsMap = share ? null : await loadSessionsByPlanIds(supabase, [plan.id]);
+  const sessions = share?.sessions ??
+    sessionsMap?.get(plan.id) ?? {
+      sessionsByState: emptySessionsByState(),
+      sessionsTotal: 0,
+    };
   return {
+    ...(share
+      ? {
+          sharedCount: share.sharedWith.length,
+          sharedWith: share.sharedWith,
+          pendingChanges: share.pendingChanges,
+        }
+      : {}),
+    ...(isOwner && plan.shared_from_id ? { sharedFromId: plan.shared_from_id } : {}),
     id: plan.id,
     title: plan.title,
     notes: plan.notes,
@@ -497,7 +666,14 @@ export async function savePlan(
   let planId = data.id;
   if (planId) {
     // Another coach's id must not reach the move replacement below.
-    await assertPlanOwned(supabase, planId, coachId);
+    const existing = await assertPlanOwned(supabase, planId, coachId);
+    if (
+      existing.kind === "plan" &&
+      !existing.athlete_id &&
+      (await hasCopies(supabase, coachId, planId))
+    ) {
+      throw sharedPlanRefusal();
+    }
     if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
     const { error } = await supabase
       .from("plans")
@@ -665,6 +841,7 @@ export async function setPlanStatus(
   data: z.infer<typeof setPlanStatusInput>,
   record: RecordCoachReason = recordCoachReason,
   loadAdmin: LoadAdmin = loadAdminClient,
+  announce: typeof announcePlansActivated = announcePlansActivated,
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
@@ -721,12 +898,41 @@ export async function setPlanStatus(
       }
     }
 
-    const { error } = await supabase
-      .from("plans")
-      .update({ status: "active" })
-      .eq("id", id)
-      .eq("coach_id", coachId);
-    if (error) planWriteError(error);
+    // A plan given to several athletes (decision #66) takes its copies live
+    // with it: the waiting drafts, or the copies deleted along with it. Only
+    // on the transition, so a replayed activate never wakes a draft the coach
+    // added later and chose to keep back. The copies go first: if this fails,
+    // the plan is still not active and a retry does the whole thing, where
+    // the other order would leave drafts that no retry ever takes live.
+    // Whatever fails after a copy has gone live, that athlete's household is
+    // still told: the retry would find the copy already live and say nothing.
+    const movedCopies: MovedCopy[] = [];
+    const tellMovedCopies = async () => {
+      if (!movedCopies.length) return;
+      await announce(
+        coachId,
+        movedCopies.map((c) => ({
+          athleteId: c.athlete_id,
+          planId: c.id,
+          title: c.title,
+          wasDraft: c.status === "draft",
+        })),
+      );
+    };
+    try {
+      if (!owned.athlete_id && owned.status !== "active") {
+        await cascadeStatusToCopies(supabase, coachId, id, owned.status, "active", movedCopies);
+      }
+      const { error } = await supabase
+        .from("plans")
+        .update({ status: "active" })
+        .eq("id", id)
+        .eq("coach_id", coachId);
+      if (error) planWriteError(error);
+    } catch (err) {
+      await tellMovedCopies();
+      throw err;
+    }
 
     // Guardian-on-file: the existing "Guardian message copy" email carries
     // the assignment to a parent or guardian who hasn't joined yet, only on
@@ -767,6 +973,8 @@ export async function setPlanStatus(
         });
       });
     }
+
+    await tellMovedCopies();
   } else {
     // A plan whose athlete has left the roster can no longer be edited or put
     // live (the roster policy refuses those writes), but its coach may still
@@ -792,6 +1000,14 @@ export async function setPlanStatus(
         .eq("status", "active");
       if (demoteErr) dbError(demoteErr);
       return { ok: true };
+    }
+
+    // Un-publishing a plan several athletes hold takes their live copies down
+    // first, for the same reason activating takes them live first: a failure
+    // leaves the plan as it was, and the retry finishes the job.
+    const isSource = !!current && !current.athlete_id;
+    if (isSource && data.status === "draft" && current.status !== "draft") {
+      await cascadeStatusToCopies(supabase, coachId, id, current.status, "draft");
     }
 
     if (data.status === "benched" && data.reason) {
@@ -825,8 +1041,65 @@ export async function setPlanStatus(
         .eq("coach_id", coachId);
       if (error) planWriteError(error);
     }
+
+    // Benching a plan several athletes hold benches every live copy, and the
+    // "why" answer covers each athlete. Not only on the transition: a request
+    // that benched the plan and then failed here is finished by its retry.
+    if (isSource && data.status === "benched") {
+      const moved: MovedCopy[] = [];
+      try {
+        await cascadeStatusToCopies(supabase, coachId, id, current.status, "benched", moved);
+      } finally {
+        // Also when a later batch failed: the copies that were benched have
+        // their answer recorded now, since the retry will not see them move.
+        const reason = data.reason;
+        if (reason && moved.length) {
+          // One answer per athlete is several writes each: after the response,
+          // a few at a time, so a whole squad stays inside the request limits.
+          const { inBackground } = await import("./background");
+          const { eachLimited } = await import("./db-batch");
+          await inBackground("plans:bench-reasons", () =>
+            eachLimited(moved, 4, (copy) =>
+              record({
+                athleteId: copy.athlete_id,
+                coachId,
+                userId: ctx.userId,
+                planId: copy.id,
+                reason,
+              }),
+            ),
+          );
+        }
+      }
+    }
   }
   return { ok: true };
+}
+
+/* ---------------- one plan for several athletes (decision #66) ---------------- */
+
+export { sharePlanInput, updateCopiesInput };
+
+/** Gives each chosen athlete their own copy; answers with the plan the coach keeps editing. */
+export async function sharePlan(
+  ctx: PlansContext,
+  id: string,
+  data: z.infer<typeof sharePlanInput>,
+  announce?: ShareAnnouncers,
+): Promise<{ id: string; shared: number }> {
+  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  return sharePlanFor(ctx.supabase, coachId, id, data, new Date(), announce);
+}
+
+/** Sends the plan as it is now to the chosen athletes' copies. */
+export async function updatePlanCopies(
+  ctx: PlansContext,
+  id: string,
+  data: z.infer<typeof updateCopiesInput>,
+  announce?: ShareAnnouncers,
+): Promise<{ ok: true; updated: number }> {
+  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  return updateCopiesFor(ctx.supabase, coachId, id, data, new Date(), announce);
 }
 
 async function assertPlanOwned(supabase: Client, planId: string, coachId: string) {
@@ -856,6 +1129,11 @@ export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: t
       message: "Active plans can't be deleted — bench the plan first.",
     });
   }
+
+  // A draft given to several athletes takes its draft copies with it. A copy
+  // that went live stays with its athlete as a plan of its own (the link is
+  // cleared by the database, never the copy).
+  if (plan.kind === "plan" && !plan.athlete_id) await deleteDraftCopies(supabase, coachId, id);
 
   await supabase.from("plan_moves").delete().eq("plan_id", id);
   const { error } = await supabase.from("plans").delete().eq("id", id).eq("coach_id", coachId);
@@ -1042,6 +1320,12 @@ export async function updatePlan(
     .single();
   if (loadErr || !current) dbError(loadErr, "Plan not found");
 
+  // A plan several athletes hold keeps its status through an edit (its copies
+  // follow that status), and is never handed to one athlete or filed as a template.
+  const isShared =
+    current.kind === "plan" && !current.athlete_id && (await hasCopies(supabase, coachId, id));
+  if (isShared && (data.athleteId || data.kind === "template")) throw sharedPlanRefusal();
+
   // Fork-on-reassign: if the coach changes the athlete on an active plan,
   // clone into a new draft for the new assignment and leave the original
   // row (and any share_token) untouched.
@@ -1124,8 +1408,9 @@ export async function updatePlan(
     patch.status = "draft";
   } else if (nextKind === "plan") {
     if (!nextAthlete) {
-      // plan with no athlete must be a draft
-      patch.status = "draft";
+      // A plan with no athlete goes back to draft on an edit, except one its
+      // athletes hold copies of: editing it must not unpublish or restore it.
+      if (!isShared) patch.status = "draft";
     } else if (nextStatus === "draft") {
       // assigning an athlete to a draft keeps it as draft until activated
       patch.status = "draft";

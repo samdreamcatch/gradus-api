@@ -82,7 +82,58 @@ export const planSummarySchema = z.object({
   updatedAt: z.string(),
   sessionsByState: sessionsByStateSchema,
   sessionsTotal: z.number().int(),
+  // One plan for several athletes (PRD decision #66). Both optional, so an
+  // installed client never fails to decode a server that predates them.
+  sharedCount: z
+    .number()
+    .int()
+    .optional()
+    .describe(
+      "On a plan given to several athletes: how many have a copy. Its session counts are the copies', summed.",
+    ),
+  sharedFromId: z
+    .string()
+    .optional()
+    .describe("On one athlete's copy: the plan it was copied from."),
 }) satisfies z.ZodType<PlanSummaryDTO>;
+
+/** One athlete's copy of a plan the coach gave to several athletes (decision #66). */
+export const planShareSchema = z.object({
+  athleteId: z.string(),
+  name: z.string(),
+  planId: z.string().describe("That athlete's own copy: an ordinary plan the coach can open."),
+  status: z.string().describe("The copy's status: active, benched, or draft. A plain string."),
+  sessionsTotal: z.number().int(),
+  tailored: z
+    .boolean()
+    .describe(
+      "The coach changed this copy on its own, so sending it an update replaces those edits.",
+    ),
+  behind: z.boolean().describe("The plan has changes this copy has not received."),
+});
+
+/** One line of what changed since the copies last received the plan. */
+export const pendingChangeSchema = z.object({
+  planMoveId: z
+    .string()
+    .nullable()
+    .describe("The plan's move; null for a removed move or a change to the plan itself."),
+  name: z.string().describe("The move's name; empty for a change to the plan itself."),
+  change: z
+    .string()
+    .describe(
+      "A plain string, never an enum: new, minutes, reps, changed, removed, title, notes, feedback, or order.",
+    ),
+});
+
+export const sharedPlanCopiesSchema = z.object({
+  id: z.string().describe("The plan the coach keeps editing; its sharedWith lists the copies."),
+  shared: z.number().int().describe("How many athletes now have a copy."),
+});
+export const updatedPlanCopiesSchema = z.object({
+  ok: z.literal(true),
+  updated: z.number().int().describe("How many copies actually changed."),
+});
 
 export const planListSchema = z.object({ plans: z.array(planSummarySchema) });
 
@@ -120,6 +171,23 @@ export const planDetailSchema = z.object({
   // "plan" (one rating for the session) or "moves" (a rating per move; the
   // session's rating is their average). Optional for older clients and servers.
   feedbackScope: z.string().optional(),
+  // One plan for several athletes (PRD decision #66). All optional.
+  sharedCount: z.number().int().optional(),
+  sharedFromId: z.string().optional(),
+  sharedWith: z
+    .array(planShareSchema)
+    .optional()
+    .describe("Owning coach only: the athletes who each have a copy of this plan."),
+  pendingChanges: z
+    .array(pendingChangeSchema)
+    .optional()
+    .describe("With sharedWith: what changed since the copies last received this plan."),
+  updatedMoves: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      "Parent and athlete only: what the coach's last update changed on this plan, as plan move id to new, minutes, reps, or changed. Sent until practice is next logged on the plan.",
+    ),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
 export const planIdSchema = z.object({ id: z.string() });

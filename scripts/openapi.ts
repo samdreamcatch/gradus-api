@@ -114,6 +114,8 @@ import "../src/routes/api/v1/plans/$id/sessions/summary";
 import "../src/routes/api/v1/voice/transcribe";
 import "../src/routes/api/v1/voice/build-plan";
 import "../src/routes/api/v1/plans/$id/share-token";
+import "../src/routes/api/v1/plans/$id/copies/index";
+import "../src/routes/api/v1/plans/$id/copies/update";
 import "../src/routes/api/v1/plans/import/$token";
 import "../src/routes/api/v1/coach/starter-plans/$id/adopt";
 import "../src/routes/api/v1/public/plans/$token";
