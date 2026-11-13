@@ -3,8 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { getOrgAdminContext } from "@/lib/org-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { OrgAdminSidebar } from "@/components/org-admin/org-admin-sidebar";
+import { OrgAdminNavigation } from "@/components/org-admin/org-admin-sidebar";
 
 export const Route = createFileRoute("/_authenticated/org-admin")({
   beforeLoad: async () => {
@@ -47,13 +46,11 @@ function OrgAdminLayout() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="paper-surface min-h-screen flex w-full">
-        <OrgAdminSidebar onSignOut={handleSignOut} />
-        <SidebarInset className="min-w-0 [&>div]:w-full [&>div]:min-w-0">
+      <div className="paper-surface min-h-screen flex w-full min-w-0 flex-col">
+        <OrgAdminNavigation onSignOut={handleSignOut} />
+        <main className="w-full min-w-0 flex-1 [&>div]:w-full [&>div]:min-w-0">
           <Outlet />
-        </SidebarInset>
+        </main>
       </div>
-    </SidebarProvider>
   );
 }
