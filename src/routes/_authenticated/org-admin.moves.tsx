@@ -291,6 +291,24 @@ function OrgMovesPage() {
             rowKey={(m) => m.key}
             onRowClick={setEditing}
             rowLabel={(m) => m.name}
+            groupControl={(label, groupMoves) => {
+              const count = groupMoves.filter((move) => selected.has(move.key)).length;
+              return (
+                <Checkbox
+                  aria-label={`Select category ${label}`}
+                  checked={count === groupMoves.length ? true : count > 0 ? "indeterminate" : false}
+                  onCheckedChange={(checked) =>
+                    setSelected((current) => {
+                      const next = new Set(current);
+                      groupMoves.forEach((move) =>
+                        checked === true ? next.add(move.key) : next.delete(move.key),
+                      );
+                      return next;
+                    })
+                  }
+                />
+              );
+            }}
             filtered={!!search || !showArchived}
             onClear={() => setSearch("")}
             empty="No moves for this sport yet."
