@@ -34,3 +34,4 @@
 - Club student and coach CSV controls share ClubCsvControls and Papa Parse; coach imports review rows before using the existing authorized invite action, retaining only failed rows for retry.
 - Manual club move entry reuses the authorized move import action; category names live on moves, so a new category is saved with its first move rather than a separate taxonomy.
 - Acknowledgements use document-grouped ClubDataGrid records; reminder selections are intersected with the current authorized outstanding roster server-side, and PDF evidence remains document-scoped.
+- Library is the club entry route; the legacy Coaching directory redirects to Users, whose optional columns reuse authorized weekly coach snapshots and retain individual coach-profile links.
