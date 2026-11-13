@@ -44,7 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { NoSportsCard, SportFilter, useOrgId } from "@/components/org-admin/org-shared";
-import { parseCsvObjects } from "@/lib/csv";
+import { parseCsvObjects, toCsv } from "@/lib/csv";
 import {
   importOrgMoves,
   listOrgMoves,
@@ -300,6 +300,7 @@ function OrgMovesPage() {
         <ImportSheet
           orgId={orgId}
           sports={sports}
+          moves={q.data?.moves ?? []}
           open={importOpen}
           onOpenChange={setImportOpen}
           onDone={() => qc.invalidateQueries({ queryKey: ["org-moves", orgId] })}
@@ -697,12 +698,14 @@ type ImportRow = {
 function ImportSheet({
   orgId,
   sports,
+  moves,
   open,
   onOpenChange,
   onDone,
 }: {
   orgId: string;
   sports: string[];
+  moves: OrgMoveRow[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onDone: () => void;
@@ -711,6 +714,29 @@ function ImportSheet({
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [problems, setProblems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const downloadTemplate = () => {
+    const csv = toCsv(
+      ["sport", "category", "name", "cue", "why", "description", "target", "target_kind"],
+      moves.map((move) => [
+        move.sport,
+        move.category,
+        move.name,
+        move.cue,
+        move.why,
+        move.description,
+        move.defaultTargetValue,
+        move.defaultTargetKind,
+      ]),
+    );
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "gradus-moves-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  };
   useEffect(() => {
     if (open) {
       setRows([]);
@@ -774,10 +800,8 @@ function ImportSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-4">
-          <Button variant="outline" className="min-h-11 press" asChild>
-            <a href="/downloads/gradus-moves-template.csv" download="gradus-moves-template.csv">
-              <Download className="size-4" /> Download template
-            </a>
+          <Button variant="outline" className="min-h-11 press" onClick={downloadTemplate}>
+            <Download className="size-4" /> Download template
           </Button>
           <Input type="file" accept=".csv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} />
           {problems.length > 0 && (
