@@ -7,7 +7,6 @@ import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 
 type Item = { to: string; label: string; exact?: boolean };
 const ITEMS: Item[] = [
-  { to: "/org-admin/coaches", label: "Coaching" },
   { to: "/org-admin/resources", label: "Library" },
   { to: "/org-admin/schedule", label: "Schedule" },
   { to: "/org-admin/people", label: "Users" },
@@ -30,6 +29,7 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
+    i.label === "Users" && pathname.startsWith("/org-admin/coaches/") ? true :
     i.label === "Library" &&
     ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) =>
       pathname.startsWith(`/org-admin/${section}`),
