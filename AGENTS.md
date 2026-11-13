@@ -37,3 +37,4 @@
 - Schedule is the club entry route and notifications open from a header bell tray (full history page kept, off the main menu); the legacy Coaching directory redirects to Users, whose optional columns reuse authorized weekly coach snapshots and retain individual coach-profile links.
 - Schedule lessons carry last-full-week practice vs target computed by the pure, tested practiceFor (same rule as weekly coach snapshots), and the week calendar collapses empty hours via compactHours, so calendar markers and coach metrics agree.
 - Schedule uses the shared student-entry action for manual/CSV roster entry; lesson CSV tools stay in Imports so roster creation and lesson review cannot be confused.
+- Schedule reminders reuse the authorized family-invitation sender after review; pure recipient selection deduplicates students and excludes unrecorded or non-actionable invitations.
