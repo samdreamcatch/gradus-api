@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { getClubCoachWeeks } from "@/lib/club-coaches.functions";
-import { targetPercent, weekStart } from "@/lib/club-coach-metrics";
+import { practiceAdherence, weekStart } from "@/lib/club-coach-metrics";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
@@ -63,9 +63,11 @@ function CoachProfile() {
   const weeks = (metrics.data?.weeks ?? []).filter((w) => w.coach_id === coachId);
   const current = weeks.find((w) => w.week_start === weekStart());
   const club = (metrics.data?.weeks ?? []).filter((w) => w.week_start === weekStart());
-  const clubPractice = club.reduce((n, w) => n + Number(w.practice_min), 0);
-  const clubTarget = club.every((w) => w.target_min !== null)
-    ? club.reduce((n, w) => n + Number(w.target_min), 0)
+  const clubMeeting = club.every((w) => w.students_meeting_target != null)
+    ? club.reduce((n, w) => n + Number(w.students_meeting_target), 0)
+    : null;
+  const clubStudents = club.every((w) => w.students != null)
+    ? club.reduce((n, w) => n + Number(w.students), 0)
     : null;
   const num = (v: number | null | undefined) => (v == null ? "—" : Math.round(v).toLocaleString());
   const pct = (value: number | null) => (value === null ? "—" : `${value}%`);
@@ -76,10 +78,12 @@ function CoachProfile() {
       `${coach.parentCount} parent accounts · ${coach.adultAthleteCount} self-managed`,
     ],
     [
-      "Practice / target",
-      current ? `${num(current.practice_min)} / ${num(current.target_min)} min` : "—",
+      "Practice adherence",
+      current ? pct(practiceAdherence(current.students_meeting_target, current.students)) : "—",
       current
-        ? `${pct(targetPercent(current.practice_min, current.target_min))} · Club ${pct(targetPercent(clubPractice, clubTarget))}`
+        ? current.students_meeting_target == null
+          ? "Individual targets unavailable"
+          : `${num(current.students_meeting_target)} of ${num(current.students)} meeting target · Club ${pct(practiceAdherence(clubMeeting, clubStudents))}`
         : "This week",
     ],
     ["Sessions", num(current?.sessions), "This week"],
@@ -136,12 +140,12 @@ function CoachProfile() {
                 downloadCsv(
                   "coach-practice.csv",
                   toCsv(
-                    ["Week (UTC)", "Students", "Practice min", "Target min", "Sessions"],
+                    ["Week (UTC)", "Students", "Students meeting target", "Practice adherence %", "Sessions"],
                     weeks.map((w) => [
                       w.week_start,
                       w.students,
-                      w.practice_min,
-                      w.target_min,
+                      w.students_meeting_target,
+                      practiceAdherence(w.students_meeting_target, w.students),
                       w.sessions,
                     ]),
                   ),
@@ -211,9 +215,8 @@ function CoachProfile() {
                 {[
                   "Week (UTC)",
                   "Students",
-                  "Practice min",
-                  "Target min",
-                  "% of target",
+                  "Meeting target",
+                  "Practice adherence",
                   "Sessions",
                 ].map((h, i) => (
                   <TableHead key={h} className={i ? "text-right" : ""}>
@@ -230,13 +233,10 @@ function CoachProfile() {
                     <ClubNumber value={w.students} />
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    <ClubNumber value={w.practice_min} />
+                    <ClubNumber value={w.students_meeting_target} />
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    <ClubNumber value={w.target_min} />
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    <ClubMeter value={w.practice_min} target={w.target_min} />
+                    <ClubMeter value={w.students_meeting_target} target={w.students} />
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     <ClubNumber value={w.sessions} />
@@ -247,9 +247,6 @@ function CoachProfile() {
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={2}>8-week total</TableCell>
-                <TableCell className="text-right font-mono">
-                  {weeks.length ? num(weeks.reduce((n, w) => n + Number(w.practice_min), 0)) : "—"}
-                </TableCell>
                 <TableCell colSpan={2} />
                 <TableCell className="text-right font-mono">
                   {weeks.length ? num(weeks.reduce((n, w) => n + w.sessions, 0)) : "—"}

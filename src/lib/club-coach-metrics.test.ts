@@ -1,7 +1,13 @@
 import { describe, expect, it } from "bun:test";
-import { weekStart, targetPercent, sumCoachWeeks } from "./club-coach-metrics";
+import { weekStart, targetPercent, sumCoachWeeks, practiceAdherence } from "./club-coach-metrics";
 
 describe("Club weekly aggregates", () => {
+  it("adherence is the percentage of students meeting their individual assignments", () => {
+    expect(practiceAdherence(3, 4)).toBe(75);
+    expect(practiceAdherence(0, 4)).toBe(0);
+    expect(practiceAdherence(null, 4)).toBeNull();
+    expect(practiceAdherence(0, 0)).toBeNull();
+  });
   it("weeks begin on Monday in UTC including Sunday", () => {
     expect(weekStart(new Date("2026-11-01T03:18:00Z"))).toBe("2026-10-26");
     expect(weekStart(new Date("2026-11-02T00:00:00Z"))).toBe("2026-11-02");

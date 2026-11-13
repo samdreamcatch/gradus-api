@@ -11,7 +11,7 @@ type CoachDatabase = Omit<Database, "public"> & {
     Tables: Database["public"]["Tables"] & {
       org_coach_week_stats: { Row: CoachWeek & { organization_id: string }; Insert: never; Update: never; Relationships: [] };
     };
-    Functions: Database["public"]["Functions"] & { refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined } };
+    Functions: Database["public"]["Functions"] & { refresh_club_coaching_metrics: { Args: { p_org: string }; Returns: undefined } };
   };
 };
 
@@ -30,11 +30,11 @@ export const getClubCoachWeeks = createServerFn({ method: "POST" })
     if (latest.error) dbError(latest.error);
     const last = latest.data?.[0]?.computed_at;
     if (!last || Date.now() - new Date(last).getTime() > 10 * 60_000) {
-      const refresh = await admin.rpc("refresh_club_coach_weeks", { p_org: data.organizationId });
+      const refresh = await admin.rpc("refresh_club_coaching_metrics", { p_org: data.organizationId });
       if (refresh.error) dbError(refresh.error);
     }
     const result = await admin.from("org_coach_week_stats")
-      .select("coach_id,week_start,students,minors,practice_min,target_min,sessions,computed_at")
+      .select("coach_id,week_start,students,minors,practice_min,target_min,sessions,students_meeting_target,lessons,computed_at")
       .eq("organization_id", data.organizationId).order("week_start", { ascending: false });
     if (result.error) dbError(result.error);
     return { viewerId: context.userId, weeks: result.data ?? [] };
