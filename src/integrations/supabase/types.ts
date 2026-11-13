@@ -3638,33 +3638,39 @@ export type Database = {
         Row: {
           coach_id: string
           computed_at: string
+          lessons: number | null
           minors: number | null
           organization_id: string
           practice_min: number
           sessions: number
           students: number | null
+          students_meeting_target: number | null
           target_min: number | null
           week_start: string
         }
         Insert: {
           coach_id: string
           computed_at?: string
+          lessons?: number | null
           minors?: number | null
           organization_id: string
           practice_min?: number
           sessions?: number
           students?: number | null
+          students_meeting_target?: number | null
           target_min?: number | null
           week_start: string
         }
         Update: {
           coach_id?: string
           computed_at?: string
+          lessons?: number | null
           minors?: number | null
           organization_id?: string
           practice_min?: number
           sessions?: number
           students?: number | null
+          students_meeting_target?: number | null
           target_min?: number | null
           week_start?: string
         }
@@ -5883,6 +5889,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined }
+      refresh_club_coaching_metrics: {
+        Args: { p_org: string }
+        Returns: undefined
+      }
       refresh_club_notifications: {
         Args: { p_org_id: string }
         Returns: undefined
