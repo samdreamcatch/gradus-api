@@ -279,6 +279,13 @@ export function ClubAddStudentsSheet({
                     </SelectContent>
                   </Select>
                 </div>
+                <Button
+                  variant="outline"
+                  className="h-11 min-h-11 press"
+                  onClick={() => addRow(rows[rows.length - 1])}
+                >
+                  <Plus className="size-4" /> Add manually
+                </Button>
                 <ClubCsvControls
                   filename="students-template.csv"
                   template={'First,Last,Email,Age,Day,Start,Length,Guardian first,Guardian last\nAlex,Rivera,parent@example.com,Under 18,Mon,16:00,30,Sam,Rivera\n'}
