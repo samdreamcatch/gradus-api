@@ -70,11 +70,14 @@ export const Route = createFileRoute("/_authenticated/org-admin/people")({
   head: () => ({
     meta: [
       { title: "Users · Gradus Club Admin" },
-      { name: "description", content: "Club coaches, teaching levels and policy sign-offs." },
+      {
+        name: "description",
+        content: "Club users, assigned seats, administrators and contract increases.",
+      },
       { property: "og:title", content: "Users · Gradus Club Admin" },
       {
         property: "og:description",
-        content: "Club coaches, teaching levels and policy sign-offs.",
+        content: "Club users, assigned seats, administrators and contract increases.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -88,46 +91,11 @@ function PeoplePage() {
   const {
     data: { org, coaches },
   } = useSuspenseQuery(peopleOptions());
-  const filtered = coaches;
-  function exportRoster() {
-    const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [
-      ["Coach", "Email", "Sports", "Levels", "Athletes", "Parents", "Joined"],
-      ...filtered.map((c) => [
-        `${c.firstName} ${c.lastName}`,
-        c.email,
-        [...new Set(c.levels.map((l) => sportDisplayLabel(l.sport)))].join("; "),
-        c.levels.map((l) => `${sportDisplayLabel(l.sport)}: ${l.label}`).join("; "),
-        c.athleteCount,
-        c.parentCount,
-        c.joinedAt,
-      ]),
-    ];
-    const url = URL.createObjectURL(
-      new Blob([rows.map((r) => r.map(cell).join(",")).join("\r\n")], {
-        type: "text/csv;charset=utf-8",
-      }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "club-coaches.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <ClubPageHeader title="Users" />
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            onClick={exportRoster}
-            disabled={!filtered.length}
-          >
-            Export
-          </Button>
           <Button asChild size="sm" className="min-h-11">
             <Link to="/org-admin/roster">Invite a coach</Link>
           </Button>
@@ -283,6 +251,23 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
       `${u.name} ${u.email ?? ""}`.toLowerCase().includes(userSearch.trim().toLowerCase()),
   );
   const userGrid = useClubGrid<UnifiedUser>("club-users", USER_COLUMNS, visibleUsers);
+  function exportUsers() {
+    const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["User", "User type", "Email", "Joined"],
+      ...visibleUsers.map((u) => [u.name, u.type, u.email, u.joined]),
+    ];
+    const url = URL.createObjectURL(
+      new Blob([rows.map((r) => r.map(escape).join(",")).join("\r\n")], {
+        type: "text/csv;charset=utf-8",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "club-users.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
   const quote =
     data.club.contract_seat_rate_cents == null ||
     !data.club.contract_starts_on ||
@@ -313,6 +298,14 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           Add seats
         </Button>
       </div>
+      <Button
+        variant="outline"
+        className="h-11"
+        onClick={exportUsers}
+        disabled={!visibleUsers.length}
+      >
+        Export users
+      </Button>
       <ClubGridToolbar
         search={userSearch}
         onSearchChange={setUserSearch}
@@ -324,6 +317,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
         }}
       >
         <FilterPill
+          className="w-auto min-w-40"
           aria-label="User type"
           value={userType}
           onValueChange={setUserType}
