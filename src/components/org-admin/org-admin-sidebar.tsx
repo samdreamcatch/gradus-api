@@ -4,13 +4,13 @@ import { useOrgId } from "./org-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
+import { ClubNotificationTray } from "./club-notification-tray";
 
 type Item = { to: string; label: string; exact?: boolean };
 const ITEMS: Item[] = [
-  { to: "/org-admin/resources", label: "Library" },
   { to: "/org-admin/schedule", label: "Schedule" },
   { to: "/org-admin/people", label: "Users" },
-  { to: "/org-admin/notifications", label: "Notifications" },
+  { to: "/org-admin/resources", label: "Library" },
   { to: "/org-admin/settings", label: "Settings" },
 ];
 
@@ -62,24 +62,22 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
               >
                 <Link to={item.to as never} aria-current={isActive(item) ? "page" : undefined}>
                   <span>{item.label}</span>
-                  {item.to === "/org-admin/notifications" &&
-                    counts.data &&
-                    counts.data.unread > 0 && (
-                      <span className="font-mono text-xs">{counts.data.unread}</span>
-                    )}
                 </Link>
               </Button>
             );
           })}
         </nav>
+        <div className="col-start-2 row-start-1 flex items-center gap-2 lg:col-start-3">
+        <ClubNotificationTray unread={counts.data?.unread ?? 0} />
         <Button
           variant="ghost"
           onClick={onSignOut}
-          className="col-start-2 row-start-1 min-h-11 shrink-0 px-0 font-sans text-text-secondary lg:col-start-3"
+          className="min-h-11 shrink-0 px-0 font-sans text-text-secondary"
           title="Sign out"
         >
           Sign out
         </Button>
+        </div>
       </div>
     </header>
   );
