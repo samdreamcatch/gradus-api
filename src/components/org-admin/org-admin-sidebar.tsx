@@ -6,20 +6,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
 
 type Item = { to: string; label: string; exact?: boolean };
-type Group = { label: string; items: Item[]; soon?: string[] };
-
-const GROUPS: Group[] = [
-  {
-    label: "Club",
-    items: [
-      { to: "/org-admin/coaches", label: "Coaching" },
-      { to: "/org-admin/resources", label: "Library" },
-      { to: "/org-admin/schedule", label: "Schedule" },
-      { to: "/org-admin/people", label: "Users" },
-      { to: "/org-admin/notifications", label: "Notifications" },
-      { to: "/org-admin/settings", label: "Settings" },
-    ],
-  },
+const ITEMS: Item[] = [
+  { to: "/org-admin/coaches", label: "Coaching" },
+  { to: "/org-admin/resources", label: "Library" },
+  { to: "/org-admin/schedule", label: "Schedule" },
+  { to: "/org-admin/people", label: "Users" },
+  { to: "/org-admin/notifications", label: "Notifications" },
+  { to: "/org-admin/settings", label: "Settings" },
 ];
 
 export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Promise<void> }) {
@@ -47,54 +40,47 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
         : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
-    <header className="w-full min-w-0 border-b border-divider bg-card px-4 sm:px-6">
-      <div className="flex min-w-0 items-center justify-between gap-4 py-2">
-          <p className="truncate font-display text-h3 text-text-primary leading-tight">
-            {orgName || "Gradus Club"}
-          </p>
-        <Button variant="ghost" onClick={onSignOut} className="min-h-11 shrink-0 font-sans text-text-primary" title="Sign out">
+    <header className="w-full min-w-0 border-b border-divider bg-card">
+      <div className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-5">
+        <p
+          title={orgName || "Gradus Club"}
+          className="max-w-56 truncate py-3 font-sans text-base font-semibold leading-tight text-text-primary lg:max-w-40 lg:border-r lg:border-divider lg:pr-5"
+        >
+          {orgName || "Gradus Club"}
+        </p>
+        <nav
+          aria-label="Club menu"
+          className="col-span-2 row-start-2 flex min-w-0 gap-1 overflow-x-auto lg:col-span-1 lg:col-start-2 lg:row-start-1"
+        >
+          {ITEMS.map((item) => {
+            return (
+              <Button
+                key={item.to}
+                variant="ghost"
+                asChild
+                className={`press-soft h-12 shrink-0 rounded-none border-b-2 px-3 py-0 font-sans lg:h-14 ${isActive(item) ? "border-accent text-accent-ink font-semibold" : "border-transparent text-text-secondary"}`}
+              >
+                <Link to={item.to as never} aria-current={isActive(item) ? "page" : undefined}>
+                  <span>{item.label}</span>
+                  {item.to === "/org-admin/notifications" &&
+                    counts.data &&
+                    counts.data.unread > 0 && (
+                      <span className="font-mono text-xs">{counts.data.unread}</span>
+                    )}
+                </Link>
+              </Button>
+            );
+          })}
+        </nav>
+        <Button
+          variant="ghost"
+          onClick={onSignOut}
+          className="col-start-2 row-start-1 min-h-11 shrink-0 px-0 font-sans text-text-secondary lg:col-start-3"
+          title="Sign out"
+        >
           Sign out
         </Button>
       </div>
-      <nav aria-label="Club menu" className="flex min-w-0 gap-1 overflow-x-auto pb-2">
-        {GROUPS.map((group) => (
-          <div key={group.label} className="flex shrink-0 items-center gap-1">
-                {group.items.map((item) => {
-                  return (
-                    <div key={item.to} className="flex shrink-0 items-center gap-1">
-                      {item.label === "Settings" && (
-                        <Button variant="ghost"
-                          disabled
-                          title="Storefront · not connected"
-                          className="min-h-11 font-sans"
-                        >
-                          <span>Storefront</span>
-                          <span className="font-sans text-xs text-text-tertiary">
-                            Not connected
-                          </span>
-                        </Button>
-                      )}
-                      <Button variant="ghost"
-                        asChild
-                        className={`min-h-11 font-sans ${isActive(item) ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold" : "text-text-secondary"}`}
-                      >
-                        <Link to={item.to as never} aria-current={isActive(item) ? "page" : undefined}>
-                          <span>{item.label}</span>
-                          {item.to === "/org-admin/notifications" &&
-                            counts.data &&
-                            counts.data.unread > 0 && (
-                              <span className="font-mono text-xs">
-                                {counts.data.unread}
-                              </span>
-                            )}
-                        </Link>
-                      </Button>
-                    </div>
-                  );
-                })}
-          </div>
-        ))}
-      </nav>
     </header>
   );
 }
