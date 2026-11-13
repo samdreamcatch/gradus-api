@@ -96,14 +96,22 @@ function Policies() {
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [review, setReview] = useState<RecordRow[] | null>(null);
-  const [preparedPdf, setPreparedPdf] = useState<{ resourceId: string; blob: Blob; filename: string } | null>(null);
+  const [preparedPdf, setPreparedPdf] = useState<{
+    resourceId: string;
+    blob: Blob;
+    filename: string;
+  } | null>(null);
   const proofFn = useServerFn(exportPolicyProof);
   const proof = useMutation({
     mutationFn: async (resourceId: string) => {
       if (!orgId) throw new Error("Select a club");
       const result = await proofFn({ data: { organizationId: orgId, resourceId } });
       const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
-      return { resourceId, blob: new Blob([bytes], { type: "application/pdf" }), filename: result.filename };
+      return {
+        resourceId,
+        blob: new Blob([bytes], { type: "application/pdf" }),
+        filename: result.filename,
+      };
     },
     onSuccess: setPreparedPdf,
     onError: (e: Error) => toast.error(e.message),
@@ -119,59 +127,166 @@ function Policies() {
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
-  const records = useMemo(() => docs.flatMap((d) =>
-    (matrix.data?.signers[d.resourceId] ?? [])
-      .filter((s) => role === "all" || s.role === role)
-      .map((s) => ({ ...s, id: `${d.resourceId}:${s.key}`, resourceId: d.resourceId,
-        document: d.title, version: d.version, dueAt: d.dueAt }))
-  ), [docs, matrix.data, role]);
+  const records = useMemo(
+    () =>
+      docs.flatMap((d) =>
+        (matrix.data?.signers[d.resourceId] ?? [])
+          .filter((s) => role === "all" || s.role === role)
+          .map((s) => ({
+            ...s,
+            id: `${d.resourceId}:${s.key}`,
+            resourceId: d.resourceId,
+            document: d.title,
+            version: d.version,
+            dueAt: d.dueAt,
+          })),
+      ),
+    [docs, matrix.data, role],
+  );
   type RecordRow = (typeof records)[number];
   const selectable = selectedOutstandingSigners(records);
   const selectedRows = selectable.filter((r) => selected.has(r.id));
-  const selectRows = (rows: RecordRow[], on: boolean) => setSelected((prev) => {
-    const next = new Set(prev);
-    for (const r of selectedOutstandingSigners(rows)) {
-      if (on) next.add(r.id); else next.delete(r.id);
-    }
-    return next;
-  });
+  const selectRows = (rows: RecordRow[], on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const r of selectedOutstandingSigners(rows)) {
+        if (on) next.add(r.id);
+        else next.delete(r.id);
+      }
+      return next;
+    });
   const selectionControl = (rows: RecordRow[], label: string) => {
     const pending = selectedOutstandingSigners(rows);
     const count = pending.filter((r) => selected.has(r.id)).length;
-    return <Checkbox aria-label={label} disabled={!pending.length}
-      checked={count > 0 && count === pending.length ? true : count > 0 ? "indeterminate" : false}
-      onCheckedChange={(on) => selectRows(rows, on === true)} />;
+    return (
+      <Checkbox
+        aria-label={label}
+        disabled={!pending.length}
+        checked={count > 0 && count === pending.length ? true : count > 0 ? "indeterminate" : false}
+        onCheckedChange={(on) => selectRows(rows, on === true)}
+      />
+    );
   };
-  const grid = useClubGrid<RecordRow>("policy-records", [
-    { key: "person", label: "Person", className: "min-w-56",
-      headerControl: <label className="mr-3 inline-flex items-center gap-2">{selectionControl(records, "Select all outstanding acknowledgements")}<span>Select all</span></label>,
-      sortValue: (r) => r.name,
-      render: (r) => <span className="inline-flex items-center gap-3"><Checkbox aria-label={`Select ${r.name} for ${r.document}`} disabled={!!r.acknowledgedAt} checked={selected.has(r.id)} onCheckedChange={(on) => selectRows([r], on === true)} />{r.name || "Unnamed"}</span> },
-    { key: "document", label: "Document", sortValue: (r) => r.document,
-      groupValue: (r) => r.document, render: (r) => `${r.document} · v${r.version}`, className: "min-w-56 whitespace-normal" },
-    { key: "role", label: "Role", sortValue: (r) => r.role, render: (r) => r.forAthleteId ? "Guardian for athlete" : ROLE_LABEL[r.role] },
-    { key: "status", label: "Status", sortValue: (r) => r.acknowledgedAt ? "Signed" : "Due", render: (r) => <Cell value={r.acknowledgedAt} dueAt={r.dueAt} /> },
-    { key: "signedBy", label: "Signed by", render: (r) => r.signedBy || "—" },
-    { key: "action", label: "", render: (r) => !r.acknowledgedAt && <Button variant="ghost" size="sm" className="press" aria-label={`Remind ${r.name} about ${r.document}`} onClick={() => setReview([r])}><Bell className="size-3" />Remind</Button> },
-  ], records, { group: "document" });
+  const grid = useClubGrid<RecordRow>(
+    "policy-records",
+    [
+      {
+        key: "person",
+        label: "Person",
+        className: "min-w-56",
+        headerControl: (
+          <label className="mr-3 inline-flex items-center gap-2">
+            {selectionControl(records, "Select all outstanding acknowledgements")}
+            <span>Select all</span>
+          </label>
+        ),
+        sortValue: (r) => r.name,
+        render: (r) => (
+          <span className="inline-flex items-center gap-3">
+            <Checkbox
+              aria-label={`Select ${r.name} for ${r.document}`}
+              disabled={!!r.acknowledgedAt}
+              checked={selected.has(r.id)}
+              onCheckedChange={(on) => selectRows([r], on === true)}
+            />
+            {r.name || "Unnamed"}
+          </span>
+        ),
+      },
+      {
+        key: "document",
+        label: "Document",
+        sortValue: (r) => r.document,
+        groupValue: (r) => r.document,
+        render: (r) => `${r.document} · v${r.version}`,
+        className: "min-w-56 whitespace-normal",
+      },
+      {
+        key: "role",
+        label: "Role",
+        sortValue: (r) => r.role,
+        render: (r) => (r.forAthleteId ? "Guardian for athlete" : ROLE_LABEL[r.role]),
+      },
+      {
+        key: "status",
+        label: "Status",
+        sortValue: (r) => (r.acknowledgedAt ? "Signed" : "Due"),
+        render: (r) => <Cell value={r.acknowledgedAt} dueAt={r.dueAt} />,
+      },
+      { key: "signedBy", label: "Signed by", render: (r) => r.signedBy || "—" },
+      {
+        key: "action",
+        label: "",
+        render: (r) =>
+          !r.acknowledgedAt && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="press"
+              aria-label={`Remind ${r.name} about ${r.document}`}
+              onClick={() => setReview([r])}
+            >
+              <Bell className="size-3" />
+              Remind
+            </Button>
+          ),
+      },
+    ],
+    records,
+    { group: "document" },
+  );
   const remind = useMutation({
     mutationFn: async (rows: RecordRow[]) => {
       if (!orgId) throw new Error("Select a club");
       let notified = 0;
       for (const resourceId of new Set(rows.map((r) => r.resourceId))) {
-        const result = await remindFn({ data: { organizationId: orgId, resourceId, signerKeys: rows.filter((r) => r.resourceId === resourceId).map((r) => r.key) } });
+        const result = await remindFn({
+          data: {
+            organizationId: orgId,
+            resourceId,
+            signerKeys: rows.filter((r) => r.resourceId === resourceId).map((r) => r.key),
+          },
+        });
         notified += result.notified;
       }
       return notified;
     },
-    onSuccess: (count) => { toast.success(count ? `Reminders requested for ${count} recipients` : "No outstanding recipients to remind"); setReview(null); setSelected(new Set()); },
+    onSuccess: (count) => {
+      toast.success(
+        count
+          ? `Reminders requested for ${count} recipients`
+          : "No outstanding recipients to remind",
+      );
+      setReview(null);
+      setSelected(new Set());
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const exportRecords = (rows: RecordRow[], filename = "club-acknowledgements.csv") => downloadCsv(filename, toCsv(
-    ["Document", "Version", "Role", "Person", "On behalf of athlete", "Signed by", "Acknowledged"],
-    rows.map((r) => [r.document, r.version, ROLE_LABEL[r.role], r.name, r.forAthleteName ?? "", r.signedBy ?? "", r.acknowledgedAt ? fmt(r.acknowledgedAt) : "Outstanding"]),
-  ));
+  const exportRecords = (rows: RecordRow[], filename = "club-acknowledgements.csv") =>
+    downloadCsv(
+      filename,
+      toCsv(
+        [
+          "Document",
+          "Version",
+          "Role",
+          "Person",
+          "On behalf of athlete",
+          "Signed by",
+          "Acknowledged",
+        ],
+        rows.map((r) => [
+          r.document,
+          r.version,
+          ROLE_LABEL[r.role],
+          r.name,
+          r.forAthleteName ?? "",
+          r.signedBy ?? "",
+          r.acknowledgedAt ? fmt(r.acknowledgedAt) : "Outstanding",
+        ]),
+      ),
+    );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
@@ -254,7 +369,10 @@ function Policies() {
             />
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
             {grid.menu}
-            <Button variant="outline" className="press" onClick={() => exportRecords(records)}><Download className="size-4" />Export CSV</Button>
+            <Button variant="outline" className="press" onClick={() => exportRecords(records)}>
+              <Download className="size-4" />
+              Export CSV
+            </Button>
           </ClubGridToolbar>
         </div>
 
@@ -269,33 +387,137 @@ function Policies() {
           </p>
         ) : (
           <div className="space-y-3">
-            {selectedRows.length > 0 && <div className="flex flex-wrap items-center gap-3 border-y border-divider py-2">
-              <span className="font-mono text-sm">{selectedRows.length} selected</span>
-              <Button className="press" onClick={() => setReview(selectedRows)}><Bell className="size-4" />Remind selected</Button>
-              <Button variant="ghost" size="icon" className="press" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X className="size-4" /></Button>
-            </div>}
-            <ClubDataGrid grid={grid} rowKey={(r) => r.id} empty="No acknowledgement records" filtered={!!search.doc || role !== "all"}
-              groupControl={(label, rows) => <span className="inline-flex flex-wrap items-center gap-3">
-                {selectionControl(rows, `Select outstanding acknowledgements for ${label}`)}
-                <Button variant="ghost" size="sm" className="press" disabled={!selectedOutstandingSigners(rows).length} onClick={() => setReview(selectedOutstandingSigners(rows))}>Remind outstanding</Button>
-                <Button variant="ghost" size="sm" className="press" onClick={() => exportRecords(rows)}><Download className="size-3" />CSV</Button>
-                {rows[0] && <Button variant="ghost" size="sm" className="press" disabled={proof.isPending} onClick={() => preparedPdf?.resourceId === rows[0]?.resourceId ? downloadPdf() : rows[0] && proof.mutate(rows[0].resourceId)}><Download className="size-3" />{preparedPdf?.resourceId === rows[0].resourceId ? "Download PDF" : "Prepare PDF"}</Button>}
-              </span>}
+            {selectedRows.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 border-y border-divider py-2">
+                <span className="font-mono text-sm">{selectedRows.length} selected</span>
+                <Button className="press" onClick={() => setReview(selectedRows)}>
+                  <Bell className="size-4" />
+                  Remind selected
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="press"
+                  aria-label="Clear selection"
+                  onClick={() => setSelected(new Set())}
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            )}
+            <ClubDataGrid
+              grid={grid}
+              rowKey={(r) => r.id}
+              empty="No acknowledgement records"
+              filtered={!!search.doc || role !== "all"}
+              groupControl={(label, rows) => (
+                <span className="inline-flex flex-wrap items-center gap-3">
+                  {selectionControl(rows, `Select outstanding acknowledgements for ${label}`)}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="press"
+                    disabled={!selectedOutstandingSigners(rows).length}
+                    onClick={() => setReview(selectedOutstandingSigners(rows))}
+                  >
+                    Remind outstanding
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="press"
+                    onClick={() => exportRecords(rows)}
+                  >
+                    <Download className="size-3" />
+                    CSV
+                  </Button>
+                  {rows[0] && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="press"
+                      disabled={proof.isPending}
+                      onClick={() =>
+                        preparedPdf?.resourceId === rows[0]?.resourceId
+                          ? downloadPdf()
+                          : rows[0] && proof.mutate(rows[0].resourceId)
+                      }
+                    >
+                      <Download className="size-3" />
+                      {preparedPdf?.resourceId === rows[0].resourceId
+                        ? "Download PDF"
+                        : "Prepare PDF"}
+                    </Button>
+                  )}
+                </span>
+              )}
             />
-            {!grid.groups && docs.map((d) => <div key={d.resourceId} className="flex flex-wrap items-center gap-3 border-b border-divider py-2">
-              <span className="text-sm">{d.title} · v{d.version}</span>
-              <Button variant="ghost" size="sm" className="press" disabled={proof.isPending} onClick={() => preparedPdf?.resourceId === d.resourceId ? downloadPdf() : proof.mutate(d.resourceId)}><Download className="size-3" />{preparedPdf?.resourceId === d.resourceId ? "Download PDF" : "Prepare PDF"}</Button>
-            </div>)}
+            {!grid.groups &&
+              docs.map((d) => (
+                <div
+                  key={d.resourceId}
+                  className="flex flex-wrap items-center gap-3 border-b border-divider py-2"
+                >
+                  <span className="text-sm">
+                    {d.title} · v{d.version}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="press"
+                    disabled={proof.isPending}
+                    onClick={() =>
+                      preparedPdf?.resourceId === d.resourceId
+                        ? downloadPdf()
+                        : proof.mutate(d.resourceId)
+                    }
+                  >
+                    <Download className="size-3" />
+                    {preparedPdf?.resourceId === d.resourceId ? "Download PDF" : "Prepare PDF"}
+                  </Button>
+                </div>
+              ))}
           </div>
         )}
-
       </section>
 
       <Sheet open={!!review} onOpenChange={(open) => !open && !remind.isPending && setReview(null)}>
-        <SheetContent side={isMobile ? "bottom" : "right"} className={cn("w-full sm:max-w-lg overflow-y-auto", isMobile ? "paper-surface" : "bg-popover")}>
-          <SheetHeader><SheetTitle>Review reminders</SheetTitle><SheetDescription>{review?.length ?? 0} outstanding acknowledgements. Guardians receive reminders for minor athletes.</SheetDescription></SheetHeader>
-          <ul className="my-4 divide-y divide-divider">{review?.map((r) => <li key={r.id} className="py-3"><p>{r.name}</p><p className="text-sm text-text-secondary">{r.document} · v{r.version}</p></li>)}</ul>
-          <Button className="press" disabled={remind.isPending || !review?.length} onClick={() => review && remind.mutate(review)}>{remind.isPending ? <Loader2 className="size-4 animate-spin" /> : <Bell className="size-4" />}Send reminders</Button>
+        <SheetContent
+          side={isMobile ? "bottom" : "right"}
+          className={cn(
+            "w-full sm:max-w-lg overflow-y-auto",
+            isMobile ? "paper-surface" : "bg-popover",
+          )}
+        >
+          <SheetHeader>
+            <SheetTitle>Review reminders</SheetTitle>
+            <SheetDescription>
+              {review?.length ?? 0} outstanding acknowledgements. Guardians receive reminders for
+              minor athletes.
+            </SheetDescription>
+          </SheetHeader>
+          <ul className="my-4 divide-y divide-divider">
+            {review?.map((r) => (
+              <li key={r.id} className="py-3">
+                <p>{r.name}</p>
+                <p className="text-sm text-text-secondary">
+                  {r.document} · v{r.version}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <Button
+            className="press"
+            disabled={remind.isPending || !review?.length}
+            onClick={() => review && remind.mutate(review)}
+          >
+            {remind.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Bell className="size-4" />
+            )}
+            Send reminders
+          </Button>
         </SheetContent>
       </Sheet>
       <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>

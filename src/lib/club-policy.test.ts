@@ -15,7 +15,9 @@ describe("club policy rules", () => {
     { key: "parent:3", acknowledgedAt: "2026-11-12T12:00:00Z" },
   ];
   it("individual reminders target only the selected outstanding person", () => {
-    expect(selectedOutstandingSigners(roster, ["parent:2", "parent:3", "outside-club"])).toEqual([roster[1]]);
+    expect(selectedOutstandingSigners(roster, ["parent:2", "parent:3", "outside-club"])).toEqual([
+      roster[1],
+    ]);
   });
   it("document reminders include all and only outstanding people", () => {
     expect(selectedOutstandingSigners(roster)).toEqual([roster[0], roster[1]]);

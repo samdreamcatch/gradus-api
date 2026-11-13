@@ -5,10 +5,9 @@ export type DeadlinePack = {
 };
 
 /** Selected keys are intersected with the current authorized, outstanding roster. */
-export function selectedOutstandingSigners<T extends { key: string; acknowledgedAt: string | null }>(
-  signers: T[],
-  keys?: string[],
-): T[] {
+export function selectedOutstandingSigners<
+  T extends { key: string; acknowledgedAt: string | null },
+>(signers: T[], keys?: string[]): T[] {
   return signers.filter((s) => !s.acknowledgedAt && (!keys || keys.includes(s.key)));
 }
 
