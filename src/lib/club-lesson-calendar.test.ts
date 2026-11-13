@@ -159,9 +159,9 @@ describe("lesson practice to target", () => {
   });
 });
 describe("compact week hours", () => {
-  it("keeps only busy hours and collapses empty stretches", () => {
+  it("trims before the first and after the last lesson but keeps midday hours", () => {
     const { rows } = compactHours([{ start: 360, end: 420 }, { start: 1020, end: 1080 }], 56, 24);
-    expect(rows.map((r) => r.kind)).toEqual(["hour", "gap", "hour"]);
-    expect(rows[1]).toMatchObject({ from: 7, to: 17 });
+    expect(rows.every((r) => r.kind === "hour")).toBe(true);
+    expect(rows.map((r) => (r.kind === "hour" ? r.hour : -1))).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
   });
 });

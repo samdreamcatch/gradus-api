@@ -34,27 +34,31 @@ const needsAttention = (l: ClubLesson) =>
 const GAP_PX = 22;
 
 /** Invite + last-week practice markers shown on each lesson. */
-function LessonMarkers({ l }: { l: ClubLesson }) {
+function LessonMarkers({ l, labels = false }: { l: ClubLesson; labels?: boolean }) {
   const practice = practiceState(l);
-  const practiceLabel =
+  const invite = needsAttention(l)
+    ? { Icon: AlertCircle, text: l.invitationStatus === "Contact missing" ? "No contact" : "Not invited", tone: "text-destructive" }
+    : l.invitationStatus === "Connected"
+      ? { Icon: UserCheck, text: "Joined", tone: "" }
+      : { Icon: Mail, text: "Invited", tone: "" };
+  const prac =
     practice === "met"
-      ? `Met practice target last week (${l.practiceMin} of ${l.targetMin} min)`
+      ? { Icon: CheckCircle2, text: `${l.practiceMin}/${l.targetMin}m`, tone: "", label: `Met practice target last week (${l.practiceMin} of ${l.targetMin} min)` }
       : practice === "below"
-        ? `Below practice target last week (${l.practiceMin} of ${l.targetMin} min)`
+        ? { Icon: TrendingDown, text: `${l.practiceMin}/${l.targetMin}m`, tone: "text-destructive", label: `Below practice target last week (${l.practiceMin} of ${l.targetMin} min)` }
         : null;
+  const items = [
+    { ...invite, label: l.invitationStatus },
+    ...(prac ? [prac] : []),
+  ];
   return (
-    <span className="flex shrink-0 items-center gap-0.5">
-      {needsAttention(l) ? (
-        <AlertCircle className="size-3 text-destructive" aria-label={l.invitationStatus} />
-      ) : l.invitationStatus === "Connected" ? (
-        <UserCheck className="size-3" aria-label="Family joined" />
-      ) : (
-        <Mail className="size-3" aria-label="Invite awaiting acceptance" />
-      )}
-      {practice === "met" && <CheckCircle2 className="size-3" aria-label={practiceLabel!} />}
-      {practice === "below" && (
-        <TrendingDown className="size-3 text-destructive" aria-label={practiceLabel!} />
-      )}
+    <span className={cn("flex shrink-0 items-center", labels ? "flex-wrap gap-x-2 gap-y-0.5" : "gap-1")}>
+      {items.map(({ Icon, text, tone, label }) => (
+        <span key={label} className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", tone)}>
+          <Icon className="size-4 shrink-0" aria-label={label} />
+          {labels && <span>{text}</span>}
+        </span>
+      ))}
     </span>
   );
 }
@@ -70,8 +74,8 @@ export function LessonCalendarLegend() {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 border-t border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
       {items.map(([Icon, label, tone]) => (
-        <li key={label} className="flex items-center gap-1">
-          <Icon className={cn("size-3", tone)} aria-hidden="true" />
+        <li key={label} className="flex items-center gap-1.5">
+          <Icon className={cn("size-4", tone)} aria-hidden="true" />
           {label}
         </li>
       ))}
@@ -268,11 +272,16 @@ function WeekGrid({
                 >
                   <div className="flex items-center justify-between gap-1 font-semibold">
                     <span className="truncate">{l.studentName}</span>
-                    <LessonMarkers l={l} />
+                    {y(l.end) - y(l.start) < 64 && <LessonMarkers l={l} />}
                   </div>
                   <div className="truncate font-mono text-[10px] opacity-80">
                     {formatTimeLabel(l.start)} · {l.coachName}
                   </div>
+                  {y(l.end) - y(l.start) >= 64 && (
+                    <div className="mt-1">
+                      <LessonMarkers l={l} labels />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
