@@ -14,6 +14,7 @@ import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { chunks, readAll } from "./db-batch";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-events.server";
 import {
@@ -99,8 +100,7 @@ function planWriteError(error: { message?: string; code?: string }): never {
 
 /** Whether any athlete holds a copy of this plan (decision #66). */
 async function hasCopies(supabase: Client, coachId: string, planId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("plans")
+  const { data, error } = await plansTable(supabase)
     .select("id")
     .eq("shared_from_id", planId)
     .eq("coach_id", coachId)
@@ -306,8 +306,7 @@ export async function listPlans(
     count: number | null;
   }>;
   const plans = await readAll<ListedPlan>((from, to) => {
-    let q = supabase
-      .from("plans")
+    let q = plansTable(supabase)
       .select("id, title, kind, status, athlete_id, updated_at, shared_from_id", {
         count: "exact",
       })
@@ -354,10 +353,7 @@ export async function listPlans(
   const loadListAthletes = async () => {
     const rows: { id: string; first_name: string; last_name: string }[] = [];
     for (const ids of chunks(athleteIds)) {
-      const res = await supabase
-        .from("athletes")
-        .select("id, first_name, last_name")
-        .in("id", ids);
+      const res = await supabase.from("athletes").select("id, first_name, last_name").in("id", ids);
       if (res.error) dbError(res.error);
       rows.push(...(res.data ?? []));
     }
@@ -497,8 +493,7 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
-  const { data: plan, error } = await supabase
-    .from("plans")
+  const { data: plan, error } = await plansTable(supabase)
     .select(
       "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope, shared_from_id, shared_synced",
     )
@@ -675,16 +670,14 @@ export async function savePlan(
       throw sharedPlanRefusal();
     }
     if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
-    const { error } = await supabase
-      .from("plans")
+    const { error } = await plansTable(supabase)
       .update(planRow)
       .eq("id", planId)
       .eq("coach_id", coachId);
     if (error) planWriteError(error);
   } else {
     if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
-    const { data: inserted, error } = await supabase
-      .from("plans")
+    const { data: inserted, error } = await plansTable(supabase)
       .insert({ ...planRow, status: "benched" })
       .select("id")
       .single();
@@ -723,8 +716,7 @@ export async function getAthleteActivePlans(
   excludePlanId?: string,
 ): Promise<{ id: string; title: string }[]> {
   const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
-  let q = ctx.supabase
-    .from("plans")
+  let q = plansTable(ctx.supabase)
     .select("id, title")
     .eq("coach_id", coachId)
     .eq("athlete_id", athleteId)
@@ -847,8 +839,7 @@ export async function setPlanStatus(
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
   if (data.status === "active") {
-    const { data: owned, error: ownErr } = await supabase
-      .from("plans")
+    const { data: owned, error: ownErr } = await plansTable(supabase)
       .select("id, athlete_id, title, status")
       .eq("id", id)
       .eq("coach_id", coachId)
@@ -873,8 +864,7 @@ export async function setPlanStatus(
         // activation still goes through: with no cap there is nothing to
         // refuse, and an outbox replay after a lost response must not park a
         // finished activation as a conflict.
-        const { data: benched, error: bErr } = await supabase
-          .from("plans")
+        const { data: benched, error: bErr } = await plansTable(supabase)
           .update({ status: "benched" })
           .eq("id", data.replaceId)
           .eq("coach_id", coachId)
@@ -923,8 +913,7 @@ export async function setPlanStatus(
       if (!owned.athlete_id && owned.status !== "active") {
         await cascadeStatusToCopies(supabase, coachId, id, owned.status, "active", movedCopies);
       }
-      const { error } = await supabase
-        .from("plans")
+      const { error } = await plansTable(supabase)
         .update({ status: "active" })
         .eq("id", id)
         .eq("coach_id", coachId);
@@ -981,8 +970,7 @@ export async function setPlanStatus(
     // take it down: active to benched or draft, nothing else. That one write
     // goes through the server, after the ownership and shape checks here, and
     // records no "why" (the coach no longer coaches the athlete).
-    const { data: current, error: curErr } = await supabase
-      .from("plans")
+    const { data: current, error: curErr } = await plansTable(supabase)
       .select("id, athlete_id, status")
       .eq("id", id)
       .eq("coach_id", coachId)
@@ -992,8 +980,7 @@ export async function setPlanStatus(
       if (current.status === data.status) return { ok: true }; // a replay: nothing to change
       if (current.status !== "active") throw forbidden(NOT_ON_ROSTER);
       const admin = await loadAdmin();
-      const { error: demoteErr } = await admin
-        .from("plans")
+      const { error: demoteErr } = await plansTable(admin)
         .update({ status: data.status })
         .eq("id", id)
         .eq("coach_id", coachId)
@@ -1015,8 +1002,7 @@ export async function setPlanStatus(
       // conditional update makes that atomic: a replayed request (the iOS
       // outbox), a retry racing the first attempt, or a second tap changes
       // no row and records nothing.
-      const { data: changed, error } = await supabase
-        .from("plans")
+      const { data: changed, error } = await plansTable(supabase)
         .update({ status: "benched" })
         .eq("id", id)
         .eq("coach_id", coachId)
@@ -1034,8 +1020,7 @@ export async function setPlanStatus(
         });
       }
     } else {
-      const { error } = await supabase
-        .from("plans")
+      const { error } = await plansTable(supabase)
         .update({ status: data.status })
         .eq("id", id)
         .eq("coach_id", coachId);
@@ -1103,8 +1088,7 @@ export async function updatePlanCopies(
 }
 
 async function assertPlanOwned(supabase: Client, planId: string, coachId: string) {
-  const { data, error } = await supabase
-    .from("plans")
+  const { data, error } = await plansTable(supabase)
     .select("id, kind, status, athlete_id")
     .eq("id", planId)
     .eq("coach_id", coachId)
@@ -1136,7 +1120,7 @@ export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: t
   if (plan.kind === "plan" && !plan.athlete_id) await deleteDraftCopies(supabase, coachId, id);
 
   await supabase.from("plan_moves").delete().eq("plan_id", id);
-  const { error } = await supabase.from("plans").delete().eq("id", id).eq("coach_id", coachId);
+  const { error } = await plansTable(supabase).delete().eq("id", id).eq("coach_id", coachId);
   if (error) dbError(error);
   return { ok: true };
 }
@@ -1176,8 +1160,7 @@ export async function createPlan(
   }> = [];
 
   if (sourceId) {
-    const { data: src, error } = await supabase
-      .from("plans")
+    const { data: src, error } = await plansTable(supabase)
       .select("title, notes, feedback_scope")
       .eq("id", sourceId)
       .eq("coach_id", coachId)
@@ -1197,8 +1180,7 @@ export async function createPlan(
     sourceMoves = srcMoves ?? [];
   }
 
-  const { data: inserted, error: insErr } = await supabase
-    .from("plans")
+  const { data: inserted, error: insErr } = await plansTable(supabase)
     .insert({
       coach_id: coachId,
       title,
@@ -1242,8 +1224,7 @@ export async function addMoveToPlan(
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
 
-  const { data: plan, error: planErr } = await supabase
-    .from("plans")
+  const { data: plan, error: planErr } = await plansTable(supabase)
     .select("id, title, coach_id")
     .eq("id", planId)
     .maybeSingle();
@@ -1282,7 +1263,7 @@ export async function addMoveToPlan(
   });
   if (insErr) dbError(insErr);
 
-  await supabase.from("plans").update({ updated_at: now.toISOString() }).eq("id", plan.id);
+  await plansTable(supabase).update({ updated_at: now.toISOString() }).eq("id", plan.id);
 
   return { planId: plan.id, planTitle: plan.title || "Untitled plan" };
 }
@@ -1312,8 +1293,7 @@ export async function updatePlan(
 
   // Load current row so we can keep the kind/status/athlete combination
   // valid per the plans_kind_athlete_chk constraint.
-  const { data: current, error: loadErr } = await supabase
-    .from("plans")
+  const { data: current, error: loadErr } = await plansTable(supabase)
     .select("kind,status,athlete_id,title,notes,feedback_scope")
     .eq("id", id)
     .eq("coach_id", coachId)
@@ -1340,8 +1320,7 @@ export async function updatePlan(
     if (data.athleteId) await assertAthleteOnRoster(supabase, coachId, data.athleteId);
     const nextTitle = data.title ?? current.title ?? "Untitled plan";
     const nextNotes = data.notes ?? current.notes ?? "";
-    const { data: inserted, error: insErr } = await supabase
-      .from("plans")
+    const { data: inserted, error: insErr } = await plansTable(supabase)
       .insert({
         coach_id: coachId,
         title: nextTitle,
@@ -1422,7 +1401,7 @@ export async function updatePlan(
   const resultingAthlete = patch.athlete_id !== undefined ? patch.athlete_id : current.athlete_id;
   if (resultingAthlete) await assertAthleteOnRoster(supabase, coachId, resultingAthlete);
 
-  const { error } = await supabase.from("plans").update(patch).eq("id", id).eq("coach_id", coachId);
+  const { error } = await plansTable(supabase).update(patch).eq("id", id).eq("coach_id", coachId);
   if (error) planWriteError(error);
 
   return { ok: true };
@@ -1483,7 +1462,7 @@ export async function updatePlanMove(
     .eq("plan_id", pm.plan_id);
   if (error) dbError(error);
 
-  await supabase.from("plans").update({ updated_at: now.toISOString() }).eq("id", pm.plan_id);
+  await plansTable(supabase).update({ updated_at: now.toISOString() }).eq("id", pm.plan_id);
 
   return { ok: true };
 }
@@ -1519,7 +1498,7 @@ export async function removePlanMove(
     .select("id");
   if (error) dbError(error);
 
-  await supabase.from("plans").update({ updated_at: now.toISOString() }).eq("id", pm.plan_id);
+  await plansTable(supabase).update({ updated_at: now.toISOString() }).eq("id", pm.plan_id);
 
   // Only the request that actually deleted the row records the answer, so a
   // retry racing the first attempt cannot double it.
@@ -1620,7 +1599,7 @@ export async function addLibraryMovesToPlan(
   const { error: insErr } = await supabase.from("plan_moves").insert(rows);
   if (insErr) dbError(insErr);
 
-  await supabase.from("plans").update({ updated_at: now.toISOString() }).eq("id", planId);
+  await plansTable(supabase).update({ updated_at: now.toISOString() }).eq("id", planId);
 
   return { inserted: rows.length };
 }

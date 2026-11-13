@@ -8,6 +8,7 @@ import { listPolicyMatrix } from "@/lib/trust-center.functions";
 import { coachPolicies } from "@/lib/club-people";
 import { sportDisplayLabel } from "@/lib/coach-sports";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ClubAddSeats } from "@/components/org-admin/club-add-seats";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
@@ -32,11 +33,8 @@ import {
   releaseClubCoach,
   removeClubAdmin,
   setClubAdminRole,
-  expandClubContract,
 } from "@/lib/club-contract.functions";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { proratedSeatCost, clubUserType } from "@/lib/club-contract-quote";
+import { clubUserType } from "@/lib/club-contract-quote";
 import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
 
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
@@ -155,12 +153,8 @@ const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
 
 function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {
   const read = useServerFn(getClubContract);
-  const expand = useServerFn(expandClubContract);
   const [userSearch, setUserSearch] = useState("");
   const [userType, setUserType] = useState("all");
-  const [expansion, setExpansion] = useState(false);
-  const [extraSeats, setExtraSeats] = useState(1);
-  const [expansionKey, setExpansionKey] = useState("");
   const remove = useServerFn(removeClubAdmin);
   const setRole = useServerFn(setClubAdminRole);
   const release = useServerFn(releaseClubCoach);
@@ -268,18 +262,6 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
     link.click();
     URL.revokeObjectURL(url);
   }
-  const quote =
-    data.club.contract_seat_rate_cents == null ||
-    !data.club.contract_starts_on ||
-    !data.club.contract_ends_on
-      ? null
-      : proratedSeatCost(
-          data.club.contract_seat_rate_cents,
-          extraSeats,
-          data.club.contract_starts_on,
-          data.club.contract_ends_on,
-          new Date().toISOString().slice(0, 10),
-        );
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -287,16 +269,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           {data.seats.filter((s) => clubSeatStatus(s) === "filled").length} /{" "}
           {data.club.coach_seats} coach seats · {data.admins.length} admins
         </p>
-        <Button
-          variant="outline"
-          className="h-11"
-          onClick={() => {
-            setExpansion(true);
-            setExpansionKey(crypto.randomUUID());
-          }}
-        >
-          Add seats
-        </Button>
+        <ClubAddSeats club={data.club} />
       </div>
       <Button
         variant="outline"
@@ -344,72 +317,6 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           setUserType("all");
         }}
       />
-      <Sheet open={expansion} onOpenChange={setExpansion}>
-        <SheetContent
-          side={mobile ? "bottom" : "right"}
-          className={mobile ? "paper-surface p-6" : "p-6"}
-        >
-          <SheetHeader>
-            <SheetTitle>Add contract seats</SheetTitle>
-            <SheetDescription>
-              Additional seats take effect immediately. The remaining contract term is billed at
-              your agreed rate.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-4">
-            <Label htmlFor="extra-seats">Additional coach seats</Label>
-            <Input
-              id="extra-seats"
-              type="number"
-              min={1}
-              max={1000}
-              value={extraSeats}
-              onChange={(e) => setExtraSeats(Number(e.target.value))}
-            />
-            {quote == null ? (
-              <p className="text-sm text-text-secondary">
-                Gradus must set your contract rate and active term before seats can be added.
-              </p>
-            ) : (
-              <ClubKeyValueTable
-                rows={[
-                  [
-                    "True-up balance",
-                    new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: data.club.contract_currency,
-                    }).format(quote / 100),
-                  ],
-                  ["Term ends", displayDate(data.club.contract_ends_on)],
-                  ["Seats after increase", data.club.coach_seats + extraSeats],
-                ]}
-              />
-            )}
-            <Button
-              disabled={busy || quote == null}
-              className="h-11"
-              onClick={async () => {
-                if (quote == null) return;
-                const ok = await run(
-                  () =>
-                    expand({
-                      data: {
-                        organizationId: orgId,
-                        seats: extraSeats,
-                        expectedAmount: quote,
-                        requestKey: expansionKey,
-                      },
-                    }),
-                  "Seats added. True-up balance recorded for invoicing.",
-                );
-                if (ok) setExpansion(false);
-              }}
-            >
-              Confirm seat increase
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
       <Sheet
         open={!!detail}
         onOpenChange={(open) => {
