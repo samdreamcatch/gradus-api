@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { assertVoiceAllowed } from "./minor-voice.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { createNameMask, nameSpellingKey, unmaskStrings } from "./ai-names";
@@ -1051,8 +1052,7 @@ export async function applyDraft(
       setPlanSource("notes", draft.sources?.notes);
     }
   } else {
-    const { data: plan, error } = await supabase
-      .from("plans")
+    const { data: plan, error } = await plansTable(supabase)
       .select("id, kind, athlete_id, shared_from_id")
       .eq("id", workingPlanId)
       .eq("coach_id", coachId)
@@ -1066,8 +1066,7 @@ export async function applyDraft(
     // changes only through the plan's own athlete list.
     let sharedPlan = !!plan.shared_from_id;
     if (!sharedPlan && !plan.athlete_id && draft.athleteId && plan.kind === "plan") {
-      const { data: copies, error: copiesErr } = await supabase
-        .from("plans")
+      const { data: copies, error: copiesErr } = await plansTable(supabase)
         .select("id")
         .eq("shared_from_id", workingPlanId)
         .eq("coach_id", coachId)
