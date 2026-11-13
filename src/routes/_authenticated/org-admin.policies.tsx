@@ -415,9 +415,9 @@ function Policies() {
               rowKey={(r) => r.id}
               empty="No acknowledgement records"
               filtered={!!search.doc || role !== "all"}
-              groupControl={(label, rows) => (
+              groupControl={(label, rows) => selectionControl(rows, `Select outstanding acknowledgements for ${label}`)}
+              groupActions={(_label, rows) => (
                 <span className="inline-flex flex-wrap items-center gap-3">
-                  {selectionControl(rows, `Select outstanding acknowledgements for ${label}`)}
                   <Button
                     variant="ghost"
                     size="sm"

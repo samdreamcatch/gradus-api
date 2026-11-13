@@ -105,16 +105,21 @@ export function ClubGroupRow({
   label,
   count,
   colSpan,
+  actions,
 }: {
   label: ReactNode;
   count: number;
   colSpan: number;
+  actions?: ReactNode;
 }) {
   return (
     <TableRow className="club-group-row">
       <TableCell colSpan={colSpan} className="py-2! text-sm text-text-secondary">
-        <span className="font-semibold text-text-primary">{label}</span>
-        <span className="ml-2 font-mono">{count}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="font-semibold text-text-primary">{label}</span>
+          <span className="font-mono">{count}</span>
+          {actions && <span className="ml-auto inline-flex flex-wrap items-center gap-3">{actions}</span>}
+        </div>
       </TableCell>
     </TableRow>
   );
