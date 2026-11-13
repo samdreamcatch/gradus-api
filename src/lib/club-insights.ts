@@ -1,5 +1,7 @@
-import { STATE_LABELS } from "./session-states";
 import { practiceAdherence, targetPercent, type CoachWeek } from "./club-coach-metrics";
+
+/** Current mobile practice ratings, ordered by the stored state_index. */
+export const PRACTICE_DIFFICULTY_LABELS = ["Easy", "A bit easy", "Just right", "A bit hard", "Hard"] as const;
 
 /** Governed Insights questions. AI may only choose among these; it never writes queries. */
 export const INSIGHT_QUESTIONS = [
@@ -10,8 +12,8 @@ export const INSIGHT_QUESTIONS = [
   },
   {
     id: "session_feel",
-    title: "How practice felt",
-    prompt: "For each coach, how did students say practice felt over the last 4 weeks?",
+    title: "Practice difficulty",
+    prompt: "For each coach, how difficult did students rate practice over the last 4 weeks?",
   },
   {
     id: "stuck_students",
@@ -89,19 +91,19 @@ export function sessionFeel(input: InsightInput, since: string): InsightResult {
   const rows = input.coaches.map((c) => {
     const s = input.sessions.filter((x) => x.logged_at >= since && planCoach.get(x.plan_id) === c.id);
     const row: Record<string, InsightCell> = { coach: c.name, sessions: s.length };
-    STATE_LABELS.forEach((label, i) => {
+    PRACTICE_DIFFICULTY_LABELS.forEach((_, i) => {
       row[`s${i}`] = s.length ? Math.round((s.filter((x) => x.state_index === i).length / s.length) * 100) : null;
     });
     return row;
   });
   return {
     id: "session_feel",
-    title: "How practice felt",
-    note: "Share of logged sessions by how the student said practice felt. This is a feeling, not a measure of effort or skill.",
+    title: "Practice difficulty",
+    note: "Share of logged sessions by the student's practice difficulty rating. Difficulty does not measure effort or skill.",
     columns: [
       { key: "coach", label: "Coach" },
       { key: "sessions", label: "Sessions", kind: "number" },
-      ...STATE_LABELS.map((label, i) => ({ key: `s${i}`, label, kind: "percent" as const })),
+      ...PRACTICE_DIFFICULTY_LABELS.map((label, i) => ({ key: `s${i}`, label, kind: "percent" as const })),
     ],
     rows,
   };
