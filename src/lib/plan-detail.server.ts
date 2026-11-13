@@ -67,6 +67,8 @@ export interface RoleAwarePlanDetailDTO {
   pendingChanges?: PendingChangeDTO[];
   /** Parent and athlete: what the coach's last update changed (plan move id → tag). */
   updatedMoves?: Record<string, string>;
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 /**
@@ -178,6 +180,7 @@ export async function getPlanForViewer(
           }
         : {}),
       ...(plan.sharedFromId ? { sharedFromId: plan.sharedFromId } : {}),
+      ...(plan.purgeAt ? { purgeAt: plan.purgeAt } : {}),
     };
   }
 
@@ -193,6 +196,7 @@ export async function getPlanForViewer(
     plan.source === ATHLETE_SOURCE ? null : await loadUpdatedMoves(ctx.admin, plan.id);
   return {
     ...(updatedMoves ? { updatedMoves } : {}),
+    ...(plan.purgeAt ? { purgeAt: plan.purgeAt } : {}),
     id: plan.id,
     title: plan.title,
     notes: plan.notes,

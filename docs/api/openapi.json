@@ -7808,6 +7808,10 @@
                           "sharedFromId": {
                             "type": "string",
                             "description": "On one athlete's copy: the plan it was copied from."
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [
@@ -8279,6 +8283,10 @@
                         "type": "string"
                       },
                       "description": "Parent and athlete only: what the coach's last update changed on this plan, as plan move id to new, minutes, reps, or changed. Sent until practice is next logged on the plan."
+                    },
+                    "purgeAt": {
+                      "type": "string",
+                      "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                     }
                   },
                   "required": [
@@ -10245,6 +10253,10 @@
                           },
                           "source": {
                             "type": "string"
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [
@@ -10421,6 +10433,10 @@
                           },
                           "source": {
                             "type": "string"
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [

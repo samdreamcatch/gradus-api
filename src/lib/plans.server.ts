@@ -17,6 +17,7 @@ import { dbError } from "./db-error";
 import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-events.server";
+import { purgeAtField } from "./plan-deletion";
 import {
   announcePlansActivated,
   cascadeStatusToCopies,
@@ -200,6 +201,8 @@ export interface PlanSummaryDTO {
   sharedCount?: number;
   /** On an athlete's copy: the plan it was copied from. Omitted otherwise. */
   sharedFromId?: string;
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 export interface PlanDetailDTO extends PlanSummaryDTO {
@@ -299,6 +302,7 @@ export async function listPlans(
     athlete_id: string | null;
     updated_at: string;
     shared_from_id: string | null;
+    deleted_at: string | null;
   };
   type Paged<T> = PromiseLike<{
     data: T[] | null;
@@ -307,7 +311,7 @@ export async function listPlans(
   }>;
   const plans = await readAll<ListedPlan>((from, to) => {
     let q = plansTable(supabase)
-      .select("id, title, kind, status, athlete_id, updated_at, shared_from_id", {
+      .select("id, title, kind, status, athlete_id, updated_at, shared_from_id, deleted_at", {
         count: "exact",
       })
       .eq("coach_id", coachId);
@@ -457,6 +461,7 @@ export async function listPlans(
     return {
       ...(copyIds ? { sharedCount: copyIds.length } : {}),
       ...(p.shared_from_id ? { sharedFromId: p.shared_from_id } : {}),
+      ...(p.kind === "plan" ? purgeAtField(p.deleted_at) : {}),
       id: p.id,
       title: p.title,
       kind: p.kind as PlanKind,
@@ -495,7 +500,7 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
 
   const { data: plan, error } = await plansTable(supabase)
     .select(
-      "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope, shared_from_id, shared_synced",
+      "id, title, notes, kind, status, athlete_id, updated_at, voice_transcript, coach_id, feedback_scope, shared_from_id, shared_synced, deleted_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -596,6 +601,7 @@ export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetail
         }
       : {}),
     ...(isOwner && plan.shared_from_id ? { sharedFromId: plan.shared_from_id } : {}),
+    ...(plan.kind === "plan" ? purgeAtField(plan.deleted_at) : {}),
     id: plan.id,
     title: plan.title,
     notes: plan.notes,
@@ -670,15 +676,20 @@ export async function savePlan(
       throw sharedPlanRefusal();
     }
     if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
+    // A template rests at 'benched'; as a plan that status means deleted
+    // (decision #67), so a template saved as a plan starts as a draft.
+    const becomesPlan = existing.kind === "template" && data.kind === "plan";
     const { error } = await plansTable(supabase)
-      .update(planRow)
+      .update(becomesPlan ? { ...planRow, status: "draft" } : planRow)
       .eq("id", planId)
       .eq("coach_id", coachId);
     if (error) planWriteError(error);
   } else {
     if (planRow.athlete_id) await assertAthleteOnRoster(supabase, coachId, planRow.athlete_id);
     const { data: inserted, error } = await plansTable(supabase)
-      .insert({ ...planRow, status: "benched" })
+      // A template's only status is "benched"; a new plan starts as a draft. (It
+      // used to start "benched" too, which since decision #67 means deleted.)
+      .insert({ ...planRow, status: data.kind === "template" ? "benched" : "draft" })
       .select("id")
       .single();
     if (error) planWriteError(error);
@@ -840,7 +851,7 @@ export async function setPlanStatus(
 
   if (data.status === "active") {
     const { data: owned, error: ownErr } = await plansTable(supabase)
-      .select("id, athlete_id, title, status")
+      .select("id, athlete_id, title, status, deleted_at")
       .eq("id", id)
       .eq("coach_id", coachId)
       .maybeSingle();
@@ -911,7 +922,15 @@ export async function setPlanStatus(
     };
     try {
       if (!owned.athlete_id && owned.status !== "active") {
-        await cascadeStatusToCopies(supabase, coachId, id, owned.status, "active", movedCopies);
+        await cascadeStatusToCopies(
+          supabase,
+          coachId,
+          id,
+          owned.status,
+          "active",
+          movedCopies,
+          owned.deleted_at,
+        );
       }
       const { error } = await plansTable(supabase)
         .update({ status: "active" })
@@ -1098,7 +1117,7 @@ async function assertPlanOwned(supabase: Client, planId: string, coachId: string
   return data;
 }
 
-/** Only templates, drafts, and benched plans may be hard-deleted; active plans must be benched first. */
+/** Only templates, drafts, and deleted (benched) plans may be removed for good; an active plan is deleted first. */
 export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
   const coachId = await ensureCoachId(supabase, ctx.userId);
@@ -1110,7 +1129,8 @@ export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: t
     throw new ApiError({
       code: "not_deletable",
       status: 422,
-      message: "Active plans can't be deleted — bench the plan first.",
+      message:
+        "This plan is active. Delete it first; it then waits in Recently deleted, where Delete now removes it for good.",
     });
   }
 
@@ -1386,6 +1406,9 @@ export async function updatePlan(
     patch.athlete_id = null;
     patch.status = "draft";
   } else if (nextKind === "plan") {
+    // A template rests at 'benched'; as a plan that status means deleted
+    // (decision #67), so a template turned into a plan starts as a draft.
+    if (current.kind === "template") patch.status = "draft";
     if (!nextAthlete) {
       // A plan with no athlete goes back to draft on an edit, except one its
       // athletes hold copies of: editing it must not unpublish or restore it.

@@ -34,7 +34,7 @@ const KIND_CONFIG = {
     filters: [
       { value: "all", label: "All" },
       { value: "active", label: "Active" },
-      { value: "benched", label: "Benched" },
+      { value: "benched", label: "Deleted" },
       { value: "draft", label: "Draft" },
     ],
   },

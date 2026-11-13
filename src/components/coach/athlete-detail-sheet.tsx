@@ -245,7 +245,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       <section className="pb-2">
         <SectionHeader title="Plans" />
         {d.plans.length === 0 ? (
-          <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
+          <EmptyLine>No active or recently deleted plans for {d.firstName} yet.</EmptyLine>
         ) : (
           <PlansList plans={d.plans} />
         )}
@@ -525,7 +525,7 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
         <Collapsible open={benchedOpen} onOpenChange={setBenchedOpen}>
           <CollapsibleTrigger className="press-soft flex w-full items-center justify-between text-left">
             <Eyebrow size="micro" tone="tertiary" weight="black" as="span">
-              Benched ({benched.length})
+              Recently deleted ({benched.length})
             </Eyebrow>
             <ChevronDown
               className={cn(

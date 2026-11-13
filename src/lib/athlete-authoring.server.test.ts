@@ -172,7 +172,7 @@ describe("owner-scoped writes", () => {
 });
 
 describe("deleteAthletePlan", () => {
-  it("refuses an active plan (bench it first)", async () => {
+  it("refuses an active plan (it is deleted first)", async () => {
     const { client, calls } = world(undefined, { ...OWNED, status: "active" });
     const err = await caught(() => deleteAthletePlan(ctxOf(client), "plan-1"));
     expect(err?.status).toBe(422);

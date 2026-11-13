@@ -60,9 +60,11 @@ type PlanRow = {
   shared_from_id: string | null;
   shared_synced: Json | null;
   shared_changes: Json | null;
+  /** When the plan was deleted (decision #67); null unless it is in Recently deleted. */
+  deleted_at: string | null;
 };
 const PLAN_COLUMNS =
-  "id, title, notes, kind, status, athlete_id, feedback_scope, shared_from_id, shared_synced, shared_changes";
+  "id, title, notes, kind, status, athlete_id, feedback_scope, shared_from_id, shared_synced, shared_changes, deleted_at";
 
 const alreadyHasCopy = () =>
   new ApiError({
@@ -888,9 +890,12 @@ export type MovedCopy = { id: string; athlete_id: string; title: string; status:
 
 /**
  * The copies a status change on the plan carries with it:
- *  - going live takes the drafts live (or, when the plan was benched, brings
- *    back the copies benched with it);
- *  - benching or un-publishing takes the live copies down.
+ *  - going live takes the drafts live (or, when the plan was deleted, restores
+ *    the copies deleted with it);
+ *  - deleting or un-publishing takes the live copies down.
+ * A restore leaves alone a copy the coach deleted on its own before deleting
+ * the plan: `deletedAt` is when the plan was deleted, and only copies deleted
+ * at or after that moment come back with it.
  * Returns the copies it moved, for the caller's notifications and "why" answers.
  */
 export async function cascadeStatusToCopies(
@@ -905,12 +910,19 @@ export async function cascadeStatusToCopies(
    * even when a later batch, or the caller's next write, fails.
    */
   movedSoFar: MovedCopy[] = [],
+  /** When the plan was deleted: a restore brings back only copies deleted at or after it. */
+  deletedAt: string | null = null,
 ): Promise<MovedCopy[]> {
   const copies = await loadCopies(supabase, coachId, planId);
   if (!copies.length) return [];
+  const since = deletedAt ? Date.parse(deletedAt) : Number.NaN;
+  const deletedWithPlan = (c: PlanRow) =>
+    Number.isNaN(since) || !c.deleted_at || Date.parse(c.deleted_at) >= since;
   const moving =
     to === "active"
-      ? copies.filter((c) => c.status === (from === "benched" ? "benched" : "draft"))
+      ? from === "benched"
+        ? copies.filter((c) => c.status === "benched" && deletedWithPlan(c))
+        : copies.filter((c) => c.status === "draft")
       : copies.filter((c) => c.status === "active");
   if (!moving.length) return [];
   // Only athletes still on the roster: the write policy refuses the rest.

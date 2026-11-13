@@ -787,6 +787,70 @@ describe("status and delete follow the plan to its copies", () => {
     expect(copiesOf(db, "plan-1").every((c) => c.status === "active")).toBe(true);
   });
 
+  it("restores only the copies deleted with the plan, not one the coach deleted earlier", async () => {
+    const db = await sharedWithFour();
+    const ctx = { userId: "user-1", supabase: db.client };
+    // Greta's copy was deleted on its own, a week before the whole plan.
+    Object.assign(copyFor(db, "plan-1", GRETA), {
+      status: "benched",
+      deleted_at: "2026-11-03T10:00:00.000000+00:00",
+    });
+    Object.assign(db.table("plans").find((p) => p.id === "plan-1") as Row, {
+      status: "benched",
+      deleted_at: "2026-11-10T10:00:00.000000+00:00",
+    });
+    for (const athlete of [TOBIAS, ELSIE, MAEVE]) {
+      Object.assign(copyFor(db, "plan-1", athlete), {
+        status: "benched",
+        deleted_at: "2026-11-10T10:00:00.412000+00:00",
+      });
+    }
+    const told: string[] = [];
+    await setPlanStatus(
+      ctx,
+      "plan-1",
+      { status: "active" },
+      undefined,
+      undefined,
+      async (_coach, plans) => void told.push(...plans.map((p) => p.athleteId)),
+    );
+    expect(copyFor(db, "plan-1", GRETA).status).toBe("benched");
+    for (const athlete of [TOBIAS, ELSIE, MAEVE]) {
+      expect(copyFor(db, "plan-1", athlete).status).toBe("active");
+    }
+    expect(told.sort()).toEqual([TOBIAS, ELSIE, MAEVE].sort());
+  });
+
+  it("starts a template saved as a plan as a draft, never as a deleted plan", async () => {
+    const db = squad({ kind: "template", status: "benched" });
+    await savePlan(
+      { userId: "user-1", supabase: db.client },
+      {
+        id: "plan-1",
+        title: "Off-ice warm-up",
+        notes: "",
+        kind: "plan",
+        athleteId: GRETA,
+        moves: [],
+      },
+    );
+    const row = db.table("plans").find((p) => p.id === "plan-1") as Row;
+    expect(row.kind).toBe("plan");
+    expect(row.status).toBe("draft");
+  });
+
+  it("starts a template turned into a plan by a patch as a draft too", async () => {
+    const db = squad({ kind: "template", status: "benched" });
+    await updatePlan({ userId: "user-1", supabase: db.client }, "plan-1", {
+      kind: "plan",
+      athleteId: GRETA,
+    });
+    const row = db.table("plans").find((p) => p.id === "plan-1") as Row;
+    expect(row.kind).toBe("plan");
+    expect(row.athlete_id).toBe(GRETA);
+    expect(row.status).toBe("draft");
+  });
+
   it("leaves a copy alone when its athlete has left the roster", async () => {
     const db = await sharedWithFour();
     db.tables.coach_athletes = db.table("coach_athletes").filter((r) => r.athlete_id !== MAEVE);
@@ -886,6 +950,30 @@ describe("the plans list and plan screen", () => {
     const copy = await getPlan(ctx, copyFor(db, "plan-1", GRETA).id as string);
     expect(copy.sharedFromId).toBe("plan-1");
     expect(copy.sharedWith).toBeUndefined();
+  });
+
+  it("says when a deleted plan will be removed, and never for a template", async () => {
+    const db = squad({
+      athlete_id: GRETA,
+      status: "benched",
+      deleted_at: "2026-11-11T09:00:00.000Z",
+    });
+    // A template rests at 'benched' too; even with a time on its row it is never "deleted".
+    db.table("plans").push(
+      planRow({
+        id: "template-1",
+        kind: "template",
+        status: "benched",
+        deleted_at: "2026-11-11T09:00:00.000Z",
+      }),
+    );
+    const ctx = { userId: "user-1", supabase: db.client };
+    const plans = await listPlans(ctx, {});
+    expect(plans.find((p) => p.id === "plan-1")?.purgeAt).toBe("2026-12-11T09:00:00.000Z");
+    const template = plans.find((p) => p.id === "template-1");
+    expect(template?.kind).toBe("template");
+    expect("purgeAt" in (template as object)).toBe(false);
+    expect((await getPlan(ctx, "plan-1")).purgeAt).toBe("2026-12-11T09:00:00.000Z");
   });
 
   it("adds nothing to an ordinary plan", async () => {

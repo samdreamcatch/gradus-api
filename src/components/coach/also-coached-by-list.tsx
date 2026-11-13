@@ -11,7 +11,7 @@ function coachMeta(coach: OtherCoachDTO): string {
     bits.push(`${coach.activeCount} active plan${coach.activeCount === 1 ? "" : "s"}`);
   }
   if (coach.benchedCount > 0) {
-    bits.push(`${coach.benchedCount} benched`);
+    bits.push(`${coach.benchedCount} deleted`);
   }
   return bits.join(" · ");
 }

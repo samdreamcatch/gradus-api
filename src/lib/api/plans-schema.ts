@@ -95,6 +95,12 @@ export const planSummarySchema = z.object({
     .string()
     .optional()
     .describe("On one athlete's copy: the plan it was copied from."),
+  purgeAt: z
+    .string()
+    .optional()
+    .describe(
+      "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan.",
+    ),
 }) satisfies z.ZodType<PlanSummaryDTO>;
 
 /** One athlete's copy of a plan the coach gave to several athletes (decision #66). */
@@ -187,6 +193,12 @@ export const planDetailSchema = z.object({
     .optional()
     .describe(
       "Parent and athlete only: what the coach's last update changed on this plan, as plan move id to new, minutes, reps, or changed. Sent until practice is next logged on the plan.",
+    ),
+  purgeAt: z
+    .string()
+    .optional()
+    .describe(
+      "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan.",
     ),
 }) satisfies z.ZodType<RoleAwarePlanDetailDTO>;
 
@@ -289,6 +301,12 @@ export const parentPlanSummarySchema = z.object({
   sessionsByState: sessionsByStateSchema,
   sessionsTotal: z.number().int(),
   source: z.string().optional(),
+  purgeAt: z
+    .string()
+    .optional()
+    .describe(
+      "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan.",
+    ),
 }) satisfies z.ZodType<ParentPlanSummaryDTO>;
 
 export const parentPlansSchema = z.object({
@@ -317,6 +335,12 @@ export const athletePlanSummarySchema = z.object({
   sessionsTotal: z.number().int(),
   /** `"athlete"` marks a plan the athlete wrote (never captioned "from Gradus"). */
   source: z.string().optional(),
+  purgeAt: z
+    .string()
+    .optional()
+    .describe(
+      "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan.",
+    ),
 }) satisfies z.ZodType<AthletePlanSummaryDTO>;
 
 /** An unfinished plan the athlete wrote; its own type so the closed `status` enum above never gains a value. */

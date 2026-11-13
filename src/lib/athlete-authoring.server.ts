@@ -266,7 +266,8 @@ export async function deleteAthletePlan(
     throw new ApiError({
       code: "not_deletable",
       status: 422,
-      message: "Active plans can't be deleted — bench the plan first.",
+      message:
+        "This plan is active. Delete it first; it then waits in Recently deleted, where Delete now removes it for good.",
     });
   }
 

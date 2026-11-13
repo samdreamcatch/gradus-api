@@ -96,7 +96,7 @@ function StatusPill({ status }: { status: "active" | "benched" }) {
     </span>
   ) : (
     <span className="inline-flex items-center rounded-pill border border-divider bg-elevated px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-      Benched
+      Deleted
     </span>
   );
 }
