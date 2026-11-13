@@ -27,3 +27,5 @@
 - Club presentation primitives live under components/org-admin and wrap shared UI without changing it; headers include the mobile sidebar trigger, while grid Columns combines device-saved visibility and grouping.
 
 - Settings and Users share ClubAddSeats for the existing seat-increase confirmation, so pricing and refreshed seat counts stay consistent across entry points.
+
+- Plan-copy reads and writes use a local plansTable schema extension to cover migration fields without editing generated clients or changing caller authorization.

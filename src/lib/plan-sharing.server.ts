@@ -22,6 +22,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { chunks, eachLimited, readAll } from "./db-batch";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import {
   diffContent,
@@ -110,8 +111,7 @@ async function loadMoves(supabase: Client, planIds: string[]): Promise<Map<strin
 async function loadCopies(supabase: Client, coachId: string, planId: string): Promise<PlanRow[]> {
   const rows = await readAll<PlanRow>(
     (from, to) =>
-      supabase
-        .from("plans")
+      plansTable(supabase)
         .select(PLAN_COLUMNS, { count: "exact" })
         .eq("shared_from_id", planId)
         .eq("coach_id", coachId)
@@ -175,8 +175,7 @@ export async function loadCopyIdsByPlan(
   for (const ids of chunks(Array.from(new Set(planIds)))) {
     const rows = await readAll<CopyRef>(
       (from, to) =>
-        supabase
-          .from("plans")
+        plansTable(supabase)
           .select("id, shared_from_id, athlete_id", { count: "exact" })
           .eq("coach_id", coachId)
           .eq("kind", "plan")
@@ -449,8 +448,7 @@ export async function sharePlanFor(
   now: Date = new Date(),
   announce: ShareAnnouncers = liveAnnouncers,
 ): Promise<{ id: string; shared: number }> {
-  const { data: found, error } = await supabase
-    .from("plans")
+  const { data: found, error } = await plansTable(supabase)
     .select(PLAN_COLUMNS)
     .eq("id", id)
     .eq("coach_id", coachId)
@@ -465,8 +463,7 @@ export async function sharePlanFor(
 
   // One athlete's copy, opened on its own: the athletes join the plan it came from.
   if (plan.kind === "plan" && plan.athlete_id && plan.shared_from_id) {
-    const { data: origin, error: originErr } = await supabase
-      .from("plans")
+    const { data: origin, error: originErr } = await plansTable(supabase)
       .select("id, athlete_id")
       .eq("id", plan.shared_from_id)
       .eq("coach_id", coachId)
@@ -494,8 +491,7 @@ export async function sharePlanFor(
     plan.kind === "plan" && !!plan.athlete_id && (isLive || (await hasPractice(supabase, plan.id)));
   const needsNewSource = plan.kind === "template" || practised;
   if (needsNewSource) {
-    const { data: created, error: createErr } = await supabase
-      .from("plans")
+    const { data: created, error: createErr } = await plansTable(supabase)
       .insert({
         coach_id: coachId,
         title: plan.title,
@@ -523,8 +519,7 @@ export async function sharePlanFor(
       // A draft for one athlete becomes the plan for all of them. Nothing was
       // practised on it, so that athlete, if still chosen, gets a copy below
       // like everyone else.
-      const { data: cleared, error: clearErr } = await supabase
-        .from("plans")
+      const { data: cleared, error: clearErr } = await plansTable(supabase)
         .update({ athlete_id: null, shared_from_id: null, shared_synced: synced })
         .eq("id", plan.id)
         .eq("coach_id", coachId)
@@ -548,8 +543,7 @@ export async function sharePlanFor(
       // the plan it made (below), and the caller is told to retry, which then
       // adds to the first one's plan.
       if (plan.kind === "plan" && plan.athlete_id && athleteIds.includes(plan.athlete_id)) {
-        const { data: linked, error: linkErr } = await supabase
-          .from("plans")
+        const { data: linked, error: linkErr } = await plansTable(supabase)
           .update({ shared_from_id: sourceId, shared_synced: synced })
           .eq("id", plan.id)
           .eq("coach_id", coachId)
@@ -566,8 +560,7 @@ export async function sharePlanFor(
     const toCreate = athleteIds.filter((a) => !hasCopy.has(a));
     shared = hasCopy.size + toCreate.length;
     if (toCreate.length) {
-      const { data: inserted, error: insErr } = await supabase
-        .from("plans")
+      const { data: inserted, error: insErr } = await plansTable(supabase)
         .insert(
           toCreate.map((athleteId) => ({
             coach_id: coachId,
@@ -611,8 +604,7 @@ export async function sharePlanFor(
     };
     if (data.activate && sourceStatus !== "active") sourcePatch.status = "active";
     if (!parseContent(sourceSynced)) sourcePatch.shared_synced = synced;
-    const { error: srcErr } = await supabase
-      .from("plans")
+    const { error: srcErr } = await plansTable(supabase)
       .update(sourcePatch)
       .eq("id", sourceId)
       .eq("coach_id", coachId);
@@ -624,8 +616,7 @@ export async function sharePlanFor(
         (c) => c.status === "draft" && athleteIds.includes(c.athlete_id as string),
       );
       for (const ids of chunks(waiting.map((c) => c.id))) {
-        const { error: actErr } = await supabase
-          .from("plans")
+        const { error: actErr } = await plansTable(supabase)
           .update({ status: "active" })
           .in("id", ids)
           .eq("coach_id", coachId)
@@ -640,7 +631,6 @@ export async function sharePlanFor(
         });
       }
     }
-
   } catch (err) {
     // Nobody has been told yet. Copies made by this request go, so no athlete
     // is left holding an empty or half-made plan, and so does a plan made for
@@ -649,8 +639,7 @@ export async function sharePlanFor(
     await takeBack(supabase, coachId, createdIds, needsNewSource ? sourceId : null);
     if (detached) {
       // The draft goes back to the athlete it was for.
-      const { error: backErr } = await supabase
-        .from("plans")
+      const { error: backErr } = await plansTable(supabase)
         .update({
           athlete_id: plan.athlete_id,
           shared_from_id: plan.shared_from_id,
@@ -687,12 +676,11 @@ async function takeBack(
 ) {
   try {
     for (const ids of chunks(copyIds)) {
-      const { error } = await supabase.from("plans").delete().in("id", ids).eq("coach_id", coachId);
+      const { error } = await plansTable(supabase).delete().in("id", ids).eq("coach_id", coachId);
       if (error) console.error("[plans] undoing a failed share: copies not removed", error);
     }
     if (newSourceId) {
-      const { error } = await supabase
-        .from("plans")
+      const { error } = await plansTable(supabase)
         .delete()
         .eq("id", newSourceId)
         .eq("coach_id", coachId);
@@ -731,8 +719,7 @@ export async function updateCopiesFor(
   now: Date = new Date(),
   announce: ShareAnnouncers = liveAnnouncers,
 ): Promise<{ ok: true; updated: number }> {
-  const { data: found, error } = await supabase
-    .from("plans")
+  const { data: found, error } = await plansTable(supabase)
     .select(PLAN_COLUMNS)
     .eq("id", id)
     .eq("coach_id", coachId)
@@ -853,14 +840,13 @@ export async function updateCopiesFor(
     })),
   ];
   if (planRows.length) {
-    const { error: rowsErr } = await supabase.from("plans").upsert(planRows, { onConflict: "id" });
+    const { error: rowsErr } = await plansTable(supabase).upsert(planRows, { onConflict: "id" });
     if (rowsErr) writeError(rowsErr);
   }
 
   // The plan remembers what it last sent, so "what changed" starts again from here.
   if (!sameContent(parseContent(plan.shared_synced), content)) {
-    const { error: srcErr } = await supabase
-      .from("plans")
+    const { error: srcErr } = await plansTable(supabase)
       .update({ shared_synced: synced })
       .eq("id", plan.id)
       .eq("coach_id", coachId);
@@ -936,8 +922,7 @@ export async function cascadeStatusToCopies(
   const allowed = moving.filter((c) => rostered.has(c.athlete_id as string));
   if (!allowed.length) return [];
   for (const ids of chunks(allowed.map((c) => c.id))) {
-    const { data, error } = await supabase
-      .from("plans")
+    const { data, error } = await plansTable(supabase)
       .update({ status: to })
       .in("id", ids)
       .eq("coach_id", coachId)
@@ -960,8 +945,7 @@ export async function cascadeStatusToCopies(
 
 /** Deleting a draft plan takes its draft copies with it; a copy that went live is kept. */
 export async function deleteDraftCopies(supabase: Client, coachId: string, planId: string) {
-  const { error } = await supabase
-    .from("plans")
+  const { error } = await plansTable(supabase)
     .delete()
     .eq("shared_from_id", planId)
     .eq("coach_id", coachId)
@@ -981,8 +965,7 @@ export async function loadUpdatedMoves(
   admin: Client,
   planId: string,
 ): Promise<Record<string, string> | null> {
-  const { data, error } = await admin
-    .from("plans")
+  const { data, error } = await plansTable(admin)
     .select("shared_changes")
     .eq("id", planId)
     .maybeSingle();
