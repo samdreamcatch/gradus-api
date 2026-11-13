@@ -909,7 +909,8 @@ function ClubSchedulePage() {
           {inviteable.length ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
               <p className="text-sm text-text-primary">
-                {inviteable.length} {inviteable.length === 1 ? "student hasn't" : "students haven't"} been invited yet.
+                {inviteable.length}{" "}
+                {inviteable.length === 1 ? "student hasn't" : "students haven't"} been invited yet.
               </p>
               <div className="flex gap-2">
                 <Button asChild variant="outline">

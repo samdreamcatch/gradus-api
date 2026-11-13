@@ -4,7 +4,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, FileUp, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { RosterCoach } from "@/lib/org-admin.functions";
-import { clubAddStudents, type ClubAddStudentResult, type ClubStudent } from "@/lib/club-students.functions";
+import {
+  clubAddStudents,
+  type ClubAddStudentResult,
+  type ClubStudent,
+} from "@/lib/club-students.functions";
 import {
   LENGTH_PRESETS,
   blankStudentRow,
@@ -129,7 +133,9 @@ export function ClubAddStudentsSheet({
   function replaceWith(parsed: StudentRow[]) {
     if (!parsed.length) return toast.error("No students found in that text.");
     setRows((rs) => [...rs.filter((r) => !isBlankRow(r)), ...parsed]);
-    toast.success(`${parsed.length} ${parsed.length === 1 ? "row" : "rows"} added — check them below`);
+    toast.success(
+      `${parsed.length} ${parsed.length === 1 ? "row" : "rows"} added — check them below`,
+    );
   }
   function onPaste(e: ClipboardEvent<HTMLInputElement>) {
     const text = e.clipboardData.getData("text");
@@ -179,7 +185,9 @@ export function ClubAddStudentsSheet({
   }
 
   const label = `Add ${ready.length} ${ready.length === 1 ? "student" : "students"}${
-    sendInvites && ready.length ? ` · send ${ready.length} ${ready.length === 1 ? "invite" : "invites"}` : ""
+    sendInvites && ready.length
+      ? ` · send ${ready.length} ${ready.length === 1 ? "invite" : "invites"}`
+      : ""
   }`;
 
   return (
@@ -214,7 +222,10 @@ export function ClubAddStudentsSheet({
                   {r.ok ? (
                     <Check className="mt-0.5 size-4 text-accent-ink" aria-label="Added" />
                   ) : (
-                    <TriangleAlert className="mt-0.5 size-4 text-destructive" aria-label="Not added" />
+                    <TriangleAlert
+                      className="mt-0.5 size-4 text-destructive"
+                      aria-label="Not added"
+                    />
                   )}
                   <div>
                     <div className="font-semibold text-text-primary">{r.name || "Unnamed row"}</div>
@@ -224,7 +235,11 @@ export function ClubAddStudentsSheet({
               ))}
               <SheetFooter className="mt-5 gap-2">
                 {results.some((r) => !r.ok) ? (
-                  <Button variant="outline" className="min-h-11 press" onClick={() => setResults(null)}>
+                  <Button
+                    variant="outline"
+                    className="min-h-11 press"
+                    onClick={() => setResults(null)}
+                  >
                     Fix skipped rows
                   </Button>
                 ) : null}
@@ -243,7 +258,9 @@ export function ClubAddStudentsSheet({
             <div className="mt-5 space-y-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-caption uppercase text-text-secondary">Coach for new rows</Label>
+                  <Label className="text-caption uppercase text-text-secondary">
+                    Coach for new rows
+                  </Label>
                   <Select
                     value={defaultCoach || NONE}
                     onValueChange={(v) => setDefaultCoach(v === NONE ? "" : v)}
@@ -265,7 +282,11 @@ export function ClubAddStudentsSheet({
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" className="min-h-11 press" onClick={() => fileRef.current?.click()}>
+                <Button
+                  variant="outline"
+                  className="min-h-11 press"
+                  onClick={() => fileRef.current?.click()}
+                >
                   <FileUp className="size-4" /> Import a .csv
                 </Button>
                 <input
@@ -281,7 +302,8 @@ export function ClubAddStudentsSheet({
                   }}
                 />
                 <p className="text-meta text-text-tertiary">
-                  Paste columns: first, last, email, under/over 18, day, start, length, guardian first, guardian last.
+                  Paste columns: first, last, email, under/over 18, day, start, length, guardian
+                  first, guardian last.
                 </p>
               </div>
 
@@ -315,7 +337,11 @@ export function ClubAddStudentsSheet({
                           />
                         </Field>
                         <Field label="Age">
-                          <div className="flex h-11 rounded-md border border-divider p-0.5" role="group" aria-label="Age">
+                          <div
+                            className="flex h-11 rounded-md border border-divider p-0.5"
+                            role="group"
+                            aria-label="Age"
+                          >
                             {[false, true].map((adult) => (
                               <button
                                 key={String(adult)}
@@ -345,7 +371,9 @@ export function ClubAddStudentsSheet({
                             <Input
                               value={row.guardianFirstName}
                               onKeyDown={(e) => onKey(e, row)}
-                              onChange={(e) => update(row.id, { guardianFirstName: e.target.value })}
+                              onChange={(e) =>
+                                update(row.id, { guardianFirstName: e.target.value })
+                              }
                             />
                           </Field>
                           <Field label="Parent or guardian last name">
@@ -359,11 +387,18 @@ export function ClubAddStudentsSheet({
                       )}
 
                       <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.2fr)_auto_auto_auto_auto]">
-                        <Field label="Coach" action={rows.length > 1 ? () => applyToAll("coachId", row) : undefined}>
+                        <Field
+                          label="Coach"
+                          action={rows.length > 1 ? () => applyToAll("coachId", row) : undefined}
+                        >
                           <Select
                             value={row.coachId || NONE}
                             onValueChange={(v) =>
-                              update(row.id, { coachId: v === NONE ? "" : v, currentLevelKey: "", seasonGoalKey: "" })
+                              update(row.id, {
+                                coachId: v === NONE ? "" : v,
+                                currentLevelKey: "",
+                                seasonGoalKey: "",
+                              })
                             }
                           >
                             <SelectTrigger className="min-h-11" aria-label="Coach">
@@ -384,7 +419,9 @@ export function ClubAddStudentsSheet({
                         <Field label="Day">
                           <Select
                             value={row.dayOfWeek === null ? NONE : String(row.dayOfWeek)}
-                            onValueChange={(v) => update(row.id, { dayOfWeek: v === NONE ? null : Number(v) })}
+                            onValueChange={(v) =>
+                              update(row.id, { dayOfWeek: v === NONE ? null : Number(v) })
+                            }
                           >
                             <SelectTrigger className="min-h-11 w-28" aria-label="Day">
                               <SelectValue />
@@ -409,7 +446,9 @@ export function ClubAddStudentsSheet({
                         </Field>
                         <Field
                           label="Length"
-                          action={rows.length > 1 ? () => applyToAll("lengthMinutes", row) : undefined}
+                          action={
+                            rows.length > 1 ? () => applyToAll("lengthMinutes", row) : undefined
+                          }
                         >
                           <div className="flex gap-2">
                             <Select
@@ -438,7 +477,9 @@ export function ClubAddStudentsSheet({
                                 aria-label="Minutes"
                                 className="w-20"
                                 value={row.lengthMinutes}
-                                onChange={(e) => update(row.id, { lengthMinutes: Number(e.target.value) || 0 })}
+                                onChange={(e) =>
+                                  update(row.id, { lengthMinutes: Number(e.target.value) || 0 })
+                                }
                               />
                             ) : null}
                           </div>
@@ -449,7 +490,9 @@ export function ClubAddStudentsSheet({
                         >
                           <Select
                             value={row.frequency}
-                            onValueChange={(v) => update(row.id, { frequency: v as StudentFrequency })}
+                            onValueChange={(v) =>
+                              update(row.id, { frequency: v as StudentFrequency })
+                            }
                           >
                             <SelectTrigger className="min-h-11 w-40" aria-label="Frequency">
                               <SelectValue />
@@ -469,12 +512,28 @@ export function ClubAddStudentsSheet({
                         {levelsOpen.has(row.id) && levels.length ? (
                           <>
                             {(["currentLevelKey", "seasonGoalKey"] as const).map((field) => (
-                              <Field key={field} label={field === "currentLevelKey" ? "Current level" : "Target this season"}>
+                              <Field
+                                key={field}
+                                label={
+                                  field === "currentLevelKey"
+                                    ? "Current level"
+                                    : "Target this season"
+                                }
+                              >
                                 <Select
                                   value={row[field] || NONE}
-                                  onValueChange={(v) => update(row.id, { [field]: v === NONE ? "" : v })}
+                                  onValueChange={(v) =>
+                                    update(row.id, { [field]: v === NONE ? "" : v })
+                                  }
                                 >
-                                  <SelectTrigger className="min-h-11 w-52" aria-label={field === "currentLevelKey" ? "Current level" : "Target this season"}>
+                                  <SelectTrigger
+                                    className="min-h-11 w-52"
+                                    aria-label={
+                                      field === "currentLevelKey"
+                                        ? "Current level"
+                                        : "Target this season"
+                                    }
+                                  >
                                     <SelectValue placeholder="Pick a level" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -511,7 +570,12 @@ export function ClubAddStudentsSheet({
                             onClick={() =>
                               setRows((rs) => {
                                 const at = rs.findIndex((r) => r.id === row.id);
-                                const copy = { ...row, id: blankStudentRow().id, firstName: "", lastName: "" };
+                                const copy = {
+                                  ...row,
+                                  id: blankStudentRow().id,
+                                  firstName: "",
+                                  lastName: "",
+                                };
                                 return [...rs.slice(0, at + 1), copy, ...rs.slice(at + 1)];
                               })
                             }
@@ -540,14 +604,21 @@ export function ClubAddStudentsSheet({
                     </div>
                   );
                 })}
-                <Button variant="outline" className="min-h-11 press" onClick={() => addRow(rows[rows.length - 1])}>
+                <Button
+                  variant="outline"
+                  className="min-h-11 press"
+                  onClick={() => addRow(rows[rows.length - 1])}
+                >
                   <Plus className="size-4" /> Add another student
                 </Button>
               </div>
 
               <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-between gap-3 border-t border-divider bg-popover px-6 py-4">
                 <label className="flex items-center gap-2 text-sm text-text-primary">
-                  <Checkbox checked={sendInvites} onCheckedChange={(v) => setSendInvites(v === true)} />
+                  <Checkbox
+                    checked={sendInvites}
+                    onCheckedChange={(v) => setSendInvites(v === true)}
+                  />
                   Send invites now
                 </label>
                 <div className="flex items-center gap-3">
@@ -603,7 +674,11 @@ function Field({
       <div className="flex items-center justify-between gap-2">
         <span className="text-caption uppercase text-text-secondary">{label}</span>
         {action ? (
-          <button type="button" onClick={action} className="press-soft text-micro uppercase text-accent-ink">
+          <button
+            type="button"
+            onClick={action}
+            className="press-soft text-micro uppercase text-accent-ink"
+          >
             Apply to all
           </button>
         ) : null}

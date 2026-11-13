@@ -92,7 +92,8 @@ export function studentRowProblems(
     if (ctx.existing.has(`${row.coachId}|${key}`)) out.push("Already on this coach's roster");
     else if (
       ctx.others.some(
-        (o) => o.id !== row.id && o.coachId === row.coachId && nameKey(o.firstName, o.lastName) === key,
+        (o) =>
+          o.id !== row.id && o.coachId === row.coachId && nameKey(o.firstName, o.lastName) === key,
       )
     )
       out.push("Listed twice");
@@ -101,8 +102,23 @@ export function studentRowProblems(
 }
 
 const DAYS: Record<string, number> = {
-  sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3,
-  thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5, sat: 6, saturday: 6,
+  sun: 0,
+  sunday: 0,
+  mon: 1,
+  monday: 1,
+  tue: 2,
+  tues: 2,
+  tuesday: 2,
+  wed: 3,
+  wednesday: 3,
+  thu: 4,
+  thur: 4,
+  thurs: 4,
+  thursday: 4,
+  fri: 5,
+  friday: 5,
+  sat: 6,
+  saturday: 6,
 };
 
 export function parseDay(value: string): number | null {
@@ -128,7 +144,10 @@ export function normalizeStart(value: string): string {
  * A header row is skipped. Missing cells stay blank for the admin to fill in.
  */
 export function parsePastedStudents(text: string, coachId: string): StudentRow[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const rows: StudentRow[] = [];
   for (const line of lines) {
     const cells = (line.includes("\t") ? line.split("\t") : line.split(",")).map((c) => c.trim());

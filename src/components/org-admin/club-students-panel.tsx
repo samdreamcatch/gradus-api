@@ -39,8 +39,18 @@ const COLUMNS: ClubColumn<ClubStudent>[] = [
     render: (s) => <ClubPersonCell name={s.name} />,
     sortValue: (s) => s.name,
   },
-  { key: "age", label: "Age", render: (s) => (s.adult ? "Over 18" : "Under 18"), groupValue: (s) => (s.adult ? "Over 18" : "Under 18") },
-  { key: "guardian", label: "Parent or guardian", render: (s) => (s.adult ? "Self" : (s.guardian ?? "—")), sortValue: (s) => s.guardian },
+  {
+    key: "age",
+    label: "Age",
+    render: (s) => (s.adult ? "Over 18" : "Under 18"),
+    groupValue: (s) => (s.adult ? "Over 18" : "Under 18"),
+  },
+  {
+    key: "guardian",
+    label: "Parent or guardian",
+    render: (s) => (s.adult ? "Self" : (s.guardian ?? "—")),
+    sortValue: (s) => s.guardian,
+  },
   { key: "email", label: "Invite email", render: (s) => s.email ?? "—", sortValue: (s) => s.email },
   {
     key: "coaches",
@@ -135,13 +145,22 @@ export function ClubStudentsPanel({
       {waiting.length ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
           <p className="text-sm text-text-primary">
-            {waiting.length} {waiting.length === 1 ? "family hasn't" : "families haven't"} been invited yet.
+            {waiting.length} {waiting.length === 1 ? "family hasn't" : "families haven't"} been
+            invited yet.
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" className="min-h-11 press" onClick={() => setStatus("Not invited")}>
+            <Button
+              variant="outline"
+              className="min-h-11 press"
+              onClick={() => setStatus("Not invited")}
+            >
               Review
             </Button>
-            <Button className="min-h-11 press" disabled={busy} onClick={() => setConfirmInvite(true)}>
+            <Button
+              className="min-h-11 press"
+              disabled={busy}
+              onClick={() => setConfirmInvite(true)}
+            >
               <Send className="size-4" /> Send {waiting.length}
             </Button>
           </div>
@@ -181,7 +200,9 @@ export function ClubStudentsPanel({
           setStatus("all");
         }}
         noun={{ one: "student", many: "students" }}
-        empty={students.isLoading ? "Loading students…" : "No students yet — use Add students to start."}
+        empty={
+          students.isLoading ? "Loading students…" : "No students yet — use Add students to start."
+        }
       />
       {open && seats.data ? (
         <ClubAddStudentsSheet

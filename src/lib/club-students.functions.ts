@@ -94,7 +94,10 @@ export const getClubStudents = createServerFn({ method: "POST" })
         .from("athlete_lesson_slots")
         .select("athlete_id,coach_id")
         .in("athlete_id", athleteIds)
-        .in("coach_id", coaches.map((c) => c.id)),
+        .in(
+          "coach_id",
+          coaches.map((c) => c.id),
+        ),
       admin
         .from("athlete_guardians")
         .select("athlete_id,parent_profiles(first_name,last_name)")

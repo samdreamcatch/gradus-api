@@ -10,7 +10,13 @@ import {
 
 const coach = "11111111-1111-1111-1111-111111111111";
 function row(p: Partial<StudentRow> = {}): StudentRow {
-  return { ...blankStudentRow(coach), firstName: "Priya", lastName: "Okonkwo", email: "d@example.com", ...p };
+  return {
+    ...blankStudentRow(coach),
+    firstName: "Priya",
+    lastName: "Okonkwo",
+    email: "d@example.com",
+    ...p,
+  };
 }
 const ctx = (others: StudentRow[] = [], existing: string[] = []) => ({
   seated: new Set([coach]),
@@ -26,8 +32,12 @@ describe("club add students rules", () => {
     );
   });
   it("needs a parent or guardian email for under-18 students", () => {
-    expect(studentRowProblems(row({ email: "" }), ctx())).toContain("Add a parent or guardian email");
-    expect(studentRowProblems(row({ email: "", adult: true }), ctx())).toContain("Add the athlete's email");
+    expect(studentRowProblems(row({ email: "" }), ctx())).toContain(
+      "Add a parent or guardian email",
+    );
+    expect(studentRowProblems(row({ email: "", adult: true }), ctx())).toContain(
+      "Add the athlete's email",
+    );
   });
   it("won't add the same student twice to a coach (safe retry)", () => {
     expect(studentRowProblems(row(), ctx([], [`${coach}|priya okonkwo`]))).toContain(
@@ -46,12 +56,20 @@ describe("club add students rules", () => {
       coach,
     );
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ email: "d@example.com", dayOfWeek: 1, start: "16:00", lengthMinutes: 30, adult: false });
+    expect(rows[0]).toMatchObject({
+      email: "d@example.com",
+      dayOfWeek: 1,
+      start: "16:00",
+      lengthMinutes: 30,
+      adult: false,
+    });
     expect(normalizeStart("6am")).toBe("06:00");
   });
   it("reports invite status", () => {
     expect(clubInviteStatus({ joined: false, email: "", invitedAt: null })).toBe("Missing email");
-    expect(clubInviteStatus({ joined: false, email: "a@b.co", invitedAt: null })).toBe("Not invited");
+    expect(clubInviteStatus({ joined: false, email: "a@b.co", invitedAt: null })).toBe(
+      "Not invited",
+    );
     expect(clubInviteStatus({ joined: true, email: null, invitedAt: null })).toBe("Joined");
   });
 });
