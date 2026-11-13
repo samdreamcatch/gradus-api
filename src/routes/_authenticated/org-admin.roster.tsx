@@ -225,6 +225,7 @@ function OrgRosterPage() {
             <div className="space-y-1">
               <Label htmlFor="inv-email">Email</Label>
               <Input
+                className="min-h-11"
                 id="inv-email"
                 type="email"
                 value={email}
@@ -235,6 +236,7 @@ function OrgRosterPage() {
             <div className="space-y-1">
               <Label htmlFor="inv-phone">Phone (optional)</Label>
               <Input
+                className="min-h-11"
                 id="inv-phone"
                 type="tel"
                 value={phone}
