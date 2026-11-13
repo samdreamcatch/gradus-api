@@ -2,26 +2,20 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
 import { ClubDataGrid, useClubGrid } from "@/components/org-admin/club-data-grid";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bell, Download, Loader2, Plus, X } from "lucide-react";
+import { Bell, Download, Loader2, X } from "lucide-react";
 import { z } from "zod";
 import {
   listPolicyMatrix,
   exportPolicyProof,
-  listPolicyPacks,
-  savePolicyPack,
-  PACK_CATEGORIES,
-  type PolicyPack,
 } from "@/lib/trust-center.functions";
 import { remindOutstandingAcks } from "@/lib/org-content.functions";
 import { useOrgId } from "@/components/org-admin/org-shared";
 import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FilterPill } from "@/components/ui/filter-pill";
 import {
@@ -42,11 +36,11 @@ export const Route = createFileRoute("/_authenticated/org-admin/policies")({
   head: () => ({
     meta: [
       { title: "Acknowledgements · Gradus Club Admin" },
-      { name: "description", content: "Policy packs and acknowledgement records for your club." },
+      { name: "description", content: "Document acknowledgement records for your club." },
       { property: "og:title", content: "Acknowledgements · Gradus Club Admin" },
       {
         property: "og:description",
-        content: "Policy packs and acknowledgement records for your club.",
+        content: "Document acknowledgement records for your club.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -55,14 +49,6 @@ export const Route = createFileRoute("/_authenticated/org-admin/policies")({
   component: Policies,
 });
 
-const CATEGORY_LABEL: Record<(typeof PACK_CATEGORIES)[number], string> = {
-  safe_sport: "Safe Sport",
-  communication: "Communication",
-  travel: "Travel",
-  photo_video: "Photo & video",
-  medical: "Medical",
-  club: "Club-specific",
-};
 const ROLE_LABEL: Record<string, string> = { coach: "Coach", parent: "Parent", athlete: "Athlete" };
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 
@@ -70,11 +56,8 @@ function Policies() {
   const { orgId } = useOrgId();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const qc = useQueryClient();
   const matrixFn = useServerFn(listPolicyMatrix);
-  const packsFn = useServerFn(listPolicyPacks);
   const remindFn = useServerFn(remindOutstandingAcks);
-  const [editing, setEditing] = useState<PolicyPack | "new" | null>(null);
   const isMobile = useIsMobile();
 
   const matrix = useQuery({
@@ -82,13 +65,6 @@ function Policies() {
     queryFn: () => matrixFn({ data: { organizationId: orgId! } }),
     enabled: !!orgId,
   });
-  const packs = useQuery({
-    queryKey: ["policy-packs", orgId],
-    queryFn: () => packsFn({ data: { organizationId: orgId! } }),
-    enabled: !!orgId,
-    retry: false,
-  });
-
   const role = search.role ?? "all";
   const docs = useMemo(
     () => (matrix.data?.docs ?? []).filter((d) => !search.doc || d.resourceId === search.doc),
@@ -293,49 +269,8 @@ function Policies() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <ClubPageHeader title="Acknowledgements" />
-        </div>
-        <Button className="press" onClick={() => setEditing("new")}>
-          <Plus className="size-4" /> New policy pack
-        </Button>
-      </div>
+      <ClubPageHeader title="Acknowledgements" />
       <ClubLibraryNav />
-
-      <section>
-        <SectionLabel>Policy packs</SectionLabel>
-        {packs.isError ? (
-          <p className="text-xs text-text-secondary">
-            Policy packs will be available once this update is live.
-          </p>
-        ) : (packs.data?.packs ?? []).length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {packs.data!.packs.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setEditing(p)}
-                className="press rounded-lg border border-divider bg-card p-4 text-left"
-              >
-                <p className="text-caption uppercase tracking-wide text-text-tertiary">
-                  {CATEGORY_LABEL[p.category]}
-                </p>
-                <p className="font-display text-h3 text-text-primary">{p.name}</p>
-                <p className="mt-1 text-xs text-text-secondary">
-                  {p.resourceIds.length} document{p.resourceIds.length === 1 ? "" : "s"}
-                  {p.dueAt ? ` · due ${new Date(p.dueAt).toLocaleDateString()}` : ""}
-                  {p.renewMonths ? ` · renews every ${p.renewMonths} mo` : ""}
-                </p>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-text-secondary">
-            Group required documents into packs, like "Safe Sport" or "Travel", and give them a due
-            date.
-          </p>
-        )}
-      </section>
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -530,26 +465,6 @@ function Policies() {
           </Button>
         </SheetContent>
       </Sheet>
-      <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <SheetContent
-          side={isMobile ? "bottom" : "right"}
-          className={cn("w-full sm:max-w-md", isMobile ? "paper-surface" : "bg-popover")}
-        >
-          {editing ? (
-            <PackForm
-              key={editing === "new" ? "new" : editing.id}
-              pack={editing === "new" ? null : editing}
-              docs={matrix.data?.docs ?? []}
-              onDone={() => {
-                setEditing(null);
-                for (const key of ["policy-packs", "policy-matrix", "trust-center"])
-                  qc.invalidateQueries({ queryKey: [key, orgId] });
-              }}
-              orgId={orgId!}
-            />
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
@@ -566,127 +481,3 @@ function Cell({ value, dueAt }: { value: string | null | undefined; dueAt: strin
   );
 }
 
-function PackForm({
-  pack,
-  docs,
-  orgId,
-  onDone,
-}: {
-  pack: PolicyPack | null;
-  docs: { resourceId: string; title: string }[];
-  orgId: string;
-  onDone: () => void;
-}) {
-  const saveFn = useServerFn(savePolicyPack);
-  const [name, setName] = useState(pack?.name ?? "");
-  const [category, setCategory] = useState<PolicyPack["category"]>(pack?.category ?? "safe_sport");
-  const [due, setDue] = useState(pack?.dueAt ? pack.dueAt.slice(0, 10) : "");
-  const [renew, setRenew] = useState(pack?.renewMonths ? String(pack.renewMonths) : "");
-  const [ids, setIds] = useState<string[]>(pack?.resourceIds ?? []);
-
-  const save = useMutation({
-    mutationFn: (archive: boolean) =>
-      saveFn({
-        data: {
-          organizationId: orgId,
-          id: pack?.id ?? null,
-          name,
-          category,
-          dueAt: due ? new Date(`${due}T23:59:59`).toISOString() : null,
-          renewMonths: renew ? Number(renew) : null,
-          resourceIds: ids,
-          archive,
-        },
-      }),
-    onSuccess: (_r, archive) => {
-      toast.success(archive ? "Pack archived" : "Pack saved");
-      onDone();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <div className="space-y-5">
-      <SheetHeader>
-        <SheetTitle>{pack ? "Edit policy pack" : "New policy pack"}</SheetTitle>
-        <SheetDescription>Group required documents and set when they're due.</SheetDescription>
-      </SheetHeader>
-      <div className="space-y-1.5">
-        <Label htmlFor="pack-name">Name</Label>
-        <Input
-          id="pack-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Fall 2026 Safe Sport"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Category</Label>
-        <FilterPill
-          aria-label="Category"
-          value={category}
-          onValueChange={(v) => setCategory(v as PolicyPack["category"])}
-          options={PACK_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="pack-due">Due date</Label>
-          <Input id="pack-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="pack-renew">Renew every (months)</Label>
-          <Input
-            id="pack-renew"
-            inputMode="numeric"
-            value={renew}
-            onChange={(e) => setRenew(e.target.value.replace(/\D/g, ""))}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Documents</Label>
-        {docs.length ? (
-          docs.map((d) => (
-            <label key={d.resourceId} className="flex items-center gap-2 text-sm text-text-primary">
-              <Checkbox
-                checked={ids.includes(d.resourceId)}
-                onCheckedChange={(c) =>
-                  setIds((prev) =>
-                    c ? [...prev, d.resourceId] : prev.filter((x) => x !== d.resourceId),
-                  )
-                }
-              />
-              {d.title}
-            </label>
-          ))
-        ) : (
-          <p className="text-xs text-text-secondary">
-            Require acknowledgement on a club document first.
-          </p>
-        )}
-      </div>
-      <div className="flex justify-between gap-2 pt-2">
-        {pack ? (
-          <Button
-            variant="outline"
-            className="press"
-            onClick={() => save.mutate(true)}
-            disabled={save.isPending}
-          >
-            Archive
-          </Button>
-        ) : (
-          <span />
-        )}
-        <Button
-          className="press"
-          onClick={() => save.mutate(false)}
-          disabled={!name.trim() || save.isPending}
-        >
-          {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null} Save
-        </Button>
-      </div>
-    </div>
-  );
-}
