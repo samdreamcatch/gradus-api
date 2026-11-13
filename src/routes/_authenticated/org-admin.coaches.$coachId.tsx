@@ -17,7 +17,11 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { ClubSection } from "@/components/org-admin/club-section";
+import { ClubKeyValueTable } from "@/components/org-admin/club-key-value-table";
+import { ClubNumber } from "@/components/org-admin/club-number";
+import { ClubMeter } from "@/components/org-admin/club-meter";
+import { ClubTag } from "@/components/org-admin/club-tag";
 
 export const Route = createFileRoute("/_authenticated/org-admin/coaches/$coachId")({
   head: () => ({
@@ -80,24 +84,22 @@ function CoachProfile() {
     ],
     ["Sessions", num(current?.sessions), "This week"],
   ];
-  const profile = [
-    ["Email", coach.email ?? "Not on file"],
+  const profile: [string, React.ReactNode][] = [
+    ["Email", coach.email || <ClubNumber value={null} />],
     ["Club", org.name],
     [
       "Sports",
-      [...new Set(coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || "Not set",
+      [...new Set(coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || <Link to="/org-admin/people" className="underline underline-offset-4">Set sport</Link>,
     ],
-    ["Joined", coach.joinedAt ? new Date(coach.joinedAt).toLocaleDateString() : "Not recorded"],
+    ["Joined", coach.joinedAt ? new Date(coach.joinedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : <ClubNumber value={null} />],
   ];
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
-      <Button variant="link" asChild className="p-0 text-text-secondary">
-        <Link to="/org-admin/coaches">Coaches</Link>
-      </Button>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <ClubPageHeader title={`${coach.firstName} ${coach.lastName}`.trim() || "Coach profile"} />
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
+      <ClubPageHeader
+        back={{ to: "/org-admin/coaches", label: "Coaching" }}
+        title={coach.firstName.trim() || coach.lastName.trim() ? `${coach.firstName} ${coach.lastName}`.trim() : <span className="inline-flex flex-wrap items-center gap-2">{coach.email || <ClubNumber value={null} />}<ClubTag>Invited</ClubTag></span>}
+        actions={<>
+          <Button variant="outline" className="min-h-11" asChild>
             <Link to="/org-admin/people">Open in Users</Link>
           </Button>
           <Button
@@ -119,35 +121,23 @@ function CoachProfile() {
               )
             }
           >
-            <Download className="size-4" />
             Export CSV
           </Button>
-        </div>
-      </div>
+        </>}
+      />
       <div className="grid gap-4 border-y border-divider py-4 sm:grid-cols-3">
         {stats.map(([label, value, reference]) => (
           <div key={label}>
             <p className="text-sm text-text-secondary">{label}</p>
-            <p className="font-display text-h2">{value}</p>
+            <p className="font-mono tabular-nums text-2xl font-medium text-text-primary">{value}</p>
             <p className="text-xs text-text-secondary">{reference}</p>
           </div>
         ))}
       </div>
-      <section className="space-y-3">
-        <h2 className="font-display text-h3">Profile</h2>
-        <ClubTable>
-          <TableBody>
-            {profile.map(([label, value]) => (
-              <TableRow key={label}>
-                <TableCell className="w-48 text-text-secondary">{label}</TableCell>
-                <TableCell>{value}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </ClubTable>
-      </section>
-      <section className="space-y-3">
-        <h2 className="font-display text-h3">Sports & levels</h2>
+      <ClubSection title="Profile">
+        <ClubKeyValueTable rows={profile} />
+      </ClubSection>
+      <ClubSection title="Sports & levels">
         <ClubTable>
           <TableHeader>
             <TableRow>
@@ -161,7 +151,7 @@ function CoachProfile() {
               <TableRow key={`${l.sport}:${l.key}`}>
                 <TableCell>{sportDisplayLabel(l.sport)}</TableCell>
                 <TableCell>{l.label}</TableCell>
-                <TableCell className="text-right font-mono">{l.practiceHours}</TableCell>
+                <TableCell className="text-right"><ClubNumber value={l.practiceHours} /></TableCell>
               </TableRow>
             ))}
             {!coach.levels.length && (
@@ -173,13 +163,13 @@ function CoachProfile() {
             )}
           </TableBody>
         </ClubTable>
-      </section>
-      <section className="space-y-3">
-        <h2 className="font-display text-h3">Practice · last 8 weeks</h2>
+      </ClubSection>
+      <ClubSection title="Practice · last 8 weeks">
         {metrics.isError ? (
-          <p role="alert" className="text-sm text-text-secondary">
-            Weekly practice records become available after this draft is accepted.
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p role="alert" className="text-sm text-text-secondary">Practice records couldn't load.</p>
+            <Button variant="outline" className="min-h-11" onClick={() => metrics.refetch()}>Try again</Button>
+          </div>
         ) : (
           <ClubTable>
             <TableHeader>
@@ -201,14 +191,14 @@ function CoachProfile() {
             <TableBody>
               {weeks.map((w) => (
                 <TableRow key={w.week_start}>
-                  <TableCell>{w.week_start}</TableCell>
-                  <TableCell className="text-right font-mono">{num(w.students)}</TableCell>
-                  <TableCell className="text-right font-mono">{num(w.practice_min)}</TableCell>
-                  <TableCell className="text-right font-mono">{num(w.target_min)}</TableCell>
+                  <TableCell>{formatWeek(w.week_start)}</TableCell>
+                  <TableCell className="text-right font-mono"><ClubNumber value={w.students} /></TableCell>
+                  <TableCell className="text-right font-mono"><ClubNumber value={w.practice_min} /></TableCell>
+                  <TableCell className="text-right font-mono"><ClubNumber value={w.target_min} /></TableCell>
                   <TableCell className="text-right font-mono">
-                    {pct(targetPercent(w.practice_min, w.target_min))}
+                    <ClubMeter value={w.practice_min} target={w.target_min} />
                   </TableCell>
-                  <TableCell className="text-right font-mono">{num(w.sessions)}</TableCell>
+                  <TableCell className="text-right font-mono"><ClubNumber value={w.sessions} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -226,7 +216,14 @@ function CoachProfile() {
             </TableFooter>
           </ClubTable>
         )}
-      </section>
+      </ClubSection>
     </div>
   );
+}
+
+function formatWeek(iso: string) {
+  const start = new Date(`${iso}T00:00:00Z`);
+  const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
+  const format = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  return `${format(start)}–${start.getUTCMonth() === end.getUTCMonth() ? end.getUTCDate() : format(end)}`;
 }
