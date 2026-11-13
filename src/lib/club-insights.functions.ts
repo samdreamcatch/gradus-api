@@ -113,25 +113,48 @@ export const matchClubInsight = createServerFn({ method: "POST" })
     z.object({ organizationId: z.string().uuid(), question: z.string().trim().min(3).max(500) }).parse(input))
   .handler(async ({ data, context }): Promise<{ questionId: InsightId | null; reply: string }> => {
     await authorize(context.supabase, context.userId, data.organizationId);
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("Insights isn't available right now.");
-    const { generateText, Output } = await import("ai");
-    const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-    const model = createLovableAiGatewayProvider(apiKey, { structuredOutputs: true })("google/gemini-3-flash-preview");
-    const result = await generateText({
-      model,
-      system: [
-        "You route a sports club administrator's question to ONE report from a fixed list, or to none.",
-        "Choose none if no report answers it. Never invent numbers or answers.",
-        "reply: one short plain sentence. If none, say briefly what Insights can answer instead.",
-        "REPORTS:",
-        ...INSIGHT_QUESTIONS.map((q) => `- ${q.id}: ${q.prompt}`),
-      ].join("\n"),
-      prompt: data.question,
-      experimental_output: Output.object({
-        schema: z.object({ questionId: z.enum([...INSIGHT_IDS, "none"]), reply: z.string() }),
-      }),
-    });
+    const { generateResponse, GatewayError } = await import("@lovable.dev/ai-gateway");
+    const ids = [...INSIGHT_IDS, "none"];
+    let text = "";
+    try {
+      const res = await generateResponse({
+        model: "openai/gpt-6-astra",
+        instructions: [
+          "You route a sports club administrator's question to ONE report from a fixed list, or to none.",
+          "Choose none if no report answers it. Never invent numbers or answers.",
+          "reply: one short plain sentence. If none, say briefly what Insights can answer instead.",
+          "REPORTS:",
+          ...INSIGHT_QUESTIONS.map((q) => `- ${q.id}: ${q.prompt}`),
+        ].join("\n"),
+        input: data.question,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "insight_match",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["questionId", "reply"],
+              properties: { questionId: { type: "string", enum: ids }, reply: { type: "string" } },
+            },
+          },
+        },
+      });
+      for (const item of res.output ?? []) {
+        if (item.type !== "message") continue;
+        for (const c of item.content) if (c.type === "output_text") text += c.text;
+      }
+    } catch (e) {
+      if (e instanceof GatewayError) {
+        console.error("insights match failed", e.code, e.ids);
+        throw new Error("Insights couldn't read that question right now. Try one of the suggested questions.");
+      }
+      throw e;
+    }
+    const out = z.object({ questionId: z.enum([...INSIGHT_IDS, "none"]), reply: z.string() }).parse(JSON.parse(text));
+    return { questionId: out.questionId === "none" ? null : out.questionId, reply: out.reply.slice(0, 300) };
+  });
     const out = result.experimental_output;
     return { questionId: out.questionId === "none" ? null : out.questionId, reply: out.reply.slice(0, 300) };
   });
