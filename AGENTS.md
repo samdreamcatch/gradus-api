@@ -35,3 +35,4 @@
 - Manual club move entry reuses the authorized move import action; category names live on moves, so a new category is saved with its first move rather than a separate taxonomy.
 - Acknowledgements use document-grouped ClubDataGrid records; reminder selections are intersected with the current authorized outstanding roster server-side, and PDF evidence remains document-scoped.
 - Schedule is the club entry route and notifications open from a header bell tray (full history page kept, off the main menu); the legacy Coaching directory redirects to Users, whose optional columns reuse authorized weekly coach snapshots and retain individual coach-profile links.
+- Schedule lessons carry last-full-week practice vs target computed by the pure, tested practiceFor (same rule as weekly coach snapshots), and the week calendar collapses empty hours via compactHours, so calendar markers and coach metrics agree.
