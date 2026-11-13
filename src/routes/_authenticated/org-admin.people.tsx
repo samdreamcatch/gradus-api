@@ -135,10 +135,16 @@ function PeoplePage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <ClubPageHeader title="Users" />
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportRoster} disabled={!filtered.length}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            onClick={exportRoster}
+            disabled={!filtered.length}
+          >
             Export
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="min-h-11">
             <Link to="/org-admin/roster">Invite a coach</Link>
           </Button>
         </div>
@@ -499,7 +505,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
                     </Button>
                   </TableCell>
                   <TableCell>{admin.club_role === "owner" ? "Owner" : "Admin"}</TableCell>
-                  <TableCell>{admin.club_title ?? "—"}</TableCell>
+                  <TableCell>{admin.club_title || <ClubNumber value={null} />}</TableCell>
                   <TableCell>{displayDate(admin.created_at)}</TableCell>
                   <TableCell>
                     <Button
@@ -522,7 +528,10 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
       <Sheet
         open={!!detail}
         onOpenChange={(open) => {
-          if (!open) setDetail(null);
+          if (!open) {
+            setDetail(null);
+            setConfirm(null);
+          }
         }}
       >
         <SheetContent
@@ -534,7 +543,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           }
         >
           <SheetHeader>
-            <SheetTitle className="font-display text-h2">
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
               <ClubPersonCell
                 name={
                   detail?.coach
@@ -683,7 +692,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           if (!open && !busy) setReleasing(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[70]">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-h3">
               Release {releasing ? `${releasing.firstName} ${releasing.lastName}` : "this coach"}'s
@@ -722,7 +731,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           if (!open && !busy) setRemoving(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[70]">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-h3">
               Remove this club admin?
@@ -797,7 +806,7 @@ function CoachSheet({
         }
       >
         <SheetHeader>
-          <SheetTitle className="pr-6 font-display text-h2">
+          <SheetTitle className="pr-6 font-display text-h2 [&_span]:font-display">
             <ClubPersonCell
               name={coach ? `${coach.firstName} ${coach.lastName}` : null}
               email={coach?.email}

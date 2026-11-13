@@ -214,7 +214,9 @@ function OrgRosterPage() {
           }
         >
           <SheetHeader>
-            <SheetTitle className="font-display text-h2">Invite a coach</SheetTitle>
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              Invite a coach
+            </SheetTitle>
             <SheetDescription className="sr-only">
               Create a coach invitation with an 8-character code.
             </SheetDescription>
@@ -273,7 +275,7 @@ function OrgRosterPage() {
           }
         >
           <SheetHeader>
-            <SheetTitle className="font-display text-h2">
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
               <ClubPersonCell
                 name={selectedCoach ? `${selectedCoach.firstName} ${selectedCoach.lastName}` : null}
                 email={selectedCoach?.email}
@@ -312,7 +314,9 @@ function OrgRosterPage() {
           }
         >
           <SheetHeader>
-            <SheetTitle className="font-display text-h2">Coach invite</SheetTitle>
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              Coach invite
+            </SheetTitle>
             <SheetDescription className="sr-only">Invitation actions</SheetDescription>
           </SheetHeader>
           <p className="mt-6 font-mono tabular-nums">{selectedInvite?.code}</p>
@@ -336,7 +340,7 @@ function OrgRosterPage() {
           if (!open) setRevoking(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[70]">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-h3">
               Revoke this invite?
@@ -366,7 +370,7 @@ function OrgRosterPage() {
           if (!o && !removeCoach.isPending) setRemoving(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[70]">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-h3">
               Remove {removing?.firstName} {removing?.lastName} from {orgName}?
