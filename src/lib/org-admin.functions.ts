@@ -502,18 +502,19 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
 
     // Pre-fill the levels the club chose, without overwriting sports the coach already set.
     const invitedLevels = (invite.data.levels as { sport: string; levelKey: string }[] | null) ?? [];
+    const coachId = coach.data.id;
     if (invitedLevels.length) {
       const held = await supabaseAdmin
         .from("coach_levels")
         .select("sport")
-        .eq("coach_id", coach.data.id);
+        .eq("coach_id", coachId);
       if (held.error) dbError(held.error);
       const heldSports = new Set((held.data ?? []).map((r) => r.sport));
       const { SPORTS } = await import("./coach-sports");
       const rows = invitedLevels
         .filter((l) => !heldSports.has(l.sport))
         .map((l) => ({
-          coach_id: coach.data.id,
+          coach_id: coachId,
           sport: l.sport,
           level_key: l.levelKey,
           practice_hours_per_week:

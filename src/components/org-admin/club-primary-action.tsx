@@ -13,7 +13,7 @@ export function ClubPrimaryAction({
 }: {
   label: string;
   to?: ComponentProps<typeof Link>["to"];
-  search?: ComponentProps<typeof Link>["search"];
+  search?: Record<string, unknown>;
   onClick?: () => void;
   disabled?: boolean;
 }) {
@@ -25,7 +25,7 @@ export function ClubPrimaryAction({
   if (to) {
     return (
       <Button asChild className="min-h-11 press">
-        <Link to={to} search={search}>
+        <Link to={to} search={search as never}>
           {content}
         </Link>
       </Button>
