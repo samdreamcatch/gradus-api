@@ -7,6 +7,7 @@
 - Admin social-plan updates use an admin-authorized transactional RPC and preserve share tokens; attribution uses draft-local schema extensions, never generated-client edits.
 - Clipboard operations use a selection fallback and expose a selectable link when copying is denied, never report false success.
 - Gradus Club contract reads use draft-local schema types and privileged clients only after caller authorization; database triggers enforce seat capacity across web/native membership writers so entry paths cannot bypass seat limits.
+- Club seat expansion uses an org-locked, idempotent service-only RPC that verifies the actor and quoted daily-prorated term rate, adds seats and records an awaiting-invoice true-up atomically; missing rates block expansion and no invoice delivery is implied.
 - Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.
 - Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
 - App notification inbox storage is separate from club notifications, uses plain user UUIDs and server-only writes, and allows owners only read, clear, or read-state updates; this prevents client-authored alerts and auth-schema foreign-key coupling.
