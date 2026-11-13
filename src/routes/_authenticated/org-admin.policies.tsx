@@ -113,7 +113,10 @@ function Policies() {
         filename: result.filename,
       };
     },
-    onSuccess: setPreparedPdf,
+    onSuccess: (result) => {
+      setPreparedPdf(result);
+      toast.success("PDF ready. Select Download PDF to save it.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const downloadPdf = () => {
@@ -445,8 +448,8 @@ function Policies() {
                           : rows[0] && proof.mutate(rows[0].resourceId)
                       }
                     >
-                      <Download className="size-3" />
-                      {preparedPdf?.resourceId === rows[0].resourceId
+                      {proof.isPending && proof.variables === rows[0].resourceId ? <Loader2 className="size-3 animate-spin" /> : <Download className="size-3" />}
+                      {proof.isPending && proof.variables === rows[0].resourceId ? "Preparing PDF…" : preparedPdf?.resourceId === rows[0].resourceId
                         ? "Download PDF"
                         : "Prepare PDF"}
                     </Button>
@@ -474,11 +477,16 @@ function Policies() {
                         : proof.mutate(d.resourceId)
                     }
                   >
-                    <Download className="size-3" />
-                    {preparedPdf?.resourceId === d.resourceId ? "Download PDF" : "Prepare PDF"}
+                    {proof.isPending && proof.variables === d.resourceId ? <Loader2 className="size-3 animate-spin" /> : <Download className="size-3" />}
+                    {proof.isPending && proof.variables === d.resourceId ? "Preparing PDF…" : preparedPdf?.resourceId === d.resourceId ? "Download PDF" : "Prepare PDF"}
                   </Button>
                 </div>
               ))}
+            {proof.isError && <p role="alert" className="text-sm text-destructive">{proof.error.message}</p>}
+            {preparedPdf && !proof.isPending && <div role="status" className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
+              <span>PDF ready</span>
+              <Button variant="outline" className="press" onClick={downloadPdf}><Download className="size-4" />Download PDF</Button>
+            </div>}
           </div>
         )}
       </section>
