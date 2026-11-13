@@ -9,7 +9,6 @@ import {
   compactHours,
   lessonsOn,
   monthGrid,
-  practiceState,
   toIso,
   weekDays,
   type ClubLesson,
@@ -38,7 +37,6 @@ const GAP_PX = 22;
 
 /** Invite + last-week practice markers shown on each lesson. */
 function LessonMarkers({ l, labels = false }: { l: ClubLesson; labels?: boolean }) {
-  const practice = practiceState(l);
   const invite = needsAttention(l)
     ? { Icon: AlertCircle, text: l.invitationStatus === "Contact missing" ? "No contact" : "Not invited", tone: "text-destructive" }
     : l.invitationStatus === "Connected"
