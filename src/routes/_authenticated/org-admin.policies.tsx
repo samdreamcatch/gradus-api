@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ClubTable } from "@/components/org-admin/club-table";
-import { ClubGridToolbar, ClubGroupRow } from "@/components/org-admin/club-grid-toolbar";
-import { useClubGrid } from "@/components/org-admin/club-data-grid";
+import { ClubGridToolbar } from "@/components/org-admin/club-grid-toolbar";
+import { ClubDataGrid, useClubGrid } from "@/components/org-admin/club-data-grid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, Loader2, Plus } from "lucide-react";
+import { Bell, Download, Loader2, Plus, X } from "lucide-react";
 import { z } from "zod";
 import {
   listPolicyMatrix,
@@ -26,14 +25,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FilterPill } from "@/components/ui/filter-pill";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -44,14 +35,15 @@ import { SectionLabel } from "@/components/org-admin/trust-ui";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { selectedOutstandingSigners } from "@/lib/club-policy";
 
 export const Route = createFileRoute("/_authenticated/org-admin/policies")({
   validateSearch: z.object({ doc: z.string().optional(), role: z.string().optional() }),
   head: () => ({
     meta: [
-      { title: "Policies · Gradus Club Admin" },
+      { title: "Acknowledgements · Gradus Club Admin" },
       { name: "description", content: "Policy packs and acknowledgement records for your club." },
-      { property: "og:title", content: "Policies · Gradus Club Admin" },
+      { property: "og:title", content: "Acknowledgements · Gradus Club Admin" },
       {
         property: "og:description",
         content: "Policy packs and acknowledgement records for your club.",
@@ -102,105 +94,90 @@ function Policies() {
     () => (matrix.data?.docs ?? []).filter((d) => !search.doc || d.resourceId === search.doc),
     [matrix.data, search.doc],
   );
-  const dueFor = (resourceId: string) =>
-    matrix.data?.docs.find((d) => d.resourceId === resourceId)?.dueAt ?? null;
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [review, setReview] = useState<RecordRow[] | null>(null);
+  const [preparedPdf, setPreparedPdf] = useState<{ resourceId: string; blob: Blob; filename: string } | null>(null);
   const proofFn = useServerFn(exportPolicyProof);
   const proof = useMutation({
     mutationFn: async (resourceId: string) => {
       if (!orgId) throw new Error("Select a club");
       const result = await proofFn({ data: { organizationId: orgId, resourceId } });
       const bytes = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0));
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = result.filename;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return { resourceId, blob: new Blob([bytes], { type: "application/pdf" }), filename: result.filename };
     },
+    onSuccess: setPreparedPdf,
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const people = useMemo(() => {
-    const m = new Map<
-      string,
-      { key: string; name: string; role: string; cells: Record<string, string | null | undefined> }
-    >();
-    for (const d of docs) {
-      for (const s of matrix.data?.signers[d.resourceId] ?? []) {
-        if (role !== "all" && s.role !== role) continue;
-        const name = s.forAthleteName ? `${s.forAthleteName} (guardian)` : s.name || "Unnamed";
-        const row = m.get(s.key) ?? { key: s.key, name, role: s.role, cells: {} };
-        row.cells[d.resourceId] = s.acknowledgedAt;
-        m.set(s.key, row);
-      }
-    }
-    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [docs, matrix.data, role]);
-
-  type Person = (typeof people)[number];
-  const signed = (p: Person) => docs.filter((d) => p.cells[d.resourceId]).length;
-  const grid = useClubGrid<Person>(
-    "policies-matrix",
-    [
-      { key: "name", label: "Person", sortValue: (p) => p.name, render: (p) => p.name },
-      {
-        key: "role",
-        label: "Role",
-        sortValue: (p) => p.role,
-        groupValue: (p) => ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role,
-        render: (p) => p.role,
-      },
-      {
-        key: "signed",
-        label: "Signed",
-        sortValue: (p) => signed(p),
-        groupValue: (p) => (signed(p) === docs.length ? "All signed" : "Missing a signature"),
-        render: (p) => signed(p),
-      },
-    ],
-    people,
-  );
-  const remind = useMutation({
-    mutationFn: (resourceId: string) => remindFn({ data: { organizationId: orgId!, resourceId } }),
-    onSuccess: (r) =>
-      toast.success(r.notified ? `Reminded ${r.notified} people` : "Everyone has signed"),
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const exportProof = (resourceId: string) => {
-    const d = matrix.data?.docs.find((x) => x.resourceId === resourceId);
-    if (!d) return;
-    const rows = (matrix.data?.signers[resourceId] ?? []).map((s) => [
-      d.title,
-      d.version,
-      ROLE_LABEL[s.role] ?? s.role,
-      s.name,
-      s.forAthleteName ?? "",
-      s.signedBy ?? "",
-      s.acknowledgedAt ? fmt(s.acknowledgedAt) : "Outstanding",
-    ]);
-    downloadCsv(
-      `${d.title.replace(/[^\w]+/g, "-").toLowerCase()}-v${d.version}-signoffs.csv`,
-      toCsv(
-        [
-          "Document",
-          "Version",
-          "Role",
-          "Person",
-          "On behalf of athlete",
-          "Signed by",
-          "Acknowledged",
-        ],
-        rows,
-      ),
-    );
+  const downloadPdf = () => {
+    if (!preparedPdf) return;
+    const url = URL.createObjectURL(preparedPdf.blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = preparedPdf.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
+  const records = useMemo(() => docs.flatMap((d) =>
+    (matrix.data?.signers[d.resourceId] ?? [])
+      .filter((s) => role === "all" || s.role === role)
+      .map((s) => ({ ...s, id: `${d.resourceId}:${s.key}`, resourceId: d.resourceId,
+        document: d.title, version: d.version, dueAt: d.dueAt }))
+  ), [docs, matrix.data, role]);
+  type RecordRow = (typeof records)[number];
+  const selectable = selectedOutstandingSigners(records);
+  const selectedRows = selectable.filter((r) => selected.has(r.id));
+  const selectRows = (rows: RecordRow[], on: boolean) => setSelected((prev) => {
+    const next = new Set(prev);
+    for (const r of selectedOutstandingSigners(rows)) {
+      if (on) next.add(r.id); else next.delete(r.id);
+    }
+    return next;
+  });
+  const selectionControl = (rows: RecordRow[], label: string) => {
+    const pending = selectedOutstandingSigners(rows);
+    const count = pending.filter((r) => selected.has(r.id)).length;
+    return <Checkbox aria-label={label} disabled={!pending.length}
+      checked={count > 0 && count === pending.length ? true : count > 0 ? "indeterminate" : false}
+      onCheckedChange={(on) => selectRows(rows, on === true)} />;
+  };
+  const grid = useClubGrid<RecordRow>("policy-records", [
+    { key: "person", label: "Person", className: "min-w-56",
+      headerControl: <label className="mr-3 inline-flex items-center gap-2">{selectionControl(records, "Select all outstanding acknowledgements")}<span>Select all</span></label>,
+      sortValue: (r) => r.name,
+      render: (r) => <span className="inline-flex items-center gap-3"><Checkbox aria-label={`Select ${r.name} for ${r.document}`} disabled={!!r.acknowledgedAt} checked={selected.has(r.id)} onCheckedChange={(on) => selectRows([r], on === true)} />{r.name || "Unnamed"}</span> },
+    { key: "document", label: "Document", sortValue: (r) => r.document,
+      groupValue: (r) => r.document, render: (r) => `${r.document} · v${r.version}`, className: "min-w-56 whitespace-normal" },
+    { key: "role", label: "Role", sortValue: (r) => r.role, render: (r) => r.forAthleteId ? "Guardian for athlete" : ROLE_LABEL[r.role] },
+    { key: "status", label: "Status", sortValue: (r) => r.acknowledgedAt ? "Signed" : "Due", render: (r) => <Cell value={r.acknowledgedAt} dueAt={r.dueAt} /> },
+    { key: "signedBy", label: "Signed by", render: (r) => r.signedBy || "—" },
+    { key: "action", label: "", render: (r) => !r.acknowledgedAt && <Button variant="ghost" size="sm" className="press" aria-label={`Remind ${r.name} about ${r.document}`} onClick={() => setReview([r])}><Bell className="size-3" />Remind</Button> },
+  ], records, { group: "document" });
+  const remind = useMutation({
+    mutationFn: async (rows: RecordRow[]) => {
+      if (!orgId) throw new Error("Select a club");
+      let notified = 0;
+      for (const resourceId of new Set(rows.map((r) => r.resourceId))) {
+        const result = await remindFn({ data: { organizationId: orgId, resourceId, signerKeys: rows.filter((r) => r.resourceId === resourceId).map((r) => r.key) } });
+        notified += result.notified;
+      }
+      return notified;
+    },
+    onSuccess: (count) => { toast.success(count ? `Reminders requested for ${count} recipients` : "No outstanding recipients to remind"); setReview(null); setSelected(new Set()); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const exportRecords = (rows: RecordRow[], filename = "club-acknowledgements.csv") => downloadCsv(filename, toCsv(
+    ["Document", "Version", "Role", "Person", "On behalf of athlete", "Signed by", "Acknowledged"],
+    rows.map((r) => [r.document, r.version, ROLE_LABEL[r.role], r.name, r.forAthleteName ?? "", r.signedBy ?? "", r.acknowledgedAt ? fmt(r.acknowledgedAt) : "Outstanding"]),
+  ));
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <ClubPageHeader title="Policies" />
+          <ClubPageHeader title="Acknowledgements" />
         </div>
         <Button className="press" onClick={() => setEditing("new")}>
           <Plus className="size-4" /> New policy pack
@@ -277,6 +254,7 @@ function Policies() {
             />
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
             {grid.menu}
+            <Button variant="outline" className="press" onClick={() => exportRecords(records)}><Download className="size-4" />Export CSV</Button>
           </ClubGridToolbar>
         </div>
 
@@ -290,83 +268,36 @@ function Policies() {
             library.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-divider bg-card">
-            <ClubTable>
-              <TableHeader className="sticky top-0 bg-card">
-                <TableRow>
-                  <TableHead className="min-w-48">Person</TableHead>
-                  <TableHead>Role</TableHead>
-                  {docs.map((d) => {
-                    const due = dueFor(d.resourceId);
-                    return (
-                      <TableHead key={d.resourceId} className="min-w-44 align-bottom">
-                        <div className="py-1">
-                          <p className="text-text-primary">{d.title}</p>
-                          <p className="font-mono text-micro text-text-tertiary">
-                            v{d.version}
-                            {due ? ` · due ${new Date(due).toLocaleDateString()}` : ""}
-                          </p>
-                          <div className="mt-1 flex gap-3 text-micro">
-                            <button
-                              className="press text-accent-ink"
-                              onClick={() => remind.mutate(d.resourceId)}
-                            >
-                              Remind
-                            </button>
-                            <button
-                              className="press inline-flex items-center gap-1 text-accent-ink"
-                              onClick={() => exportProof(d.resourceId)}
-                            >
-                              <Download className="size-3" /> CSV
-                            </button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="press"
-                              disabled={proof.isPending}
-                              onClick={() => proof.mutate(d.resourceId)}
-                            >
-                              <Download className="size-3" /> PDF
-                            </Button>
-                          </div>
-                        </div>
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(grid.groups ?? [{ label: "", rows: grid.rows }]).flatMap((g) => [
-                  ...(g.label
-                    ? [
-                        <ClubGroupRow
-                          key={`g-${g.label}`}
-                          label={g.label}
-                          count={g.rows.length}
-                          colSpan={docs.length + 2}
-                        />,
-                      ]
-                    : []),
-                  ...g.rows.map((p) => (
-                    <TableRow key={p.key} className="text-xs">
-                      <TableCell className="py-2 text-text-primary">{p.name}</TableCell>
-                      <TableCell className="py-2 text-text-secondary">
-                        {ROLE_LABEL[p.role]}
-                      </TableCell>
-                      {docs.map((d) => (
-                        <TableCell key={d.resourceId} className="py-2">
-                          <Cell value={p.cells[d.resourceId]} dueAt={dueFor(d.resourceId)} />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  )),
-                ])}
-              </TableBody>
-            </ClubTable>
+          <div className="space-y-3">
+            {selectedRows.length > 0 && <div className="flex flex-wrap items-center gap-3 border-y border-divider py-2">
+              <span className="font-mono text-sm">{selectedRows.length} selected</span>
+              <Button className="press" onClick={() => setReview(selectedRows)}><Bell className="size-4" />Remind selected</Button>
+              <Button variant="ghost" size="icon" className="press" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X className="size-4" /></Button>
+            </div>}
+            <ClubDataGrid grid={grid} rowKey={(r) => r.id} empty="No acknowledgement records" filtered={!!search.doc || role !== "all"}
+              groupControl={(label, rows) => <span className="inline-flex flex-wrap items-center gap-3">
+                {selectionControl(rows, `Select outstanding acknowledgements for ${label}`)}
+                <Button variant="ghost" size="sm" className="press" disabled={!selectedOutstandingSigners(rows).length} onClick={() => setReview(selectedOutstandingSigners(rows))}>Remind outstanding</Button>
+                <Button variant="ghost" size="sm" className="press" onClick={() => exportRecords(rows)}><Download className="size-3" />CSV</Button>
+                {rows[0] && <Button variant="ghost" size="sm" className="press" disabled={proof.isPending} onClick={() => preparedPdf?.resourceId === rows[0]?.resourceId ? downloadPdf() : rows[0] && proof.mutate(rows[0].resourceId)}><Download className="size-3" />{preparedPdf?.resourceId === rows[0].resourceId ? "Download PDF" : "Prepare PDF"}</Button>}
+              </span>}
+            />
+            {!grid.groups && docs.map((d) => <div key={d.resourceId} className="flex flex-wrap items-center gap-3 border-b border-divider py-2">
+              <span className="text-sm">{d.title} · v{d.version}</span>
+              <Button variant="ghost" size="sm" className="press" disabled={proof.isPending} onClick={() => preparedPdf?.resourceId === d.resourceId ? downloadPdf() : proof.mutate(d.resourceId)}><Download className="size-3" />{preparedPdf?.resourceId === d.resourceId ? "Download PDF" : "Prepare PDF"}</Button>
+            </div>)}
           </div>
         )}
+
       </section>
 
+      <Sheet open={!!review} onOpenChange={(open) => !open && !remind.isPending && setReview(null)}>
+        <SheetContent side={isMobile ? "bottom" : "right"} className={cn("w-full sm:max-w-lg overflow-y-auto", isMobile ? "paper-surface" : "bg-popover")}>
+          <SheetHeader><SheetTitle>Review reminders</SheetTitle><SheetDescription>{review?.length ?? 0} outstanding acknowledgements. Guardians receive reminders for minor athletes.</SheetDescription></SheetHeader>
+          <ul className="my-4 divide-y divide-divider">{review?.map((r) => <li key={r.id} className="py-3"><p>{r.name}</p><p className="text-sm text-text-secondary">{r.document} · v{r.version}</p></li>)}</ul>
+          <Button className="press" disabled={remind.isPending || !review?.length} onClick={() => review && remind.mutate(review)}>{remind.isPending ? <Loader2 className="size-4 animate-spin" /> : <Bell className="size-4" />}Send reminders</Button>
+        </SheetContent>
+      </Sheet>
       <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <SheetContent
           side={isMobile ? "bottom" : "right"}
