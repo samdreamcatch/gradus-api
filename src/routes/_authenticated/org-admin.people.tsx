@@ -1,9 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, queryOptions } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { getOrgAdminContext, listOrgRoster, type RosterCoach } from "@/lib/org-admin.functions";
+import {
+  getOrgAdminContext,
+  listOrgRoster,
+  listOrgCoachInvites,
+  resendOrgCoachInvite,
+  revokeOrgCoachInvite,
+  type OrgCoachInvite,
+  type RosterCoach,
+} from "@/lib/org-admin.functions";
+import { ClubInviteCoachSheet } from "@/components/org-admin/club-invite-coach-sheet";
 import { listPolicyMatrix } from "@/lib/trust-center.functions";
 import { coachPolicies } from "@/lib/club-people";
 import { sportDisplayLabel } from "@/lib/coach-sports";
@@ -88,6 +97,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/people")({
   validateSearch: z.object({
     tab: z.enum(["coaches", "students"]).optional(),
     add: z.coerce.boolean().optional(),
+    invite: z.coerce.boolean().optional(),
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(peopleOptions()),
   component: PeoplePage,
@@ -116,7 +126,13 @@ function PeoplePage() {
           <TabsTrigger value="students">Students &amp; families</TabsTrigger>
         </TabsList>
         <TabsContent value="coaches" className="mt-5">
-          <ClubCapacity orgId={org.id} coaches={coaches} />
+          <ClubCapacity
+            orgId={org.id}
+            orgName={org.name}
+            coaches={coaches}
+            startInvite={Boolean(search.invite)}
+            onInviteOpened={() => void navigate({ search: { tab: "coaches" }, replace: true })}
+          />
         </TabsContent>
         <TabsContent value="students" className="mt-5">
           <ClubStudentsPanel
@@ -135,8 +151,9 @@ type UnifiedUser = {
   id: string;
   name: string;
   email: string | null;
-  type: "Coach" | "Admin" | "Unassigned";
+  type: "Coach" | "Admin" | "Unassigned" | "Invited";
   coach?: RosterCoach;
+  invite?: OrgCoachInvite;
   admin?: ClubAdmin;
   request?: ClubSeatRequest;
   joined: string | null;
@@ -162,7 +179,9 @@ const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
     render: (u) =>
       u.coach
         ? [...new Set(u.coach.levels.map((l) => sportDisplayLabel(l.sport)))].join(", ") || "—"
-        : "—",
+        : u.invite?.sports.length
+          ? u.invite.sports.map(sportDisplayLabel).join(", ")
+          : "—",
   },
   {
     key: "students",
@@ -178,8 +197,34 @@ const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
   },
 ];
 
-function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[] }) {
+function ClubCapacity({
+  orgId,
+  orgName,
+  coaches,
+  startInvite,
+  onInviteOpened,
+}: {
+  orgId: string;
+  orgName: string;
+  coaches: RosterCoach[];
+  startInvite: boolean;
+  onInviteOpened: () => void;
+}) {
   const read = useServerFn(getClubContract);
+  const readInvites = useServerFn(listOrgCoachInvites);
+  const resendFn = useServerFn(resendOrgCoachInvite);
+  const revokeFn = useServerFn(revokeOrgCoachInvite);
+  const [inviting, setInviting] = useState(startInvite);
+  const [openInvite, setOpenInvite] = useState<OrgCoachInvite | null>(null);
+  const [revoking, setRevoking] = useState<OrgCoachInvite | null>(null);
+  useEffect(() => {
+    if (startInvite) onInviteOpened();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const invites = useQuery({
+    queryKey: ["org-invites", orgId],
+    queryFn: () => readInvites({ data: { organizationId: orgId } }),
+  });
   const [userSearch, setUserSearch] = useState("");
   const [userType, setUserType] = useState("all");
   const remove = useServerFn(removeClubAdmin);
@@ -266,6 +311,16 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
         request,
         joined: request.requested_at,
       });
+  for (const invite of invites.data?.invites ?? [])
+    if (invite.status === "pending" || invite.status === "expired")
+      users.push({
+        id: `invite-${invite.id}`,
+        name: invite.email ?? invite.phone ?? invite.code,
+        email: invite.email,
+        type: "Invited",
+        invite,
+        joined: null,
+      });
   const visibleUsers = users.filter(
     (u) =>
       (userType === "all" || u.type === userType) &&
@@ -298,7 +353,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <ClubAddSeats club={data.club} />
-          <ClubPrimaryAction label="Add coach" to="/org-admin/roster" search={{ invite: true }} />
+          <ClubPrimaryAction label="Add coach" onClick={() => setInviting(true)} />
         </div>
       </div>
       <Button
@@ -326,7 +381,7 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           onValueChange={setUserType}
           options={[
             { value: "all", label: "All user types" },
-            ...(["Coach", "Admin", "Unassigned"] as const).map((value) => ({
+            ...(["Coach", "Admin", "Unassigned", "Invited"] as const).map((value) => ({
               value,
               label: value,
             })),
@@ -338,7 +393,11 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
         grid={userGrid}
         rowKey={(u) => u.id}
         rowLabel={(u) => u.name}
-        onRowClick={(u) => setDetail({ coach: u.coach, admin: u.admin, request: u.request })}
+        onRowClick={(u) =>
+          u.invite
+            ? setOpenInvite(u.invite)
+            : setDetail({ coach: u.coach, admin: u.admin, request: u.request })
+        }
         noun={{ one: "user", many: "users" }}
         empty="No users found."
         filtered={true}
@@ -527,6 +586,115 @@ function ClubCapacity({ orgId, coaches }: { orgId: string; coaches: RosterCoach[
           </div>
         </SheetContent>
       </Sheet>
+      <ClubInviteCoachSheet
+        open={inviting}
+        onOpenChange={setInviting}
+        orgId={orgId}
+        orgName={orgName}
+      />
+      <Sheet open={!!openInvite} onOpenChange={(o) => !o && setOpenInvite(null)}>
+        <SheetContent
+          side={mobile ? "bottom" : "right"}
+          className={
+            mobile
+              ? "paper-surface max-h-[90dvh] overflow-y-auto p-6 font-sans"
+              : "w-full overflow-y-auto p-6 font-sans sm:max-w-lg"
+          }
+        >
+          <SheetHeader>
+            <SheetTitle className="font-display text-h2 [&_span]:font-display">
+              <ClubPersonCell name={openInvite?.email ?? openInvite?.phone ?? "Invite"} />
+            </SheetTitle>
+            <SheetDescription className="sr-only">Coach invitation details</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-5">
+            <ClubKeyValueTable
+              rows={[
+                ["Status", openInvite?.status === "expired" ? "Expired" : "Invited"],
+                ["Code", <span className="font-mono">{openInvite?.code}</span>],
+                [
+                  "Sports",
+                  openInvite?.sports.length
+                    ? openInvite.sports.map(sportDisplayLabel).join(", ")
+                    : "—",
+                ],
+                ["Sent", displayDate(openInvite?.createdAt ?? null)],
+                ["Expires", displayDate(openInvite?.expiresAt ?? null)],
+              ]}
+            />
+            <div className="flex flex-wrap gap-2">
+              {openInvite?.email && openInvite.status === "pending" && (
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      const res = await resendFn({
+                        data: { organizationId: orgId, inviteId: openInvite.id },
+                      });
+                      if (res.ok) toast.success(`Invite re-sent to ${res.email}`);
+                      else toast.error(res.error);
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Couldn't resend.");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Resend
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="min-h-11 text-destructive"
+                disabled={busy}
+                onClick={() => setRevoking(openInvite)}
+              >
+                Revoke
+              </Button>
+              <Button variant="outline" className="min-h-11" onClick={() => setOpenInvite(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog open={!!revoking} onOpenChange={(o) => !o && !busy && setRevoking(null)}>
+        <AlertDialogContent className="z-[70]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-h3">Revoke this invite?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The code stops working. You can send a new invite any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Close</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (event) => {
+                event.preventDefault();
+                if (!revoking) return;
+                setBusy(true);
+                try {
+                  await revokeFn({ data: { organizationId: orgId, inviteId: revoking.id } });
+                  await qc.invalidateQueries({ queryKey: ["org-invites", orgId] });
+                  toast.success("Invite revoked.");
+                  setRevoking(null);
+                  setOpenInvite(null);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Couldn't revoke.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Revoke
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <CoachSheet coach={policyCoach} orgId={orgId} onClose={() => setPolicyCoach(null)} />
       <AlertDialog
         open={!!releasing}

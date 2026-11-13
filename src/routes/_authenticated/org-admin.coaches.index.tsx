@@ -214,7 +214,7 @@ function CoachesPage() {
               Export
             </Button>
             <Button asChild className="min-h-11">
-              <Link to="/org-admin/roster">Invite a coach</Link>
+              <Link to="/org-admin/people" search={{ tab: "coaches", invite: true }}>Invite a coach</Link>
             </Button>
           </>
         }
