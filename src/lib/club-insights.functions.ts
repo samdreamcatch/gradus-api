@@ -155,6 +155,3 @@ export const matchClubInsight = createServerFn({ method: "POST" })
     const out = z.object({ questionId: z.enum([...INSIGHT_IDS, "none"]), reply: z.string() }).parse(JSON.parse(text));
     return { questionId: out.questionId === "none" ? null : out.questionId, reply: out.reply.slice(0, 300) };
   });
-    const out = result.experimental_output;
-    return { questionId: out.questionId === "none" ? null : out.questionId, reply: out.reply.slice(0, 300) };
-  });
