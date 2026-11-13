@@ -1,11 +1,13 @@
 import type React from "react";
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertCircle, Mail, UserCheck, CheckCircle2, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   addDays,
+  compactHours,
   lessonsOn,
   monthGrid,
+  practiceState,
   toIso,
   weekDays,
   type ClubLesson,
@@ -29,6 +31,53 @@ const fmtDay = (iso: string, opts: Intl.DateTimeFormatOptions) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { timeZone: "UTC", ...opts });
 const needsAttention = (l: ClubLesson) =>
   l.invitationStatus === "Contact missing" || l.invitationStatus === "Not invited";
+const GAP_PX = 22;
+
+/** Invite + last-week practice markers shown on each lesson. */
+function LessonMarkers({ l }: { l: ClubLesson }) {
+  const practice = practiceState(l);
+  const practiceLabel =
+    practice === "met"
+      ? `Met practice target last week (${l.practiceMin} of ${l.targetMin} min)`
+      : practice === "below"
+        ? `Below practice target last week (${l.practiceMin} of ${l.targetMin} min)`
+        : null;
+  return (
+    <span className="flex shrink-0 items-center gap-0.5">
+      {needsAttention(l) ? (
+        <AlertCircle className="size-3 text-destructive" aria-label={l.invitationStatus} />
+      ) : l.invitationStatus === "Connected" ? (
+        <UserCheck className="size-3" aria-label="Family joined" />
+      ) : (
+        <Mail className="size-3" aria-label="Invite awaiting acceptance" />
+      )}
+      {practice === "met" && <CheckCircle2 className="size-3" aria-label={practiceLabel!} />}
+      {practice === "below" && (
+        <TrendingDown className="size-3 text-destructive" aria-label={practiceLabel!} />
+      )}
+    </span>
+  );
+}
+
+export function LessonCalendarLegend() {
+  const items = [
+    [UserCheck, "Family joined", ""],
+    [Mail, "Invite awaiting acceptance", ""],
+    [AlertCircle, "Not invited or contact missing", "text-destructive"],
+    [CheckCircle2, "Met practice target last week", ""],
+    [TrendingDown, "Below practice target last week", "text-destructive"],
+  ] as const;
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 border-t border-divider bg-elevated px-3 py-2 text-xs text-text-secondary">
+      {items.map(([Icon, label, tone]) => (
+        <li key={label} className="flex items-center gap-1">
+          <Icon className={cn("size-3", tone)} aria-hidden="true" />
+          {label}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function LessonCalendar({
   lessons,
@@ -115,6 +164,7 @@ export function LessonCalendar({
           }}
         />
       )}
+      <LessonCalendarLegend />
     </div>
   );
 }
@@ -132,13 +182,8 @@ function WeekGrid({
   coachIds: string[];
   onOpen: (l: ClubLesson) => void;
 }) {
-  const firstHour = lessons.length
-    ? Math.max(0, Math.floor(Math.min(...lessons.map((l) => l.start)) / 60) - 1)
-    : 8;
-  const lastHour = lessons.length
-    ? Math.min(24, Math.ceil(Math.max(...lessons.map((l) => l.end)) / 60) + 1)
-    : 18;
-  const hours = Array.from({ length: Math.max(1, lastHour - firstHour) }, (_, i) => firstHour + i);
+  const weekLessons = days.flatMap((iso) => lessonsOn(lessons, iso));
+  const { rows, height, y } = compactHours(weekLessons, HOUR_PX, GAP_PX);
   return (
     <div className="overflow-x-auto">
       <div className="grid min-w-[760px] grid-cols-[56px_repeat(7,minmax(0,1fr))]">
@@ -159,16 +204,27 @@ function WeekGrid({
             </div>
           </div>
         ))}
-        <div className="relative" style={{ height: hours.length * HOUR_PX }}>
-          {hours.map((h, i) => (
-            <div
-              key={h}
-              className="absolute right-2 -translate-y-1/2 font-mono text-[10px] text-text-tertiary"
-              style={{ top: i * HOUR_PX }}
-            >
-              {i === 0 ? "" : formatTimeLabel(h * 60)}
-            </div>
-          ))}
+        <div className="relative" style={{ height }}>
+          {rows.map((r) =>
+            r.kind === "hour" ? (
+              <div
+                key={`h${r.hour}`}
+                className="absolute right-2 translate-y-0.5 font-mono text-[10px] text-text-tertiary"
+                style={{ top: r.top }}
+              >
+                {formatTimeLabel(r.hour * 60)}
+              </div>
+            ) : (
+              <div
+                key={`g${r.from}`}
+                className="absolute inset-x-0 flex items-center justify-end pr-2 font-mono text-[9px] text-text-tertiary"
+                style={{ top: r.top, height: r.height }}
+                title={`No lessons ${formatTimeLabel(r.from * 60)}–${formatTimeLabel(r.to * 60)}`}
+              >
+                ⋯
+              </div>
+            ),
+          )}
         </div>
         {days.map((iso) => {
           const dayLessons = lessonsOn(lessons, iso);
@@ -176,15 +232,23 @@ function WeekGrid({
             <div
               key={iso}
               className={cn("relative border-l border-divider", iso === today && "bg-accent/5")}
-              style={{ height: hours.length * HOUR_PX }}
+              style={{ height }}
             >
-              {hours.map((h, i) => (
-                <div
-                  key={h}
-                  className="absolute inset-x-0 border-t border-divider/60"
-                  style={{ top: i * HOUR_PX }}
-                />
-              ))}
+              {rows.map((r) =>
+                r.kind === "hour" ? (
+                  <div
+                    key={`h${r.hour}`}
+                    className="absolute inset-x-0 border-t border-divider/60"
+                    style={{ top: r.top }}
+                  />
+                ) : (
+                  <div
+                    key={`g${r.from}`}
+                    className="absolute inset-x-0 border-y border-dashed border-divider bg-elevated/70"
+                    style={{ top: r.top, height: r.height }}
+                  />
+                ),
+              )}
               {layoutOverlaps(dayLessons).map(({ lesson: l, col, cols }) => (
                 <button
                   key={l.id}
@@ -196,20 +260,15 @@ function WeekGrid({
                   )}
                   style={{
                     ...coachTone(l.coachId, coachIds),
-                    top: ((l.start - firstHour * 60) / 60) * HOUR_PX + 1,
-                    height: Math.max(22, (l.minutes / 60) * HOUR_PX - 2),
+                    top: y(l.start) + 1,
+                    height: Math.max(22, y(l.end) - y(l.start) - 2),
                     left: `calc(${(col / cols) * 100}% + 2px)`,
                     width: `calc(${100 / cols}% - 4px)`,
                   }}
                 >
-                  <div className="flex items-center gap-1 font-semibold">
-                    {needsAttention(l) && (
-                      <AlertCircle
-                        className="size-3 shrink-0 text-destructive"
-                        aria-label={l.invitationStatus}
-                      />
-                    )}
+                  <div className="flex items-center justify-between gap-1 font-semibold">
                     <span className="truncate">{l.studentName}</span>
+                    <LessonMarkers l={l} />
                   </div>
                   <div className="truncate font-mono text-[10px] opacity-80">
                     {formatTimeLabel(l.start)} · {l.coachName}
@@ -287,14 +346,9 @@ function MonthGrid({
                     )}
                     style={coachTone(l.coachId, coachIds)}
                   >
-                    {needsAttention(l) && (
-                      <AlertCircle
-                        className="size-3 shrink-0 text-destructive"
-                        aria-label={l.invitationStatus}
-                      />
-                    )}
                     <span className="font-mono opacity-80">{formatTimeLabel(l.start)}</span>
-                    <span className="truncate font-semibold">{l.studentName}</span>
+                    <span className="min-w-0 flex-1 truncate font-semibold">{l.studentName}</span>
+                    <LessonMarkers l={l} />
                   </button>
                 ))}
                 {dayLessons.length > MAX && (
