@@ -1,4 +1,6 @@
 import type React from "react";
+import { useEffect, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, AlertCircle, Mail, UserCheck, CheckCircle2, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -63,6 +65,47 @@ function LessonMarkers({ l, labels = false }: { l: ClubLesson; labels?: boolean 
   );
 }
 
+export type CardLayout = "detail" | "status" | "minimal";
+export const CARD_LAYOUTS: { value: CardLayout; label: string }[] = [
+  { value: "detail", label: "Name + coach" },
+  { value: "status", label: "Status first" },
+  { value: "minimal", label: "Minimal" },
+];
+
+/** Start time is implied by placement, so cards never repeat it. */
+function LessonCardBody({ l, layout, tall }: { l: ClubLesson; layout: CardLayout; tall: boolean }) {
+  if (layout === "minimal")
+    return (
+      <div className="flex items-center justify-between gap-1 font-semibold">
+        <span className="truncate">{l.studentName}</span>
+        <LessonMarkers l={l} />
+      </div>
+    );
+  if (layout === "status")
+    return (
+      <>
+        <div className="truncate font-semibold">{l.studentName}</div>
+        <div className="mt-0.5">
+          <LessonMarkers l={l} labels />
+        </div>
+      </>
+    );
+  return (
+    <>
+      <div className="flex items-center justify-between gap-1 font-semibold">
+        <span className="truncate">{l.studentName}</span>
+        {!tall && <LessonMarkers l={l} />}
+      </div>
+      <div className="truncate text-[11px] opacity-80">{l.coachName}</div>
+      {tall && (
+        <div className="mt-1">
+          <LessonMarkers l={l} labels />
+        </div>
+      )}
+    </>
+  );
+}
+
 export function LessonCalendarLegend() {
   const items = [
     [UserCheck, "Family joined", ""],
@@ -100,6 +143,15 @@ export function LessonCalendar({
   onDateChange: (iso: string) => void;
   onOpen: (l: ClubLesson) => void;
 }) {
+  const [layout, setLayoutState] = useState<CardLayout>("detail");
+  useEffect(() => {
+    const saved = localStorage.getItem("gradus.club.lessonCard");
+    if (saved === "detail" || saved === "status" || saved === "minimal") setLayoutState(saved);
+  }, []);
+  const setLayout = (v: CardLayout) => {
+    setLayoutState(v);
+    localStorage.setItem("gradus.club.lessonCard", v);
+  };
   const today = toIso(new Date());
   const days = mode === "week" ? weekDays(date) : monthGrid(date);
   const title =
@@ -138,6 +190,21 @@ export function LessonCalendar({
           </Button>
           <h3 className="ml-2 font-display text-lg">{title}</h3>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {mode === "week" && (
+          <Select value={layout} onValueChange={(v) => setLayout(v as CardLayout)}>
+            <SelectTrigger className="h-9 w-40" aria-label="Lesson card layout">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CARD_LAYOUTS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <ToggleGroup
           type="single"
           value={mode}
@@ -151,9 +218,10 @@ export function LessonCalendar({
             Month
           </ToggleGroupItem>
         </ToggleGroup>
+        </div>
       </div>
       {mode === "week" ? (
-        <WeekGrid days={days} today={today} lessons={lessons} coachIds={coachIds} onOpen={onOpen} />
+        <WeekGrid days={days} today={today} lessons={lessons} coachIds={coachIds} onOpen={onOpen} layout={layout} />
       ) : (
         <MonthGrid
           days={days}
@@ -179,12 +247,14 @@ function WeekGrid({
   lessons,
   coachIds,
   onOpen,
+  layout,
 }: {
   days: string[];
   today: string;
   lessons: ClubLesson[];
   coachIds: string[];
   onOpen: (l: ClubLesson) => void;
+  layout: CardLayout;
 }) {
   const weekLessons = days.flatMap((iso) => lessonsOn(lessons, iso));
   const { rows, height, y } = compactHours(weekLessons, HOUR_PX, GAP_PX);
@@ -270,18 +340,7 @@ function WeekGrid({
                     width: `calc(${100 / cols}% - 4px)`,
                   }}
                 >
-                  <div className="flex items-center justify-between gap-1 font-semibold">
-                    <span className="truncate">{l.studentName}</span>
-                    {y(l.end) - y(l.start) < 64 && <LessonMarkers l={l} />}
-                  </div>
-                  <div className="truncate font-mono text-[10px] opacity-80">
-                    {formatTimeLabel(l.start)} · {l.coachName}
-                  </div>
-                  {y(l.end) - y(l.start) >= 64 && (
-                    <div className="mt-1">
-                      <LessonMarkers l={l} labels />
-                    </div>
-                  )}
+                  <LessonCardBody l={l} layout={layout} tall={y(l.end) - y(l.start) >= 64} />
                 </button>
               ))}
             </div>
@@ -355,7 +414,6 @@ function MonthGrid({
                     )}
                     style={coachTone(l.coachId, coachIds)}
                   >
-                    <span className="font-mono opacity-80">{formatTimeLabel(l.start)}</span>
                     <span className="min-w-0 flex-1 truncate font-semibold">{l.studentName}</span>
                     <LessonMarkers l={l} />
                   </button>
