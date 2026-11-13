@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { PageTitle } from "@/components/page-title";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function ClubPageHeader({
   title,
@@ -24,7 +23,6 @@ export function ClubPageHeader({
       )}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <SidebarTrigger className="min-h-11 min-w-11 md:hidden" />
           <PageTitle>{title}</PageTitle>
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2 font-sans">{actions}</div>}
