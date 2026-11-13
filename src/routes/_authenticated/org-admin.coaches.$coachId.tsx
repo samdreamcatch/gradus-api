@@ -126,7 +126,7 @@ function CoachProfile() {
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <ClubPageHeader
-        back={{ to: "/org-admin/coaches", label: "Coaching" }}
+        back={{ to: "/org-admin/people", label: "Users" }}
         title={
           coach.firstName.trim() || coach.lastName.trim() ? (
             `${coach.firstName} ${coach.lastName}`.trim()

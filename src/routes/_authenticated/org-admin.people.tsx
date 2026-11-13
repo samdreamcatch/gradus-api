@@ -47,6 +47,10 @@ import {
   removeClubAdmin,
   setClubAdminRole,
 } from "@/lib/club-contract.functions";
+import { getClubCoachWeeks } from "@/lib/club-coaches.functions";
+import { weekStart, practiceAdherence, type CoachWeek } from "@/lib/club-coach-metrics";
+import { ClubWeekStepper } from "@/components/org-admin/club-week-stepper";
+import { ClubMeter } from "@/components/org-admin/club-meter";
 import { clubUserType } from "@/lib/club-contract-quote";
 import { clubSeatStatus, canRemoveClubAdmin } from "@/lib/club-seat-rules";
 
@@ -157,6 +161,7 @@ type UnifiedUser = {
   admin?: ClubAdmin;
   request?: ClubSeatRequest;
   joined: string | null;
+  stats?: CoachWeek;
 };
 const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
   {
@@ -195,6 +200,14 @@ const USER_COLUMNS: ClubColumn<UnifiedUser>[] = [
     render: (u) => displayDate(u.joined),
     sortValue: (u) => u.joined,
   },
+  { key: "levels", label: "Teaching levels", defaultHidden: true, render: (u) => u.coach?.levels.map((l) => l.label).join(", ") || "—" },
+  { key: "weeklyStudents", label: "Students / wk", defaultHidden: true, align: "right", numeric: (u) => u.stats?.students ?? null, sortValue: (u) => u.stats?.students ?? null },
+  { key: "practice", label: "Practice min / wk", defaultHidden: true, align: "right", numeric: (u) => u.stats?.practice_min ?? null, sortValue: (u) => u.stats?.practice_min ?? null },
+  { key: "target", label: "Target min / wk", defaultHidden: true, align: "right", numeric: (u) => u.stats?.target_min ?? null, sortValue: (u) => u.stats?.target_min ?? null },
+  { key: "adherence", label: "Practice adherence", defaultHidden: true, align: "right", render: (u) => <ClubMeter value={u.stats?.students_meeting_target} target={u.stats?.students} />, sortValue: (u) => practiceAdherence(u.stats?.students_meeting_target, u.stats?.students ?? null) },
+  { key: "lessons", label: "Lessons / wk", defaultHidden: true, align: "right", numeric: (u) => u.stats?.lessons ?? null, sortValue: (u) => u.stats?.lessons ?? null },
+  { key: "sessions", label: "Practice sessions / wk", defaultHidden: true, align: "right", numeric: (u) => u.stats?.sessions ?? null, sortValue: (u) => u.stats?.sessions ?? null },
+
 ];
 
 function ClubCapacity({
@@ -211,6 +224,9 @@ function ClubCapacity({
   onInviteOpened: () => void;
 }) {
   const read = useServerFn(getClubContract);
+  const readWeeks = useServerFn(getClubCoachWeeks);
+  const [period, setPeriod] = useState(weekStart());
+  const metrics = useQuery({ queryKey: ["club-coach-weeks", orgId], queryFn: () => readWeeks({ data: { organizationId: orgId } }), retry: false });
   const readInvites = useServerFn(listOrgCoachInvites);
   const resendFn = useServerFn(resendOrgCoachInvite);
   const revokeFn = useServerFn(revokeOrgCoachInvite);
@@ -289,6 +305,7 @@ function ClubCapacity({
       coach,
       admin,
       joined: coach.joinedAt,
+      stats: metrics.data?.weeks.find((w) => w.coach_id === coach.coachId && w.week_start === period),
     };
   });
   for (const admin of data.admins)
@@ -330,8 +347,8 @@ function ClubCapacity({
   function exportUsers() {
     const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const rows = [
-      ["User", "User type", "Email", "Joined"],
-      ...visibleUsers.map((u) => [u.name, u.type, u.email, u.joined]),
+      ["User", "User type", "Email", "Joined", "Week (UTC)", "Students / wk", "Practice min / wk", "Target min / wk", "Practice adherence (%)", "Lessons / wk", "Practice sessions / wk"],
+      ...visibleUsers.map((u) => [u.name, u.type, u.email, u.joined, period, u.stats?.students, u.stats?.practice_min, u.stats?.target_min, practiceAdherence(u.stats?.students_meeting_target, u.stats?.students ?? null), u.stats?.lessons, u.stats?.sessions]),
     ];
     const url = URL.createObjectURL(
       new Blob([rows.map((r) => r.map(escape).join(",")).join("\r\n")], {
@@ -387,8 +404,10 @@ function ClubCapacity({
             })),
           ]}
         />
+        {userGrid.columns.some((c) => ["weeklyStudents", "practice", "target", "adherence", "lessons", "sessions"].includes(c.key)) && <ClubWeekStepper value={period} onValueChange={setPeriod} />}
         {userGrid.menu}
       </ClubGridToolbar>
+      {metrics.isError && userGrid.columns.some((c) => ["weeklyStudents", "practice", "target", "adherence", "lessons", "sessions"].includes(c.key)) && <p role="alert" className="text-sm text-destructive">Weekly coaching records could not be loaded.</p>}
       <ClubDataGrid
         grid={userGrid}
         rowKey={(u) => u.id}
