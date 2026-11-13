@@ -38,6 +38,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
+import {
+  applyPromoCodeInput,
+  checkPromoForPlan,
+  resolvePromoForPlan,
+  type AppliedPromo,
+  type PromoCheckState,
+  type PromoDiscountType,
+} from "./coach-promo-codes.server";
 import { dbError } from "./db-error";
 import { createConnectStripeClient } from "./stripe-connect.server";
 import { guardianAthleteAccess } from "./team.server";
@@ -73,6 +81,8 @@ export type PurchaseContext = {
 export const startPlanCheckoutInput = z.object({
   /** Who the plan is for. A parent must name their child; an athlete buys for themselves. */
   athleteId: z.string().uuid().optional(),
+  /** One of the plan's coach's promo codes (any case); see `previewPlanPromoCode`. */
+  promoCode: z.string().trim().min(1).max(64).optional(),
 });
 
 /** Delivery: pending (at checkout), fulfilling, fulfilled (plan delivered), canceled, restricted (coach removed access). */
@@ -90,7 +100,12 @@ export interface PlanPurchaseDTO {
   athleteId: string | null;
   /** The athlete's own copy, once delivered. */
   copiedPlanId: string | null;
+  /** What's charged, after any promo code. */
   amountCents: number;
+  /** The plan's price before any promo code. */
+  originalAmountCents: number;
+  /** The promo code applied, as it was applied; null when none. */
+  promoCode: string | null;
   /** Since when the buyer owes it; null while nothing is owed. */
   paymentDueAt: string | null;
   paidAt: string | null;
@@ -112,6 +127,8 @@ type PurchaseRow = {
   athlete_id: string | null;
   copied_plan_id: string | null;
   amount_cents: number;
+  original_amount_cents: number | null;
+  promo_code: string | null;
   currency: string;
   status: PurchaseStatus;
   payment_status: PaymentStatus | null;
@@ -125,7 +142,7 @@ type PurchaseRow = {
 };
 
 const PURCHASE_COLUMNS =
-  "id, plan_id, coach_id, buyer_user_id, athlete_id, copied_plan_id, amount_cents, currency, status, payment_status, payment_due_at, paid_at, platform_fee_cents, stripe_fee_cents, coach_payout_cents, stripe_checkout_session_id, created_at";
+  "id, plan_id, coach_id, buyer_user_id, athlete_id, copied_plan_id, amount_cents, original_amount_cents, promo_code, currency, status, payment_status, payment_due_at, paid_at, platform_fee_cents, stripe_fee_cents, coach_payout_cents, stripe_checkout_session_id, created_at";
 
 /** A row from before payment_status existed counts as paid once delivered (the migration labels them). */
 const paymentStatusOf = (row: PurchaseRow): PaymentStatus =>
@@ -149,6 +166,8 @@ const toDTO = (row: PurchaseRow, now: Date = new Date()): PlanPurchaseDTO => ({
   athleteId: row.athlete_id,
   copiedPlanId: row.copied_plan_id,
   amountCents: row.amount_cents,
+  originalAmountCents: row.original_amount_cents ?? row.amount_cents,
+  promoCode: row.promo_code,
   paymentDueAt: row.payment_due_at,
   paidAt: row.paid_at,
   overdue: isOverdue(row, now),
@@ -312,9 +331,75 @@ async function buyerEmail(admin: Admin, userId: string): Promise<string | undefi
   return data.user?.email ?? undefined;
 }
 
+export interface PlanPromoPreviewDTO {
+  /** `valid`, or why the code can't be used (see `PromoCheckState`). */
+  state: PromoCheckState;
+  /** Why not, to show the buyer; null when valid. */
+  message: string | null;
+  /** The plan's price. */
+  originalAmountCents: number;
+  /** The rest is null unless `valid`. The code as the coach saved it. */
+  code: string | null;
+  discountType: PromoDiscountType | null;
+  /** percent: 1–100; fixed: USD; free: null. */
+  discountValue: number | null;
+  discountCents: number | null;
+  /** What the buyer would pay; 0 is free (no checkout). */
+  amountCents: number | null;
+}
+
 /**
- * Starts buying `planId` for an athlete. Checks who may buy, then:
- *   - a free plan is delivered right away;
+ * `POST /api/v1/marketplace/plans/{id}/promo-code`: whether a promo code
+ * works on this listing for the caller, and the price with it, before they
+ * buy. A code that doesn't work is a `state`, not an error. Changes nothing;
+ * the code is checked again at checkout.
+ */
+export async function previewPlanPromoCode(
+  ctx: PurchaseContext,
+  planId: string,
+  input: z.infer<typeof applyPromoCodeInput>,
+): Promise<PlanPromoPreviewDTO> {
+  const plan = await listingForSale(ctx.admin, planId);
+  if (plan.coach.user_id === ctx.userId) {
+    throw conflict("own_plan", "This is your own plan.");
+  }
+  const originalAmountCents = Math.round(Number(plan.price) * 100);
+  const check = await checkPromoForPlan(ctx.admin, {
+    coachId: plan.coach.id,
+    planId,
+    originalAmountCents,
+    buyerUserId: ctx.userId,
+    code: input.code,
+  });
+  if (check.state !== "valid") {
+    return {
+      state: check.state,
+      message: check.message,
+      originalAmountCents,
+      code: null,
+      discountType: null,
+      discountValue: null,
+      discountCents: null,
+      amountCents: null,
+    };
+  }
+  const { promo } = check;
+  return {
+    state: "valid",
+    message: null,
+    originalAmountCents,
+    code: promo.code,
+    discountType: promo.discountType,
+    discountValue: promo.discountValue,
+    discountCents: promo.discountCents,
+    amountCents: promo.amountCents,
+  };
+}
+
+/**
+ * Starts buying `planId` for an athlete. Checks who may buy and applies any
+ * promo code (`resolvePromoForPlan`), then:
+ *   - a free plan (or one a promo code makes free) is delivered right away;
  *   - a coach not on Stripe yet: delivered right away, nothing owed until
  *     their payouts are on (`awaiting_coach_setup`), no checkout page;
  *   - otherwise: a pending purchase and the Stripe Checkout page to pay first.
@@ -342,7 +427,17 @@ export async function startPlanCheckout(
   if (owned.data)
     throw conflict("already_purchased", "This plan has already been bought for this athlete.");
 
-  const amountCents = Math.round(Number(plan.price) * 100);
+  const originalAmountCents = Math.round(Number(plan.price) * 100);
+  const promo: AppliedPromo | null = input.promoCode
+    ? await resolvePromoForPlan(ctx.admin, {
+        coachId: plan.coach.id,
+        planId,
+        originalAmountCents,
+        buyerUserId: ctx.userId,
+        code: input.promoCode,
+      })
+    : null;
+  const amountCents = promo?.amountCents ?? originalAmountCents;
   const free = amountCents === 0;
   const payLater = !free && !coachCanSell(plan.coach);
   const now = new Date().toISOString();
@@ -354,6 +449,9 @@ export async function startPlanCheckout(
       buyer_user_id: ctx.userId,
       athlete_id: athleteId,
       amount_cents: amountCents,
+      original_amount_cents: originalAmountCents,
+      promo_code_id: promo?.promoCodeId ?? null,
+      promo_code: promo?.code ?? null,
       status: free || payLater ? "fulfilling" : "pending",
       payment_status: free ? "paid" : payLater ? "awaiting_coach_setup" : "payment_due",
       payment_due_at: free || payLater ? null : now,

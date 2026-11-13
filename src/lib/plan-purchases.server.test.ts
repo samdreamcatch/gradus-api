@@ -6,6 +6,7 @@ import {
   listCoachSales,
   listMyPlanPurchases,
   payPlanPurchase,
+  previewPlanPromoCode,
   resolvePurchaseAthlete,
   restrictPlanPurchase,
   splitPayment,
@@ -270,6 +271,145 @@ describe("startPlanCheckout", () => {
         { origin: "https://gradus.test" },
       ),
     ).rejects.toMatchObject({ status: 409, code: "own_plan" });
+  });
+
+  const promo = (over: Row = {}): Row => ({
+    id: "promo1",
+    coach_id: "c-seller",
+    code: "SUMMER10",
+    discount_type: "percent",
+    discount_value: "10.00",
+    plan_id: null,
+    max_redemptions: 50,
+    expires_at: null,
+    active: true,
+    ...over,
+  });
+
+  it("charges the discounted price and records the code applied", async () => {
+    const tables = {
+      plans: [listing()],
+      athletes: [adultAthlete],
+      plan_purchases: [] as Row[],
+      coach_promo_codes: [promo()],
+    };
+    const admin = fakeAdmin(tables);
+    const { stripe, calls } = fakeStripe();
+    const res = await startPlanCheckout(
+      { userId: "u", admin, stripe },
+      "p1",
+      { promoCode: "summer10" },
+      { origin: "https://gradus.test" },
+    );
+    expect(res.purchase).toMatchObject({
+      amountCents: 2249,
+      originalAmountCents: 2499,
+      promoCode: "SUMMER10",
+    });
+    expect(tables.plan_purchases[0]).toMatchObject({ promo_code_id: "promo1" });
+    const create = calls.find((c) => c[0] === "sessions.create")!;
+    expect(create[1]).toMatchObject({
+      line_items: [{ price_data: { unit_amount: 2249 } }],
+    });
+  });
+
+  it("delivers a plan a Free code makes free, with no checkout and no fee", async () => {
+    const tables = {
+      plans: [listing()],
+      athletes: [adultAthlete],
+      plan_purchases: [] as Row[],
+      plan_moves: [] as Row[],
+      coach_promo_codes: [promo({ discount_type: "free", discount_value: null })],
+    };
+    const admin = fakeAdmin(tables);
+    const { stripe, calls } = fakeStripe();
+    const res = await startPlanCheckout(
+      { userId: "u", admin, stripe },
+      "p1",
+      { promoCode: "SUMMER10" },
+      { origin: "https://gradus.test" },
+    );
+    expect(res.checkoutUrl).toBeNull();
+    expect(res.purchase).toMatchObject({
+      status: "fulfilled",
+      paymentStatus: "paid",
+      amountCents: 0,
+      originalAmountCents: 2499,
+    });
+    expect(tables.plan_purchases[0]).toMatchObject({ platform_fee_cents: 0 });
+    expect(calls.some((c) => c[0] === "sessions.create")).toBe(false);
+  });
+
+  it("buys nothing when the code can't be applied", async () => {
+    const tables = {
+      plans: [listing()],
+      athletes: [adultAthlete],
+      plan_purchases: [] as Row[],
+      coach_promo_codes: [promo({ active: false })],
+    };
+    await expect(
+      startPlanCheckout(
+        { userId: "u", admin: fakeAdmin(tables), stripe: fakeStripe().stripe },
+        "p1",
+        { promoCode: "SUMMER10" },
+        { origin: "https://gradus.test" },
+      ),
+    ).rejects.toMatchObject({ status: 404, code: "promo_code_invalid" });
+    expect(tables.plan_purchases).toHaveLength(0);
+  });
+});
+
+describe("previewPlanPromoCode", () => {
+  const fiveOff = (over: Row = {}): Row => ({
+    id: "promo1",
+    coach_id: "c-seller",
+    code: "FIVEOFF",
+    discount_type: "fixed",
+    discount_value: "5.00",
+    plan_id: "p1",
+    max_redemptions: 50,
+    expires_at: null,
+    active: true,
+    ...over,
+  });
+
+  it("shows the discounted price without buying anything", async () => {
+    const tables = {
+      plans: [listing()],
+      plan_purchases: [] as Row[],
+      coach_promo_codes: [fiveOff()],
+    };
+    const res = await previewPlanPromoCode({ userId: "u", admin: fakeAdmin(tables) }, "p1", {
+      code: "fiveoff",
+    });
+    expect(res).toEqual({
+      state: "valid",
+      message: null,
+      originalAmountCents: 2499,
+      code: "FIVEOFF",
+      discountType: "fixed",
+      discountValue: 5,
+      discountCents: 500,
+      amountCents: 1999,
+    });
+    expect(tables.plan_purchases).toHaveLength(0);
+  });
+
+  it("answers a code that doesn't work with its state, not an error", async () => {
+    const tables = {
+      plans: [listing()],
+      plan_purchases: [{ promo_code_id: "promo1", buyer_user_id: "u", status: "fulfilled" }],
+      coach_promo_codes: [fiveOff()],
+    };
+    const res = await previewPlanPromoCode({ userId: "u", admin: fakeAdmin(tables) }, "p1", {
+      code: "FIVEOFF",
+    });
+    expect(res).toMatchObject({
+      state: "already_used",
+      message: "You've already used this promo code.",
+      originalAmountCents: 2499,
+      amountCents: null,
+    });
   });
 });
 
