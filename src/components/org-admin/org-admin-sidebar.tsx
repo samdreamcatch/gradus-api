@@ -40,7 +40,7 @@ export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Prom
         : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
-    <header className="w-full min-w-0 border-b border-divider bg-card">
+    <header className="sticky top-0 z-30 w-full min-w-0 border-b border-divider bg-popover">
       <div className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-5">
         <p
           title={orgName || "Gradus Club"}
