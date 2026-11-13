@@ -21165,6 +21165,11 @@
                   "athleteId": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "promoCode": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                   }
                 }
               }
@@ -21225,6 +21230,15 @@
                         "amountCents": {
                           "type": "number"
                         },
+                        "originalAmountCents": {
+                          "type": "number"
+                        },
+                        "promoCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "paymentDueAt": {
                           "type": [
                             "string",
@@ -21249,6 +21263,8 @@
                         "athleteId",
                         "copiedPlanId",
                         "amountCents",
+                        "originalAmountCents",
+                        "promoCode",
                         "paymentDueAt",
                         "paidAt",
                         "overdue"
@@ -21363,6 +21379,15 @@
                           "amountCents": {
                             "type": "number"
                           },
+                          "originalAmountCents": {
+                            "type": "number"
+                          },
+                          "promoCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "paymentDueAt": {
                             "type": [
                               "string",
@@ -21408,6 +21433,8 @@
                           "athleteId",
                           "copiedPlanId",
                           "amountCents",
+                          "originalAmountCents",
+                          "promoCode",
                           "paymentDueAt",
                           "paidAt",
                           "overdue",
@@ -21509,6 +21536,15 @@
                     "amountCents": {
                       "type": "number"
                     },
+                    "originalAmountCents": {
+                      "type": "number"
+                    },
+                    "promoCode": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "paymentDueAt": {
                       "type": [
                         "string",
@@ -21533,6 +21569,8 @@
                     "athleteId",
                     "copiedPlanId",
                     "amountCents",
+                    "originalAmountCents",
+                    "promoCode",
                     "paymentDueAt",
                     "paidAt",
                     "overdue"
@@ -21627,6 +21665,15 @@
                         "amountCents": {
                           "type": "number"
                         },
+                        "originalAmountCents": {
+                          "type": "number"
+                        },
+                        "promoCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "paymentDueAt": {
                           "type": [
                             "string",
@@ -21651,6 +21698,8 @@
                         "athleteId",
                         "copiedPlanId",
                         "amountCents",
+                        "originalAmountCents",
+                        "promoCode",
                         "paymentDueAt",
                         "paidAt",
                         "overdue"
@@ -21765,6 +21814,15 @@
                           "amountCents": {
                             "type": "number"
                           },
+                          "originalAmountCents": {
+                            "type": "number"
+                          },
+                          "promoCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "paymentDueAt": {
                             "type": [
                               "string",
@@ -21825,6 +21883,8 @@
                           "athleteId",
                           "copiedPlanId",
                           "amountCents",
+                          "originalAmountCents",
+                          "promoCode",
                           "paymentDueAt",
                           "paidAt",
                           "overdue",
@@ -22025,6 +22085,15 @@
                           "amountCents": {
                             "type": "number"
                           },
+                          "originalAmountCents": {
+                            "type": "number"
+                          },
+                          "promoCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "paymentDueAt": {
                             "type": [
                               "string",
@@ -22085,6 +22154,8 @@
                           "athleteId",
                           "copiedPlanId",
                           "amountCents",
+                          "originalAmountCents",
+                          "promoCode",
                           "paymentDueAt",
                           "paidAt",
                           "overdue",
@@ -22432,6 +22503,15 @@
                     "amountCents": {
                       "type": "number"
                     },
+                    "originalAmountCents": {
+                      "type": "number"
+                    },
+                    "promoCode": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "paymentDueAt": {
                       "type": [
                         "string",
@@ -22456,9 +22536,687 @@
                     "athleteId",
                     "copiedPlanId",
                     "amountCents",
+                    "originalAmountCents",
+                    "promoCode",
                     "paymentDueAt",
                     "paidAt",
                     "overdue"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/marketplace/plans/{id}/promo-code": {
+      "post": {
+        "operationId": "previewMarketplacePlanPromoCode",
+        "summary": "Check a promo code on a marketplace plan and show the discounted price",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "discountType": {
+                      "type": "string",
+                      "enum": [
+                        "percent",
+                        "fixed"
+                      ]
+                    },
+                    "discountValue": {
+                      "type": "number"
+                    },
+                    "originalAmountCents": {
+                      "type": "number"
+                    },
+                    "discountCents": {
+                      "type": "number"
+                    },
+                    "amountCents": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "discountType",
+                    "discountValue",
+                    "originalAmountCents",
+                    "discountCents",
+                    "amountCents"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/promo-codes": {
+      "get": {
+        "operationId": "listCoachPromoCodes",
+        "summary": "The coach's promo codes, newest first",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "discountType": {
+                            "type": "string",
+                            "enum": [
+                              "percent",
+                              "fixed"
+                            ]
+                          },
+                          "discountValue": {
+                            "type": "number"
+                          },
+                          "planIds": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "maxRedemptions": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "maxPerUser": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "redemptionCount": {
+                            "type": "integer"
+                          },
+                          "startsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "expiresAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "active",
+                              "paused",
+                              "scheduled",
+                              "expired",
+                              "used_up"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "discountType",
+                          "discountValue",
+                          "planIds",
+                          "maxRedemptions",
+                          "maxPerUser",
+                          "redemptionCount",
+                          "startsAt",
+                          "expiresAt",
+                          "active",
+                          "state",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCoachPromoCode",
+        "summary": "Make a promo code for the coach's marketplace plans",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "discountType": {
+                    "type": "string",
+                    "enum": [
+                      "percent",
+                      "fixed"
+                    ]
+                  },
+                  "discountValue": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
+                  },
+                  "planIds": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "maxRedemptions": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "maxPerUser": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "default": 1
+                  },
+                  "startsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "expiresAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": [
+                  "code",
+                  "discountType",
+                  "discountValue"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "discountType": {
+                      "type": "string",
+                      "enum": [
+                        "percent",
+                        "fixed"
+                      ]
+                    },
+                    "discountValue": {
+                      "type": "number"
+                    },
+                    "planIds": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "maxRedemptions": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "maxPerUser": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "redemptionCount": {
+                      "type": "integer"
+                    },
+                    "startsAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "paused",
+                        "scheduled",
+                        "expired",
+                        "used_up"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "code",
+                    "discountType",
+                    "discountValue",
+                    "planIds",
+                    "maxRedemptions",
+                    "maxPerUser",
+                    "redemptionCount",
+                    "startsAt",
+                    "expiresAt",
+                    "active",
+                    "state",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/promo-codes/{id}": {
+      "patch": {
+        "operationId": "updateCoachPromoCode",
+        "summary": "Change or pause a promo code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "discountType": {
+                    "type": "string",
+                    "enum": [
+                      "percent",
+                      "fixed"
+                    ]
+                  },
+                  "discountValue": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
+                  },
+                  "planIds": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "maxRedemptions": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "maxPerUser": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "startsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "expiresAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "discountType": {
+                      "type": "string",
+                      "enum": [
+                        "percent",
+                        "fixed"
+                      ]
+                    },
+                    "discountValue": {
+                      "type": "number"
+                    },
+                    "planIds": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "maxRedemptions": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "maxPerUser": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "redemptionCount": {
+                      "type": "integer"
+                    },
+                    "startsAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "paused",
+                        "scheduled",
+                        "expired",
+                        "used_up"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "code",
+                    "discountType",
+                    "discountValue",
+                    "planIds",
+                    "maxRedemptions",
+                    "maxPerUser",
+                    "redemptionCount",
+                    "startsAt",
+                    "expiresAt",
+                    "active",
+                    "state",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteCoachPromoCode",
+        "summary": "Delete a promo code",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
                   ]
                 }
               }

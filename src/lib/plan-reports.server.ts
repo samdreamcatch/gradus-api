@@ -1,5 +1,5 @@
 /**
- * Plan reports (migration 20261112120000_plan_reports): "Report this plan" on
+ * Plan reports (migration 20261113110000_plan_reports): "Report this plan" on
  * a marketplace plan. The reporter says what's wrong (inappropriate content, a
  * misleading listing, or an unsafe instruction) and may add a note; the safety
  * inbox is emailed and an admin reviews it, as with user reports

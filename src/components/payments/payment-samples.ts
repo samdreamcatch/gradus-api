@@ -10,6 +10,7 @@ const sampleBase = {
   paymentDueAt: null,
   paidAt: null,
   overdue: false,
+  promoCode: null,
 };
 
 /** Sample purchases for `/payments-preview`. */
@@ -20,6 +21,7 @@ export const samplePurchases: MyPlanPurchaseDTO[] = [
     status: "fulfilled",
     paymentStatus: "payment_due",
     amountCents: 3999,
+    originalAmountCents: 3999,
     paymentDueAt: "2026-11-08T10:00:00Z",
     planTitle: "Build a Consistent Axel",
     coachName: "Maya Chen",
@@ -32,6 +34,7 @@ export const samplePurchases: MyPlanPurchaseDTO[] = [
     status: "fulfilled",
     paymentStatus: "awaiting_coach_setup",
     amountCents: 2000,
+    originalAmountCents: 2000,
     planTitle: "Spin Strength Block",
     coachName: "Jordan Ellis",
     athleteName: "Leo",
@@ -43,6 +46,7 @@ export const samplePurchases: MyPlanPurchaseDTO[] = [
     status: "fulfilled",
     paymentStatus: "paid",
     amountCents: 2499,
+    originalAmountCents: 2499,
     paidAt: "2026-11-02T10:00:00Z",
     planTitle: "Edge Control Foundations",
     coachName: "Maya Chen",
@@ -55,6 +59,7 @@ export const samplePurchases: MyPlanPurchaseDTO[] = [
     status: "fulfilled",
     paymentStatus: "paid",
     amountCents: 3899,
+    originalAmountCents: 3899,
     paidAt: "2026-10-06T10:00:00Z",
     planTitle: "Juvenile Jump Foundations",
     coachName: "Jordan Ellis",
@@ -69,6 +74,7 @@ const sampleSale = (over: Partial<CoachSaleDTO>): CoachSaleDTO => ({
   status: "fulfilled",
   paymentStatus: "paid",
   amountCents: 3899,
+  originalAmountCents: 3899,
   planTitle: "Juvenile Jump Foundations",
   athleteName: "Greta S.",
   platformFeeCents: null,

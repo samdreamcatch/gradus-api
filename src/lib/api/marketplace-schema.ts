@@ -109,7 +109,12 @@ export const planPurchaseSchema = z.object({
   athleteId: z.string().nullable(),
   /** The athlete's own copy, once delivered. */
   copiedPlanId: z.string().nullable(),
+  /** What's charged, after any promo code. */
   amountCents: z.number(),
+  /** The plan's price before any promo code. */
+  originalAmountCents: z.number(),
+  /** The coach's promo code applied, as it was applied; null when none. */
+  promoCode: z.string().nullable(),
   /** Since when payment is owed; null while nothing is owed. */
   paymentDueAt: z.string().nullable(),
   paidAt: z.string().nullable(),
@@ -207,3 +212,43 @@ export const coachDashboardSchema = z.object({
     }),
   ),
 });
+
+/** `POST /api/v1/marketplace/plans/{id}/promo-code` (src/lib/plan-purchases.server.ts `PlanPromoPreviewDTO`). */
+export const planPromoPreviewSchema = z.object({
+  /** The code as the coach saved it. */
+  code: z.string(),
+  discountType: z.enum(["percent", "fixed"]),
+  /** percent: 1–100; fixed: USD. */
+  discountValue: z.number(),
+  originalAmountCents: z.number(),
+  discountCents: z.number(),
+  /** What the buyer would pay; 0 is free (delivered with no checkout). */
+  amountCents: z.number(),
+});
+
+/** One of the coach's promo codes (src/lib/coach-promo-codes.server.ts `CoachPromoCodeDTO`). */
+export const coachPromoCodeSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  discountType: z.enum(["percent", "fixed"]),
+  /** percent: 1–100; fixed: USD. */
+  discountValue: z.number(),
+  /** The coach's plans it applies to; null is all of them. */
+  planIds: z.array(z.string()).nullable(),
+  /** Total uses allowed; null is unlimited. */
+  maxRedemptions: z.number().int().nullable(),
+  /** Uses per buyer; null is unlimited. */
+  maxPerUser: z.number().int().nullable(),
+  /** Purchases delivered with it. */
+  redemptionCount: z.number().int(),
+  startsAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  /** false: paused by the coach. */
+  active: z.boolean(),
+  /** active: usable now; paused; scheduled: not started; expired; used_up: maxRedemptions reached. */
+  state: z.enum(["active", "paused", "scheduled", "expired", "used_up"]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const coachPromoCodesSchema = z.object({ items: z.array(coachPromoCodeSchema) });
