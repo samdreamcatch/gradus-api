@@ -271,7 +271,16 @@ export function ClubDataGrid<T>({
             ? grid.groups.flatMap((g) => [
                 <ClubGroupRow
                   key={`g-${g.label}`}
-                  label={groupControl ? <span className="inline-flex items-center gap-3">{groupControl(g.label, g.rows)}{g.label}</span> : g.label}
+                  label={
+                    groupControl ? (
+                      <span className="inline-flex items-center gap-3">
+                        {groupControl(g.label, g.rows)}
+                        {g.label}
+                      </span>
+                    ) : (
+                      g.label
+                    )
+                  }
                   count={g.rows.length}
                   colSpan={cols.length}
                 />,
