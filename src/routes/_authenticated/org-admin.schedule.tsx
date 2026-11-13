@@ -907,13 +907,13 @@ function ClubSchedulePage() {
               onValueChange={(v) => (v === "calendar" || v === "grid") && setSp({ view: v })}
               aria-label="Lesson view"
             >
-              <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3">
-                <Table2 className="size-4" />
-                Grid
-              </ToggleGroupItem>
               <ToggleGroupItem value="calendar" className="press-soft gap-1.5 px-3">
                 <CalendarDays className="size-4" />
                 Calendar
+              </ToggleGroupItem>
+              <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3">
+                <Table2 className="size-4" />
+                Grid
               </ToggleGroupItem>
             </ToggleGroup>
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
