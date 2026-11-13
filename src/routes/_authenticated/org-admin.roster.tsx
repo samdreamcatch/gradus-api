@@ -53,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/org-admin/roster")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { invite?: boolean } =>
+    s.invite ? { invite: true } : {},
   component: OrgRosterPage,
 });
 
@@ -90,7 +92,7 @@ function OrgRosterPage() {
   const [sports, setSports] = useState<string[]>([]);
   const [levels, setLevels] = useState<{ sport: string; levelKey: string }[]>([]);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const [inviting, setInviting] = useState(false);
+  const [inviting, setInviting] = useState(Boolean(Route.useSearch().invite));
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [selectedInvite, setSelectedInvite] = useState<Invite | null>(null);
   const [revoking, setRevoking] = useState<Invite | null>(null);
