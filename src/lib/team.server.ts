@@ -117,10 +117,15 @@ export type GuardianAthleteAccess = {
  * is never locked. A co-guardian is locked once the athlete's primary
  * parent's Team plan is no longer active — mirrors `resolveAthleteAccess`'s
  * write-side rule, but for reads and across the whole reachable set.
+ *
+ * A failed read looks like "no athletes" here, as it always has. A caller
+ * that must tell the two apart (the conversations list) passes
+ * `onReadError`, which is called with the database error and should throw.
  */
 export async function guardianAthleteAccess(
   admin: Admin,
   parentId: string,
+  opts: { onReadError?: (error: { message?: string; code?: string }) => void } = {},
 ): Promise<GuardianAthleteAccess[]> {
   const [own, joined] = await Promise.all([
     admin.from("athletes").select("id").eq("parent_id", parentId),
@@ -129,6 +134,8 @@ export async function guardianAthleteAccess(
       .select("athlete_id, athletes!inner(parent_id)")
       .eq("parent_id", parentId),
   ]);
+  const failed = own.error ?? joined.error;
+  if (failed) opts.onReadError?.(failed);
 
   const byId = new Map<string, GuardianAthleteAccess>();
   for (const r of own.data ?? []) {
