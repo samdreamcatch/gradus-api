@@ -316,6 +316,13 @@
       "when": 1794703770082,
       "tag": "0044_message_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794703818833,
+      "tag": "0045_plan_copies_for_several_athletes",
+      "breakpoints": true
     }
   ]
 }

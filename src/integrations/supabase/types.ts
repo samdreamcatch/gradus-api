@@ -4849,6 +4849,9 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          shared_changes: Json | null
+          shared_from_id: string | null
+          shared_synced: Json | null
           social_coach_name: string
           source: string
           source_competition_id: string | null
@@ -4869,6 +4872,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4889,6 +4895,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4917,6 +4926,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_shared_from_id_fkey"
+            columns: ["shared_from_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
           {
