@@ -6002,6 +6002,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_room_read: {
+        Args: { p_direct: boolean; p_room_id: string; p_user_id: string }
+        Returns: number
+      }
       match_knowledge_chunks: {
         Args: {
           p_coach_ids: string[]

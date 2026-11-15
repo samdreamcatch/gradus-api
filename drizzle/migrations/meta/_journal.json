@@ -337,6 +337,13 @@
       "when": 1794703876125,
       "tag": "0047_room_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794707090727,
+      "tag": "0048_mark_room_read",
+      "breakpoints": true
     }
   ]
 }
