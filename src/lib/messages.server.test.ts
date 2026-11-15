@@ -3,15 +3,19 @@ import { ApiError } from "./api/errors";
 import {
   decodeCursor,
   encodeCursor,
+  getRoomDetail,
+  getRoomPage,
   getUnreadTotal,
   idChunks,
   isMissingFunction,
   listRooms,
+  markRoomRead,
   isReactionEmoji,
   missingLateColumn,
   newMessagePush,
   partitionByKind,
   roomClosedMessage,
+  resetMarkRoomReadProbe,
   resetRoomSummariesProbe,
   roomsDigest,
   REPLY_EXCERPT_MAX,
@@ -375,7 +379,12 @@ type FakeError = { code?: string; message: string };
  */
 function fakeMessagesAdmin(
   tables: Record<string, FakeRow[]>,
-  opts: { errors?: Record<string, FakeError>; withFunction?: boolean } = {},
+  opts: {
+    errors?: Record<string, FakeError>;
+    withFunction?: boolean;
+    /** Storage paths that can't be signed; "*" fails the whole storage call. */
+    unsignable?: string[];
+  } = {},
 ) {
   const calls: string[] = [];
   const errors = opts.errors ?? {};
@@ -401,6 +410,26 @@ function fakeMessagesAdmin(
       select: () => self,
       eq: (col: string, value: unknown) => (filters.push((r) => r[col] === value), self),
       in: (col: string, values: unknown[]) => (filters.push((r) => values.includes(r[col])), self),
+      neq: (col: string, value: unknown) => (filters.push((r) => r[col] !== value), self),
+      lt: (col: string, value: any) => (filters.push((r) => r[col] < value), self),
+      // Only `.not(col, "is", null)` is used.
+      not: (col: string) => (filters.push((r) => r[col] !== null && r[col] !== undefined), self),
+      upsert: (rows: FakeRow[], options?: { onConflict?: string; ignoreDuplicates?: boolean }) => {
+        calls.push(`upsert:${table}`);
+        // Without these the real API would overwrite and return every row.
+        if (options?.onConflict !== "message_id,user_id" || options?.ignoreDuplicates !== true) {
+          throw new Error("fake upsert: expected onConflict message_id,user_id + ignoreDuplicates");
+        }
+        const list = (tables[table] ??= []);
+        const added = rows.filter(
+          (row) => !list.some((r) => r.message_id === row.message_id && r.user_id === row.user_id),
+        );
+        list.push(...added);
+        const res = errors[table]
+          ? { data: null, error: errors[table] }
+          : { data: added, error: null };
+        return { select: async () => res };
+      },
       or: (expr: string) => {
         const clauses = expr.split(",").map((part) => {
           const [col, , ...rest] = part.split(".");
@@ -437,9 +466,22 @@ function fakeMessagesAdmin(
         data: null,
         error: {
           code: "PGRST202",
-          message: "Could not find the function public.room_summaries in the schema cache",
+          message: `Could not find the function public.${name} in the schema cache`,
         },
       };
+    }
+    if (name === "mark_room_read") {
+      const column = args.p_direct ? "direct_room_id" : "room_id";
+      const list = (tables.message_reads ??= []);
+      const unread = (tables.messages ?? []).filter(
+        (m) =>
+          m[column] === args.p_room_id &&
+          m.sender_user_id &&
+          m.sender_user_id !== args.p_user_id &&
+          !list.some((r) => r.message_id === m.id && r.user_id === args.p_user_id),
+      );
+      list.push(...unread.map((m) => ({ message_id: m.id, user_id: args.p_user_id })));
+      return { data: unread.length, error: null };
     }
     const reads = new Set(
       (tables.message_reads ?? [])
@@ -476,7 +518,25 @@ function fakeMessagesAdmin(
     };
   };
 
-  return { from, rpc, calls };
+  const storage = {
+    from: () => ({
+      createSignedUrls: async (paths: string[]) => {
+        calls.push(`storage:${paths.length}`);
+        const bad = opts.unsignable ?? [];
+        if (bad.includes("*")) return { data: null, error: { message: "storage is down" } };
+        return {
+          data: paths.map((path) =>
+            bad.includes(path)
+              ? { path, signedUrl: null, error: "The object does not exist" }
+              : { path, signedUrl: `https://signed.example/${path}`, error: null },
+          ),
+          error: null,
+        };
+      },
+    }),
+  };
+
+  return { from, rpc, storage, calls };
 }
 
 async function withMessagesAdmin<T>(
@@ -486,11 +546,13 @@ async function withMessagesAdmin<T>(
   const real = await import("@/integrations/supabase/client.server");
   mock.module("@/integrations/supabase/client.server", () => ({ ...real, supabaseAdmin: admin }));
   resetRoomSummariesProbe();
+  resetMarkRoomReadProbe();
   try {
     return await run();
   } finally {
     mock.module("@/integrations/supabase/client.server", () => real);
     resetRoomSummariesProbe();
+    resetMarkRoomReadProbe();
   }
 }
 
@@ -782,6 +844,170 @@ describe("listRooms and getUnreadTotal", () => {
         "direct-corin:parent:0",
         "room-maeve:parent:2", // m1 and m2; m3 he read, m4 is his own, m5 has no sender
       ]);
+    });
+  });
+});
+
+/** `coachInbox()` with adult athletes (so the room rule leaves the composer open) and a voice note with a file. */
+function threadInbox(): Record<string, FakeRow[]> {
+  const seed = coachInbox();
+  for (const a of seed.athletes!)
+    Object.assign(a, { birthdate: "1990-01-01", account_state: "active" });
+  seed.coach_athletes = [];
+  seed.message_reactions = [];
+  seed.plans = [{ id: "plan-1", title: "Loop week", coach_id: "coach-1" }];
+  for (const m of seed.messages!)
+    Object.assign(m, {
+      audio_url: null,
+      duration_seconds: null,
+      plan_id: null,
+      reply_to_id: null,
+      transcript: null,
+    });
+  Object.assign(seed.messages!.find((m) => m.id === "m3")!, { plan_id: "plan-1" });
+  Object.assign(seed.messages!.find((m) => m.id === "m4")!, { reply_to_id: "m1" });
+  Object.assign(seed.messages!.find((m) => m.id === "t1")!, {
+    audio_url: "room-theo/t1.m4a",
+    duration_seconds: 12,
+  });
+  return seed;
+}
+
+describe("opening a thread", () => {
+  it("returns a page oldest-first with reads, plan tags, quotes and the header", async () => {
+    const admin = fakeMessagesAdmin(threadInbox());
+    await withMessagesAdmin(admin, async () => {
+      const page = await getRoomPage(viewer, { roomId: "room-maeve", limit: 3 });
+      expect(page.items.map((m) => m.id)).toEqual(["m3", "m4", "m5"]);
+      expect(page.nextCursor).not.toBeNull();
+      expect(page.items[0]!.plan).toEqual({ id: "plan-1", title: "Loop week", coachId: "coach-1" });
+      expect(page.items[0]!.readBy).toEqual([
+        { userId: "u-corin", readAt: "2026-11-01T10:03:30+00:00" },
+      ]);
+      expect(page.items[1]!.replyTo?.id).toBe("m1");
+      expect(page.items[1]!.senderFirstName).toBe("Corin");
+      expect(page.items[2]!.senderUserId).toBeNull();
+      expect(page.room).toEqual({
+        id: "room-maeve",
+        kind: "athlete",
+        coachId: "coach-1",
+        athleteId: "ath-maeve",
+        participants: page.room.participants,
+        myRole: "coach",
+        myUserId: "u-linnea",
+        myCoachId: "coach-1",
+        messagingPausedByParent: false,
+        messagingClosedMessage: null,
+        viewerTextOnly: false,
+      });
+      expect(page.room.participants.map((p) => p.firstName)).toEqual(["Linnea", "Maeve", "Corin"]);
+
+      const older = await getRoomPage(viewer, {
+        roomId: "room-maeve",
+        limit: 3,
+        cursor: page.nextCursor!,
+      });
+      expect(older.items.map((m) => m.id)).toEqual(["m1", "m2"]);
+      expect(older.nextCursor).toBeNull();
+    });
+  });
+
+  it("signs a page's voice notes in one storage call, and none when there are none", async () => {
+    const admin = fakeMessagesAdmin(threadInbox());
+    await withMessagesAdmin(admin, async () => {
+      const theo = await getRoomPage(viewer, { roomId: "room-theo", limit: 50 });
+      expect(theo.items[0]!.audioUrl).toBe("https://signed.example/room-theo/t1.m4a");
+      expect(admin.calls.filter((c) => c.startsWith("storage:"))).toEqual(["storage:1"]);
+      await getRoomPage(viewer, { roomId: "room-maeve", limit: 50 });
+      expect(admin.calls.filter((c) => c.startsWith("storage:")).length).toBe(1);
+    });
+  });
+
+  it("still opens the thread, without audio, when a note or the whole storage call can't be signed", async () => {
+    for (const unsignable of [["room-theo/t1.m4a"], ["*"]]) {
+      const admin = fakeMessagesAdmin(threadInbox(), { unsignable });
+      await withMessagesAdmin(admin, async () => {
+        const theo = await getRoomPage(viewer, { roomId: "room-theo", limit: 50 });
+        expect(theo.items.map((m) => m.id)).toEqual(["t1"]);
+        expect(theo.items[0]!.audioUrl).toBeNull();
+      });
+    }
+  });
+
+  it("does not read the coach's profile a second time for the header", async () => {
+    const admin = fakeMessagesAdmin(threadInbox());
+    await withMessagesAdmin(admin, async () => {
+      await getRoomPage(viewer, { roomId: "room-theo", limit: 50 });
+      // Once for the identity, once for the room's participants.
+      expect(admin.calls.filter((c) => c === "coach_profiles").length).toBe(2);
+    });
+  });
+
+  it("gives the web's whole-thread read the same messages", async () => {
+    const admin = fakeMessagesAdmin(threadInbox());
+    await withMessagesAdmin(admin, async () => {
+      const detail = await getRoomDetail(viewer, { roomId: "room-maeve" });
+      expect(detail.messages.map((m) => m.id)).toEqual(["m1", "m2", "m3", "m4", "m5"]);
+      expect(detail.room.myCoachId).toBe("coach-1");
+    });
+  });
+
+  it("is not found for a room the caller is not in, and a parent's header has no coach id", async () => {
+    const seed = threadInbox();
+    seed.athlete_guardians = [];
+    await withMessagesAdmin(fakeMessagesAdmin(seed), async () => {
+      const err = await thrown(() =>
+        getRoomPage({ userId: "u-theo" }, { roomId: "room-maeve", limit: 50 }),
+      );
+      expect(err?.message).toBe("Conversation not found");
+      const asParent = await getRoomPage(
+        { userId: "u-corin" },
+        { roomId: "room-maeve", limit: 50 },
+      );
+      expect(asParent.room.myRole).toBe("parent");
+      expect(asParent.room.myCoachId).toBeNull();
+    });
+  });
+});
+
+describe("markRoomRead", () => {
+  it("marks other people's unread messages in the database function, reading no history", async () => {
+    const admin = fakeMessagesAdmin(threadInbox());
+    await withMessagesAdmin(admin, async () => {
+      expect(await markRoomRead(viewer, { roomId: "room-maeve" })).toEqual({ marked: 2 });
+      expect(admin.calls).toContain("rpc:mark_room_read");
+      expect(admin.calls).not.toContain("messages");
+      expect(await markRoomRead(viewer, { roomId: "room-maeve" })).toEqual({ marked: 0 });
+      expect(await markRoomRead(viewer, { roomId: "direct-corin" })).toEqual({ marked: 1 });
+      expect((await listRooms(viewer, undefined)).rooms.every((r) => r.unreadCount === 0)).toBe(
+        true,
+      );
+    });
+  });
+
+  it("falls back while the function is missing, with the same result", async () => {
+    const admin = fakeMessagesAdmin(threadInbox(), { withFunction: false });
+    await withMessagesAdmin(admin, async () => {
+      expect(await markRoomRead(viewer, { roomId: "room-maeve" })).toEqual({ marked: 2 });
+      expect(admin.calls).toContain("upsert:message_reads");
+      expect(await markRoomRead(viewer, { roomId: "room-maeve" })).toEqual({ marked: 0 });
+      expect(admin.calls.filter((c) => c === "rpc:mark_room_read").length).toBe(1);
+      expect(await getUnreadTotal(viewer, undefined)).toEqual({ total: 1 });
+    });
+  });
+
+  it("marks nothing for a room the caller is not in, and throws when the database fails", async () => {
+    await withMessagesAdmin(fakeMessagesAdmin(threadInbox()), async () => {
+      expect(await markRoomRead({ userId: "u-theo" }, { roomId: "room-maeve" })).toEqual({
+        marked: 0,
+      });
+    });
+    const down = { code: "57014", message: "canceling statement due to statement timeout" };
+    const admin = fakeMessagesAdmin(threadInbox(), { errors: { mark_room_read: down } });
+    await withMessagesAdmin(admin, async () => {
+      expect((await thrown(() => markRoomRead(viewer, { roomId: "room-maeve" })))?.message).toBe(
+        "Couldn't update read status",
+      );
     });
   });
 });

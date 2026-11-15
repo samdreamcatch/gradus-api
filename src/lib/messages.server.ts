@@ -137,6 +137,8 @@ export async function listMyRoomIds(
 ): Promise<{
   rooms: InternalRoomRow[];
   myRoleByRoom: Map<string, RoleInRoom>;
+  /** The caller's profiles, already loaded here, so callers need not read them again. */
+  me: Awaited<ReturnType<typeof resolveMyIdentity>>;
 }> {
   const me = await resolveMyIdentity(userId);
   const rows: InternalRoomRow[] = [];
@@ -218,10 +220,10 @@ export async function listMyRoomIds(
     const filtered = rows.filter((r) => myRoleByRoom.get(r.id) === viewerRole);
     const filteredRoles = new Map<string, RoleInRoom>();
     for (const r of filtered) filteredRoles.set(r.id, viewerRole);
-    return { rooms: filtered, myRoleByRoom: filteredRoles };
+    return { rooms: filtered, myRoleByRoom: filteredRoles, me };
   }
 
-  return { rooms: rows, myRoleByRoom };
+  return { rooms: rows, myRoleByRoom, me };
 }
 
 type PersonRow = {
@@ -335,14 +337,6 @@ export async function loadParticipants(
   }
 
   return out;
-}
-
-export async function signAudio(path: string): Promise<string | null> {
-  const { data, error } = await supabaseAdmin.storage
-    .from("voice-notes")
-    .createSignedUrl(path, 60 * 60);
-  if (error || !data) return null;
-  return data.signedUrl;
 }
 
 export { supabaseAdmin };
@@ -853,70 +847,100 @@ async function findMyRoom(
   viewerRole?: RoleInRoom,
   missing = "Conversation not found",
 ) {
-  const { rooms, myRoleByRoom } = await listMyRoomIds(userId, viewerRole);
+  const { rooms, myRoleByRoom, me } = await listMyRoomIds(userId, viewerRole);
   const room = rooms.find((r) => r.id === roomId);
   if (!room) throw notFound(missing);
-  return { room, myRoleByRoom, rooms };
+  return { room, myRoleByRoom, rooms, me };
 }
 
-/** Reads, plan tags, and signed audio URLs for a set of rows. */
-async function hydrateMessages(
-  room: InternalRoomRow,
-  participants: RoomParticipant[],
-  rows: MsgRow[],
-): Promise<MessageDTO[]> {
+/** Signed URLs for voice notes, by storage path: one storage call for the whole page. */
+export async function signAudioPaths(paths: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const unique = Array.from(new Set(paths));
+  if (unique.length === 0) return out;
+  // In slices, so a long web thread is not one oversized request and a failed
+  // slice costs only its own notes. A note that can't be signed has no URL.
+  const signed = await Promise.all(
+    idChunks(unique).map((chunk) =>
+      supabaseAdmin.storage.from("voice-notes").createSignedUrls(chunk, 60 * 60),
+    ),
+  );
+  for (const { data, error } of signed) {
+    if (error || !data) continue;
+    for (const item of data) if (item.path && item.signedUrl) out.set(item.path, item.signedUrl);
+  }
+  return out;
+}
+
+type MessageExtras = {
+  readsByMessage: Map<string, { userId: string; readAt: string }[]>;
+  plansById: Map<string, { id: string; title: string; coachId: string | null }>;
+  reactionsByMessage: Map<string, MessageReaction[]>;
+  quoted: Map<string, MsgRow>;
+  audioByPath: Map<string, string>;
+};
+
+/**
+ * Everything a page of rows needs besides the rows themselves: reads, plan
+ * tags, reactions, quoted messages and signed audio URLs. The five lookups
+ * don't depend on each other, so they are one round trip, not five.
+ */
+async function loadMessageExtras(rows: MsgRow[]): Promise<MessageExtras> {
   const messageIds = rows.map((m) => m.id);
-  const { data: reads } = messageIds.length
-    ? await supabaseAdmin
-        .from("message_reads")
-        .select("message_id, user_id, read_at")
-        .in("message_id", messageIds)
-    : { data: [] as { message_id: string; user_id: string; read_at: string }[] };
+  const planIds = Array.from(new Set(rows.map((m) => m.plan_id).filter(Boolean) as string[]));
+  const [reads, planRows, reactionsByMessage, quoted, audioByPath] = await Promise.all([
+    messageIds.length
+      ? supabaseAdmin
+          .from("message_reads")
+          .select("message_id, user_id, read_at")
+          .in("message_id", messageIds)
+      : { data: [] as { message_id: string; user_id: string; read_at: string }[] },
+    planIds.length
+      ? supabaseAdmin.from("plans").select("id, title, coach_id").in("id", planIds)
+      : { data: [] as { id: string; title: string | null; coach_id: string | null }[] },
+    loadReactions(messageIds),
+    loadQuotedMessages(rows),
+    signAudioPaths(rows.map((m) => m.audio_url).filter(Boolean) as string[]),
+  ]);
   const readsByMessage = new Map<string, { userId: string; readAt: string }[]>();
-  for (const r of reads ?? []) {
+  for (const r of reads.data ?? []) {
     const arr = readsByMessage.get(r.message_id) ?? [];
     arr.push({ userId: r.user_id, readAt: r.read_at });
     readsByMessage.set(r.message_id, arr);
   }
-
-  const planIds = Array.from(new Set(rows.map((m) => m.plan_id).filter(Boolean) as string[]));
   const plansById = new Map<string, { id: string; title: string; coachId: string | null }>();
-  if (planIds.length > 0) {
-    const { data: planRows } = await supabaseAdmin
-      .from("plans")
-      .select("id, title, coach_id")
-      .in("id", planIds);
-    for (const p of planRows ?? []) {
-      plansById.set(p.id, {
-        id: p.id,
-        title: p.title || "Untitled plan",
-        coachId: p.coach_id ?? null,
-      });
-    }
+  for (const p of planRows.data ?? []) {
+    plansById.set(p.id, {
+      id: p.id,
+      title: p.title || "Untitled plan",
+      coachId: p.coach_id ?? null,
+    });
   }
+  return { readsByMessage, plansById, reactionsByMessage, quoted, audioByPath };
+}
 
-  const [reactionsByMessage, quoted] = await Promise.all([
-    loadReactions(messageIds),
-    loadQuotedMessages(rows),
-  ]);
-
-  return Promise.all(
-    rows.map(async (m) => {
-      const target = m.reply_to_id ? quoted.get(m.reply_to_id) : undefined;
-      return toMessageDTO(
-        m,
-        room.id,
-        participants,
-        readsByMessage.get(m.id) ?? [],
-        m.plan_id ? (plansById.get(m.plan_id) ?? null) : null,
-        m.audio_url ? await signAudio(m.audio_url) : null,
-        {
-          replyTo: target ? toReplyPreview(target, participants) : null,
-          reactions: reactionsByMessage.get(m.id) ?? [],
-        },
-      );
-    }),
-  );
+/** `MessageDTO`s from rows, their room's participants, and the lookups in `loadMessageExtras`. */
+function assembleMessages(
+  room: InternalRoomRow,
+  participants: RoomParticipant[],
+  rows: MsgRow[],
+  extras: MessageExtras,
+): MessageDTO[] {
+  return rows.map((m) => {
+    const target = m.reply_to_id ? extras.quoted.get(m.reply_to_id) : undefined;
+    return toMessageDTO(
+      m,
+      room.id,
+      participants,
+      extras.readsByMessage.get(m.id) ?? [],
+      m.plan_id ? (extras.plansById.get(m.plan_id) ?? null) : null,
+      m.audio_url ? (extras.audioByPath.get(m.audio_url) ?? null) : null,
+      {
+        replyTo: target ? toReplyPreview(target, participants) : null,
+        reactions: extras.reactionsByMessage.get(m.id) ?? [],
+      },
+    );
+  });
 }
 
 /**
@@ -965,37 +989,41 @@ export function isReactionEmoji(value: string): value is ReactionEmoji {
   return (MESSAGE_REACTIONS as readonly string[]).includes(value);
 }
 
-async function roomHeader(
+type RoomGateFacts = {
+  messagingPausedByParent: boolean;
+  messagingClosedMessage: string | null;
+  viewerTextOnly: boolean;
+};
+
+/**
+ * §6.13 A7, C: the composer needs to know about a parent's pause and, for a
+ * minor athlete viewing their own room, that voice is off. Any other hold
+ * from the room rule (a parent who hasn't joined, a provisional or paused
+ * account) closes the composer with its reason, so a conversation that
+ * opened before the hold shows why it is quiet instead of refusing each
+ * send (2026-10-19, decision #56).
+ */
+async function roomGateFacts(room: InternalRoomRow, myRole: RoleInRoom): Promise<RoomGateFacts> {
+  if (room.kind !== "athlete" || !room.coachId || !room.athleteId) {
+    return { messagingPausedByParent: false, messagingClosedMessage: null, viewerTextOnly: false };
+  }
+  const gate = await athleteRoomGate(supabaseAdmin, room.athleteId, room.coachId);
+  return {
+    messagingPausedByParent: gate.restriction === "paused_by_parent",
+    messagingClosedMessage: roomClosedMessage(gate.restriction, myRole),
+    viewerTextOnly: myRole === "athlete" && gate.minor,
+  };
+}
+
+function roomHeader(
   userId: string,
   room: InternalRoomRow,
-  myRoleByRoom: Map<string, RoleInRoom>,
+  myRole: RoleInRoom,
+  /** The caller's coach profile id, from the identity `listMyRoomIds` loaded. */
+  myCoachProfileId: string | null,
   participants: RoomParticipant[],
-): Promise<RoomDetail["room"]> {
-  let myCoachId: string | null = null;
-  if (myRoleByRoom.get(room.id) === "coach") {
-    const { data: cp } = await supabaseAdmin
-      .from("coach_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-    myCoachId = cp?.id ?? null;
-  }
-  // §6.13 A7, C: the composer needs to know about a parent's pause and,
-  // for a minor athlete viewing their own room, that voice is off. Any other
-  // hold from the room rule (a parent who hasn't joined, a provisional or
-  // paused account) closes the composer with its reason, so a conversation
-  // that opened before the hold shows why it is quiet instead of refusing
-  // each send (2026-10-19, decision #56).
-  const myRole = myRoleByRoom.get(room.id)!;
-  let messagingPausedByParent = false;
-  let messagingClosedMessage: string | null = null;
-  let viewerTextOnly = false;
-  if (room.kind === "athlete" && room.coachId && room.athleteId) {
-    const gate = await athleteRoomGate(supabaseAdmin, room.athleteId, room.coachId);
-    messagingPausedByParent = gate.restriction === "paused_by_parent";
-    messagingClosedMessage = roomClosedMessage(gate.restriction, myRole);
-    viewerTextOnly = myRole === "athlete" && gate.minor;
-  }
+  gate: RoomGateFacts,
+): RoomDetail["room"] {
   return {
     id: room.id,
     kind: room.kind,
@@ -1004,10 +1032,37 @@ async function roomHeader(
     participants,
     myRole,
     myUserId: userId,
-    myCoachId,
-    messagingPausedByParent,
-    messagingClosedMessage,
-    viewerTextOnly,
+    myCoachId: myRole === "coach" ? myCoachProfileId : null,
+    ...gate,
+  };
+}
+
+/**
+ * A thread read: the room's participants, one page of rows with their
+ * lookups, and the composer's gate, loaded side by side. They used to run
+ * one after another, about ten round trips before a thread could open.
+ */
+async function loadThread(
+  userId: string,
+  found: Awaited<ReturnType<typeof findMyRoom>>,
+  loadRows: () => Promise<MsgRow[]>,
+): Promise<{
+  room: RoomDetail["room"];
+  rows: MsgRow[];
+  toMessages: (rows: MsgRow[]) => MessageDTO[];
+}> {
+  const { room, myRoleByRoom, me } = found;
+  const myRole = myRoleByRoom.get(room.id)!;
+  const [participantsByRoom, page, gate] = await Promise.all([
+    loadParticipants([room]),
+    loadRows().then(async (rows) => ({ rows, extras: await loadMessageExtras(rows) })),
+    roomGateFacts(room, myRole),
+  ]);
+  const participants = participantsByRoom.get(room.id) ?? [];
+  return {
+    room: roomHeader(userId, room, myRole, me.coach?.id ?? null, participants, gate),
+    rows: page.rows,
+    toMessages: (rows) => assembleMessages(room, participants, rows, page.extras),
   };
 }
 
@@ -1146,22 +1201,20 @@ export async function getRoomDetail(
   input: z.infer<typeof roomInput>,
 ): Promise<RoomDetail> {
   const { userId } = ctx;
-  const { room, myRoleByRoom } = await findMyRoom(userId, input.roomId, input.viewerRole);
+  const found = await findMyRoom(userId, input.roomId, input.viewerRole);
+  const { room } = found;
 
-  const participantsByRoom = await loadParticipants([room]);
-  const participants = participantsByRoom.get(room.id) ?? [];
-
-  const { data: msgs, error } = await selectMessages(async (cols) => {
-    const q = supabaseAdmin.from("messages").select(cols);
-    return room.kind === "athlete"
-      ? await q.eq("room_id", room.id).order("created_at", { ascending: true }).limit(500)
-      : await q.eq("direct_room_id", room.id).order("created_at", { ascending: true }).limit(500);
+  const thread = await loadThread(userId, found, async () => {
+    const { data: msgs, error } = await selectMessages(async (cols) => {
+      const q = supabaseAdmin.from("messages").select(cols);
+      return room.kind === "athlete"
+        ? await q.eq("room_id", room.id).order("created_at", { ascending: true }).limit(500)
+        : await q.eq("direct_room_id", room.id).order("created_at", { ascending: true }).limit(500);
+    });
+    if (error) dbError(error, "Couldn't load messages");
+    return (msgs ?? []) as unknown as MsgRow[];
   });
-  if (error) dbError(error, "Couldn't load messages");
-
-  const messages = await hydrateMessages(room, participants, (msgs ?? []) as unknown as MsgRow[]);
-  const header = await roomHeader(userId, room, myRoleByRoom, participants);
-  return { room: header, messages };
+  return { room: thread.room, messages: thread.toMessages(thread.rows) };
 }
 
 /**
@@ -1174,29 +1227,29 @@ export async function getRoomPage(
   input: { roomId: string } & z.infer<typeof roomPageQuery>,
 ): Promise<{ room: RoomDetail["room"]; items: MessageDTO[]; nextCursor: string | null }> {
   const { userId } = ctx;
-  const { room, myRoleByRoom } = await findMyRoom(userId, input.roomId, input.viewerRole);
+  const found = await findMyRoom(userId, input.roomId, input.viewerRole);
+  const { room } = found;
   const before = input.cursor ? decodeCursor(input.cursor) : null;
 
-  const participantsByRoom = await loadParticipants([room]);
-  const participants = participantsByRoom.get(room.id) ?? [];
-
-  const { data: msgs, error } = await selectMessages(async (cols) => {
-    let q = supabaseAdmin.from("messages").select(cols);
-    q = room.kind === "athlete" ? q.eq("room_id", room.id) : q.eq("direct_room_id", room.id);
-    if (before) q = q.lt("created_at", before.createdAt);
-    return await q.order("created_at", { ascending: false }).limit(input.limit + 1);
+  let hasMore = false;
+  const thread = await loadThread(userId, found, async () => {
+    const { data: msgs, error } = await selectMessages(async (cols) => {
+      let q = supabaseAdmin.from("messages").select(cols);
+      q = room.kind === "athlete" ? q.eq("room_id", room.id) : q.eq("direct_room_id", room.id);
+      if (before) q = q.lt("created_at", before.createdAt);
+      return await q.order("created_at", { ascending: false }).limit(input.limit + 1);
+    });
+    if (error) dbError(error, "Couldn't load messages");
+    const rows = (msgs ?? []) as unknown as MsgRow[];
+    hasMore = rows.length > input.limit;
+    // Only the page itself needs its lookups, not the one extra row that says "there is more".
+    return hasMore ? rows.slice(0, input.limit) : rows;
   });
-  if (error) dbError(error, "Couldn't load messages");
 
-  const rows = (msgs ?? []) as unknown as MsgRow[];
-  const hasMore = rows.length > input.limit;
-  const page = hasMore ? rows.slice(0, input.limit) : rows;
+  const page = thread.rows;
   const oldest = page[page.length - 1];
   const nextCursor = hasMore && oldest ? encodeCursor(oldest.created_at, oldest.id) : null;
-
-  const items = await hydrateMessages(room, participants, [...page].reverse());
-  const header = await roomHeader(userId, room, myRoleByRoom, participants);
-  return { room: header, items, nextCursor };
+  return { room: thread.room, items: thread.toMessages([...page].reverse()), nextCursor };
 }
 
 /** `sendMessage`. */
@@ -1658,6 +1711,48 @@ export async function setReaction(
   return { ok: true, reactions: (await loadReactions([messageId])).get(messageId) ?? [] };
 }
 
+/**
+ * `mark_room_read` arrives with migration 20261114130000. Until Mariah
+ * applies it (Lovable does not apply migrations on publish), reads are
+ * marked from here, the way they used to be. Looked for again a minute
+ * after it was last found missing.
+ */
+const MARK_ROOM_READ_MIGRATION = "20261114130000";
+let markRoomReadMissingUntil = 0;
+
+/** Test hook: forget that `mark_room_read` was missing. */
+export function resetMarkRoomReadProbe(): void {
+  markRoomReadMissingUntil = 0;
+}
+
+/**
+ * The fallback: receipts for the newest messages other people sent in the
+ * room. Existing receipts are skipped by the insert itself, so nothing is
+ * read back first.
+ */
+async function legacyMarkRoomRead(userId: string, room: InternalRoomRow): Promise<number> {
+  const q = supabaseAdmin
+    .from("messages")
+    .select("id")
+    .not("sender_user_id", "is", null)
+    .neq("sender_user_id", userId);
+  const { data: fromOthers, error } = await (
+    room.kind === "athlete" ? q.eq("room_id", room.id) : q.eq("direct_room_id", room.id)
+  )
+    .order("created_at", { ascending: false })
+    .limit(LEGACY_SUMMARY_ROW_CAP);
+  if (error) dbError(error, "Couldn't update read status");
+  const rows = (fromOthers ?? []).map((m) => ({ message_id: m.id, user_id: userId }));
+  if (rows.length === 0) return 0;
+
+  const { data: inserted, error: insErr } = await supabaseAdmin
+    .from("message_reads")
+    .upsert(rows, { onConflict: "message_id,user_id", ignoreDuplicates: true })
+    .select("message_id");
+  if (insErr) dbError(insErr, "Couldn't update read status");
+  return (inserted ?? []).length;
+}
+
 /** `markRoomRead`. */
 export async function markRoomRead(
   ctx: MessagesContext,
@@ -1669,34 +1764,21 @@ export async function markRoomRead(
   const room = rooms.find((r) => r.id === input.roomId);
   if (!room) return { marked: 0 };
 
-  const q = supabaseAdmin
-    .from("messages")
-    .select("id")
-    .not("sender_user_id", "is", null)
-    .neq("sender_user_id", userId);
-  const { data: unread, error } =
-    room.kind === "athlete"
-      ? await q.eq("room_id", room.id)
-      : await q.eq("direct_room_id", room.id);
-  if (error) dbError(error, "Couldn't update read status");
-
-  const ids = (unread ?? []).map((m) => m.id);
-  if (ids.length === 0) return { marked: 0 };
-
-  const { data: already } = await supabaseAdmin
-    .from("message_reads")
-    .select("message_id")
-    .eq("user_id", userId)
-    .in("message_id", ids);
-  const alreadySet = new Set((already ?? []).map((r) => r.message_id));
-  const toInsert = ids
-    .filter((id) => !alreadySet.has(id))
-    .map((id) => ({ message_id: id, user_id: userId }));
-  if (toInsert.length === 0) return { marked: 0 };
-
-  const { error: insErr } = await supabaseAdmin.from("message_reads").insert(toInsert);
-  if (insErr) dbError(insErr, "Couldn't update read status");
-  return { marked: toInsert.length };
+  if (Date.now() >= markRoomReadMissingUntil) {
+    // Not in the generated types until the migration is applied and they are regenerated.
+    const { data, error } = (await (supabaseAdmin as any).rpc("mark_room_read", {
+      p_user_id: userId,
+      p_room_id: room.id,
+      p_direct: room.kind !== "athlete",
+    })) as DbRead<number>;
+    if (!error) return { marked: Number(data) || 0 };
+    if (!isMissingFunction(error)) dbError(error, "Couldn't update read status");
+    markRoomReadMissingUntil = Date.now() + ROOM_SUMMARIES_RETRY_MS;
+    console.error(
+      `[messages] mark_room_read() is missing; using the fallback until migration ${MARK_ROOM_READ_MIGRATION} is applied`,
+    );
+  }
+  return { marked: await legacyMarkRoomRead(userId, room) };
 }
 
 /** `getUnreadTotal`: the sum of the list's per-room unread counts. */

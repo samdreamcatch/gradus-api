@@ -29,7 +29,8 @@ select to_regclass('public.api_rate_limits')      as rate_limits,
        to_regprocedure('public.protect_parent_verification_columns()') as verification_guard,
        to_regclass('public.app_store_app_transactions') as app_store_transactions,
        to_regclass('public.app_store_rescinded_transactions') as app_store_rescinds,
-       to_regprocedure('public.room_summaries(uuid, uuid[], uuid[])') as room_summaries_fn;
+       to_regprocedure('public.room_summaries(uuid, uuid[], uuid[])') as room_summaries_fn,
+       to_regprocedure('public.mark_room_read(uuid, uuid, boolean)') as mark_room_read_fn;
 ```
 
 Every column must be non-null. If any is null, ask Lovable to apply the pending files in
