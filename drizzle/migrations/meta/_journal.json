@@ -330,6 +330,13 @@
       "when": 1794703849698,
       "tag": "0046_delete_replaces_bench",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794703876125,
+      "tag": "0047_room_summaries",
+      "breakpoints": true
     }
   ]
 }

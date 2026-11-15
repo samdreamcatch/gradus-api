@@ -6111,6 +6111,26 @@ export type Database = {
           state: string
         }[]
       }
+      room_summaries: {
+        Args: {
+          p_athlete_room_ids: string[]
+          p_direct_room_ids: string[]
+          p_user_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          direct_room_id: string
+          id: string
+          kind: string
+          room_id: string
+          room_key: string
+          sender_deleted_at: string
+          sender_role: string
+          sender_user_id: string
+          unread_count: number
+        }[]
+      }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
       set_club_policy_requirement: {
         Args: {
