@@ -309,6 +309,34 @@
       "when": 1794535019604,
       "tag": "0043_coach_invite_sports",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794703770082,
+      "tag": "0044_message_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794703818833,
+      "tag": "0045_plan_copies_for_several_athletes",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794703849698,
+      "tag": "0046_delete_replaces_bench",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794703876125,
+      "tag": "0047_room_summaries",
+      "breakpoints": true
     }
   ]
 }

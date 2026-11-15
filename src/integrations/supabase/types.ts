@@ -3251,6 +3251,77 @@ export type Database = {
         }
         Relationships: []
       }
+      message_flags: {
+        Row: {
+          admin_notes: string
+          body: string | null
+          category: string
+          coach_id: string | null
+          created_at: string
+          direct_room_id: string | null
+          id: string
+          matched: string
+          message_id: string | null
+          outcome: string
+          room_has_minor: boolean
+          room_id: string | null
+          rule_id: string
+          sender_minor: boolean
+          sender_role: string
+          sender_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          body?: string | null
+          category: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id: string
+          sender_minor?: boolean
+          sender_role: string
+          sender_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          body?: string | null
+          category?: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome?: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id?: string
+          sender_minor?: boolean
+          sender_role?: string
+          sender_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_flags_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           direct_room_id: string | null
@@ -3425,6 +3496,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messaging_suspensions: {
+        Row: {
+          created_at: string
+          note: string
+          paused_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note?: string
+          paused_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: string
+          paused_by?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       moves: {
         Row: {
@@ -4715,7 +4807,9 @@ export type Database = {
           logged_at: string
           note: string
           parent_id: string | null
+          plan_coach_id: string | null
           plan_id: string
+          plan_title: string | null
           state_index: number
         }
         Insert: {
@@ -4727,7 +4821,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id: string
+          plan_title?: string | null
           state_index: number
         }
         Update: {
@@ -4739,7 +4835,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id?: string
+          plan_title?: string | null
           state_index?: number
         }
         Relationships: []
@@ -4749,6 +4847,7 @@ export type Database = {
           athlete_id: string | null
           coach_id: string | null
           created_at: string
+          deleted_at: string | null
           feedback_scope: string
           id: string
           is_org_template: boolean
@@ -4757,6 +4856,9 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          shared_changes: Json | null
+          shared_from_id: string | null
+          shared_synced: Json | null
           social_coach_name: string
           source: string
           source_competition_id: string | null
@@ -4769,6 +4871,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -4777,6 +4880,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4789,6 +4895,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -4797,6 +4904,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4825,6 +4935,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_shared_from_id_fkey"
+            columns: ["shared_from_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
           {
@@ -5935,6 +6052,7 @@ export type Database = {
         Args: { _resource_id: string }
         Returns: boolean
       }
+      purge_deleted_plans: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -5991,6 +6109,26 @@ export type Database = {
           response_body: Json
           response_status: number
           state: string
+        }[]
+      }
+      room_summaries: {
+        Args: {
+          p_athlete_room_ids: string[]
+          p_direct_room_ids: string[]
+          p_user_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          direct_room_id: string
+          id: string
+          kind: string
+          room_id: string
+          room_key: string
+          sender_deleted_at: string
+          sender_role: string
+          sender_user_id: string
+          unread_count: number
         }[]
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }
