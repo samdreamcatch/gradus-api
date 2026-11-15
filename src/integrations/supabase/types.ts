@@ -4807,7 +4807,9 @@ export type Database = {
           logged_at: string
           note: string
           parent_id: string | null
+          plan_coach_id: string | null
           plan_id: string
+          plan_title: string | null
           state_index: number
         }
         Insert: {
@@ -4819,7 +4821,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id: string
+          plan_title?: string | null
           state_index: number
         }
         Update: {
@@ -4831,7 +4835,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id?: string
+          plan_title?: string | null
           state_index?: number
         }
         Relationships: []
@@ -4841,6 +4847,7 @@ export type Database = {
           athlete_id: string | null
           coach_id: string | null
           created_at: string
+          deleted_at: string | null
           feedback_scope: string
           id: string
           is_org_template: boolean
@@ -4864,6 +4871,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -4887,6 +4895,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -6043,6 +6052,7 @@ export type Database = {
         Args: { _resource_id: string }
         Returns: boolean
       }
+      purge_deleted_plans: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

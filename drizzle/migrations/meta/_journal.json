@@ -323,6 +323,13 @@
       "when": 1794703818833,
       "tag": "0045_plan_copies_for_several_athletes",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794703849698,
+      "tag": "0046_delete_replaces_bench",
+      "breakpoints": true
     }
   ]
 }
