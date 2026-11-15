@@ -37,6 +37,9 @@ export const draftLineSchema = z.object({
   amountCents: z.number(),
   state: draftLineStateSchema,
   defaultIncluded: z.boolean(),
+  // Decision #68: optional so an older build decodes the draft unchanged.
+  group: z.boolean().optional(),
+  billable: z.boolean().optional(),
 }) satisfies z.ZodType<DraftLineDTO>;
 
 export const invoicePreviewSchema = z.object({
@@ -52,6 +55,8 @@ export const invoicePreviewSchema = z.object({
 export const invoiceLineSchema = z.object({
   occurrenceDate: z.string(),
   amountCents: z.number(),
+  group: z.boolean().optional(),
+  canceledBilled: z.boolean().optional(),
 }) satisfies z.ZodType<InvoiceLineDTO>;
 
 export const invoiceSchema = z.object({

@@ -4849,6 +4849,9 @@
                                     "string",
                                     "null"
                                   ]
+                                },
+                                "group": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -5155,6 +5158,9 @@
                                           "integer",
                                           "null"
                                         ]
+                                      },
+                                      "billable": {
+                                        "type": "boolean"
                                       }
                                     },
                                     "required": [
@@ -5164,6 +5170,12 @@
                                       "endMinute"
                                     ]
                                   }
+                                },
+                                "groupId": {
+                                  "type": "string"
+                                },
+                                "priceCents": {
+                                  "type": "integer"
                                 }
                               },
                               "required": [
@@ -5803,6 +5815,20 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "billable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -5929,6 +5955,495 @@
       "delete": {
         "operationId": "clearLessonOverride",
         "summary": "Remove a one-date override",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups": {
+      "post": {
+        "operationId": "createLessonGroup",
+        "summary": "Add a recurring group lesson for two to eight rostered athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "dayOfWeek": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6
+                  },
+                  "startMinute": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440
+                  },
+                  "endMinute": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "weekly",
+                      "biweekly",
+                      "twice_monthly",
+                      "monthly"
+                    ],
+                    "default": "weekly"
+                  },
+                  "weeksOfMonth": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    },
+                    "default": []
+                  },
+                  "startsOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "priceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 10000000
+                  }
+                },
+                "required": [
+                  "athleteIds",
+                  "dayOfWeek",
+                  "startMinute",
+                  "endMinute"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slotIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slotIds"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups/{id}": {
+      "patch": {
+        "operationId": "updateLessonGroup",
+        "summary": "Move a group lesson, set its price, or add and remove athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "dayOfWeek": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 6
+                      },
+                      "startMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "endMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "frequency": {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "biweekly",
+                          "twice_monthly",
+                          "monthly"
+                        ],
+                        "default": "weekly"
+                      },
+                      "weeksOfMonth": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5
+                        },
+                        "default": []
+                      },
+                      "startsOn": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      }
+                    },
+                    "required": [
+                      "dayOfWeek",
+                      "startMinute",
+                      "endMinute"
+                    ]
+                  },
+                  "priceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 10000000
+                  },
+                  "addAthleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  },
+                  "removeAthleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLessonGroup",
+        "summary": "Delete a recurring group lesson for every athlete in it",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups/{id}/occurrences/{date}": {
+      "put": {
+        "operationId": "setGroupOccurrence",
+        "summary": "Set who is out, and any new times, for one date of a group lesson",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reschedule": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "startMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "endMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      }
+                    },
+                    "required": [
+                      "startMinute",
+                      "endMinute"
+                    ]
+                  },
+                  "out": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "athleteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "billable": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "athleteId"
+                      ]
+                    },
+                    "maxItems": 8,
+                    "default": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clearGroupOccurrence",
+        "summary": "Put one date of a group lesson back on the regular schedule",
         "security": [
           {
             "bearerAuth": []
@@ -17008,6 +17523,9 @@
                                           "string",
                                           "null"
                                         ]
+                                      },
+                                      "group": {
+                                        "type": "boolean"
                                       }
                                     },
                                     "required": [
@@ -21272,9 +21790,13 @@
                           "type": "string",
                           "enum": [
                             "completed",
-                            "manual_add"
+                            "manual_add",
+                            "canceled_billed"
                           ],
                           "default": "completed"
+                        },
+                        "group": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -21456,6 +21978,12 @@
                           },
                           "defaultIncluded": {
                             "type": "boolean"
+                          },
+                          "group": {
+                            "type": "boolean"
+                          },
+                          "billable": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -21564,6 +22092,12 @@
                           },
                           "amountCents": {
                             "type": "number"
+                          },
+                          "group": {
+                            "type": "boolean"
+                          },
+                          "canceledBilled": {
+                            "type": "boolean"
                           }
                         },
                         "required": [

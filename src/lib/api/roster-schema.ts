@@ -36,8 +36,12 @@ export const rosterSlotSchema = z.object({
       status: z.enum(["canceled", "rescheduled"]),
       startMinute: z.number().int().nullable(),
       endMinute: z.number().int().nullable(),
+      // Decision #68: optional so an older build decodes the roster unchanged.
+      billable: z.boolean().optional(),
     }),
   ),
+  groupId: z.string().optional(),
+  priceCents: z.number().int().optional(),
 });
 
 export const rosterAthleteSchema = z.object({
@@ -87,6 +91,12 @@ export const addAthleteResultSchema = z.object({
 }) satisfies z.ZodType<AddAthleteResult>;
 
 export const slotIdSchema = z.object({ id: z.string() });
+
+/** `POST /api/v1/coach/lesson-groups` response: the group's id and its member slots. */
+export const lessonGroupCreatedSchema = z.object({
+  id: z.string(),
+  slotIds: z.array(z.string()),
+});
 
 const planStatusSchema = z.enum(["active", "benched"]);
 const sessionsByStateSchema = z.object({

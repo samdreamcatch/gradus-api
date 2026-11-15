@@ -133,7 +133,7 @@ function makeDb() {
     function project(row: Row): Row {
       const out: Row = { ...row };
       if (!selectCols) return out;
-      for (const part of selectCols.split(",").map((s) => s.trim())) {
+      for (const part of splitTopLevel(selectCols).map((s) => s.trim())) {
         const m = part.match(/^(\w+)\((.+)\)$/);
         if (m) {
           const [, relTable, relColsStr] = m;
@@ -1182,5 +1182,243 @@ describe("POST /api/v1/coach/invoices idempotency", () => {
     expect(calls).toBe(1);
     expect(db.tables.invoices).toHaveLength(1);
     expect(db.tables.invoice_lines).toHaveLength(1);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Group lessons, lesson prices and billed cancellations (decision #68)       */
+/* -------------------------------------------------------------------------- */
+
+describe("previewInvoice with group lessons (decision #68)", () => {
+  const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-19" };
+
+  it("bills a lesson's own price in place of the athlete's rate, and flags a group lesson", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    db.tables.coach_athlete_rates.push({
+      coach_id: COACH,
+      athlete_id: ATHLETE,
+      rate_kind: "hourly",
+      rate_cents: 7000,
+    });
+    seedWeeklySlot(db, { dayOfWeek: 1 }); // private, Mondays, 60 min
+    seedWeeklySlot(db, { id: "slot-group", dayOfWeek: 3, startMinute: 1020, endMinute: 1080 });
+    Object.assign(db.tables.athlete_lesson_slots[1]!, { group_id: "group-1", price_cents: 3000 });
+    seedGroupPartner(db);
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const priv = result.lines.find((l) => l.occurrenceDate === "2026-01-05");
+    const group = result.lines.find((l) => l.occurrenceDate === "2026-01-07");
+    expect(priv?.amountCents).toBe(7000);
+    expect(priv && "group" in priv).toBe(false);
+    expect(group?.amountCents).toBe(3000);
+    expect(group?.group).toBe(true);
+  });
+
+  it("uses the lesson's price even when the athlete has no rate", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    Object.assign(db.tables.athlete_lesson_slots[0]!, { group_id: "group-1", price_cents: 2500 });
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    expect(result.rate).toBeNull();
+    expect(result.lines.every((l) => l.amountCents === 2500)).toBe(true);
+  });
+
+  it("puts a canceled lesson the coach chose to bill on the draft by default", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    db.tables.lesson_slot_overrides.push(
+      { slot_id: SLOT, occurrence_date: "2026-01-12", status: "canceled", billable: true },
+      { slot_id: SLOT, occurrence_date: "2026-01-19", status: "canceled", billable: false },
+    );
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const billed = result.lines.find((l) => l.occurrenceDate === "2026-01-12");
+    const dropped = result.lines.find((l) => l.occurrenceDate === "2026-01-19");
+    // Still "canceled": a build that predates `billable` decodes the same states.
+    expect(billed?.state).toBe("canceled");
+    expect(billed?.billable).toBe(true);
+    expect(billed?.defaultIncluded).toBe(true);
+    expect(dropped?.state).toBe("canceled");
+    expect(dropped?.defaultIncluded).toBe(false);
+    expect(dropped && "billable" in dropped).toBe(false);
+  });
+
+  it("ignores `billable` on a rescheduled date", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    db.tables.lesson_slot_overrides.push({
+      slot_id: SLOT,
+      occurrence_date: "2026-01-12",
+      status: "rescheduled",
+      start_minute: 700,
+      end_minute: 760,
+      billable: true,
+    });
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const line = result.lines.find((l) => l.occurrenceDate === "2026-01-12");
+    expect(line?.state).toBe("scheduled");
+    expect(line && "billable" in line).toBe(false);
+  });
+});
+
+const GROUP_SLOT = "5107aaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const LATE_SLOT = "5107bbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+
+/** Another athlete's slot in "group-1", so the group has two members. */
+function seedGroupPartner(db: ReturnType<typeof makeDb>) {
+  seedWeeklySlot(db, {
+    id: "slot-group-partner",
+    athleteId: "athlete-partner",
+    dayOfWeek: 3,
+    startMinute: 1020,
+    endMinute: 1080,
+  });
+  Object.assign(db.tables.athlete_lesson_slots.at(-1)!, { group_id: "group-1", price_cents: 3000 });
+}
+
+function seedPrivateAndGroup(db: ReturnType<typeof makeDb>) {
+  seedCoach(db);
+  seedRoster(db, ATHLETE);
+  seedWeeklySlot(db, { dayOfWeek: 1 }); // private, Mondays
+  seedWeeklySlot(db, { id: GROUP_SLOT, dayOfWeek: 3, startMinute: 1020, endMinute: 1080 });
+  Object.assign(db.tables.athlete_lesson_slots[1]!, { group_id: "group-1", price_cents: 3000 });
+  seedGroupPartner(db);
+}
+
+describe("createInvoice / getInvoiceDetail with group lessons (decision #68)", () => {
+  it("reads the group flag and the billed cancellation from the schedule, whatever the client sends", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    db.tables.lesson_slot_overrides.push({
+      slot_id: GROUP_SLOT,
+      occurrence_date: "2026-01-14",
+      status: "canceled",
+      start_minute: null,
+      end_minute: null,
+      billable: true,
+    });
+
+    // What a build that predates decision #68 sends: no group flag, and
+    // "completed" for every ticked line.
+    const created = await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        athleteId: ATHLETE,
+        periodStart: "2026-01-01",
+        periodEnd: "2026-01-31",
+        lines: [
+          { slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 },
+          { slotId: GROUP_SLOT, occurrenceDate: "2026-01-07", amountCents: 3000 },
+          { slotId: GROUP_SLOT, occurrenceDate: "2026-01-14", amountCents: 3000 },
+        ],
+      }),
+    );
+    expect(created.totalCents).toBe(13000);
+
+    // Every row names `is_group`: PostgREST writes NULL for a key missing
+    // from some rows of a bulk insert, and the column is NOT NULL.
+    expect(db.tables.invoice_lines.map((l) => l.is_group)).toEqual([false, true, true]);
+
+    const detail = await getInvoiceDetail(ctxFor(db), created.invoiceId);
+    expect(detail.lines).toEqual([
+      { occurrenceDate: "2026-01-05", amountCents: 7000 },
+      { occurrenceDate: "2026-01-07", amountCents: 3000, group: true },
+      { occurrenceDate: "2026-01-14", amountCents: 3000, group: true, canceledBilled: true },
+    ]);
+  });
+
+  it("a lone slot left in a group is billed as a private lesson", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    db.tables.athlete_lesson_slots.pop(); // the partner left
+
+    const preview = await previewInvoice(ctxFor(db), {
+      athleteId: ATHLETE,
+      periodStart: "2026-01-05",
+      periodEnd: "2026-01-11",
+    });
+    expect(preview.lines).toHaveLength(2);
+    expect(preview.lines.some((l) => "group" in l)).toBe(false);
+
+    await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        athleteId: ATHLETE,
+        periodStart: "2026-01-05",
+        periodEnd: "2026-01-11",
+        lines: [{ slotId: GROUP_SLOT, occurrenceDate: "2026-01-07", amountCents: 3000 }],
+      }),
+    );
+    expect(db.tables.invoice_lines.map((l) => l.is_group)).toEqual([false]);
+  });
+
+  it("a slot id that isn't this athlete's lesson can't get a billed date billed again", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-05" };
+    const bill = (slotId: string | null) =>
+      caught(() =>
+        createInvoice(
+          ctxFor(db),
+          createInvoiceInput.parse({
+            ...window,
+            lines: [{ slotId, occurrenceDate: "2026-01-05", amountCents: 7000 }],
+          }),
+        ),
+      );
+
+    expect(await bill(SLOT)).toBeNull();
+    // Another athlete's slot, and a manual line, on the date already billed.
+    expect((await bill("5107cccc-cccc-4ccc-8ccc-cccccccccccc"))?.status).toBe(422);
+    expect((await bill(null))?.status).toBe(422);
+    expect(db.tables.invoice_lines).toHaveLength(1);
+  });
+
+  it("bills two lessons on one date separately", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    seedWeeklySlot(db, { id: LATE_SLOT, dayOfWeek: 1, startMinute: 1020, endMinute: 1080 });
+    const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-05" };
+
+    await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        ...window,
+        lines: [{ slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 }],
+      }),
+    );
+
+    // The lesson left off the first invoice is still there to bill...
+    const preview = await previewInvoice(ctxFor(db), window);
+    expect(preview.lines.map((l) => l.slotId)).toEqual([LATE_SLOT]);
+
+    // ...and the one already billed is not billed twice.
+    const again = await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        ...window,
+        lines: [
+          { slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 },
+          { slotId: LATE_SLOT, occurrenceDate: "2026-01-05", amountCents: 3000 },
+        ],
+      }),
+    );
+    expect(again).toMatchObject({ totalCents: 3000, lineCount: 1 });
   });
 });

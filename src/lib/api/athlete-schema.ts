@@ -79,6 +79,12 @@ export const scheduleSlotSchema = z.object({
   frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]),
   weeksOfMonth: z.array(z.number().int()),
   startsOn: z.string().nullable(),
+  /**
+   * True on a group lesson (decision #68). The only thing a parent or athlete
+   * learns about a group: never who else is in it, or how many. Optional so
+   * an older build decodes the schedule unchanged.
+   */
+  group: z.boolean().optional(),
 });
 
 export const coachScheduleSchema = z.object({

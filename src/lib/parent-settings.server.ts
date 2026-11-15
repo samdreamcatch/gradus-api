@@ -33,6 +33,7 @@ import {
 import { coachUserId, notifyUsers } from "./push-notify.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
+import { groupedSlotTimes, groupFlag, replaceFamilySlots } from "./lesson-group-guard.server";
 import { currentGoalValues, recordGoalsChange } from "./goals-history.server";
 import { ensureStarterPrograms } from "./starter-programs.server";
 import { guardianAthleteAccess, resolveAthleteAccess } from "./team.server";
@@ -85,6 +86,8 @@ export type ParentSettingsSlotDTO = {
   frequency: "weekly" | "biweekly" | "twice_monthly" | "monthly";
   weeksOfMonth: number[];
   startsOn: string | null;
+  /** True on a group lesson (decision #68); nothing else about the group is ever sent. */
+  group?: boolean;
 };
 
 export type ParentSettingsScheduleDTO = {
@@ -354,6 +357,7 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
   if (sportsScopeRes.error) dbError(sportsScopeRes.error);
   if (goalsRes.error) dbError(goalsRes.error);
   if (slotsRes.error) dbError(slotsRes.error);
+  const grouped = await groupedSlotTimes(admin, athleteIds);
   if (primaryRes.error) dbError(primaryRes.error);
   if (codesRes.error) dbError(codesRes.error);
 
@@ -493,6 +497,11 @@ export async function getParentSettings(ctx: ParentSettingsContext): Promise<Par
             frequency: s.frequency as "weekly" | "biweekly" | "twice_monthly" | "monthly",
             weeksOfMonth: (s.weeks_of_month ?? []) as number[],
             startsOn: (s.starts_on as string | null) ?? null,
+            ...groupFlag(grouped, a.id, c.coachId, {
+              dayOfWeek: s.day_of_week,
+              startMinute: s.start_minute,
+              endMinute: s.end_minute,
+            }),
           }));
         return { coachId: c.coachId, coachName: c.coachName, slots };
       });
@@ -851,29 +860,7 @@ export async function replaceParentAthleteSchedule(
     if (s.endMinute <= s.startMinute) throw unprocessable("End time must be after start time.");
   }
 
-  const del = await admin
-    .from("athlete_lesson_slots")
-    .delete()
-    .eq("athlete_id", athleteId)
-    .eq("coach_id", data.coachId);
-  if (del.error) dbError(del.error);
-
-  if (data.slots.length > 0) {
-    const ins = await admin.from("athlete_lesson_slots").insert(
-      data.slots.map((s) => ({
-        athlete_id: athleteId,
-        coach_id: data.coachId,
-        day_of_week: s.dayOfWeek,
-        start_minute: s.startMinute,
-        end_minute: s.endMinute,
-        frequency: s.frequency,
-        weeks_of_month:
-          s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
-        starts_on: s.frequency === "biweekly" ? s.startsOn : null,
-      })),
-    );
-    if (ins.error) dbError(ins.error);
-  }
+  await replaceFamilySlots(admin, athleteId, data.coachId, data.slots);
   return { ok: true };
 }
 

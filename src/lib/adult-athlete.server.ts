@@ -26,6 +26,7 @@ import {
 } from "./goals-history.server";
 import { inviteCodeSchema } from "./invites.server";
 import { lessonSlotSchema } from "./parent-signup.server";
+import { groupedSlotTimes, groupFlag, replaceFamilySlots } from "./lesson-group-guard.server";
 import { ageInYears } from "./pending-athlete-dob";
 import { isUnderThirteen } from "./guardian-verification.server";
 
@@ -642,6 +643,7 @@ export async function getAdultAthleteSchedules(
   ]);
   if (profiles.error) dbError(profiles.error);
   if (slots.error) dbError(slots.error);
+  const grouped = await groupedSlotTimes(admin, [athleteId]);
 
   const slotsByCoach = new Map<string, ScheduleSlotDTO[]>();
   for (const s of slots.data ?? []) {
@@ -654,6 +656,11 @@ export async function getAdultAthleteSchedules(
       frequency: (s.frequency ?? "weekly") as ScheduleSlotDTO["frequency"],
       weeksOfMonth: (s.weeks_of_month ?? []) as number[],
       startsOn: (s.starts_on as string | null) ?? null,
+      ...groupFlag(grouped, athleteId, s.coach_id, {
+        dayOfWeek: s.day_of_week,
+        startMinute: s.start_minute,
+        endMinute: s.end_minute,
+      }),
     });
     slotsByCoach.set(s.coach_id, arr);
   }
@@ -692,28 +699,6 @@ export async function saveAdultAthleteScheduleForCoach(
   if (link.error) dbError(link.error);
   if (!link.data) throw unprocessable("You aren't linked to this coach.");
 
-  const del = await admin
-    .from("athlete_lesson_slots")
-    .delete()
-    .eq("athlete_id", athleteId)
-    .eq("coach_id", coachId);
-  if (del.error) dbError(del.error);
-
-  if (data.slots.length > 0) {
-    const ins = await admin.from("athlete_lesson_slots").insert(
-      data.slots.map((s) => ({
-        athlete_id: athleteId,
-        coach_id: coachId,
-        day_of_week: s.dayOfWeek,
-        start_minute: s.startMinute,
-        end_minute: s.endMinute,
-        frequency: s.frequency,
-        weeks_of_month:
-          s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
-        starts_on: s.frequency === "biweekly" ? s.startsOn : null,
-      })),
-    );
-    if (ins.error) dbError(ins.error);
-  }
+  await replaceFamilySlots(admin, athleteId, coachId, data.slots);
   return { ok: true as const };
 }
