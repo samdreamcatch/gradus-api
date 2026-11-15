@@ -309,6 +309,13 @@
       "when": 1794535019604,
       "tag": "0043_coach_invite_sports",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794703770082,
+      "tag": "0044_message_flags",
+      "breakpoints": true
     }
   ]
 }

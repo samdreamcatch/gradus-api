@@ -3251,6 +3251,77 @@ export type Database = {
         }
         Relationships: []
       }
+      message_flags: {
+        Row: {
+          admin_notes: string
+          body: string | null
+          category: string
+          coach_id: string | null
+          created_at: string
+          direct_room_id: string | null
+          id: string
+          matched: string
+          message_id: string | null
+          outcome: string
+          room_has_minor: boolean
+          room_id: string | null
+          rule_id: string
+          sender_minor: boolean
+          sender_role: string
+          sender_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          body?: string | null
+          category: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id: string
+          sender_minor?: boolean
+          sender_role: string
+          sender_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          body?: string | null
+          category?: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome?: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id?: string
+          sender_minor?: boolean
+          sender_role?: string
+          sender_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_flags_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           direct_room_id: string | null
@@ -3425,6 +3496,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messaging_suspensions: {
+        Row: {
+          created_at: string
+          note: string
+          paused_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note?: string
+          paused_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: string
+          paused_by?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       moves: {
         Row: {
