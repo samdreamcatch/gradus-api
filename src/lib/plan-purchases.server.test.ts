@@ -261,6 +261,69 @@ describe("startPlanCheckout", () => {
     expect(tables.plan_purchases[0]).toMatchObject({ stripe_checkout_session_id: "cs_1" });
   });
 
+  const openCheckout = (): Row => ({
+    id: "pur-old",
+    plan_id: "p1",
+    coach_id: "c-seller",
+    buyer_user_id: "u",
+    athlete_id: "a1",
+    amount_cents: 2499,
+    currency: "usd",
+    status: "pending",
+    payment_status: "payment_due",
+    stripe_checkout_session_id: "cs_old",
+  });
+
+  it("expires an earlier unpaid checkout before opening a new one, so it can't be paid twice", async () => {
+    const tables = {
+      plans: [listing()],
+      athletes: [adultAthlete],
+      plan_purchases: [openCheckout()],
+    };
+    const { stripe, calls } = fakeStripe();
+    stripe.checkout.sessions.retrieve = (async () => ({
+      id: "cs_old",
+      status: "open",
+      payment_status: "unpaid",
+    })) as never;
+    stripe.checkout.sessions.expire = (async (id: string) => {
+      calls.push(["sessions.expire", id]);
+      return { id, status: "expired" };
+    }) as never;
+    const res = await startPlanCheckout(
+      { userId: "u", admin: fakeAdmin(tables), stripe },
+      "p1",
+      {},
+      { origin: "https://gradus.test" },
+    );
+    expect(calls).toContainEqual(["sessions.expire", "cs_old"]);
+    expect(tables.plan_purchases[0]).toMatchObject({ id: "pur-old", status: "canceled" });
+    expect(res.purchase).toMatchObject({ status: "pending" });
+    expect(res.checkoutUrl).toBe("https://checkout.stripe.test/cs_1");
+  });
+
+  it("delivers an earlier checkout that was paid after all instead of opening another", async () => {
+    const tables: Record<string, Row[]> = {
+      plans: [listing()],
+      athletes: [adultAthlete],
+      plan_purchases: [openCheckout()],
+      coach_profiles: [{ id: "c-seller", stripe_connect_account_id: "acct_seller" }],
+      plan_moves: [],
+    };
+    const { stripe, calls } = fakeStripe();
+    await expect(
+      startPlanCheckout(
+        { userId: "u", admin: fakeAdmin(tables), stripe },
+        "p1",
+        {},
+        { origin: "https://gradus.test" },
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "already_purchased" });
+    expect(tables.plan_purchases).toHaveLength(1);
+    expect(tables.plan_purchases[0]).toMatchObject({ status: "fulfilled", payment_status: "paid" });
+    expect(calls.some((c) => c[0] === "sessions.create")).toBe(false);
+  });
+
   it("refuses the coach their own plan", async () => {
     const admin = fakeAdmin({ plans: [listing()], athletes: [] });
     await expect(

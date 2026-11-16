@@ -3,6 +3,7 @@ import type { DefineApiRouteOptions } from "@/lib/api/define-route";
 import { requireContext, type ApiContext } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/errors";
 import { WEB_HANDOFF_PATHS } from "@/lib/web-handoff-paths";
+import { publicOrigin } from "./public-origin";
 
 /**
  * `POST /api/v1/auth/web-session` — carries the app's signed-in account into
@@ -87,7 +88,7 @@ export function webSessionRoute(
           message: "Something went wrong. Please try again.",
         });
       }
-      return { url: handoffUrl(new URL(request.url).origin, tokenHash, input.next) };
+      return { url: handoffUrl(publicOrigin(request), tokenHash, input.next) };
     },
   };
 }

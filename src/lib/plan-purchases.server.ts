@@ -66,7 +66,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The Stripe calls this module makes; tests pass a fake. */
 export type PurchaseStripe = {
-  checkout: { sessions: Pick<Stripe["checkout"]["sessions"], "create" | "retrieve"> };
+  checkout: { sessions: Pick<Stripe["checkout"]["sessions"], "create" | "retrieve" | "expire"> };
   paymentIntents: Pick<Stripe["paymentIntents"], "retrieve">;
   transfers: Pick<Stripe["transfers"], "create">;
 };
@@ -426,6 +426,7 @@ export async function startPlanCheckout(
   if (owned.error) dbError(owned.error);
   if (owned.data)
     throw conflict("already_purchased", "This plan has already been bought for this athlete.");
+  await settleOpenCheckouts(ctx, planId, athleteId);
 
   const originalAmountCents = Math.round(Number(plan.price) * 100);
   const promo: AppliedPromo | null = input.promoCode
@@ -479,6 +480,51 @@ export async function startPlanCheckout(
     purchase: toDTO((await purchaseRow(ctx.admin, purchase.id)) ?? purchase),
     checkoutUrl: url,
   };
+}
+
+const alreadyPurchased = () =>
+  conflict("already_purchased", "This plan has already been bought for this athlete.");
+
+/**
+ * Earlier checkouts of the same plan for the same athlete still at Stripe (the
+ * buyer closed the page without paying, then tapped Buy again). One paid after
+ * all is delivered, and this purchase stops as already bought; any other has
+ * its Stripe page expired and is canceled, so the buyer can never pay twice.
+ */
+async function settleOpenCheckouts(
+  ctx: PurchaseContext,
+  planId: string,
+  athleteId: string,
+): Promise<void> {
+  const { data, error } = await untyped(ctx.admin)
+    .from("plan_purchases")
+    .select(PURCHASE_COLUMNS)
+    .eq("plan_id", planId)
+    .eq("athlete_id", athleteId)
+    .eq("status", "pending");
+  if (error) dbError(error);
+  const open = (data ?? []) as PurchaseRow[];
+  if (open.length === 0) return;
+
+  const stripe = ctx.stripe ?? createConnectStripeClient();
+  for (const row of open) {
+    if (row.stripe_checkout_session_id) {
+      // Paid, or expired at Stripe already: recorded as such.
+      const checked = await fulfillPurchase(ctx.admin, stripe, row.id);
+      if (checked?.status === "fulfilled") throw alreadyPurchased();
+      if (checked?.status !== "pending") continue;
+      try {
+        await stripe.checkout.sessions.expire(row.stripe_checkout_session_id);
+      } catch (e) {
+        // It can't be expired once it's complete: it was paid a moment ago.
+        const again = await fulfillPurchase(ctx.admin, stripe, row.id);
+        if (again?.status === "fulfilled") throw alreadyPurchased();
+        if (again?.status !== "pending") continue;
+        throw e;
+      }
+    }
+    await updatePurchase(ctx.admin, row.id, { status: "canceled" });
+  }
 }
 
 /**

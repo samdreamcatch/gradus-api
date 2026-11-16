@@ -4,6 +4,7 @@ import { defineApiRoute } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
 import { planPurchaseSchema } from "@/lib/api/marketplace-schema";
 import { payPlanPurchase } from "@/lib/plan-purchases.server";
+import { publicOrigin } from "@/lib/api/public-origin";
 
 /**
  * Thin wrapper over `payPlanPurchase` in `src/lib/plan-purchases.server.ts`:
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/api/v1/marketplace/purchases/$id/pay")({
       handler: async ({ ctx, params, request }) => {
         const { userId, admin } = requireContext(ctx);
         return payPlanPurchase({ userId, admin }, z.string().uuid().parse(params.id), {
-          origin: new URL(request.url).origin,
+          origin: publicOrigin(request),
         });
       },
     }),
