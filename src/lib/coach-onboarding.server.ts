@@ -110,6 +110,19 @@ export async function ensureCoachProfile(ctx: CoachContext) {
     });
   }
 
+  // Same for an athlete: an athlete login that reaches a coach endpoint must
+  // not get a coach row, or every plan route would serve it as a coach (the
+  // viewer role checks coach first) and its own plans would be "not found".
+  const athlete = await supabase.from("athletes").select("id").eq("user_id", userId).maybeSingle();
+  if (athlete.error) dbError(athlete.error);
+  if (athlete.data) {
+    throw new ApiError({
+      code: WRONG_ROLE_CODE,
+      status: 403,
+      message: "This account is an athlete account.",
+    });
+  }
+
   // Seed first/last name from auth user_metadata (set during signup, or by
   // Google OAuth which only provides full_name). Avoids asking again in
   // onboarding.

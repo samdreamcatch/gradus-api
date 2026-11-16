@@ -8,6 +8,7 @@ import {
   getCoachBilling,
   toCoachBilling,
 } from "./coach-billing.server";
+import { getCoachProfile } from "./coach-onboarding.server";
 
 /**
  * A chainable fake that records every `table.method` call: `rows[table]`
@@ -158,6 +159,20 @@ describe("toCoachBilling", () => {
         subscriptionStatus: null,
       }).manageUrl,
     ).toBe(BILLING_PAYWALL_URL);
+  });
+});
+
+describe("getCoachProfile", () => {
+  it("never makes an athlete login a coach (403 wrong_role, no coach row)", async () => {
+    const supabase = fakeClient({ athletes: { id: "a1" } });
+    const admin = fakeClient({});
+    const err = await caught(() =>
+      getCoachProfile({ userId: "u", supabase: supabase.client, admin: admin.client }),
+    );
+    expect(err?.status).toBe(403);
+    expect(err?.code).toBe("wrong_role");
+    expect(err?.message).toBe("This account is an athlete account.");
+    expect(admin.calls.filter((c) => c.endsWith(".insert"))).toEqual([]);
   });
 });
 
