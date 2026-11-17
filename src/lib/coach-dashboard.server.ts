@@ -18,6 +18,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { promoCodeCounts } from "./coach-promo-codes.server";
+import { listingCoverUrls } from "./plan-marketplace-fields.server";
 import { dbError } from "./db-error";
 import { listCoachSales, type CoachSaleDTO } from "./plan-purchases.server";
 import { createConnectStripeClient } from "./stripe-connect.server";
@@ -146,6 +147,8 @@ export interface CoachDashboardDTO {
     status: string;
     soldCount: number;
     views: number;
+    /** The plan's cover image (signed link for an upload); null without one. */
+    coverUrl: string | null;
   }[];
   /** Views and sales per week, newest first (`weekStart`, `weekEnd` are YYYY-MM-DD, Monday to Sunday). */
   weekly: { weekStart: string; weekEnd: string; views: number; sales: number }[];
@@ -167,6 +170,7 @@ type PlanRow = {
   price: number | string | null;
   status: string;
   view_count: number | null;
+  media: string | null;
   rating_avg: number | string | null;
   rating_count: number | null;
   created_at: string;
@@ -206,7 +210,7 @@ export async function getCoachDashboard(
     listCoachSales({ userId: ctx.userId, admin: ctx.admin }, {}, now),
     untyped(ctx.admin)
       .from("plans")
-      .select("id, title, price, status, view_count, rating_avg, rating_count, created_at")
+      .select("id, title, price, status, view_count, media, rating_avg, rating_count, created_at")
       .eq("coach_id", coach.id)
       // Live: every active plan, as the marketplace lists them (assigned ones included).
       // Drafts: the unpublished plans and templates the coach is building (no athlete).
@@ -223,6 +227,10 @@ export async function getCoachDashboard(
   if (plansRes.error) dbError(plansRes.error);
   if (ratedRes.error) dbError(ratedRes.error);
   const plans = (plansRes.data ?? []) as PlanRow[];
+  const covers = await listingCoverUrls(
+    ctx.admin as unknown as Parameters<typeof listingCoverUrls>[0],
+    plans.map((p) => p.media),
+  );
 
   // Weekly views of the coach's plans, from plan_views.
   const firstWeek = new Date(weekStart(now).getTime() - (PERFORMANCE_WEEKS - 1) * 7 * DAY_MS);
@@ -326,13 +334,14 @@ export async function getCoachDashboard(
     },
     monthlyEarnings,
     sales: sales.items,
-    plans: plans.map((p) => ({
+    plans: plans.map((p, i) => ({
       id: p.id,
       title: p.title,
       priceCents: Math.round(Number(p.price ?? 0) * 100),
       status: p.status,
       soldCount: soldByPlan.get(p.id) ?? 0,
       views: p.view_count ?? 0,
+      coverUrl: covers[i],
     })),
     weekly,
     payouts: money.payouts,

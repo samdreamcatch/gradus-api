@@ -41,7 +41,7 @@ export const marketplacePlanSchema = z.object({
     id: z.string(),
     firstName: z.string(),
     lastName: z.string(),
-    /** Finished identity verification: show the Verified badge. */
+    /** On Coach Pro: show the Verified badge. */
     verified: z.boolean(),
     /** A link (an hour) to their profile photo; null when they have none. */
     photoUrl: z.string().nullable(),
@@ -73,7 +73,7 @@ export const marketplaceCoachSchema = z.object({
     id: z.string(),
     firstName: z.string(),
     lastName: z.string(),
-    /** Finished identity verification: show the Verified badge. */
+    /** On Coach Pro: show the Verified badge. */
     verified: z.boolean(),
     /** A link (an hour) to their profile photo; null when they have none. */
     photoUrl: z.string().nullable(),
@@ -195,6 +195,8 @@ export const coachDashboardSchema = z.object({
       status: z.string(),
       soldCount: z.number(),
       views: z.number(),
+      /** Cover image (signed link for an upload); null without one. */
+      coverUrl: z.string().nullable(),
     }),
   ),
   /** Views and sales per week (Monday to Sunday), newest first. */

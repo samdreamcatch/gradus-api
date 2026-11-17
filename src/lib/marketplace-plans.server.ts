@@ -249,6 +249,8 @@ type ListingRow = {
     last_name: string;
     checklist: { identityVerification?: unknown } | null;
     photo_url: string | null;
+    subscription_tier: string | null;
+    organization_id: string | null;
     stripe_connect_account_id: string | null;
     stripe_connect_charges_enabled: boolean | null;
     stripe_connect_payouts_enabled: boolean | null;
@@ -393,7 +395,7 @@ export async function getMarketplacePlans(
         id: row.coach.id,
         firstName: row.coach.first_name,
         lastName: row.coach.last_name,
-        verified: row.coach.checklist?.identityVerification === true,
+        verified: isVerifiedCoach(row.coach),
         photoUrl: coachPhotos.get(row.coach.id) ?? null,
         canSell:
           !!row.coach.stripe_connect_account_id &&
@@ -415,7 +417,7 @@ export interface MarketplaceCoachDTO {
     id: string;
     firstName: string;
     lastName: string;
-    /** Finished identity verification (their setup checklist): the Verified badge. */
+    /** On Coach Pro (`isVerifiedCoach`): the Verified badge. */
     verified: boolean;
     /** A link (an hour) to their profile photo; null when they have none. */
     photoUrl: string | null;
@@ -447,6 +449,18 @@ const coachNotFound = () =>
  * so the profile never reveals a coach who doesn't sell plans. Bio and
  * location aren't stored yet, so they aren't returned.
  */
+/**
+ * The Verified badge: the coach is on Coach Pro (not through a club), as
+ * `public.coach_effective_tier()` counts it. Every coach the marketplace lists
+ * is, so it shows on all of them.
+ */
+export function isVerifiedCoach(coach: {
+  subscription_tier: string | null;
+  organization_id: string | null;
+}): boolean {
+  return coach.subscription_tier === "coach_pro" && coach.organization_id === null;
+}
+
 export async function getMarketplaceCoach(
   ctx: MarketplaceContext,
   coachId: string,
@@ -529,7 +543,7 @@ export async function getMarketplaceCoach(
       id: coach.id,
       firstName: coach.first_name,
       lastName: coach.last_name,
-      verified: coach.checklist?.identityVerification === true,
+      verified: isVerifiedCoach(coach),
       photoUrl,
       isMe: coach.user_id === ctx.userId,
       onboardedAt: coach.onboarded_at,

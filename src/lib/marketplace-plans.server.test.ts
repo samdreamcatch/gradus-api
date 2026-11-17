@@ -5,6 +5,7 @@ import {
   encodeMarketplaceCursor,
   getMarketplaceCoach,
   getMarketplacePlans,
+  isVerifiedCoach,
   searchTerms,
 } from "./marketplace-plans.server";
 
@@ -76,6 +77,8 @@ const COACH = {
   first_name: "Tami",
   last_name: "Taylor",
   checklist: { identityVerification: true },
+  subscription_tier: "coach_pro",
+  organization_id: null,
 };
 const listing = (id: string, updatedAt: string) => ({
   id,
@@ -97,6 +100,17 @@ const listing = (id: string, updatedAt: string) => ({
   updated_at: updatedAt,
   notes: "private notes",
   coach: COACH,
+});
+
+describe("isVerifiedCoach", () => {
+  it("is Coach Pro outside a club, whatever their identity checklist says", () => {
+    expect(isVerifiedCoach({ subscription_tier: "coach_pro", organization_id: null })).toBe(true);
+    expect(isVerifiedCoach({ subscription_tier: "coach", organization_id: null })).toBe(false);
+    expect(isVerifiedCoach({ subscription_tier: null, organization_id: null })).toBe(false);
+    expect(isVerifiedCoach({ subscription_tier: "coach_pro", organization_id: "org-1" })).toBe(
+      false,
+    );
+  });
 });
 
 describe("searchTerms and allOf", () => {
