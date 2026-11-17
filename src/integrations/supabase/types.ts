@@ -707,7 +707,9 @@ export type Database = {
           day_of_week: number
           end_minute: number
           frequency: string
+          group_id: string | null
           id: string
+          price_cents: number | null
           start_minute: number
           starts_on: string | null
           updated_at: string
@@ -720,7 +722,9 @@ export type Database = {
           day_of_week: number
           end_minute: number
           frequency?: string
+          group_id?: string | null
           id?: string
+          price_cents?: number | null
           start_minute: number
           starts_on?: string | null
           updated_at?: string
@@ -733,7 +737,9 @@ export type Database = {
           day_of_week?: number
           end_minute?: number
           frequency?: string
+          group_id?: string | null
           id?: string
+          price_cents?: number | null
           start_minute?: number
           starts_on?: string | null
           updated_at?: string
@@ -2716,6 +2722,7 @@ export type Database = {
           id: string
           included_reason: string
           invoice_id: string
+          is_group: boolean
           occurrence_date: string
           slot_id: string | null
           start_minute: number | null
@@ -2729,6 +2736,7 @@ export type Database = {
           id?: string
           included_reason?: string
           invoice_id: string
+          is_group?: boolean
           occurrence_date: string
           slot_id?: string | null
           start_minute?: number | null
@@ -2742,6 +2750,7 @@ export type Database = {
           id?: string
           included_reason?: string
           invoice_id?: string
+          is_group?: boolean
           occurrence_date?: string
           slot_id?: string | null
           start_minute?: number | null
@@ -3035,6 +3044,7 @@ export type Database = {
       }
       lesson_slot_overrides: {
         Row: {
+          billable: boolean
           created_at: string
           end_minute: number | null
           id: string
@@ -3045,6 +3055,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billable?: boolean
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -3055,6 +3066,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billable?: boolean
           created_at?: string
           end_minute?: number | null
           id?: string
