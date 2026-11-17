@@ -20,7 +20,7 @@
  * at a dash or an emoji standing alone).
  */
 
-export const MESSAGE_RULES_VERSION = "2026-11-10";
+export const MESSAGE_RULES_VERSION = "2026-11-16";
 
 export const MESSAGE_CATEGORIES = ["sexual", "slur", "threat", "abuse", "self_harm"] as const;
 export type MessageCategory = (typeof MESSAGE_CATEGORIES)[number];
@@ -433,14 +433,14 @@ export const MESSAGE_RULE_SET: MessageRuleSet = {
       category: "threat",
       label: "Telling someone to kill themselves",
       pattern:
-        "(?<!dont )(?<!need to )(?<!have to )kill (?:yourself|urself|your self)(?! trying| over| to get| rushing| getting| for| in | on )|kys|go die|drop dead(?! gorgeous| date)|hang yourself|end yourself|end your life|slit your wrists?|unalive yourself|(?:go|just|should) off yourself",
+        "(?<!dont )(?<!need to )(?<!have to )kill (?:yourself|urself|your self|ur self)(?! trying| over| to get| rushing| getting| for| in | on )|kys|go die|drop dead(?! gorgeous| date)|hang yourself|end yourself|end your life|slit your wrists?|unalive yourself|(?:go|just|should) off yourself",
     },
     {
       id: "T3",
       category: "threat",
       label: "Hoping someone dies or is hurt",
       pattern:
-        "(?:you should|u should|i hope you|i hope u|hope you|hope she|hope he|hope they|i hope she|i hope he|i hope they) (?:all )?(?:die|dies|get hurt{END}|gets hurt{END}|get cancer|gets cancer|get hit by|gets hit by|break your (?:leg|legs|neck|arm|ankle|back|face|nose)|breaks (?:her|his) (?:leg|neck|arm|ankle|back)|rot|rots)|hope your (?:kid|daughter|son|child) (?:dies|gets hurt|breaks (?:her|his) (?:leg|neck|arm|back))|(?:you|u|she|he|they) deserves? to (?:die|be shot|get hurt)|(?:you|u|she|he|they) should be shot",
+        "(?:you should|u should|i hope you|i hope u|hope you|hope u|hope she|hope he|hope they|i hope she|i hope he|i hope they) (?:all )?(?:die|dies|get hurt{END}|gets hurt{END}|get cancer|gets cancer|get hit by|gets hit by|break your (?:leg|legs|neck|arm|ankle|back|face|nose)|breaks (?:her|his) (?:leg|neck|arm|ankle|back)|rot|rots)|hope your (?:kid|daughter|son|child) (?:dies|gets hurt|breaks (?:her|his) (?:leg|neck|arm|back))|(?:you|u|she|he|they) deserves? to (?:die|be shot|get hurt)|(?:you|u|she|he|they) should be shot",
     },
     {
       id: "T4",
@@ -461,7 +461,7 @@ export const MESSAGE_RULE_SET: MessageRuleSet = {
       category: "threat",
       label: "Beat the crap out of",
       pattern:
-        "(?:beat|knock|slap|kick|smack) the (?:shit|crap|hell|snot|piss|fuck) out of (?:you|u|him|her|your)",
+        "(?:beat|knock|slap|kick|smack) the (?:shit|crap|hell|snot|piss|fuck) out of (?:you|u|him|her|your)|{IWILL} {HARD}(?:beat|whoop) (?:your|ur|yo|ya|his|her) ass{END}",
     },
     {
       id: "T7",
@@ -564,9 +564,9 @@ export const MESSAGE_RULE_SET: MessageRuleSet = {
     {
       id: "A12",
       category: "abuse",
-      label: "Fuck you, fuck off, stfu",
+      label: "Fuck you, fuck off, go to hell, you suck, stfu",
       pattern:
-        "(?:fuck|fuk|fck|fuc|fuq|phuck|fvck) (?:you|u|off|yall|your mom|them all)|fuckyou|fu ck you|go fuck (?:yourself|urself)|screw you(?! guys| over| up)|shut the fuck up|stfu",
+        "(?:fuck|fuk|fck|fuc|fuq|phuck|fvck) (?:you|u|off|yall|your mom|them all|(?:yourself|yourselves|urself|ur self|your self|ya self|yo self|yaself|yoself|youself|yourslef|yoursel|yorself|yself)(?! over| up)|right off)|fuckyou|fuckoff|fuckyourself|fuckurself|pissoff|fu ck you|eff (?:you|u|off)|f off{END}|(?:f|eff) (?:yourself|urself|ur self|your self)|shut the f up|(?:fuck|fuk|fck) your (?:mother|mum|mama|dad|family)|screw (?:yourself|urself|ur self|your self)(?! over| up)|get fucked|piss off{END}|(?<!pick )(?<!sign )(?<!heads )(?<!set )(?<!hold )(?<!look )(?<!picked )(?<!signed )up yours{END}|kiss my ass|(?<!i )(?<!to )(?<!gonna )(?<!and )(?<!always )eat shit{END}|eat (?:a|my) (?:dick|ass|shit)|(?<!can )(?<!could )go to hell{END}|(?:rot|burn) in hell{END}|(?:you|u) son of a bitch|(?<!when )(?<!if )(?<!time )(?:you|u) (?:really |totally |fucking |all |guys )?suck(?:{END}| at| so| ass| balls)|screw (?:you|u)(?! guys| over| up)|shut the fuck up|stfu",
     },
     {
       id: "A13",
@@ -588,7 +588,7 @@ export const MESSAGE_RULE_SET: MessageRuleSet = {
       category: "abuse",
       label: '"Your worthless" (you\'re, misspelled)',
       pattern:
-        "(?:your|ur) (?:so |such a |such an |a |an )?(?:worthless|useless|pathetic|disgusting){END}|(?:your|ur) so (?:stupid|dumb|ugly|fat|lazy){END}",
+        "(?:your|ur) (?:so |such a |such an |a |an )?(?:worthless|useless|pathetic|disgusting){END}|(?:your|ur) so (?:stupid|dumb|ugly|fat|lazy){END}|ur (?:stupid|dumb|ugly|fat|gross){END}|(?:your|ur) (?:such a |such an |a |an )(?:fucking |stupid |little |total |complete )?(?:loser|bitch|idiot|moron|asshole|dick|whore|slut)",
     },
 
     /* ---------------- Self-harm said about oneself (flag only) ---------------- */

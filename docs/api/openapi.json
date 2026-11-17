@@ -71,6 +71,9 @@
                     },
                     "termsVersion": {
                       "type": "string"
+                    },
+                    "messageCheck": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
