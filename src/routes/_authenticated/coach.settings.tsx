@@ -6,6 +6,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  BadgeCheck,
   LogOut,
   Mail,
   Palette,
@@ -84,6 +85,14 @@ function SettingsPage() {
           <SettingsList>
             <NameDisclosure firstName={data.profile.firstName} lastName={data.profile.lastName} />
             <SettingsRow icon={<Mail className="size-4" />} label="Email" value={email ?? "—"} />
+            {data.profile.effectiveTier === "coach_pro" && (
+              <SettingsRow
+                icon={<BadgeCheck className="size-4" />}
+                label="Verified coach"
+                description="Coach Pro coaches show a Verified badge on their marketplace profile."
+                trailing={<VerifiedBadge />}
+              />
+            )}
           </SettingsList>
         </SettingsGroup>
 
@@ -143,6 +152,15 @@ function SettingsPage() {
       </div>
       <CoachBottomNav />
     </>
+  );
+}
+
+function VerifiedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-accent-ink px-2.5 py-0.5 text-xs font-bold text-accent-ink">
+      <BadgeCheck className="size-3.5" aria-hidden />
+      Verified
+    </span>
   );
 }
 

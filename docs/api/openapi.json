@@ -22191,6 +22191,12 @@
                           },
                           "views": {
                             "type": "number"
+                          },
+                          "coverUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -22199,7 +22205,8 @@
                           "priceCents",
                           "status",
                           "soldCount",
-                          "views"
+                          "views",
+                          "coverUrl"
                         ]
                       }
                     },

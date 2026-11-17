@@ -173,6 +173,7 @@ describe("getCoachDashboard", () => {
         status: "active",
         soldCount: 2,
         views: 4,
+        coverUrl: null,
       },
     ]);
     // This week (Mon 9 – Sun 15 Nov): 1 view, 2 sales; last week: 1 view.
