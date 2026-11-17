@@ -211,6 +211,36 @@ describe("getPendingLessonWrapUps asks only about lessons that happened today", 
     ]);
   });
 
+  it("a group lesson's members carry its id; a lone leftover link reads as private (GL4)", async () => {
+    const t = {
+      athlete_lesson_slots: [
+        lessonSlot({ id: "s1", group_id: "g1" }),
+        lessonSlot({ id: "s2", athlete_id: "a2", group_id: "g1" }),
+        lessonSlot({ id: "s3", athlete_id: "a3", group_id: "g-lone" }),
+      ],
+    };
+    const rows = await pending(t, 11 * 60);
+    expect(rows.map((w) => [w.athleteId, w.groupId])).toEqual([
+      ["a1", "g1"],
+      ["a2", "g1"],
+      ["a3", undefined],
+    ]);
+    expect("groupId" in rows[2]).toBe(false);
+  });
+
+  it("a group member out for the day is not pending, and the rest still read as a group", async () => {
+    const t = {
+      athlete_lesson_slots: [
+        lessonSlot({ id: "s1", group_id: "g1" }),
+        lessonSlot({ id: "s2", athlete_id: "a2", group_id: "g1" }),
+      ],
+      lesson_slot_overrides: [override("s1", { status: "canceled" })],
+    };
+    expect((await pending(t, 11 * 60)).map((w) => [w.athleteId, w.groupId])).toEqual([
+      ["a2", "g1"],
+    ]);
+  });
+
   it("a lesson canceled for today is not pending; another date's cancellation does not apply", async () => {
     const t = {
       athlete_lesson_slots: [lessonSlot({ id: "s1" }), lessonSlot({ id: "s2", athlete_id: "a2" })],

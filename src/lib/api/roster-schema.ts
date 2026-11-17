@@ -225,6 +225,7 @@ export const pendingWrapUpSchema = z.object({
   lessonDate: z.string(),
   lessonEndMinute: z.number().int(),
   activePlanId: z.string().nullable(),
+  groupId: z.string().optional(),
 }) satisfies z.ZodType<PendingWrapUp>;
 
 export const pendingWrapUpsSchema = z.object({ wrapUps: z.array(pendingWrapUpSchema) });

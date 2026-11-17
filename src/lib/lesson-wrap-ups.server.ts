@@ -35,6 +35,11 @@ export type PendingWrapUp = {
   lessonDate: string; // YYYY-MM-DD
   lessonEndMinute: number;
   activePlanId: string | null;
+  /**
+   * Set when the lesson was a group lesson (PRD §6.16 F): pending wrap-ups that
+   * share it are one prompt on the client. Absent for a private lesson.
+   */
+  groupId?: string;
 };
 
 export type WrapUpAction = "edited" | "redeployed" | "dismissed" | "did_not_happen";
@@ -106,7 +111,7 @@ export async function getPendingLessonWrapUps(
 
   // Keep only the latest-ending lesson per athlete that isn't handled yet.
   const byAthlete = new Map<string, PendingWrapUp>();
-  for (const { athleteId, endMinute } of ended) {
+  for (const { athleteId, endMinute, groupId } of ended) {
     if (handled.has(athleteId)) continue;
     const a = athleteById.get(athleteId);
     if (!a) continue;
@@ -118,6 +123,7 @@ export async function getPendingLessonWrapUps(
         lessonDate: data.lessonDate,
         lessonEndMinute: endMinute,
         activePlanId: activePlanByAthlete.get(athleteId) ?? null,
+        ...(groupId ? { groupId } : {}),
       });
     }
   }

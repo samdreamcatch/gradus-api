@@ -6,7 +6,7 @@ import { computeLessonWrapUpPrompts, WINDOW_MINUTES } from "./lesson-wrap-up-pro
 type Row = Record<string, unknown>;
 
 /** Row-store fake for the query shapes this module issues; the upsert honours UNIQUE(slot_id, lesson_date). */
-function fakeDb(tables: Record<string, Row[]>) {
+function fakeDb(tables: Record<string, Row[]>, opts: { noGroupColumn?: boolean } = {}) {
   const sent: Row[] = [...(tables.lesson_wrap_up_prompts_sent ?? [])];
   const query = (rows: Row[]) => {
     const self = {
@@ -21,7 +21,29 @@ function fakeDb(tables: Record<string, Row[]>) {
   };
   const admin = {
     from: (table: string) => ({
-      select: () => query(table === "lesson_wrap_up_prompts_sent" ? sent : (tables[table] ?? [])),
+      select: (columns?: string) => {
+        // Before migration 20261115120000 the column does not exist: Postgres says 42703.
+        if (
+          opts.noGroupColumn &&
+          table === "athlete_lesson_slots" &&
+          columns?.includes("group_id")
+        ) {
+          const failed = {
+            eq: () => failed,
+            in: () => failed,
+            then: (
+              resolve: (v: { data: null; error: { code: string; message: string } }) => void,
+            ) =>
+              resolve({ data: null, error: { code: "42703", message: "column does not exist" } }),
+          };
+          return failed;
+        }
+        if (opts.noGroupColumn && table === "athlete_lesson_slots") {
+          // The column is not there to read: rows come back without it.
+          return query((tables[table] ?? []).map(({ group_id: _gone, ...rest }) => rest));
+        }
+        return query(table === "lesson_wrap_up_prompts_sent" ? sent : (tables[table] ?? []));
+      },
       upsert: (payload: Row[]) => ({
         select: () => {
           const inserted: Row[] = [];
@@ -36,7 +58,16 @@ function fakeDb(tables: Record<string, Row[]>) {
       }),
       delete: () => ({
         in: () => Promise.resolve({ error: null }),
-        eq: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        eq: (colA: string, a: unknown) => ({
+          eq: (colB: string, b: unknown) => {
+            if (table === "lesson_wrap_up_prompts_sent") {
+              for (let i = sent.length - 1; i >= 0; i -= 1) {
+                if (sent[i][colA] === a && sent[i][colB] === b) sent.splice(i, 1);
+              }
+            }
+            return Promise.resolve({ error: null });
+          },
+        }),
       }),
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,5 +251,159 @@ describe("computeLessonWrapUpPrompts", () => {
     expect(
       await computeLessonWrapUpPrompts({ admin: biweekly.admin, push }, rinkTime(10, 3)),
     ).toEqual({ scanned: 1, prompted: 0, sent: 0 });
+  });
+
+  describe("group lessons (GL4, decision #68)", () => {
+    const member = (n: number, over: Row = {}): Row => ({
+      ...SLOT,
+      id: `slot-${n}`,
+      athlete_id: `athlete-${n}`,
+      group_id: "group-1",
+      ...over,
+    });
+    const groupTables = (overrides: Partial<Record<string, Row[]>> = {}) =>
+      baseTables({
+        athlete_lesson_slots: [member(1), member(2), member(3)],
+        athletes: [
+          { id: "athlete-1", first_name: "Greta", last_name: "Halvorsen" },
+          { id: "athlete-2", first_name: "Tobin", last_name: "Ashcombe" },
+          { id: "athlete-3", first_name: "Ines", last_name: "Marlowe" },
+        ],
+        ...overrides,
+      });
+    const body = (req: ApnsRequest) => (req.payload.aps as { alert: { body: string } }).alert.body;
+
+    it("sends one push for the whole group, records every member, and stays quiet on the next tick", async () => {
+      const db = fakeDb(groupTables());
+      const { push, sent } = pushSpy();
+      expect(await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 1))).toEqual({
+        scanned: 3,
+        prompted: 1,
+        sent: 1,
+      });
+      expect(sent).toHaveLength(1);
+      expect(body(sent[0])).toBe(
+        "Group lesson with Greta, Ines, Tobin just ended. Edit, redeploy, or dismiss their plans.",
+      );
+      expect(sent[0].collapseId).toBe("wrapup:group:group-1:2026-09-15:600");
+      expect(db.sent.map((r) => r.slot_id).sort()).toEqual(["slot-1", "slot-2", "slot-3"]);
+
+      expect(await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 6))).toEqual({
+        scanned: 3,
+        prompted: 0,
+        sent: 0,
+      });
+      expect(sent).toHaveLength(1);
+    });
+
+    it("a group of eight is one push, three names then +5", async () => {
+      const slots = Array.from({ length: 8 }, (_, i) => member(i + 1));
+      const names = ["Greta", "Tobin", "Ines", "Wren", "Odette", "Maeve", "Calla", "Bram"];
+      const db = fakeDb(
+        groupTables({
+          athlete_lesson_slots: slots,
+          athletes: names.map((first_name, i) => ({
+            id: `athlete-${i + 1}`,
+            first_name,
+            last_name: "Example",
+          })),
+        }),
+      );
+      const { push, sent } = pushSpy();
+      expect(await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 2))).toEqual({
+        scanned: 8,
+        prompted: 1,
+        sent: 1,
+      });
+      expect(body(sent[0])).toContain("Group lesson with Bram, Calla, Greta +5 just ended");
+    });
+
+    it("leaves out members who are out today or already wrapped up; one left reads as their own lesson", async () => {
+      const out = fakeDb(
+        groupTables({
+          lesson_slot_overrides: [
+            {
+              slot_id: "slot-3",
+              occurrence_date: "2026-09-15",
+              status: "canceled",
+              start_minute: null,
+              end_minute: null,
+            },
+          ],
+        }),
+      );
+      const first = pushSpy();
+      await computeLessonWrapUpPrompts({ admin: out.admin, push: first.push }, rinkTime(10, 2));
+      expect(first.sent).toHaveLength(1);
+      expect(body(first.sent[0])).toContain("Group lesson with Greta, Tobin just ended");
+
+      const wrapped = fakeDb(
+        groupTables({
+          lesson_wrap_ups: [
+            { coach_id: "coach-1", athlete_id: "athlete-1", lesson_date: "2026-09-15" },
+            { coach_id: "coach-1", athlete_id: "athlete-3", lesson_date: "2026-09-15" },
+          ],
+        }),
+      );
+      const second = pushSpy();
+      await computeLessonWrapUpPrompts(
+        { admin: wrapped.admin, push: second.push },
+        rinkTime(10, 2),
+      );
+      expect(second.sent).toHaveLength(1);
+      expect(body(second.sent[0])).toBe(
+        "Tobin Ashcombe's lesson just ended. Edit, redeploy, or dismiss their plan.",
+      );
+      expect(second.sent[0].collapseId).toBe("wrapup:slot-2:2026-09-15");
+    });
+
+    it("stays out of the inbox, and a send that fails releases every member so the next tick retries", async () => {
+      const db = fakeDb(groupTables());
+      const sent: ApnsRequest[] = [];
+      let fail = true;
+      const send = async (_c: ApnsConfig, req: ApnsRequest): Promise<ApnsOutcome> => {
+        if (fail) return { ok: false, status: 503, reason: "ServiceUnavailable", dead: false };
+        sent.push(req);
+        return { ok: true, apnsId: null };
+      };
+      const push = { config, send };
+      const first = await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 1));
+      expect(first.sent).toBe(0);
+      expect(db.sent).toHaveLength(0);
+      fail = false;
+      const second = await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 4));
+      expect(second).toEqual({ scanned: 3, prompted: 1, sent: 1 });
+      expect(body(sent[0])).toContain("Greta, Ines, Tobin");
+      expect(db.sent).toHaveLength(3);
+    });
+
+    it("before the group migration every lesson prompts on its own, as it always did", async () => {
+      const db = fakeDb(groupTables(), { noGroupColumn: true });
+      const { push, sent } = pushSpy();
+      expect(await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 2))).toEqual({
+        scanned: 3,
+        prompted: 3,
+        sent: 3,
+      });
+      expect(sent.every((r) => body(r).includes("'s lesson just ended"))).toBe(true);
+    });
+
+    it("a lone leftover group link and two different groups each prompt on their own", async () => {
+      const db = fakeDb(
+        groupTables({
+          athlete_lesson_slots: [member(1), member(2), member(3, { group_id: "group-lone" })],
+        }),
+      );
+      const { push, sent } = pushSpy();
+      expect(await computeLessonWrapUpPrompts({ admin: db.admin, push }, rinkTime(10, 2))).toEqual({
+        scanned: 3,
+        prompted: 2,
+        sent: 2,
+      });
+      expect(sent.map(body).sort()).toEqual([
+        "Group lesson with Greta, Tobin just ended. Edit, redeploy, or dismiss their plans.",
+        "Ines Marlowe's lesson just ended. Edit, redeploy, or dismiss their plan.",
+      ]);
+    });
   });
 });
