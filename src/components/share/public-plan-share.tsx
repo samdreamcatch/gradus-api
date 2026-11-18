@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BadgeCheck, ChevronDown, ChevronRight, Infinity as InfinityIcon, LockKeyhole, Play, Share, Star } from "lucide-react";
 import { toast } from "sonner";
-import { APP_STORE_URL } from "@/components/app-store-badges";
+import { APP_STORE_URL, openInAppOrStore } from "@/lib/open-in-app";
 import type { SharedPlanDTO, SharedPlanMoveDTO } from "@/lib/plan-share.functions";
 
 const reviews = [
@@ -37,7 +37,7 @@ function PlanCover({ move }: { move?: SharedPlanMoveDTO }) {
   </div>;
 }
 
-function MovePreview({ move, remaining }: { move: SharedPlanMoveDTO; remaining: number }) {
+function MovePreview({ move, remaining, onOpenApp }: { move: SharedPlanMoveDTO; remaining: number; onOpenApp: () => void }) {
   const [open, setOpen] = useState(true);
   const unit = move.targetKind === "mins" ? "min" : "reps";
   return <div className="overflow-hidden rounded-[22px] bg-white/70">
@@ -52,7 +52,7 @@ function MovePreview({ move, remaining }: { move: SharedPlanMoveDTO; remaining: 
       {move.why && <p><span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500">Why</span>{move.why}</p>}
       {move.description && <p className="leading-relaxed text-slate-600">{move.description}</p>}
     </div>}
-    {remaining > 0 && <button type="button" onClick={() => toast("Open the Gradus app to see the full plan")} className="flex w-full items-center gap-2 border-t border-divider px-4 py-3 text-left text-sm font-bold text-slate-600"><LockKeyhole className="size-4" />{remaining} more {remaining === 1 ? "move" : "moves"}</button>}
+    {remaining > 0 && <button type="button" onClick={onOpenApp} className="flex w-full items-center gap-2 border-t border-divider px-4 py-3 text-left text-sm font-bold text-slate-600"><LockKeyhole className="size-4" />{remaining} more {remaining === 1 ? "move" : "moves"}</button>}
   </div>;
 }
 
@@ -65,11 +65,13 @@ function ReviewCard({ review }: { review: (typeof reviews)[number] }) {
   </article>;
 }
 
-function AppLink({ className = "" }: { className?: string }) {
-  return <a href={APP_STORE_URL} target="_blank" rel="noreferrer" className={`rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold ${className}`}>Open in the Gradus app</a>;
+function AppLink({ appPath, className = "" }: { appPath: string; className?: string }) {
+  return <a href={APP_STORE_URL} onClick={(event) => { event.preventDefault(); openInAppOrStore(appPath); }} className={`rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold ${className}`}>Open in the Gradus app</a>;
 }
 
-export function PublicPlanShare({ plan }: { plan: SharedPlanDTO }) {
+/** `appPath` is the page the app opens to, e.g. `p/<token>`; the marketplace until there is one. */
+export function PublicPlanShare({ plan, appPath = "marketplace" }: { plan: SharedPlanDTO; appPath?: string }) {
+  const openApp = () => openInAppOrStore(appPath);
   const [coachOpen, setCoachOpen] = useState(false);
   const [allReviews, setAllReviews] = useState(false);
   const firstMove = plan.moves[0];
@@ -101,8 +103,8 @@ export function PublicPlanShare({ plan }: { plan: SharedPlanDTO }) {
         <div className="flex items-center justify-between border-t border-divider px-4 py-3"><strong className="font-display text-3xl font-bold">$24.99</strong><span className="flex items-center gap-1"><Rating /><span className="text-xs text-slate-500">(24)</span></span></div>
       </section>
 
-      <button type="button" onClick={() => toast("Open the Gradus app to get this plan")} className="mt-3 w-full rounded-full bg-[#c3e51b] px-5 py-3 text-sm font-bold shadow-sm">Buy $24.99</button>
-      <p className="mt-2 text-center text-xs text-slate-600">Already have it? <AppLink className="border-0 p-0 text-xs underline" /></p>
+      <button type="button" onClick={openApp} className="mt-3 w-full rounded-full bg-[#c3e51b] px-5 py-3 text-sm font-bold shadow-sm">Buy $24.99</button>
+      <p className="mt-2 text-center text-xs text-slate-600">Already have it? <AppLink appPath={appPath} className="border-0 p-0 text-xs underline" /></p>
 
       <section className="mt-6">
         <SectionTitle>What&apos;s inside</SectionTitle>
@@ -110,7 +112,7 @@ export function PublicPlanShare({ plan }: { plan: SharedPlanDTO }) {
         <div className="mt-3 grid grid-cols-3 divide-x divide-divider rounded-[20px] bg-white/65 px-2 py-3">
           <Stat label="Weeks" value="6" /><Stat label="Per week" value="3×" /><Stat label="Moves" value={String(plan.moves.length)} />
         </div>
-        {firstMove ? <div className="mt-3"><MovePreview move={firstMove} remaining={remaining} /></div> : <div className="mt-3 rounded-[22px] bg-white/65 p-4 text-sm text-slate-600">No moves are listed yet.</div>}
+        {firstMove ? <div className="mt-3"><MovePreview move={firstMove} remaining={remaining} onOpenApp={openApp} /></div> : <div className="mt-3 rounded-[22px] bg-white/65 p-4 text-sm text-slate-600">No moves are listed yet.</div>}
       </section>
 
       <section className="mt-6">
@@ -134,7 +136,7 @@ export function PublicPlanShare({ plan }: { plan: SharedPlanDTO }) {
     <footer className="mt-5 border-t border-divider bg-white/35">
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-8">
         <h2 className="font-display text-xl font-bold">Train with it in the Gradus app</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2"><a href={APP_STORE_URL} target="_blank" rel="noreferrer" className="rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold">App Store</a><a href="#google-play" className="rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold">Google Play</a></div>
+        <div className="mt-3 grid grid-cols-2 gap-2"><a href={APP_STORE_URL} onClick={(event) => { event.preventDefault(); openApp(); }} className="rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold">App Store</a><a href="#google-play" className="rounded-full border border-slate-500/60 px-4 py-3 text-center text-sm font-bold">Google Play</a></div>
         <nav className="mt-5 flex gap-5 text-xs text-slate-700 underline"><a href="/terms">Terms of sale</a><a href="/privacy">Privacy</a><a href="mailto:support@gradus.app">Help</a></nav>
       </div>
     </footer>

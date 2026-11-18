@@ -15,7 +15,8 @@ function getEffectiveSiteKey() {
   const isPreviewHost =
     hostname === "localhost" ||
     hostname.endsWith(".lovable.app") ||
-    hostname.endsWith(".lovableproject.com");
+    hostname.endsWith(".lovableproject.com") ||
+    hostname.endsWith(".vercel.app");
 
   return isPreviewHost ? TURNSTILE_TEST_SITE_KEY : TURNSTILE_SITE_KEY;
 }
