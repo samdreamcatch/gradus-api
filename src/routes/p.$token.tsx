@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { isNativeApp } from "@/lib/native";
 import { AppStoreBadges } from "@/components/app-store-badges";
+import { PublicPlanShare } from "@/components/share/public-plan-share";
 import { sharedPlanByline } from "@/lib/plan-share-byline";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -73,8 +74,18 @@ function NotFound() {
 function SharedPlanPage() {
   const { token } = Route.useParams();
   const plan = Route.useLoaderData() as SharedPlanDTO | null;
+  // Unknown until the browser checks; visitors are the common case, so they see their page first.
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+  }, []);
 
   if (!plan) return <NotFound />;
+  // Signed-out visitors get the storefront page; its buttons open this plan in the app.
+  if (!isNativeApp() && signedIn !== true) {
+    return <PublicPlanShare plan={plan} appPath={`p/${token}`} />;
+  }
 
   return (
     <div className="min-h-dvh">
@@ -241,7 +252,7 @@ function ImportCTA({ token }: { token: string }) {
 
         {authState === "anon" ? (
           <div className="flex shrink-0 flex-col gap-1.5 sm:items-end">
-            {!isNativeApp() && <AppStoreBadges />}
+            {!isNativeApp() && <AppStoreBadges appPath={redirectTo} />}
             <p className="text-[12px] text-text-secondary">
               Already have an account?{" "}
               <Link
