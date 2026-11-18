@@ -15,6 +15,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PaymentHistoryPreviewRouteImport } from './routes/payment-history-preview'
 import { Route as PaymentsPreviewRouteImport } from './routes/payments-preview'
+import { Route as PlanSharePreviewRouteImport } from './routes/plan-share-preview'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SupportRouteImport } from './routes/support'
@@ -431,6 +432,11 @@ const PaymentHistoryPreviewRoute = PaymentHistoryPreviewRouteImport.update({
 const PaymentsPreviewRoute = PaymentsPreviewRouteImport.update({
   id: '/payments-preview',
   path: '/payments-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanSharePreviewRoute = PlanSharePreviewRouteImport.update({
+  id: '/plan-share-preview',
+  path: '/plan-share-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -2607,6 +2613,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/payment-history-preview': typeof PaymentHistoryPreviewRoute
   '/payments-preview': typeof PaymentsPreviewRoute
+  '/plan-share-preview': typeof PlanSharePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -3002,6 +3009,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/payment-history-preview': typeof PaymentHistoryPreviewRoute
   '/payments-preview': typeof PaymentsPreviewRoute
+  '/plan-share-preview': typeof PlanSharePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -3393,6 +3401,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/payment-history-preview': typeof PaymentHistoryPreviewRoute
   '/payments-preview': typeof PaymentsPreviewRoute
+  '/plan-share-preview': typeof PlanSharePreviewRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/support': typeof SupportRoute
@@ -3790,6 +3799,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/payment-history-preview'
     | '/payments-preview'
+    | '/plan-share-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4185,6 +4195,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/payment-history-preview'
     | '/payments-preview'
+    | '/plan-share-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4575,6 +4586,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/payment-history-preview'
     | '/payments-preview'
+    | '/plan-share-preview'
     | '/privacy'
     | '/reset-password'
     | '/support'
@@ -4972,6 +4984,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PaymentHistoryPreviewRoute: typeof PaymentHistoryPreviewRoute
   PaymentsPreviewRoute: typeof PaymentsPreviewRoute
+  PlanSharePreviewRoute: typeof PlanSharePreviewRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SupportRoute: typeof SupportRoute
@@ -5311,6 +5324,13 @@ declare module '@tanstack/react-router' {
       path: '/payments-preview'
       fullPath: '/payments-preview'
       preLoaderRoute: typeof PaymentsPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan-share-preview': {
+      id: '/plan-share-preview'
+      path: '/plan-share-preview'
+      fullPath: '/plan-share-preview'
+      preLoaderRoute: typeof PlanSharePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -8341,6 +8361,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PaymentHistoryPreviewRoute: PaymentHistoryPreviewRoute,
   PaymentsPreviewRoute: PaymentsPreviewRoute,
+  PlanSharePreviewRoute: PlanSharePreviewRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SupportRoute: SupportRoute,
