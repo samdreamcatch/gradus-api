@@ -1,8 +1,9 @@
 import appStoreBadge from "@/assets/app-store-badge.svg.asset.json";
 import { openExternal } from "@/lib/native";
+import { APP_STORE_URL, openInAppOrStore } from "@/lib/open-in-app";
 import { cn } from "@/lib/utils";
 
-export const APP_STORE_URL = "https://apps.apple.com/us/app/gradus-training/id6816124994";
+export { APP_STORE_URL };
 
 function PlayIcon({ className = "" }: { className?: string }) {
   return (
@@ -12,8 +13,11 @@ function PlayIcon({ className = "" }: { className?: string }) {
   );
 }
 
-/** App Store badge + Google Play "coming soon" chip, matching the Gradus website. */
-export function AppStoreBadges({ className }: { className?: string }) {
+/**
+ * App Store badge + Google Play "coming soon" chip, matching the Gradus website.
+ * With `appPath`, the badge opens that page in the app when it's installed.
+ */
+export function AppStoreBadges({ className, appPath }: { className?: string; appPath?: string }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
       <a
@@ -22,7 +26,8 @@ export function AppStoreBadges({ className }: { className?: string }) {
         rel="noopener noreferrer"
         onClick={(e) => {
           e.preventDefault();
-          void openExternal(APP_STORE_URL);
+          if (appPath) openInAppOrStore(appPath);
+          else void openExternal(APP_STORE_URL);
         }}
         aria-label="Download Gradus on the App Store"
         className="press inline-flex min-h-11 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
