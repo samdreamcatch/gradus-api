@@ -208,6 +208,54 @@ describe("getUpNext", () => {
     ).toHaveLength(1);
   });
 
+  it("marks a group's members and counts the group as one lesson toward the limit", async () => {
+    const at = (n: number) => ({ start_minute: (9 + n) * 60, end_minute: (9 + n) * 60 + 30 });
+    const slots = [
+      slot({ id: "g1", athlete_id: "a1", group_id: "grp", ...at(1) }),
+      slot({ id: "g2", athlete_id: "a2", group_id: "grp", ...at(1) }),
+      slot({ id: "p1", athlete_id: "a3", ...at(2) }),
+      slot({ id: "p2", athlete_id: "a1", ...at(3) }),
+    ];
+    const out = await getUpNext(ctx({ athlete_lesson_slots: slots }), ask(8 * 60, { limit: 2 }));
+    expect(out.map((l) => [l.slotId, l.groupId])).toEqual([
+      ["g1", "grp"],
+      ["g2", "grp"],
+      ["p1", undefined],
+    ]);
+  });
+
+  it("drops the group id when only one member is left on this date", async () => {
+    const out = await getUpNext(
+      ctx({
+        athlete_lesson_slots: [
+          slot({ id: "g1", athlete_id: "a1", group_id: "grp" }),
+          slot({ id: "g2", athlete_id: "a2", group_id: "grp" }),
+        ],
+        lesson_slot_overrides: [
+          {
+            slot_id: "g2",
+            occurrence_date: DATE,
+            status: "canceled",
+            start_minute: null,
+            end_minute: null,
+          },
+        ],
+      }),
+      ask(8 * 60),
+    );
+    expect(out.map((l) => l.slotId)).toEqual(["g1"]);
+    expect("groupId" in out[0]).toBe(false);
+  });
+
+  it("leaves a lone leftover of a group reading as a private lesson", async () => {
+    const out = await getUpNext(
+      ctx({ athlete_lesson_slots: [slot({ group_id: "grp" })] }),
+      ask(8 * 60),
+    );
+    expect(out).toHaveLength(1);
+    expect("groupId" in out[0]).toBe(false);
+  });
+
   it("lets the Today widget ask for 20 lessons, and no more", () => {
     const parse = (limit: string) =>
       upNextInput.safeParse({ lessonDate: DATE, dayOfWeek: 3, currentMinute: 5, limit }).success;

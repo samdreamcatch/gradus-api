@@ -6743,6 +6743,11 @@
                                   "twice_monthly",
                                   "monthly"
                                 ]
+                              },
+                              "groupKey": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
                               }
                             },
                             "required": [
@@ -7871,6 +7876,9 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "groupId": {
+                            "type": "string"
                           }
                         },
                         "required": [

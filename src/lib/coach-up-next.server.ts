@@ -50,6 +50,12 @@ export type UpNextLesson = {
    */
   briefingCached: boolean;
   activePlanId: string | null;
+  /**
+   * Set when this lesson is one member of a group lesson (decision #68, GL5):
+   * rows sharing it are one lesson, which the watch and the Today widget show
+   * as first names then "+N". Absent for a private lesson.
+   */
+  groupId?: string;
 };
 
 const DEFAULT_LIMIT = 3;
@@ -65,10 +71,21 @@ export async function getUpNext(
   const coachId = coach.data?.id as string | undefined;
   if (!coachId) return [];
 
-  const upcoming = (await getCoachLessonsOn(admin, coachId, data))
+  const sorted = (await getCoachLessonsOn(admin, coachId, data))
     .filter((l) => l.endMinute > data.currentMinute) // ended ones are the wrap-up's job
-    .sort((a, b) => a.startMinute - b.startMinute)
-    .slice(0, data.limit ?? DEFAULT_LIMIT);
+    .sort((a, b) => a.startMinute - b.startMinute);
+  // `limit` counts lessons, and a group is one lesson: every member of a
+  // group that made the cut comes along, so the client never sees half a group.
+  const limit = data.limit ?? DEFAULT_LIMIT;
+  const units = new Set<string>();
+  const upcoming = sorted.filter((l) => {
+    const unit = l.groupId
+      ? `group:${l.groupId}:${l.startMinute}:${l.endMinute}`
+      : `slot:${l.slotId}`;
+    if (!units.has(unit) && units.size >= limit) return false;
+    units.add(unit);
+    return true;
+  });
   if (upcoming.length === 0) return [];
 
   const athleteIds = Array.from(new Set(upcoming.map((u) => u.athleteId)));
@@ -104,7 +121,16 @@ export async function getUpNext(
   }
   const cached = new Set((briefingsRes.data ?? []).map((b) => b.athlete_id as string));
 
-  return upcoming.flatMap(({ slotId, athleteId, startMinute, endMinute }) => {
+  // A group with one member left on this date (the others are out, or gone
+  // from the roster) is a private lesson to the coach: no `groupId`.
+  const shown = upcoming.filter((u) => names.has(u.athleteId));
+  const groupSizes = new Map<string, number>();
+  for (const u of shown) {
+    if (u.groupId) groupSizes.set(u.groupId, (groupSizes.get(u.groupId) ?? 0) + 1);
+  }
+
+  return shown.flatMap(({ slotId, athleteId, startMinute, endMinute, groupId: linked }) => {
+    const groupId = linked && (groupSizes.get(linked) ?? 0) >= 2 ? linked : null;
     const name = names.get(athleteId);
     if (!name) return []; // an athlete the coach can no longer see
     return [
@@ -120,6 +146,7 @@ export async function getUpNext(
         inProgress: startMinute <= data.currentMinute,
         briefingCached: cached.has(athleteId),
         activePlanId: planByAthlete.get(athleteId) ?? null,
+        ...(groupId ? { groupId } : {}),
       },
     ];
   });

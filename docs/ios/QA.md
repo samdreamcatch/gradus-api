@@ -66,6 +66,22 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Voice FAB: hold to record ≤ 90 s, cancel by slide, transcript → new plan with AI-touched fields highlighted; edit mode on an open plan.
 - [ ] Starter program adopt; share plan → `/p/<token>`.
 
+## 3a. Group lessons (PRD §6.16, decision #68, GL1–GL5)
+
+Needs migration `20261115120000_lesson_groups.sql` applied. Use a coach with at least three athletes, one of them with an active plan, and a parent account linked to one of them.
+
+- [ ] **Create (GL2):** Create new lesson with two to eight athletes makes one card on the Schedule titled with first names (three, then "+N") and a "Group" tag; a ninth athlete is refused; the week strip counts the group once.
+- [ ] **Change (GL2):** moving the group's time, changing its price, adding or removing an athlete applies to every member; removing down to one athlete leaves a private lesson.
+- [ ] **One date (GL2):** on one date, mark one athlete out with "Still bill" on (the default for a group): the others' lesson is unchanged and nobody's price changes. With everyone out the date stays on the agenda as Canceled.
+- [ ] **Billing (GL3):** the Bill sheet tags the group's lines "Group" and the canceller's line "Canceled · billed"; each athlete gets their own invoice at their own price; the invoice text says "Group lesson" / "Canceled, billed". A private lesson's cancel offers "Cancel, still bill" (off by default).
+- [ ] **Wrap-up (GL4):** when a group of three ends there is **one** push ("Group lesson with … just ended.") and one alert, "Group lesson just ended."; Wrap up opens the group sheet with an Everyone row (Re-deploy, New plan) and a row per athlete; "Lesson didn't happen" clears all of them; the sheet closes itself when every athlete is ticked. Not now leaves one banner for the group.
+- [ ] **Wrap-up offline (GL4):** with the sheet open in airplane mode, Everyone → Re-deploy shows one "Saved" message, the ticks stay, and nothing reappears as pending after reconnecting.
+- [ ] **Today widget (GL5):** a group lesson is one line: first names then "+N", its time, and "Group lesson" where the practice week would be; tapping it opens the Roster. A private lesson before or after still shows its student's week.
+- [ ] **Watch (GL5):** the group is one stop on the day's dial and one row in Up next ("3 left today" counts it once); its button is **Athletes**, which lists the members; each opens that athlete's lesson with Briefing and plan. The watch face reads "Greta +2".
+- [ ] **Import (GL5):** import a schedule where three athletes share Tuesday 4:00 PM: the review shows a **Same time** card naming them. Without tapping it, the import makes three private lessons. With **Link as a group** it makes one group card on the Schedule. Changing one athlete's time on the review removes them from the card and unlinks it. Importing the same schedule again with the link on, after one athlete was skipped the first time, completes the group.
+- [ ] **Parent (GL5):** the parent's athlete page tags the lesson "Group lesson" and shows no other names anywhere (schedule, reminder, invoice, notification). In the lessons editor the group lesson is listed above the editable ones and can't be changed; saving the editor leaves it in place; a lesson that overlaps it is refused with the server's message.
+- [ ] **VoiceOver (GL5):** the Same time card reads the names, the time and whether it is linked, and its button says who it links; the group's widget line and watch stop read "Group lesson" and every name; the parent's line reads "…, group lesson".
+
 ## 4. Messaging (PRD §7.5) — all roles
 
 - [ ] Rooms list unread badges match the tab badge and the app icon badge.

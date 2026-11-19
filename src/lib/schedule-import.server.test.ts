@@ -11,6 +11,7 @@ import { parseLengthToMinutes } from "./schedule-import";
 import {
   commitScheduleImport,
   commitScheduleImportInput,
+  importGroupShapes,
   imageBytesFromDataUrl,
   lessonsFromModelText,
   MAX_IMAGE_BYTES,
@@ -1409,5 +1410,185 @@ describe("POST /coach/schedule-import/commit pipeline", () => {
     });
     expect(bad.status).toBe(400);
     expect((await bad.json()).error.code).toBe("validation_failed");
+  });
+});
+
+describe("schedule import: linking same-time rows into a group (decision #68, GL5)", () => {
+  const member = (first: string, slots: Array<Record<string, unknown>>) =>
+    group({
+      key: `${first.toLowerCase()}|vale|`,
+      firstName: first,
+      lastName: "Vale",
+      guardianEmail: "",
+      sport: "",
+      slots,
+    });
+  const linked = (over: Record<string, unknown> = {}) => ({ ...slot(), groupKey: "g1", ...over });
+  const run = async (
+    seed: Record<string, Row[]>,
+    groups: ReturnType<typeof member>[],
+    opts: Parameters<typeof fakeAdmin>[1] = {},
+  ) => {
+    const fake = fakeAdmin({ coach_profiles: [COACH], ...seed }, opts);
+    const { deps } = commitDeps();
+    const out = await commitScheduleImport(
+      { admin: fake.admin, userId: USER },
+      { groups },
+      {},
+      deps,
+    );
+    return { ...fake, out, slots: fake.tables.athlete_lesson_slots ?? [] };
+  };
+  const groupOf = (rows: Row[]) => rows.map((r) => r.group_id ?? null);
+
+  it("links rows that share a key and a time as one group, and leaves the rest private", async () => {
+    const { slots } = await run({}, [
+      member("Greta", [linked(), slot({ dayOfWeek: 4 })]),
+      member("Ines", [linked()]),
+      member("Tobin", [slot()]),
+    ]);
+    const ids = groupOf(slots);
+    expect(typeof ids[0]).toBe("string");
+    expect(ids).toEqual([ids[0], null, ids[0], null]);
+  });
+
+  it("ignores a key on one row only, on different times, twice on one row, on nine rows, or on a lesson that is not weekly", () => {
+    const g = (key: string, slots: Array<Record<string, unknown>>) => ({
+      key,
+      slots: slots as never,
+    });
+    expect(importGroupShapes([g("a", [linked()])]).size).toBe(0);
+    expect(
+      importGroupShapes([g("a", [linked()]), g("b", [linked({ startMinute: 990 })])]).size,
+    ).toBe(0);
+    expect(importGroupShapes([g("a", [linked(), linked()]), g("b", [linked()])]).size).toBe(0);
+    const nine = Array.from({ length: 9 }, (_, i) => g(`a${i}`, [linked()]));
+    expect(importGroupShapes(nine).size).toBe(0);
+    expect(importGroupShapes(nine.slice(0, 8)).get("g1")?.athleteKeys).toHaveLength(8);
+    const biweekly = linked({ frequency: "biweekly" });
+    expect(importGroupShapes([g("a", [biweekly]), g("b", [biweekly])]).size).toBe(0);
+  });
+
+  it("never makes a group of one: a member with no seat leaves the other's lesson private", async () => {
+    const five = Array.from({ length: 5 }, (_, i) => ({
+      id: `link-${i}`,
+      coach_id: "coach-1",
+      athlete_id: `old-${i}`,
+    }));
+    const { out, slots } = await run({ coach_athletes: five.slice(0, 4) }, [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+    ]);
+    expect(out.outcomes.map((o) => o.status)).toEqual(["created", "skipped"]);
+    expect(groupOf(slots)).toEqual([null]);
+  });
+
+  it("joins an athlete who already has that exact lesson, so importing again completes the group", async () => {
+    const seed = {
+      athletes: [{ id: "a-greta", first_name: "Greta", last_name: "Vale" }],
+      coach_athletes: [{ id: "l1", coach_id: "coach-1", athlete_id: "a-greta" }],
+      athlete_lesson_slots: [
+        {
+          id: "s-greta",
+          coach_id: "coach-1",
+          athlete_id: "a-greta",
+          day_of_week: 2,
+          start_minute: 960,
+          end_minute: 1020,
+          frequency: "weekly",
+          weeks_of_month: [],
+          starts_on: null,
+          group_id: null,
+        },
+      ],
+    };
+    const { out, slots } = await run(seed, [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+    ]);
+    expect(out.outcomes.map((o) => [o.status, o.slotsAdded])).toEqual([
+      ["linked", 0],
+      ["created", 1],
+    ]);
+    const ids = groupOf(slots);
+    expect(typeof ids[0]).toBe("string");
+    expect(ids[1]).toBe(ids[0]);
+  });
+
+  it("leaves out an athlete whose other lesson overlaps, or whose lesson at that time has another length", async () => {
+    const base = {
+      coach_id: "coach-1",
+      day_of_week: 2,
+      frequency: "weekly",
+      weeks_of_month: [],
+      starts_on: null,
+      group_id: null,
+    };
+    const seed = {
+      athletes: [
+        { id: "a-greta", first_name: "Greta", last_name: "Vale" },
+        { id: "a-ines", first_name: "Ines", last_name: "Vale" },
+      ],
+      coach_athletes: [
+        { id: "l1", coach_id: "coach-1", athlete_id: "a-greta" },
+        { id: "l2", coach_id: "coach-1", athlete_id: "a-ines" },
+      ],
+      athlete_lesson_slots: [
+        { id: "s-greta", athlete_id: "a-greta", start_minute: 990, end_minute: 1050, ...base }, // overlaps 4:00–5:00
+        { id: "s-ines", athlete_id: "a-ines", start_minute: 960, end_minute: 990, ...base }, // same start, shorter
+      ],
+    };
+    const { slots } = await run(seed, [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+      member("Tobin", [linked()]),
+      member("Wren", [linked()]),
+    ]);
+    const by = (athlete: string) =>
+      slots.filter((r) => r.athlete_id === athlete).map((r) => r.group_id ?? null);
+    expect(by("a-greta")).toEqual([null, null]);
+    expect(by("a-ines")).toEqual([null]);
+    const rest = slots.filter((r) => !["a-greta", "a-ines"].includes(r.athlete_id as string));
+    expect(rest).toHaveLength(2);
+    expect(typeof rest[0].group_id).toBe("string");
+    expect(rest[1].group_id).toBe(rest[0].group_id);
+  });
+
+  it("imports the lessons as private ones before the group migration is applied", async () => {
+    for (const code of ["42703", "PGRST204"]) {
+      const fake = fakeAdmin({ coach_profiles: [COACH] });
+      const from = fake.admin.from.bind(fake.admin);
+      // The linking read names `group_id`; the lesson inserts and the dedupe read do not.
+      let reads = 0;
+      (fake.admin as unknown as { from: (t: string) => unknown }).from = (table: string) => {
+        const api = from(table as never) as unknown as { select: (c?: string) => unknown };
+        if (table !== "athlete_lesson_slots") return api;
+        const select = api.select.bind(api);
+        api.select = (columns?: string) => {
+          if (columns?.includes("group_id")) {
+            reads += 1;
+            const failed = { data: null, error: { code, message: "no group_id" } };
+            const q: Record<string, unknown> = {
+              then: (ok: (v: unknown) => unknown) => Promise.resolve(failed).then(ok),
+            };
+            q.eq = () => q;
+            q.in = () => q;
+            return q;
+          }
+          return select(columns);
+        };
+        return api;
+      };
+      const { deps } = commitDeps();
+      const out = await commitScheduleImport(
+        { admin: fake.admin, userId: USER },
+        { groups: [member("Greta", [linked()]), member("Ines", [linked()])] },
+        {},
+        deps,
+      );
+      expect(out.outcomes.map((o) => o.status)).toEqual(["created", "created"]);
+      expect(reads).toBe(1);
+      expect(fake.tables.athlete_lesson_slots.every((r) => r.group_id == null)).toBe(true);
+    }
   });
 });

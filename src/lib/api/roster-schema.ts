@@ -242,6 +242,7 @@ export const upNextLessonSchema = z.object({
   inProgress: z.boolean(),
   briefingCached: z.boolean(),
   activePlanId: z.string().nullable(),
+  groupId: z.string().optional(),
 }) satisfies z.ZodType<UpNextLesson>;
 
 export const upNextSchema = z.object({ upNext: z.array(upNextLessonSchema) });
