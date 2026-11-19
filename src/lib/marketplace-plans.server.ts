@@ -173,10 +173,17 @@ async function viewerScope(
   return { coachId: coachRes.data?.id ?? null, athleteIds: Array.from(athleteIds) };
 }
 
-/** The caller's fulfilled purchases among `planIds`: listing id → who it was bought for. */
+/**
+ * Fulfilled purchases among `planIds` that the caller made, or that anyone made
+ * for one of the caller's athletes (their own, or a parent's children): listing
+ * id → who it was bought for. Matches the `already_purchased` check in
+ * `startPlanCheckout`, which goes by athlete, not buyer, so a plan the other
+ * parent (or the athlete) bought never shows Buy.
+ */
 async function viewerPurchases(
   admin: Admin,
   userId: string,
+  athleteIds: string[],
   planIds: string[],
 ): Promise<Map<string, MarketplacePurchaseRef[]>> {
   const out = new Map<string, MarketplacePurchaseRef[]>();
@@ -184,19 +191,28 @@ async function viewerPurchases(
   // The generated types don't know plan_purchases yet (20261111120800_plan_purchases).
   const { data, error } = await (admin as unknown as { from: (t: string) => any }) // eslint-disable-line @typescript-eslint/no-explicit-any
     .from("plan_purchases")
-    .select("id, plan_id, athlete_id, copied_plan_id, payment_status")
-    .eq("buyer_user_id", userId)
+    .select("id, plan_id, athlete_id, buyer_user_id, copied_plan_id, payment_status")
+    .or(
+      athleteIds.length
+        ? `buyer_user_id.eq.${userId},athlete_id.in.(${athleteIds.join(",")})`
+        : `buyer_user_id.eq.${userId}`,
+    )
     .eq("status", "fulfilled")
     .in("plan_id", planIds);
   if (error) dbError(error);
-  for (const p of (data ?? []) as {
+  const rows = (data ?? []) as {
     id: string;
     plan_id: string;
     athlete_id: string | null;
+    buyer_user_id: string | null;
     copied_plan_id: string | null;
     payment_status: MarketplacePurchaseRef["paymentStatus"] | null;
-  }[]) {
+  }[];
+  // The caller's own purchase first, so it wins for "Complete payment" when there are two.
+  rows.sort((a, b) => Number(b.buyer_user_id === userId) - Number(a.buyer_user_id === userId));
+  for (const p of rows) {
     if (!p.athlete_id) continue;
+    if (out.get(p.plan_id)?.some((r) => r.athleteId === p.athlete_id)) continue;
     out.set(p.plan_id, [
       ...(out.get(p.plan_id) ?? []),
       {
@@ -363,6 +379,7 @@ export async function getMarketplacePlans(
     viewerPurchases(
       admin,
       ctx.userId,
+      scope.athleteIds,
       page.map((row) => row.id),
     ),
   ]);
