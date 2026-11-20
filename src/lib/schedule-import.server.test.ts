@@ -1515,6 +1515,102 @@ describe("schedule import: linking same-time rows into a group (decision #68, GL
     expect(ids[1]).toBe(ids[0]);
   });
 
+  it("joins a group a first import already made, at its price, and never past eight", async () => {
+    const slotRow = (id: string, athlete: string, group: string | null) => ({
+      id,
+      coach_id: "coach-1",
+      athlete_id: athlete,
+      day_of_week: 2,
+      start_minute: 960,
+      end_minute: 1020,
+      frequency: "weekly",
+      weeks_of_month: [],
+      starts_on: null,
+      group_id: group,
+      price_cents: group ? 4500 : null,
+    });
+    const seed = (extraMembers: number) => ({
+      athletes: [
+        { id: "a-greta", first_name: "Greta", last_name: "Vale" },
+        { id: "a-ines", first_name: "Ines", last_name: "Vale" },
+      ],
+      coach_athletes: [
+        { id: "l1", coach_id: "coach-1", athlete_id: "a-greta" },
+        { id: "l2", coach_id: "coach-1", athlete_id: "a-ines" },
+      ],
+      athlete_lesson_slots: [
+        slotRow("s-greta", "a-greta", "g-first"),
+        slotRow("s-ines", "a-ines", "g-first"),
+        // Members of the same group who are not in this import still count toward eight.
+        ...Array.from({ length: extraMembers }, (_, i) => slotRow(`s-x${i}`, `a-x${i}`, "g-first")),
+      ],
+    });
+    // The third athlete was skipped the first time; importing again brings them into the group.
+    const joined = await run(seed(0), [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+      member("Tobin", [linked()]),
+    ]);
+    const tobin = joined.slots.find((r) => !["a-greta", "a-ines"].includes(r.athlete_id as string));
+    expect(tobin?.group_id).toBe("g-first");
+    expect(tobin?.price_cents).toBe(4500);
+    // A group already at eight takes nobody: the new lesson stays private.
+    const full = await run(seed(6), [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+      member("Tobin", [linked()]),
+    ]);
+    const left = full.slots.find((r) => !String(r.athlete_id).startsWith("a-"));
+    expect(left?.group_id ?? null).toBeNull();
+    expect(full.slots.filter((r) => r.group_id === "g-first")).toHaveLength(8);
+    // Members on different prices have no group price to hand on: the newcomer keeps their usual rate.
+    const mixedSeed = seed(0);
+    mixedSeed.athlete_lesson_slots[1].price_cents = null;
+    const mixed = await run(mixedSeed, [
+      member("Greta", [linked()]),
+      member("Ines", [linked()]),
+      member("Tobin", [linked()]),
+    ]);
+    const unpriced = mixed.slots.find(
+      (r) => !["a-greta", "a-ines"].includes(r.athlete_id as string),
+    );
+    expect(unpriced?.group_id).toBe("g-first");
+    expect(unpriced?.price_cents ?? null).toBeNull();
+  });
+
+  it("does not pull new athletes into a group only one of them is in", async () => {
+    const slotRow = (id: string, athlete: string) => ({
+      id,
+      coach_id: "coach-1",
+      athlete_id: athlete,
+      day_of_week: 2,
+      start_minute: 960,
+      end_minute: 1020,
+      frequency: "weekly",
+      weeks_of_month: [],
+      starts_on: null,
+      group_id: "g-hand",
+      price_cents: 4500,
+    });
+    // Greta's group was made by hand with athletes who are not in this import.
+    const { slots } = await run(
+      {
+        athletes: [{ id: "a-greta", first_name: "Greta", last_name: "Vale" }],
+        coach_athletes: [{ id: "l1", coach_id: "coach-1", athlete_id: "a-greta" }],
+        athlete_lesson_slots: [slotRow("s-greta", "a-greta"), slotRow("s-x0", "a-x0")],
+      },
+      [member("Greta", [linked()]), member("Tobin", [linked()]), member("Wren", [linked()])],
+    );
+    const fresh = slots.filter((r) => !["a-greta", "a-x0"].includes(r.athlete_id as string));
+    expect(fresh).toHaveLength(2);
+    // The two new athletes are linked to each other, at no group price, and the hand-made group is untouched.
+    expect(fresh[0].group_id).toBeTruthy();
+    expect(fresh[0].group_id).toBe(fresh[1].group_id);
+    expect(fresh[0].group_id).not.toBe("g-hand");
+    expect(fresh.every((r) => (r.price_cents ?? null) === null)).toBe(true);
+    expect(slots.filter((r) => r.group_id === "g-hand")).toHaveLength(2);
+  });
+
   it("leaves out an athlete whose other lesson overlaps, or whose lesson at that time has another length", async () => {
     const base = {
       coach_id: "coach-1",

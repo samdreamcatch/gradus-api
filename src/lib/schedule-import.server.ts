@@ -453,7 +453,8 @@ export type ImportGroupShape = {
  * eight different rows, every one of those slots is the same weekly lesson,
  * and no row carries it twice. A key that fails any test is ignored (private
  * lessons). Weekly only: the import stores other frequencies without the
- * start date or weeks a group lesson's editor requires.
+ * start date or weeks a group lesson requires, and the group editor on iPhone
+ * has no frequency or starting-date control to add them afterwards.
  */
 export function importGroupShapes(
   groups: Array<{ key: string; slots: ImportSlot[] }>,
@@ -510,11 +511,14 @@ type LinkRow = {
  * (decision #68, GL5). Run once the import's rows have landed, so a group is
  * never made of athletes who were skipped or failed, and so importing again
  * joins the ones a first attempt left out: the members are whoever has that
- * exact weekly lesson now, not yet in a group.
+ * exact weekly lesson now, not yet in a group. When two or more of the set
+ * are already one group at that time (a first attempt linked them), the rest
+ * join that group, at its price, if all of them fit within eight.
  *
  * An athlete with another lesson overlapping this one stays out (the same
- * rule `createLessonGroup` enforces). Fewer than two left, or more than
- * eight: nothing is linked and the lessons stay private. Never throws: a
+ * rule `createLessonGroup` enforces). With no group to join, fewer than two
+ * left or more than eight: nothing is linked and the lessons stay private.
+ * Never throws: a
  * failure here leaves private lessons, which is what the import made before.
  */
 async function linkImportedGroup(
@@ -555,6 +559,56 @@ async function linkImportedGroup(
     if (!lesson) continue;
     if (mine.some((r) => r.id !== lesson.id && slotsCoincide(r, lesson))) continue;
     members.push(lesson);
+  }
+  // A group at exactly this lesson that already holds two or more of this
+  // set is the one a first attempt made: the rest join it. One athlete in
+  // some other group, two such groups, or no room left is not that case, and
+  // the ungrouped ones are linked among themselves as before.
+  const grouped = new Map<string, number>();
+  for (const r of rows) {
+    if (
+      r.group_id != null &&
+      r.start_minute === shape.startMinute &&
+      r.end_minute === shape.endMinute &&
+      (r.frequency ?? "weekly") === "weekly"
+    )
+      grouped.set(r.group_id, (grouped.get(r.group_id) ?? 0) + 1);
+  }
+  const firstAttempts = [...grouped].filter(([, n]) => n >= 2).map(([id]) => id);
+  if (firstAttempts.length === 1 && members.length > 0) {
+    const groupId = firstAttempts[0];
+    const group = (await admin
+      .from("athlete_lesson_slots")
+      .select("id, price_cents")
+      .eq("coach_id", coachId)
+      .eq("group_id", groupId)) as unknown as {
+      data: Array<{ id: string; price_cents: number | null }> | null;
+      error: { code?: string; message: string } | null;
+    };
+    if (group.error) {
+      if (!missingGroupColumn(group.error))
+        console.error("[schedule-import] group not joined", group.error);
+      return;
+    }
+    const current = group.data ?? [];
+    if (current.length >= 2 && current.length + members.length <= 8) {
+      // The group's price only when every member shares one (the rule
+      // `updateLessonGroup` reads it by); otherwise each athlete's usual rate.
+      const prices = new Set(current.map((g) => g.price_cents));
+      const price = prices.size === 1 ? current[0].price_cents : null;
+      const join = (await admin
+        .from("athlete_lesson_slots")
+        .update({ group_id: groupId, price_cents: price } as never)
+        .eq("coach_id", coachId)
+        .in(
+          "id",
+          members.map((m) => m.id),
+        )) as unknown as { error: { code?: string; message: string } | null };
+      if (join.error && !missingGroupColumn(join.error)) {
+        console.error("[schedule-import] group not joined", join.error);
+      }
+      return;
+    }
   }
   if (members.length < 2 || members.length > 8) return;
   const upd = (await admin
