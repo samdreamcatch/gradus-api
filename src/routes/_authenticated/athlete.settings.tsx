@@ -223,7 +223,17 @@ function ProfileDisclosure({
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Birthdate</Label>
-          <Input type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
+          <Input
+            type="date"
+            value={birthdate}
+            disabled={Boolean(profile.birthdate)}
+            onChange={(e) => setBirthdate(e.target.value)}
+          />
+          {profile.birthdate ? (
+            <p className="text-xs text-muted-foreground">
+              Your birthdate can't be changed. Contact support if it's wrong.
+            </p>
+          ) : null}
         </div>
       </div>
       <div className="mt-3 flex justify-end">

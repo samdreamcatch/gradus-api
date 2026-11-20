@@ -287,8 +287,10 @@ export async function linkAdultAthleteToCoach(
   if (existing.error) dbError(existing.error);
   if (existing.data) throw unprocessable("That coach is already linked to your account.");
 
-  // Insert the roster link under the athlete's own RLS branch.
-  const ins = await supabase
+  // Insert the roster link as the server: members have no INSERT on
+  // coach_athletes (a link is only made for a coach whose code was resolved
+  // above), and `athleteId` is the caller's own row, read under their RLS.
+  const ins = await admin
     .from("coach_athletes")
     .insert({ athlete_id: athleteId, coach_id: coachId });
   if (ins.error) dbError(ins.error);
