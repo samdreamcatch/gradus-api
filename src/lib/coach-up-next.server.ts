@@ -91,13 +91,18 @@ export async function getUpNext(
   const athleteIds = Array.from(new Set(upcoming.map((u) => u.athleteId)));
   const [athletesRes, plansRes, briefingsRes] = await Promise.all([
     admin.from("athletes").select("id, first_name, last_name").in("id", athleteIds),
+    // Newest first (created_at, then id, both descending): the order pending
+    // wrap-ups use, so both lists name the same plan, the most recent, as
+    // "the" active one for an athlete with several.
     admin
       .from("plans")
       .select("id, athlete_id")
       .eq("coach_id", coachId)
       .eq("kind", "plan")
       .eq("status", "active")
-      .in("athlete_id", athleteIds),
+      .in("athlete_id", athleteIds)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
     admin
       .from("pre_lesson_briefings")
       .select("athlete_id")

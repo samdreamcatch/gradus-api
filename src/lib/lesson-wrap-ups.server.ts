@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { getCoachLessonsOn } from "./coach-day-lessons.server";
+import { readAll } from "./db-batch";
 import { dbError } from "./db-error";
 
 export type WrapUpClient = SupabaseClient<Database>;
@@ -29,12 +30,27 @@ export async function getCoachIdOrNull(
   return data?.id ?? null;
 }
 
+/** One of the coach's own active plans for an athlete, as the wrap-up prompt offers it. */
+export type WrapUpPlan = { id: string; title: string };
+
 export type PendingWrapUp = {
   athleteId: string;
   athleteName: string;
   lessonDate: string; // YYYY-MM-DD
   lessonEndMinute: number;
+  /** The first of `activePlans`, or null when there are none. */
   activePlanId: string | null;
+  /**
+   * The coach's own active plans for this athlete, newest first: the same
+   * plans, in the same order, as `GET /coach/athletes/{id}/active-plans`
+   * answers with, carried here so the client asks once for the whole list.
+   * This server sets it on every row (empty when the athlete has no active
+   * plan from this coach). Optional on the wire all the same, as every field
+   * added to an existing response is: a client built from this contract must
+   * still decode a server that predates the field, and reads its absence as
+   * "ask the per-athlete route".
+   */
+  activePlans?: WrapUpPlan[];
   /**
    * Set when the lesson was a group lesson (PRD §6.16 F): pending wrap-ups that
    * share it are one prompt on the client. Absent for a private lesson.
@@ -74,32 +90,51 @@ export async function getPendingLessonWrapUps(
 
   const athleteIds = Array.from(new Set(ended.map((l) => l.athleteId)));
 
-  const [handledRes, plansRes, athletesRes] = await Promise.all([
+  const [handledRes, planRows, athletesRes] = await Promise.all([
     supabase
       .from("lesson_wrap_ups")
       .select("athlete_id")
       .eq("coach_id", coachId)
       .eq("lesson_date", data.lessonDate)
       .in("athlete_id", athleteIds),
-    supabase
-      .from("plans")
-      .select("id, athlete_id")
-      .eq("coach_id", coachId)
-      .eq("kind", "plan")
-      .eq("status", "active")
-      .in("athlete_id", athleteIds),
+    // The same filter and order as `getAthleteActivePlans`, for every athlete
+    // at once. Newest first (created_at, then id, both descending), so
+    // `activePlanId`, the first of the list, is the athlete's most recent
+    // active plan, and the list is the same on every read; "up next" orders
+    // its copy of this query the same way.
+    //
+    // Read to the end, page by page: there is no cap on active plans (#52),
+    // and a single response stops at 1,000 rows without saying so. Cut short,
+    // this list would lose whole athletes' plans (those made longest ago),
+    // and the client trusts it enough not to ask again. The order ends in the
+    // primary key, so it is total and the pages neither repeat nor skip a row.
+    readAll(
+      (from, to) =>
+        supabase
+          .from("plans")
+          .select("id, athlete_id, title", { count: "exact" })
+          .eq("coach_id", coachId)
+          .eq("kind", "plan")
+          .eq("status", "active")
+          .in("athlete_id", athleteIds)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, to),
+      dbError,
+    ),
     supabase.from("athletes").select("id, first_name, last_name").in("id", athleteIds),
   ]);
   if (handledRes.error) dbError(handledRes.error);
-  if (plansRes.error) dbError(plansRes.error);
   if (athletesRes.error) dbError(athletesRes.error);
 
   const handled = new Set((handledRes.data ?? []).map((r) => r.athlete_id as string));
-  const activePlanByAthlete = new Map<string, string>();
-  for (const p of plansRes.data ?? []) {
-    if (!activePlanByAthlete.has(p.athlete_id as string)) {
-      activePlanByAthlete.set(p.athlete_id as string, p.id as string);
-    }
+  const activePlansByAthlete = new Map<string, WrapUpPlan[]>();
+  for (const p of planRows) {
+    const athleteId = p.athlete_id as string;
+    const plans = activePlansByAthlete.get(athleteId) ?? [];
+    // The title as stored, as the per-athlete route returns it.
+    plans.push({ id: p.id as string, title: p.title as string });
+    activePlansByAthlete.set(athleteId, plans);
   }
   const athleteById = new Map<string, { first_name: string; last_name: string }>();
   for (const a of athletesRes.data ?? []) {
@@ -117,12 +152,14 @@ export async function getPendingLessonWrapUps(
     if (!a) continue;
     const existing = byAthlete.get(athleteId);
     if (!existing || endMinute > existing.lessonEndMinute) {
+      const activePlans = activePlansByAthlete.get(athleteId) ?? [];
       byAthlete.set(athleteId, {
         athleteId,
         athleteName: `${a.first_name} ${a.last_name}`.trim(),
         lessonDate: data.lessonDate,
         lessonEndMinute: endMinute,
-        activePlanId: activePlanByAthlete.get(athleteId) ?? null,
+        activePlanId: activePlans[0]?.id ?? null,
+        activePlans,
         ...(groupId ? { groupId } : {}),
       });
     }

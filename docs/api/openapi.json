@@ -7738,6 +7738,25 @@
                               "null"
                             ]
                           },
+                          "activePlans": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title"
+                              ]
+                            },
+                            "description": "The coach's own active plans for this athlete, newest first: the same plans, in the same order, as GET /coach/athletes/{id}/active-plans returns. Always present from this server version on, empty when there are none; `activePlanId` is the first one, the most recent. Absent only from an older server: read the per-athlete route then."
+                          },
                           "groupId": {
                             "type": "string"
                           }

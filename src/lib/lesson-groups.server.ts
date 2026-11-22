@@ -221,11 +221,18 @@ export async function createLessonGroup(
 ): Promise<{ id: string; slotIds: string[] }> {
   const { admin, userId } = ctx;
   const coachId = await requireCoachId(admin, userId);
-  await assertAllRostered(admin, coachId, data.athleteIds);
-  await assertNoClash(admin, coachId, data.athleteIds, scheduleColumns(data), null);
+  const schedule = scheduleColumns(data);
+  // Both checks only read, so they run together. `allSettled` waits for both
+  // (no rejection is left unhandled) and the roster answer is looked at first,
+  // so when both refuse the coach still hears about the roster, as before.
+  const [rostered, clashFree] = await Promise.allSettled([
+    assertAllRostered(admin, coachId, data.athleteIds),
+    assertNoClash(admin, coachId, data.athleteIds, schedule, null),
+  ]);
+  if (rostered.status === "rejected") throw rostered.reason;
+  if (clashFree.status === "rejected") throw clashFree.reason;
 
   const groupId = crypto.randomUUID();
-  const schedule = scheduleColumns(data);
   // One INSERT for every member: all of them land, or none.
   const res = (await admin
     .from("athlete_lesson_slots")

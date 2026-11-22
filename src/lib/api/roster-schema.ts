@@ -225,6 +225,15 @@ export const pendingWrapUpSchema = z.object({
   lessonDate: z.string(),
   lessonEndMinute: z.number().int(),
   activePlanId: z.string().nullable(),
+  // Optional, as every field added to an existing response is: a client
+  // generated from this contract must still decode a server that predates it.
+  // This server sends it on every row.
+  activePlans: z
+    .array(z.object({ id: z.string(), title: z.string() }))
+    .optional()
+    .describe(
+      "The coach's own active plans for this athlete, newest first: the same plans, in the same order, as GET /coach/athletes/{id}/active-plans returns. Always present from this server version on, empty when there are none; `activePlanId` is the first one, the most recent. Absent only from an older server: read the per-athlete route then.",
+    ),
   groupId: z.string().optional(),
 }) satisfies z.ZodType<PendingWrapUp>;
 

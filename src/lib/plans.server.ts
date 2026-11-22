@@ -734,7 +734,12 @@ export async function getAthleteActivePlans(
     .eq("kind", "plan")
     .eq("status", "active");
   if (excludePlanId) q = q.neq("id", excludePlanId);
-  const { data: rows, error } = await q;
+  // Newest first (created_at, then id, both descending): the order pending
+  // wrap-ups carry these same plans in, so a picker lists them the same way
+  // whichever read answered, and the first is the athlete's most recent plan.
+  const { data: rows, error } = await q
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
   if (error) dbError(error);
   return (rows ?? []) as { id: string; title: string }[];
 }

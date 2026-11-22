@@ -921,6 +921,67 @@ describe("review fixes (PR #287)", () => {
     expect(add?.status).toBe(422);
   });
 
+  it("create checks the roster and the clash together, and the roster refusal wins when both fail", async () => {
+    const ROSTER = "Every athlete in a group lesson must be on your roster";
+    const { db, ctx } = seeded(2); // the third athlete is not on the roster
+    db.tables.athlete_lesson_slots!.push(
+      privateSlot("private-1", 1, { day_of_week: 5, start_minute: 1050, end_minute: 1110 }),
+    );
+    // The roster read answers late, so the clash refusal is ready first.
+    const events: string[] = [];
+    const admin = {
+      from: (table: string) => {
+        const query = db.admin.from(table);
+        const answer = query.then;
+        if (table === "coach_athletes") {
+          query.then = (resolve: (v: unknown) => void) => {
+            events.push("roster asked");
+            setTimeout(() => {
+              events.push("roster answered");
+              answer(resolve);
+            }, 5);
+          };
+        } else if (table === "athlete_lesson_slots") {
+          query.then = (resolve: (v: unknown) => void) => {
+            events.push("clash asked");
+            answer(resolve);
+          };
+        }
+        return query;
+      },
+    };
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => void unhandled.push(reason);
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      const err = await caught(() =>
+        createLessonGroup(
+          { ...ctx, admin: admin as typeof ctx.admin },
+          createLessonGroupInput.parse({ athleteIds: ids(3), ...friday5pm }),
+        ),
+      );
+      await new Promise((done) => setTimeout(done, 0));
+      expect(events).toEqual(["roster asked", "clash asked", "roster answered"]);
+      expect(err?.status).toBe(422);
+      expect(err?.message).toBe(ROSTER);
+      expect(db.tables.athlete_lesson_slots).toHaveLength(1);
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+
+    // Before the migration the clash read answers 503; the roster refusal still comes first.
+    const early = seeded(2, ["group_id", "price_cents", "billable"]);
+    const before = await caught(() =>
+      createLessonGroup(
+        early.ctx,
+        createLessonGroupInput.parse({ athleteIds: ids(3), ...friday5pm }),
+      ),
+    );
+    expect(before?.status).toBe(422);
+    expect(before?.message).toBe(ROSTER);
+  });
+
   it("a change that failed part-way can be sent again", async () => {
     const { db, ctx } = seeded(3);
     seedGroup(db, 3);

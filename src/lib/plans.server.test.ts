@@ -10,6 +10,7 @@ import {
 import {
   createPlan,
   deletePlan,
+  getAthleteActivePlans,
   listCoachAthletes,
   removePlanMove,
   savePlan,
@@ -35,14 +36,20 @@ function fakeClient(
     /** The object passed to every `.update(...)`. */
     payloads?: unknown[];
     errors?: Record<string, { code: string; message: string }>;
+    /** `table.column asc|desc` for every `.order(...)`, in the order called. */
+    orders?: string[];
   } = {},
 ) {
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
     let lastWrite: string | null = null;
-    for (const m of ["select", "neq", "in", "is", "lt", "lte", "gte", "order", "limit"]) {
+    for (const m of ["select", "neq", "in", "is", "lt", "lte", "gte", "limit"]) {
       self[m] = () => self;
     }
+    self.order = (column: string, o: { ascending?: boolean } = {}) => {
+      opts.orders?.push(`${table}.${column} ${o.ascending === false ? "desc" : "asc"}`);
+      return self;
+    };
     self.eq = (column: string, value: unknown) => {
       opts.filters?.push(`${table}.${column}=${String(value)}`);
       return self;
@@ -110,6 +117,31 @@ describe("listCoachAthletes", () => {
     ]);
     expect(filters).toContain("coach_athletes.coach_id=coach-1");
     expect(filters).toContain("coach_athlete_sports.coach_id=coach-1");
+  });
+});
+
+describe("getAthleteActivePlans", () => {
+  it("lists the coach's active plans newest first, then by id descending, as pending wrap-ups carry them", async () => {
+    const filters: string[] = [];
+    const orders: string[] = [];
+    const plans = [
+      { id: "p-new", title: "Spin entries" },
+      { id: "p-old", title: "Edges and turns" },
+    ];
+    const supabase = fakeClient(
+      { coach_profiles: { id: "coach-1" } },
+      { plans },
+      { filters, orders },
+    );
+    expect(await getAthleteActivePlans({ userId: "u", supabase }, "a1")).toEqual(plans);
+    expect(filters).toEqual([
+      "coach_profiles.user_id=u",
+      "plans.coach_id=coach-1",
+      "plans.athlete_id=a1",
+      "plans.kind=plan",
+      "plans.status=active",
+    ]);
+    expect(orders).toEqual(["plans.created_at desc", "plans.id desc"]);
   });
 });
 
