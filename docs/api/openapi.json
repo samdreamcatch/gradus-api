@@ -309,6 +309,9 @@
                         "version",
                         "decidedAt"
                       ]
+                    },
+                    "invoiceCurrency": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -694,6 +697,71 @@
                     "state",
                     "version",
                     "decidedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/invoice-currency": {
+      "put": {
+        "operationId": "putMeInvoiceCurrency",
+        "summary": "Set the currency the coach invoices in",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "USD",
+                      "CAD",
+                      "AUD",
+                      "NZD",
+                      "GBP"
+                    ]
+                  }
+                },
+                "required": [
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoiceCurrency": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "invoiceCurrency"
                   ]
                 }
               }
@@ -21600,6 +21668,9 @@
                           },
                           "lineCount": {
                             "type": "number"
+                          },
+                          "currency": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -21714,6 +21785,9 @@
                           },
                           "lineCount": {
                             "type": "number"
+                          },
+                          "currency": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -21867,6 +21941,9 @@
                     },
                     "lineCount": {
                       "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -22114,6 +22191,9 @@
                     },
                     "lineCount": {
                       "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
                     },
                     "lines": {
                       "type": "array",

@@ -56,3 +56,12 @@ export function dbError(
   throw wrapped;
 }
 
+/**
+ * Postgres "undefined column" (42703), or PostgREST's schema-cache miss for
+ * one (PGRST204): a column whose migration has not been applied yet. Lovable
+ * applies migrations separately from code deploys, in either order, so a read
+ * of a new column retries without it and a write that needs it answers 503.
+ */
+export function isMissingColumn(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}

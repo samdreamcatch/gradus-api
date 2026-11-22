@@ -1,0 +1,491 @@
+{
+  "description": "Invoice money as text (decision #69). Every case names its function in input.function. formatMoney: the currency's prefix, then cents / 100 with exactly two decimals and a dot, no grouping, never locale-formatted. The prefix is the symbol for the five known codes (USD, CAD, AUD and NZD \"$\", GBP \"£\") and, for any other code, the code itself and one space; codes are compared exactly as stored, in upper case. A currency that is left out or null is USD. A negative amount puts the minus sign first, before the symbol or the code, and then reads as the positive amount does (\"-$70.00\", \"-£62.50\", \"-CHF 70.00\"); zero is never signed. formatMoneyShort: the same, except an amount that is a whole number of units has no decimals (\"$70\", \"-$70\"). buildInvoiceText: the plain text a coach shares: \"Invoice — {athleteName}\" (an em dash), the period as \"{start} – {end}\" (an en dash), an empty line, one line per invoice line as \"{date}  {formatMoney}\" (two spaces), an empty line, \"Total: {formatMoney}\" followed by a space and the code only when the currency is one of the five known codes and is not USD (an unknown code is already written before the amount, so it is not repeated: \"Total: CHF 140.00\"), then \"— {coachName}\" when there is one; lines are joined with \"\\n\". Dates are calendar dates with no time zone, written as short month and day in input.locale (\"Aug 4\" in en-US). These cases are ordinary private lessons: the apps add a note after the amount on a group lesson's line and on a billed cancellation's (decision #68), which the web's text does not have and no case here covers.",
+  "source": "src/lib/invoice-format.ts",
+  "cases": [
+    {
+      "name": "formatMoney: USD, a whole amount keeps its two decimals",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "USD"
+      },
+      "expected": "$70.00"
+    },
+    {
+      "name": "formatMoney: CAD, a whole amount keeps its two decimals",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "CAD"
+      },
+      "expected": "$70.00"
+    },
+    {
+      "name": "formatMoney: AUD, a whole amount keeps its two decimals",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "AUD"
+      },
+      "expected": "$70.00"
+    },
+    {
+      "name": "formatMoney: NZD, a whole amount keeps its two decimals",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "NZD"
+      },
+      "expected": "$70.00"
+    },
+    {
+      "name": "formatMoney: GBP, a whole amount keeps its two decimals",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "GBP"
+      },
+      "expected": "£70.00"
+    },
+    {
+      "name": "formatMoney: USD, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "USD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoney: CAD, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "CAD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoney: AUD, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "AUD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoney: NZD, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "NZD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoney: GBP, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "GBP"
+      },
+      "expected": "£62.50"
+    },
+    {
+      "name": "formatMoney: no currency is US dollars",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000
+      },
+      "expected": "$70.00"
+    },
+    {
+      "name": "formatMoney: a null currency is US dollars",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": null
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoney: an unknown code is the code and a space, never a dollar sign",
+      "input": {
+        "function": "formatMoney",
+        "cents": 7000,
+        "currency": "CHF"
+      },
+      "expected": "CHF 70.00"
+    },
+    {
+      "name": "formatMoney: an unknown code, a fractional amount",
+      "input": {
+        "function": "formatMoney",
+        "cents": 6250,
+        "currency": "CHF"
+      },
+      "expected": "CHF 62.50"
+    },
+    {
+      "name": "formatMoney: zero",
+      "input": {
+        "function": "formatMoney",
+        "cents": 0,
+        "currency": "GBP"
+      },
+      "expected": "£0.00"
+    },
+    {
+      "name": "formatMoney: under one unit",
+      "input": {
+        "function": "formatMoney",
+        "cents": 5,
+        "currency": "USD"
+      },
+      "expected": "$0.05"
+    },
+    {
+      "name": "formatMoney: thousands are not grouped",
+      "input": {
+        "function": "formatMoney",
+        "cents": 123456,
+        "currency": "GBP"
+      },
+      "expected": "£1234.56"
+    },
+    {
+      "name": "formatMoney: the largest amount the server accepts",
+      "input": {
+        "function": "formatMoney",
+        "cents": 10000000,
+        "currency": "USD"
+      },
+      "expected": "$100000.00"
+    },
+    {
+      "name": "formatMoney: negative, the minus sign comes before the symbol",
+      "input": {
+        "function": "formatMoney",
+        "cents": -7000,
+        "currency": "USD"
+      },
+      "expected": "-$70.00"
+    },
+    {
+      "name": "formatMoney: negative and fractional in pounds",
+      "input": {
+        "function": "formatMoney",
+        "cents": -6250,
+        "currency": "GBP"
+      },
+      "expected": "-£62.50"
+    },
+    {
+      "name": "formatMoney: negative under one unit",
+      "input": {
+        "function": "formatMoney",
+        "cents": -5,
+        "currency": "CAD"
+      },
+      "expected": "-$0.05"
+    },
+    {
+      "name": "formatMoney: negative with an unknown code, the minus sign before the code",
+      "input": {
+        "function": "formatMoney",
+        "cents": -7000,
+        "currency": "CHF"
+      },
+      "expected": "-CHF 70.00"
+    },
+    {
+      "name": "formatMoneyShort: USD, a whole amount has no decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "USD"
+      },
+      "expected": "$70"
+    },
+    {
+      "name": "formatMoneyShort: CAD, a whole amount has no decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "CAD"
+      },
+      "expected": "$70"
+    },
+    {
+      "name": "formatMoneyShort: AUD, a whole amount has no decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "AUD"
+      },
+      "expected": "$70"
+    },
+    {
+      "name": "formatMoneyShort: NZD, a whole amount has no decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "NZD"
+      },
+      "expected": "$70"
+    },
+    {
+      "name": "formatMoneyShort: GBP, a whole amount has no decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "GBP"
+      },
+      "expected": "£70"
+    },
+    {
+      "name": "formatMoneyShort: USD, a fractional amount keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "USD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoneyShort: CAD, a fractional amount keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "CAD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoneyShort: AUD, a fractional amount keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "AUD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoneyShort: NZD, a fractional amount keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "NZD"
+      },
+      "expected": "$62.50"
+    },
+    {
+      "name": "formatMoneyShort: GBP, a fractional amount keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "GBP"
+      },
+      "expected": "£62.50"
+    },
+    {
+      "name": "formatMoneyShort: no currency is US dollars",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000
+      },
+      "expected": "$70"
+    },
+    {
+      "name": "formatMoneyShort: an unknown code, a whole amount",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7000,
+        "currency": "CHF"
+      },
+      "expected": "CHF 70"
+    },
+    {
+      "name": "formatMoneyShort: an unknown code, a fractional amount",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 6250,
+        "currency": "CHF"
+      },
+      "expected": "CHF 62.50"
+    },
+    {
+      "name": "formatMoneyShort: zero",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 0,
+        "currency": "USD"
+      },
+      "expected": "$0"
+    },
+    {
+      "name": "formatMoneyShort: fifty cents over keeps two decimals",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": 7050,
+        "currency": "GBP"
+      },
+      "expected": "£70.50"
+    },
+    {
+      "name": "formatMoneyShort: negative and whole",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": -7000,
+        "currency": "GBP"
+      },
+      "expected": "-£70"
+    },
+    {
+      "name": "formatMoneyShort: negative and fractional",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": -6250,
+        "currency": "USD"
+      },
+      "expected": "-$62.50"
+    },
+    {
+      "name": "formatMoneyShort: negative and whole with an unknown code",
+      "input": {
+        "function": "formatMoneyShort",
+        "cents": -7000,
+        "currency": "CHF"
+      },
+      "expected": "-CHF 70"
+    },
+    {
+      "name": "buildInvoiceText: US dollars, the text as it was before invoices had a currency",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-08-03",
+        "periodEnd": "2026-08-17",
+        "lines": [
+          {
+            "occurrenceDate": "2026-08-04",
+            "amountCents": 7000
+          },
+          {
+            "occurrenceDate": "2026-08-11",
+            "amountCents": 6250
+          }
+        ],
+        "totalCents": 13250,
+        "locale": "en-US",
+        "coachName": "Thea Solberg",
+        "currency": "USD"
+      },
+      "expected": "Invoice — Maren Holloway\nAug 3 – Aug 17\n\nAug 4  $70.00\nAug 11  $62.50\n\nTotal: $132.50\n— Thea Solberg"
+    },
+    {
+      "name": "buildInvoiceText: no currency and no coach name is the same US dollar text without a signature",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-12-28",
+        "periodEnd": "2027-01-04",
+        "lines": [
+          {
+            "occurrenceDate": "2026-12-29",
+            "amountCents": 7000
+          }
+        ],
+        "totalCents": 7000,
+        "locale": "en-US"
+      },
+      "expected": "Invoice — Maren Holloway\nDec 28 – Jan 4\n\nDec 29  $70.00\n\nTotal: $70.00"
+    },
+    {
+      "name": "buildInvoiceText: Canadian dollars, the Total line names the code because the symbol is shared",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-08-03",
+        "periodEnd": "2026-08-17",
+        "lines": [
+          {
+            "occurrenceDate": "2026-08-04",
+            "amountCents": 7000
+          },
+          {
+            "occurrenceDate": "2026-08-11",
+            "amountCents": 7000
+          }
+        ],
+        "totalCents": 14000,
+        "locale": "en-US",
+        "coachName": "Thea Solberg",
+        "currency": "CAD"
+      },
+      "expected": "Invoice — Maren Holloway\nAug 3 – Aug 17\n\nAug 4  $70.00\nAug 11  $70.00\n\nTotal: $140.00 CAD\n— Thea Solberg"
+    },
+    {
+      "name": "buildInvoiceText: pounds, the symbol on every amount and the code on the Total line",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-08-03",
+        "periodEnd": "2026-08-17",
+        "lines": [
+          {
+            "occurrenceDate": "2026-08-04",
+            "amountCents": 7000
+          },
+          {
+            "occurrenceDate": "2026-08-11",
+            "amountCents": 7000
+          }
+        ],
+        "totalCents": 14000,
+        "locale": "en-US",
+        "coachName": "Thea Solberg",
+        "currency": "GBP"
+      },
+      "expected": "Invoice — Maren Holloway\nAug 3 – Aug 17\n\nAug 4  £70.00\nAug 11  £70.00\n\nTotal: £140.00 GBP\n— Thea Solberg"
+    },
+    {
+      "name": "buildInvoiceText: an unknown code before every amount, and not a second time after the total",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-08-03",
+        "periodEnd": "2026-08-17",
+        "lines": [
+          {
+            "occurrenceDate": "2026-08-04",
+            "amountCents": 7000
+          },
+          {
+            "occurrenceDate": "2026-08-11",
+            "amountCents": 7000
+          }
+        ],
+        "totalCents": 14000,
+        "locale": "en-US",
+        "currency": "CHF"
+      },
+      "expected": "Invoice — Maren Holloway\nAug 3 – Aug 17\n\nAug 4  CHF 70.00\nAug 11  CHF 70.00\n\nTotal: CHF 140.00"
+    },
+    {
+      "name": "buildInvoiceText: no lines",
+      "input": {
+        "function": "buildInvoiceText",
+        "athleteName": "Maren Holloway",
+        "periodStart": "2026-08-03",
+        "periodEnd": "2026-08-17",
+        "lines": [],
+        "totalCents": 0,
+        "locale": "en-US",
+        "currency": "NZD"
+      },
+      "expected": "Invoice — Maren Holloway\nAug 3 – Aug 17\n\n\nTotal: $0.00 NZD"
+    }
+  ]
+}

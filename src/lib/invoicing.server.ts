@@ -15,7 +15,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
-import { dbError } from "./db-error";
+import { dbError, isMissingColumn } from "./db-error";
 import { liveGroupIds } from "./lesson-group-guard.server";
 import {
   addDays,
@@ -89,6 +89,13 @@ export interface InvoiceDTO {
   status: InvoiceStatus;
   createdAt: string;
   lineCount: number;
+  /**
+   * The ISO 4217 code this invoice was created in (decision #69): the coach's
+   * invoice currency at that moment, kept by the database. Display only.
+   * Absent until migration 20261121120000 is applied; read a missing value as
+   * US dollars.
+   */
+  currency?: string;
 }
 
 export interface AthleteBillingDTO {
@@ -101,10 +108,7 @@ export interface AthleteBillingDTO {
 const MAX_WINDOW_DAYS = 400;
 
 type Rows<T> = { data: T[] | null; error: { code?: string; message: string } | null };
-
-/** Postgres "undefined column", or PostgREST's schema-cache miss for one. */
-const isMissingColumn = (error: { code?: string } | null | undefined) =>
-  error?.code === "42703" || error?.code === "PGRST204";
+type OneRow<T> = { data: T | null; error: { code?: string; message: string } | null };
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
@@ -196,7 +200,29 @@ type InvoiceRow = {
   total_cents: number;
   status: string;
   created_at: string;
+  /** Arrives with migration 20261121120000; not selected before it. */
+  currency?: string | null;
 };
+
+const INVOICE_COLUMNS = "id, athlete_id, period_start, period_end, total_cents, status, created_at";
+
+/**
+ * Runs an invoice-header select with `currency`, and again without it while
+ * the column is missing (migration 20261121120000 not applied yet), so the
+ * invoice reads, and the header `createInvoice` asks back from its insert,
+ * work on either side of the migration. `run` builds a fresh query each time
+ * it is called.
+ */
+async function withInvoiceCurrency<R extends { error: { code?: string } | null }>(
+  run: (columns: string) => PromiseLike<R>,
+): Promise<R> {
+  const res = await run(`${INVOICE_COLUMNS}, currency`);
+  return isMissingColumn(res.error) ? run(INVOICE_COLUMNS) : res;
+}
+
+/** `currency` for an invoice DTO: the row's value, or no field at all. */
+const currencyOf = (row: InvoiceRow): { currency?: string } =>
+  row.currency ? { currency: row.currency } : {};
 
 /** Line counts + athlete names for a page of invoice header rows, as `InvoiceDTO`s. */
 async function hydrateInvoiceRows(supabase: Client, rows: InvoiceRow[]): Promise<InvoiceDTO[]> {
@@ -229,6 +255,7 @@ async function hydrateInvoiceRows(supabase: Client, rows: InvoiceRow[]): Promise
     status: r.status as InvoiceStatus,
     createdAt: r.created_at,
     lineCount: lineCounts.get(r.id) ?? 0,
+    ...currencyOf(r),
   }));
 }
 
@@ -237,17 +264,18 @@ async function loadInvoices(
   coachId: string,
   athleteId?: string,
 ): Promise<InvoiceDTO[]> {
-  let query = supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (athleteId) query = query.eq("athlete_id", athleteId);
-
-  const { data, error } = await query;
+  const { data, error } = await withInvoiceCurrency((columns) => {
+    let query = supabase
+      .from("invoices")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (athleteId) query = query.eq("athlete_id", athleteId);
+    return query as unknown as PromiseLike<Rows<InvoiceRow>>;
+  });
   if (error) dbError(error);
-  return hydrateInvoiceRows(supabase, (data ?? []) as InvoiceRow[]);
+  return hydrateInvoiceRows(supabase, data ?? []);
 }
 
 export async function getCoachInvoices(ctx: InvoicingContext): Promise<InvoiceDTO[]> {
@@ -297,22 +325,23 @@ export async function getCoachInvoicesPage(
   const { coachId } = await requireCoach(supabase, userId);
   const before = input.cursor ? decodeInvoiceCursor(input.cursor) : null;
 
-  let query = supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (before) {
-    query = query.or(
-      `created_at.lt.${before.createdAt},and(created_at.eq.${before.createdAt},id.lt.${before.id})`,
-    );
-  }
-
-  const { data, error } = await query.limit(input.limit + 1);
+  const { data, error } = await withInvoiceCurrency((columns) => {
+    let query = supabase
+      .from("invoices")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (before) {
+      query = query.or(
+        `created_at.lt.${before.createdAt},and(created_at.eq.${before.createdAt},id.lt.${before.id})`,
+      );
+    }
+    return query.limit(input.limit + 1) as unknown as PromiseLike<Rows<InvoiceRow>>;
+  });
   if (error) dbError(error);
 
-  const rows = (data ?? []) as InvoiceRow[];
+  const rows = data ?? [];
   const hasMore = rows.length > input.limit;
   const page = hasMore ? rows.slice(0, input.limit) : rows;
   const oldest = page[page.length - 1];
@@ -357,12 +386,15 @@ export async function getInvoiceDetail(
   const { supabase, userId } = ctx;
   const { coachId } = await requireCoach(supabase, userId);
 
-  const { data: inv, error } = await supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("id", invoiceId)
-    .eq("coach_id", coachId)
-    .maybeSingle();
+  const { data: inv, error } = await withInvoiceCurrency(
+    (columns) =>
+      supabase
+        .from("invoices")
+        .select(columns)
+        .eq("id", invoiceId)
+        .eq("coach_id", coachId)
+        .maybeSingle() as unknown as PromiseLike<OneRow<InvoiceRow>>,
+  );
   if (error) dbError(error);
   if (!inv) throw notFound("Invoice not found");
 
@@ -400,6 +432,7 @@ export async function getInvoiceDetail(
     status: inv.status as InvoiceStatus,
     createdAt: inv.created_at,
     lineCount: (lines ?? []).length,
+    ...currencyOf(inv),
     lines: (lines ?? []).map((l) => ({
       occurrenceDate: l.occurrence_date,
       amountCents: l.amount_cents,
@@ -782,7 +815,7 @@ async function lineFacts(
 export async function createInvoice(
   ctx: InvoicingContext,
   data: z.infer<typeof createInvoiceInput>,
-): Promise<{ invoiceId: string; totalCents: number; lineCount: number }> {
+): Promise<{ invoiceId: string; totalCents: number; lineCount: number; currency?: string }> {
   const { supabase, userId } = ctx;
   const { coachId } = await requireCoach(supabase, userId);
   await assertRostered(supabase, coachId, data.athleteId);
@@ -814,18 +847,29 @@ export async function createInvoice(
 
   const totalCents = fresh.reduce((sum, l) => sum + l.amountCents, 0);
 
-  const { data: invoice, error } = await supabase
-    .from("invoices")
-    .insert({
-      coach_id: coachId,
-      athlete_id: data.athleteId,
-      period_start: data.periodStart,
-      period_end: data.periodEnd,
-      total_cents: totalCents,
-      status: "unpaid",
-    })
-    .select("id")
-    .single();
+  // The header is asked back with the currency the database stamped on it, so
+  // the caller labels the invoice it just made from the invoice itself, not
+  // from its own copy of the coach's setting (which can be minutes old). While
+  // the column is missing the statement fails as a whole and inserts nothing,
+  // so running it again without the column cannot make a second invoice.
+  const { data: invoice, error } = await withInvoiceCurrency(
+    (columns) =>
+      supabase
+        .from("invoices")
+        .insert({
+          coach_id: coachId,
+          athlete_id: data.athleteId,
+          period_start: data.periodStart,
+          period_end: data.periodEnd,
+          total_cents: totalCents,
+          status: "unpaid",
+          // `currency` is never named here: the invoices_set_currency trigger
+          // (migration 20261121120000) sets it from the coach's invoice
+          // currency, and before that migration the column does not exist.
+        })
+        .select(columns)
+        .single() as unknown as PromiseLike<OneRow<InvoiceRow>>,
+  );
   // The insert is scoped to the caller's own coach_id, so the roster clause of
   // "Coaches manage own invoices" is the only one that can fail with 42501 (an
   // athlete removed from the roster since the check above).
@@ -873,7 +917,12 @@ export async function createInvoice(
     dbError(lErr);
   }
 
-  return { invoiceId: invoice!.id, totalCents, lineCount: fresh.length };
+  return {
+    invoiceId: invoice!.id,
+    totalCents,
+    lineCount: fresh.length,
+    ...currencyOf(invoice!),
+  };
 }
 
 /** `PATCH /api/v1/coach/invoices/{id}/status` body (the invoice id is in the path). */

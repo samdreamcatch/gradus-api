@@ -37,6 +37,7 @@ import {
 import { adoptStarterPlan } from "@/lib/starter-programs.functions";
 import { setPracticeTarget, clearPracticeTarget } from "@/lib/practice-targets.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
+import { invoiceCurrencyQueryOptions } from "@/hooks/use-invoice-currency";
 import {
   buildSampleAiSummary,
   buildSampleAthleteDetail,
@@ -69,7 +70,7 @@ export function AthleteDetailSheet({
   );
 }
 
-function AthleteDetailBody({ athleteId }: { athleteId: string }) {
+export function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
   const fetchBilling = useServerFn(getAthleteBilling);
@@ -103,6 +104,9 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     queryFn: () => fetchBilling({ data: { athleteId } }),
     enabled: !isSample,
   });
+  // The same for the coach's invoice currency, which the section also waits
+  // for (the same options object as its hook, so one request).
+  useQuery(invoiceCurrencyQueryOptions);
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {

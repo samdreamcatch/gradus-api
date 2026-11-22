@@ -20,8 +20,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet";
 import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
-import { deleteInvoice, getAthleteBilling, setInvoiceStatus } from "@/lib/invoicing.functions";
+import {
+  deleteInvoice,
+  getAthleteBilling,
+  setInvoiceStatus,
+  type AthleteBillingDTO,
+} from "@/lib/invoicing.functions";
 import { formatDateRange, formatMoney, formatMoneyShort } from "@/lib/invoice-format";
+import { displayCurrency } from "@/lib/invoice-currency";
+import { useCoachInvoiceCurrency } from "@/hooks/use-invoice-currency";
 import { SAMPLE_ATHLETE_NAME, SAMPLE_RATE, isSampleAthlete } from "@/data/sample-athlete";
 import {
   deleteSampleInvoice,
@@ -45,6 +52,9 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
 
   const isSample = isSampleAthlete(athleteId);
   const sampleInvoices = useSampleInvoices();
+  // The rate has no currency of its own, so it waits for the coach's rather
+  // than showing a dollar sign first.
+  const coachCurrency = useCoachInvoiceCurrency();
 
   const billing = useQuery({
     queryKey: ["coach", "billing", athleteId],
@@ -68,7 +78,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!isSample && billing.isLoading) {
+  if ((!isSample && billing.isLoading) || coachCurrency.isLoading) {
     return (
       <div className="flex items-center gap-2 py-3 text-sm text-text-tertiary">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -76,7 +86,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
       </div>
     );
   }
-  const b = isSample
+  const b: AthleteBillingDTO | undefined = isSample
     ? {
         athleteId,
         athleteName: SAMPLE_ATHLETE_NAME,
@@ -113,7 +123,7 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
       />
       <p className="text-sm text-text-secondary">
         {b.rate
-          ? `${formatMoneyShort(b.rate.rateCents)} ${b.rate.rateKind === "hourly" ? "per hour" : "per session"}`
+          ? `${formatMoneyShort(b.rate.rateCents, coachCurrency.currency)} ${b.rate.rateKind === "hourly" ? "per hour" : "per session"}`
           : "No rate set yet"}
       </p>
 
@@ -127,7 +137,10 @@ export function AthleteBillingSection({ athleteId }: { athleteId: string }) {
                 onClick={() => setOpenInvoice(inv.id)}
               >
                 <div className="text-sm font-bold text-text-primary">
-                  {formatMoney(inv.totalCents)}{" "}
+                  {formatMoney(
+                    inv.totalCents,
+                    displayCurrency(inv.currency, coachCurrency.currency),
+                  )}{" "}
                   <span className="font-normal text-text-tertiary">
                     · {inv.lineCount} session{inv.lineCount === 1 ? "" : "s"}
                   </span>

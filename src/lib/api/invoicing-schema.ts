@@ -69,6 +69,10 @@ export const invoiceSchema = z.object({
   status: invoiceStatusSchema,
   createdAt: z.string(),
   lineCount: z.number(),
+  // Decision #69: the ISO 4217 code the invoice was created in. Optional so an
+  // older build decodes the invoice unchanged, and absent until the migration
+  // is applied; a string, not an enum, so a currency added later still decodes.
+  currency: z.string().optional(),
 }) satisfies z.ZodType<InvoiceDTO>;
 
 export const invoiceDetailSchema = invoiceSchema.extend({
@@ -92,4 +96,8 @@ export const createInvoiceResultSchema = z.object({
   invoiceId: z.string(),
   totalCents: z.number(),
   lineCount: z.number(),
+  // Decision #69: the code the database stamped on the new invoice, so the
+  // caller labels it from the invoice and not from its own copy of the coach's
+  // setting. Optional and a string for the reasons given on `invoiceSchema`.
+  currency: z.string().optional(),
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { defineApiRoute } from "@/lib/api/define-route";
+import { defineApiRoute, type DefineApiRouteOptions } from "@/lib/api/define-route";
 import { requireContext } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/errors";
 import { deleteMyAccountRoute } from "@/lib/api/account-routes";
@@ -18,6 +18,7 @@ import {
 import { callerSports } from "@/lib/caller-sports.server";
 import { isMinorOrUnconfirmed } from "@/lib/athlete-age";
 import { getAiConsent } from "@/lib/ai-consent.server";
+import { getInvoiceCurrency } from "@/lib/invoice-currency.server";
 
 const outputSchema = z.object({
   userId: z.string(),
@@ -63,7 +64,20 @@ const outputSchema = z.object({
       decidedAt: z.string().nullable(),
     })
     .optional(),
+  /**
+   * Coach only (decision #69): the currency the coach invoices in, an ISO
+   * 4217 code (`PUT /me/invoice-currency` sets it). Display only: nothing is
+   * converted. Absent for other roles, and for a coach whenever the server
+   * could not read it (the column's migration is not applied, or this one read
+   * failed): absent means unknown, so the app keeps what it last knew, and
+   * reads US dollars and hides the setting only while it has never been given
+   * one. A string, not an enum, so a currency added later still decodes in a
+   * build that predates it.
+   */
+  invoiceCurrency: z.string().optional(),
 });
+
+type MeOutput = z.infer<typeof outputSchema>;
 
 /**
  * Minimal `GET /me` (PRD Appendix A): role, onboarding state, and terms
@@ -82,109 +96,124 @@ const outputSchema = z.object({
  * `src/lib/api/account-routes.ts`: the client must send the JSON body
  * (`confirmPhrase`, `minorChoices`) with the DELETE request — `defineApiRoute`
  * parses a body for any method once `input` is set.
+ *
+ * The options are a function (as `passwordRouteOptions` is) so
+ * src/lib/api/me-routes.test.ts can run the handler through
+ * `createApiRouteHandler` with a fake admin.
  */
+export function getMeRouteOptions(): DefineApiRouteOptions<undefined, MeOutput> {
+  return {
+    method: "GET",
+    path: "/api/v1/me",
+    operationId: "getMe",
+    auth: "user",
+    summary: "Session summary for the caller: role, onboarding state, terms status",
+    output: outputSchema,
+    handler: async ({ ctx }) => {
+      const { admin, userId } = requireContext(ctx);
+      // Six requests, and no more: a Worker holds six open at once and queues
+      // the rest, so a seventh here would wait behind one of these.
+      const [coach, parent, athlete, orgAdmin, terms, aiConsent] = await Promise.all([
+        admin.from("coach_profiles").select("id, onboarded_at").eq("user_id", userId).maybeSingle(),
+        admin
+          .from("parent_profiles")
+          .select(PARENT_VERIFICATION_COLUMNS)
+          .eq("user_id", userId)
+          .maybeSingle(),
+        // No .limit(1): the row's account_state is read, so a duplicate
+        // user_id must surface (PGRST116) instead of an arbitrary row.
+        admin
+          .from("athletes")
+          .select("id, account_state, birthdate")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        admin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
+        admin
+          .from("terms_acceptances")
+          .select("terms_version, accepted_at")
+          .eq("user_id", userId)
+          .eq("terms_version", CURRENT_TERMS_VERSION)
+          .maybeSingle(),
+        // Never fails `/me`: the AI routes check permission on their own.
+        getAiConsent(admin, userId).catch((err) => {
+          console.error("[api] me ai-consent", err);
+          return undefined;
+        }),
+      ]);
+      const failed = [coach, parent, athlete, orgAdmin, terms].find((r) => r.error);
+      if (failed?.error) {
+        console.error("[api] me", failed.error);
+        throw new ApiError({
+          code: "internal",
+          status: 500,
+          message: "Something went wrong. Please try again.",
+        });
+      }
+
+      let role: "coach" | "parent" | "athlete" | "org_admin" | null = null;
+      let onboardingComplete: boolean | null = null;
+      if (coach.data?.onboarded_at) {
+        role = "coach";
+        onboardingComplete = true;
+      } else if (parent.data) role = "parent";
+      else if (athlete.data) role = "athlete";
+      else if (coach.data) {
+        role = "coach";
+        onboardingComplete = false;
+      } else if (orgAdmin.data) role = "org_admin";
+
+      const [sports, invoiceCurrency] = await Promise.all([
+        callerSports(
+          admin,
+          role === "coach" && coach.data
+            ? { role: "coach", coachId: coach.data.id as string }
+            : role === "parent" && parent.data
+              ? { role: "parent", parentId: (parent.data as { id: string }).id }
+              : role === "athlete" && athlete.data
+                ? { role: "athlete", athleteId: athlete.data.id as string }
+                : { role: "none" },
+        ),
+        // Coach only, beside the coach's sports read, so it adds no round trip
+        // and no request for anyone else. Its own query, and `undefined`
+        // whenever it can't be read (the column may not exist yet): it never
+        // fails `/me`. By role, so an account whose role resolved to something
+        // else (a parent with a leftover coach row) gets none.
+        role === "coach" ? getInvoiceCurrency(admin, userId) : undefined,
+      ]);
+
+      const parentRow = parent.data as ParentVerificationRow | null;
+      const athleteRow = athlete.data as {
+        account_state?: string | null;
+        birthdate?: string | null;
+      } | null;
+
+      return {
+        userId,
+        role,
+        onboardingComplete,
+        terms: {
+          accepted: !!terms.data,
+          version: CURRENT_TERMS_VERSION,
+          acceptedAt: terms.data?.accepted_at ?? null,
+        },
+        parentVerification: parentRow ? toParentVerificationDTO(parentRow) : null,
+        athleteAccountState: athleteRow
+          ? ((athleteRow.account_state as AthleteAccountState | null | undefined) ?? "active")
+          : null,
+        athleteVoiceToPlan:
+          role === "athlete" && athleteRow ? !isMinorOrUnconfirmed(athleteRow.birthdate) : null,
+        sports,
+        aiConsent,
+        invoiceCurrency,
+      };
+    },
+  };
+}
+
 export const Route = createFileRoute("/api/v1/me/")({
   server: {
     handlers: {
-      ...defineApiRoute({
-        method: "GET",
-        path: "/api/v1/me",
-        operationId: "getMe",
-        auth: "user",
-        summary: "Session summary for the caller: role, onboarding state, terms status",
-        output: outputSchema,
-        handler: async ({ ctx }) => {
-          const { admin, userId } = requireContext(ctx);
-          const [coach, parent, athlete, orgAdmin, terms, aiConsent] = await Promise.all([
-            admin
-              .from("coach_profiles")
-              .select("id, onboarded_at")
-              .eq("user_id", userId)
-              .maybeSingle(),
-            admin
-              .from("parent_profiles")
-              .select(PARENT_VERIFICATION_COLUMNS)
-              .eq("user_id", userId)
-              .maybeSingle(),
-            // No .limit(1): the row's account_state is read, so a duplicate
-            // user_id must surface (PGRST116) instead of an arbitrary row.
-            admin
-              .from("athletes")
-              .select("id, account_state, birthdate")
-              .eq("user_id", userId)
-              .maybeSingle(),
-            admin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
-            admin
-              .from("terms_acceptances")
-              .select("terms_version, accepted_at")
-              .eq("user_id", userId)
-              .eq("terms_version", CURRENT_TERMS_VERSION)
-              .maybeSingle(),
-            // Never fails `/me`: the AI routes check permission on their own.
-            getAiConsent(admin, userId).catch((err) => {
-              console.error("[api] me ai-consent", err);
-              return undefined;
-            }),
-          ]);
-          const failed = [coach, parent, athlete, orgAdmin, terms].find((r) => r.error);
-          if (failed?.error) {
-            console.error("[api] me", failed.error);
-            throw new ApiError({
-              code: "internal",
-              status: 500,
-              message: "Something went wrong. Please try again.",
-            });
-          }
-
-          let role: "coach" | "parent" | "athlete" | "org_admin" | null = null;
-          let onboardingComplete: boolean | null = null;
-          if (coach.data?.onboarded_at) {
-            role = "coach";
-            onboardingComplete = true;
-          } else if (parent.data) role = "parent";
-          else if (athlete.data) role = "athlete";
-          else if (coach.data) {
-            role = "coach";
-            onboardingComplete = false;
-          } else if (orgAdmin.data) role = "org_admin";
-
-          const sports = await callerSports(
-            admin,
-            role === "coach" && coach.data
-              ? { role: "coach", coachId: coach.data.id as string }
-              : role === "parent" && parent.data
-                ? { role: "parent", parentId: (parent.data as { id: string }).id }
-                : role === "athlete" && athlete.data
-                  ? { role: "athlete", athleteId: athlete.data.id as string }
-                  : { role: "none" },
-          );
-
-          const parentRow = parent.data as ParentVerificationRow | null;
-          const athleteRow = athlete.data as {
-            account_state?: string | null;
-            birthdate?: string | null;
-          } | null;
-
-          return {
-            userId,
-            role,
-            onboardingComplete,
-            terms: {
-              accepted: !!terms.data,
-              version: CURRENT_TERMS_VERSION,
-              acceptedAt: terms.data?.accepted_at ?? null,
-            },
-            parentVerification: parentRow ? toParentVerificationDTO(parentRow) : null,
-            athleteAccountState: athleteRow
-              ? ((athleteRow.account_state as AthleteAccountState | null | undefined) ?? "active")
-              : null,
-            athleteVoiceToPlan:
-              role === "athlete" && athleteRow ? !isMinorOrUnconfirmed(athleteRow.birthdate) : null,
-            sports,
-            aiConsent,
-          };
-        },
-      }),
+      ...defineApiRoute(getMeRouteOptions()),
       ...defineApiRoute(deleteMyAccountRoute()),
     },
   },

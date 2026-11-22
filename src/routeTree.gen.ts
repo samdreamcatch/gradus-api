@@ -178,6 +178,7 @@ import { Route as ApiV1MeIndexRouteImport } from './routes/api/v1/me/index'
 import { Route as ApiV1MeAiConsentRouteImport } from './routes/api/v1/me/ai-consent'
 import { Route as ApiV1MeAppTransactionRouteImport } from './routes/api/v1/me/app-transaction'
 import { Route as ApiV1MeDeletionImpactRouteImport } from './routes/api/v1/me/deletion-impact'
+import { Route as ApiV1MeInvoiceCurrencyRouteImport } from './routes/api/v1/me/invoice-currency'
 import { Route as ApiV1MePresenceRouteImport } from './routes/api/v1/me/presence'
 import { Route as ApiV1MePromoCodeRouteImport } from './routes/api/v1/me/promo-code'
 import { Route as ApiV1MeTermsRouteImport } from './routes/api/v1/me/terms'
@@ -1310,6 +1311,11 @@ const ApiV1MeAppTransactionRoute = ApiV1MeAppTransactionRouteImport.update({
 const ApiV1MeDeletionImpactRoute = ApiV1MeDeletionImpactRouteImport.update({
   id: '/api/v1/me/deletion-impact',
   path: '/api/v1/me/deletion-impact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MeInvoiceCurrencyRoute = ApiV1MeInvoiceCurrencyRouteImport.update({
+  id: '/api/v1/me/invoice-currency',
+  path: '/api/v1/me/invoice-currency',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MePresenceRoute = ApiV1MePresenceRouteImport.update({
@@ -2572,6 +2578,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
+  '/api/v1/me/invoice-currency': typeof ApiV1MeInvoiceCurrencyRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
@@ -2934,6 +2941,7 @@ export interface FileRoutesByTo {
   '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
+  '/api/v1/me/invoice-currency': typeof ApiV1MeInvoiceCurrencyRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
@@ -3304,6 +3312,7 @@ export interface FileRoutesById {
   '/api/v1/me/ai-consent': typeof ApiV1MeAiConsentRoute
   '/api/v1/me/app-transaction': typeof ApiV1MeAppTransactionRoute
   '/api/v1/me/deletion-impact': typeof ApiV1MeDeletionImpactRoute
+  '/api/v1/me/invoice-currency': typeof ApiV1MeInvoiceCurrencyRoute
   '/api/v1/me/presence': typeof ApiV1MePresenceRoute
   '/api/v1/me/promo-code': typeof ApiV1MePromoCodeRoute
   '/api/v1/me/terms': typeof ApiV1MeTermsRoute
@@ -3674,6 +3683,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
+    | '/api/v1/me/invoice-currency'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
@@ -4036,6 +4046,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
+    | '/api/v1/me/invoice-currency'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
@@ -4405,6 +4416,7 @@ export interface FileRouteTypes {
     | '/api/v1/me/ai-consent'
     | '/api/v1/me/app-transaction'
     | '/api/v1/me/deletion-impact'
+    | '/api/v1/me/invoice-currency'
     | '/api/v1/me/presence'
     | '/api/v1/me/promo-code'
     | '/api/v1/me/terms'
@@ -4695,6 +4707,7 @@ export interface RootRouteChildren {
   ApiV1MeAiConsentRoute: typeof ApiV1MeAiConsentRoute
   ApiV1MeAppTransactionRoute: typeof ApiV1MeAppTransactionRoute
   ApiV1MeDeletionImpactRoute: typeof ApiV1MeDeletionImpactRoute
+  ApiV1MeInvoiceCurrencyRoute: typeof ApiV1MeInvoiceCurrencyRoute
   ApiV1MePresenceRoute: typeof ApiV1MePresenceRoute
   ApiV1MePromoCodeRoute: typeof ApiV1MePromoCodeRoute
   ApiV1MeTermsRoute: typeof ApiV1MeTermsRoute
@@ -6080,6 +6093,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/me/deletion-impact'
       fullPath: '/api/v1/me/deletion-impact'
       preLoaderRoute: typeof ApiV1MeDeletionImpactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me/invoice-currency': {
+      id: '/api/v1/me/invoice-currency'
+      path: '/api/v1/me/invoice-currency'
+      fullPath: '/api/v1/me/invoice-currency'
+      preLoaderRoute: typeof ApiV1MeInvoiceCurrencyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me/presence': {
@@ -7845,6 +7865,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1MeAiConsentRoute: ApiV1MeAiConsentRoute,
   ApiV1MeAppTransactionRoute: ApiV1MeAppTransactionRoute,
   ApiV1MeDeletionImpactRoute: ApiV1MeDeletionImpactRoute,
+  ApiV1MeInvoiceCurrencyRoute: ApiV1MeInvoiceCurrencyRoute,
   ApiV1MePresenceRoute: ApiV1MePresenceRoute,
   ApiV1MePromoCodeRoute: ApiV1MePromoCodeRoute,
   ApiV1MeTermsRoute: ApiV1MeTermsRoute,
