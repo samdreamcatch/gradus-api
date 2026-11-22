@@ -1759,6 +1759,7 @@ export type Database = {
           founding_pro_trial_used: boolean
           free_access_until: string | null
           id: string
+          invoice_currency: string
           is_org_admin: boolean
           is_test: boolean
           last_name: string
@@ -1786,6 +1787,7 @@ export type Database = {
           founding_pro_trial_used?: boolean
           free_access_until?: string | null
           id?: string
+          invoice_currency?: string
           is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
@@ -1813,6 +1815,7 @@ export type Database = {
           founding_pro_trial_used?: boolean
           free_access_until?: string | null
           id?: string
+          invoice_currency?: string
           is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
@@ -2791,6 +2794,7 @@ export type Database = {
           athlete_id: string
           coach_id: string
           created_at: string
+          currency: string
           id: string
           paid_at: string | null
           period_end: string
@@ -2803,6 +2807,7 @@ export type Database = {
           athlete_id: string
           coach_id: string
           created_at?: string
+          currency?: string
           id?: string
           paid_at?: string | null
           period_end: string
@@ -2815,6 +2820,7 @@ export type Database = {
           athlete_id?: string
           coach_id?: string
           created_at?: string
+          currency?: string
           id?: string
           paid_at?: string | null
           period_end?: string
