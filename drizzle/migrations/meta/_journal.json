@@ -365,6 +365,13 @@
       "when": 1795369889344,
       "tag": "0051_invoice_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795370231417,
+      "tag": "0052_security_recheck_lookups_and_test_flag",
+      "breakpoints": true
     }
   ]
 }
