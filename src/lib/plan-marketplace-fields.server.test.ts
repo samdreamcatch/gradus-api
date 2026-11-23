@@ -134,6 +134,7 @@ describe("plan marketplace fields", () => {
         price: "24.50",
         media: null,
         product_type: "plan",
+        sport: "figure_skating",
         selected_level: "basic_skills",
         selected_level_to: "pre_juvenile",
         description: "Edges first.",
@@ -146,6 +147,7 @@ describe("plan marketplace fields", () => {
       price: 24.5,
       media: null,
       productType: "plan",
+      sport: "figure_skating",
       selectedLevel: "basic_skills",
       selectedLevelTo: "pre_juvenile",
       description: "Edges first.",
@@ -162,6 +164,7 @@ describe("marketplaceFieldsForCopy", () => {
     price: 30,
     media: imageUrl(),
     productType: "program" as const,
+    sport: "figure_skating",
     selectedLevel: "basic_skills",
     selectedLevelTo: "pre_juvenile",
     description: "Edges first.",
@@ -175,6 +178,7 @@ describe("marketplaceFieldsForCopy", () => {
       price: 30,
       media: undefined,
       productType: "program",
+      sport: "figure_skating",
       selectedLevel: "basic_skills",
       selectedLevelTo: "pre_juvenile",
       description: "Edges first.",
@@ -199,6 +203,11 @@ describe("marketplaceFieldsForCopy", () => {
     });
   });
 
+  it("keeps the source's sport unless the request sends one", () => {
+    expect(marketplaceFieldsForCopy(source, {}).sport).toBe("figure_skating");
+    expect(marketplaceFieldsForCopy(source, { sport: "dance" }).sport).toBe("dance");
+  });
+
   it("lets what the request sent win, a cleared description included", () => {
     expect(
       marketplaceFieldsForCopy(source, { price: 0, productType: "plan", description: null }),
@@ -217,6 +226,7 @@ describe("default artwork on copies", () => {
       price: 0,
       media: DEFAULT_PLAN_MEDIA_URLS[0],
       productType: "plan" as const,
+      sport: null,
       selectedLevel: "Novice",
       selectedLevelTo: null,
       description: null,

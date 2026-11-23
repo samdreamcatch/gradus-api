@@ -127,6 +127,8 @@ export const planDetailSchema = z.object({
   // Product type ("plan" or "program"), level and description, in the coach's
   // view; null on plans made before them. Optional for older clients and servers.
   productType: z.enum(["plan", "program"]).nullable().optional(),
+  /** The sport the plan is for ("figure_skating"); null on plans saved without one. */
+  sport: z.string().nullable().optional(),
   selectedLevel: z.string().nullable().optional(),
   selectedLevelTo: z.string().nullable().optional(),
   description: z.string().nullable().optional(),

@@ -23,6 +23,7 @@ import {
   planPriceInput,
   planProductTypeInput,
   planSelectedLevelInput,
+  planSportInput,
   planSessionsPerWeekInput,
   planWeeksInput,
   setPlanMarketplaceFields,
@@ -482,6 +483,8 @@ export const savePlanMoveInput = z.object({
 const marketplaceDetailInputs = {
   /** "plan" or "program". */
   productType: planProductTypeInput.optional(),
+  /** The sport the plan is for (a sport key, "figure_skating"); filters the marketplace. */
+  sport: planSportInput.optional(),
   /** The level the plan is for, as the frontend sends it. */
   selectedLevel: planSelectedLevelInput.optional(),
   /** The other end of a level range; null (or absent with `selectedLevel`) is a single level. */
