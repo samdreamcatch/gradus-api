@@ -184,6 +184,7 @@ export async function getPlanForViewer(
         ? {
             price: marketplace.price,
             productType: marketplace.productType,
+            sport: marketplace.sport,
             selectedLevel: marketplace.selectedLevel,
             selectedLevelTo: marketplace.selectedLevelTo,
             description: marketplace.description,

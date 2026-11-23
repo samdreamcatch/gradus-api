@@ -45,6 +45,8 @@ export interface MarketplacePlanDTO {
    * (20261111120100_plans_product_type_level_description); null when unset.
    */
   productType: "plan" | "program" | null;
+  /** The sport the plan is for ("figure_skating"; 20261124120000_plans_sport); null when unset. */
+  sport: string | null;
   selectedLevel: string | null;
   /** The other end of a level range (20261111120400); null for a single level. */
   selectedLevelTo: string | null;
@@ -97,11 +99,13 @@ export interface MarketplacePurchaseRef {
 
 /**
  * `GET /api/v1/marketplace/plans` `[page]`:
- * `?q=&minPrice=&maxPrice=&limit=20&cursor=<opaque>`, newest first. `q`
- * matches the plan title or the coach's name; the price bounds are inclusive.
+ * `?q=&sport=&minPrice=&maxPrice=&limit=20&cursor=<opaque>`, newest first. `q`
+ * matches the plan title or the coach's name; `sport` is a sport key
+ * ("figure_skating"); the price bounds are inclusive.
  */
 export const marketplacePlansQuery = z.object({
   q: z.string().trim().max(100).optional(),
+  sport: z.string().trim().regex(/^[a-z0-9_]{1,64}$/).optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -248,6 +252,7 @@ type ListingRow = {
   kind: string;
   price: number | string;
   product_type: string | null;
+  sport: string | null;
   selected_level: string | null;
   selected_level_to: string | null;
   description: string | null;
@@ -301,7 +306,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled)",
+      "id, title, kind, price, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -309,6 +314,8 @@ export async function getMarketplacePlans(
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false });
   if (opts.coachId) query = query.eq("coach_id", opts.coachId);
+  // `sport` isn't in the generated types yet; the key is checked to [a-z0-9_] above.
+  if (input.sport) query = query.or(`sport.eq.${input.sport}`);
   if (input.minPrice !== undefined) query = query.gte("price", input.minPrice);
   if (input.maxPrice !== undefined) query = query.lte("price", input.maxPrice);
 
@@ -394,6 +401,7 @@ export async function getMarketplacePlans(
       price: Number(row.price),
       productType:
         row.product_type === "plan" || row.product_type === "program" ? row.product_type : null,
+      sport: row.sport,
       selectedLevel: row.selected_level,
       selectedLevelTo: row.selected_level_to,
       description: row.description,

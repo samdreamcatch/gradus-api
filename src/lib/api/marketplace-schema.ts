@@ -10,6 +10,8 @@ export const marketplacePlanSchema = z.object({
   price: z.number(),
   /** "plan" or "program"; null on plans made before it existed. */
   productType: z.enum(["plan", "program"]).nullable(),
+  /** The sport the plan is for ("figure_skating"); null when unset. Filter with `?sport=`. */
+  sport: z.string().nullable(),
   /** The level the plan is for; null on older plans. */
   selectedLevel: z.string().nullable(),
   /** The other end of a level range; null for a single level. */
