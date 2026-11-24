@@ -5,7 +5,8 @@
  * (`<SUPABASE_URL>/storage/v1/object/authenticated/plan-media/<plan id>/<file>`)
  * (migration 20261111120000_plans_price_media); `productType`, `selectedLevel`
  * and `description` (20261111120100_plans_product_type_level_description); and
- * `selectedLevelTo`, the other end of a level range (20261111120400).
+ * `selectedLevelTo`, the other end of a level range (20261111120400); and `sport`,
+ * the sport the plan is for (20261124120000_plans_sport).
  *
  * A level is one key in `selectedLevel`, or a range: the first pick there and the
  * second in `selectedLevelTo`. Sending `selectedLevel` alone makes it a single
@@ -34,6 +35,11 @@ export const planProductTypeInput = z.enum(["plan", "program"]);
 /** The level the coach picked for the plan, as the frontend sends it. */
 export const planSelectedLevelInput = z.string().trim().min(1).max(160);
 export const planDescriptionInput = z.string().max(4000);
+/** The sport the plan is for: a sport key from the app's catalog ("figure_skating"); filters the marketplace. */
+export const planSportInput = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9_]{1,64}$/, "sport must be a sport key like figure_skating");
 /** How long the plan runs (the column checks match). */
 export const planWeeksInput = z.number().int().min(1).max(52);
 export const planSessionsPerWeekInput = z.number().int().min(1).max(14);
@@ -165,6 +171,7 @@ export type PlanMarketplaceFields = {
   price: number;
   media: string | null;
   productType: PlanProductType | null;
+  sport: string | null;
   selectedLevel: string | null;
   selectedLevelTo: string | null;
   description: string | null;
@@ -178,6 +185,7 @@ export type PlanMarketplaceInput = {
   price?: number;
   media?: string | null;
   productType?: PlanProductType;
+  sport?: string;
   selectedLevel?: string;
   /** The range's other end; null makes it a single level. */
   selectedLevelTo?: string | null;
@@ -196,7 +204,7 @@ export async function getPlanMarketplaceFields(
   const { data, error } = await untyped(supabase)
     .from("plans")
     .select(
-      "price, media, product_type, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count",
+      "price, media, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count",
     )
     .eq("id", planId)
     .maybeSingle();
@@ -207,6 +215,7 @@ export async function getPlanMarketplaceFields(
     price: Number(data.price),
     media: data.media ?? null,
     productType: data.product_type ?? null,
+    sport: data.sport ?? null,
     selectedLevel: data.selected_level ?? null,
     selectedLevelTo: data.selected_level_to ?? null,
     description: data.description ?? null,
@@ -230,6 +239,7 @@ export async function setPlanMarketplaceFields(
     ...(input.price !== undefined ? { price: input.price } : {}),
     ...(input.media !== undefined ? { media: input.media } : {}),
     ...(input.productType !== undefined ? { product_type: input.productType } : {}),
+    ...(input.sport !== undefined ? { sport: input.sport } : {}),
     ...(input.selectedLevel !== undefined ? { selected_level: input.selectedLevel } : {}),
     // A new level without a range end is a single level: the old end goes.
     ...(input.selectedLevelTo !== undefined
@@ -266,6 +276,7 @@ export function marketplaceFieldsForCopy(
           ? source.media
           : undefined,
     productType: sent.productType ?? source?.productType ?? undefined,
+    sport: sent.sport ?? source?.sport ?? undefined,
     selectedLevel: sent.selectedLevel ?? source?.selectedLevel ?? undefined,
     // The range travels with its first level: a level sent here brings its own end.
     selectedLevelTo:
