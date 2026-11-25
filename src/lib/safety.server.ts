@@ -5,6 +5,7 @@
  * and any coaching relationship between the two people is severed. History is
  * preserved — nothing is deleted from `messages`.
  */
+import { siteUrl } from "@/lib/site-url";
 import { z } from "zod";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
@@ -16,7 +17,7 @@ export const ALERT_RECIPIENTS = ["alyson@gradussports.com"];
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-const SITE_URL = "https://gradus.training";
+const SITE_URL = siteUrl();
 
 export type SafetyIdentity = {
   userId: string;

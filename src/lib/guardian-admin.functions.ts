@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -14,7 +15,7 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
   if (!data) throw new Error("Forbidden");
 }
 
-const SITE_URL = "https://gradus.training";
+const SITE_URL = siteUrl();
 
 export interface PendingGuardianInvite {
   athleteId: string;

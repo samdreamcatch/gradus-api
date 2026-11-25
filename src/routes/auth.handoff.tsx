@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { isWebHandoffPath } from "@/lib/web-handoff-paths";
+import { markOpenedFromApp } from "@/lib/app-return";
 
 export const Route = createFileRoute("/auth/handoff")({
   ssr: false,
@@ -30,29 +31,46 @@ function HandoffPage() {
   const started = useRef(false);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const token = params.get("token");
-    const rawNext = params.get("next");
-    const next = isWebHandoffPath(rawNext) ? rawNext : null;
-    // The token must not survive in history, whatever happens next.
-    window.history.replaceState(null, "", window.location.pathname);
-    if (!token || !next) {
-      setFailedNext(next);
-      return;
-    }
-    (async () => {
-      // verifyOtp replaces whatever session this browser had; a spent or
-      // expired link leaves that session alone.
-      const { error } = await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" });
-      if (error) {
+    // Safari reuses a tab already on /auth/handoff: a second link from the app
+    // (tapping Upgrade again) only changes the fragment, which doesn't reload
+    // the page. Treat a new token in the fragment as a fresh handoff.
+    const onHashChange = () => {
+      if (!new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token")) return;
+      started.current = false;
+      setFailedNext(undefined);
+      handoff();
+    };
+    window.addEventListener("hashchange", onHashChange);
+    handoff();
+    return () => window.removeEventListener("hashchange", onHashChange);
+
+    function handoff() {
+      if (started.current) return;
+      started.current = true;
+      const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const token = params.get("token");
+      const rawNext = params.get("next");
+      const next = isWebHandoffPath(rawNext) ? rawNext : null;
+      // The token must not survive in history, whatever happens next.
+      window.history.replaceState(null, "", window.location.pathname);
+      if (!token || !next) {
         setFailedNext(next);
         return;
       }
-      // Full load so the router and every cached query start as this account.
-      window.location.replace(next);
-    })().catch(() => setFailedNext(next));
+      (async () => {
+        // verifyOtp replaces whatever session this browser had; a spent or
+        // expired link leaves that session alone.
+        const { error } = await supabase.auth.verifyOtp({ token_hash: token, type: "magiclink" });
+        if (error) {
+          setFailedNext(next);
+          return;
+        }
+        // The paywall sends the coach back to the app once their plan changes.
+        markOpenedFromApp();
+        // Full load so the router and every cached query start as this account.
+        window.location.replace(next);
+      })().catch(() => setFailedNext(next));
+    }
   }, []);
 
   return (

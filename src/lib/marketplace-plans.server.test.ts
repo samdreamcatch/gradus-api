@@ -188,6 +188,7 @@ describe("getMarketplacePlans", () => {
           lessonCount: null,
           rating: { average: 4.5, count: 2 },
           media: null,
+          mediaVideo: null,
           createdAt: "2026-10-30T09:00:00.000Z",
           updatedAt: "2026-11-02T10:00:00.000Z",
           sampleMove: {

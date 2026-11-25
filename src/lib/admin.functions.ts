@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -2453,7 +2454,7 @@ export const adminAddClubAdmin = createServerFn({ method: "POST" })
     let userId = (found as string | null) ?? null;
     let invited = false;
     if (!userId) {
-      const site = process.env.SITE_URL ?? "https://gradus.training";
+      const site = siteUrl();
       const { data: inv, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${site}/org-admin`,
       });
