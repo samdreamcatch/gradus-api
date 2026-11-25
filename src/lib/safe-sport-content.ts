@@ -19,7 +19,7 @@ export const HOTLINES: Hotline[] = [
     name: "U.S. Center for SafeSport",
     blurb:
       "Specifically for sport. You can report something about a coach, teammate, or official — or just ask if something counts.",
-    tel: "8663676272",
+    tel: "8335877233",
     url: "https://uscenterforsafesport.org/report-a-concern/",
     hours: "Online 24/7 · Phone Mon–Fri",
   },
