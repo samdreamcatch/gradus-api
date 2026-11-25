@@ -81,13 +81,26 @@ export async function resolvePlanViewerRole(
   supabase: Client,
   userId: string,
 ): Promise<PlanViewerRole> {
+  return (await resolvePlanViewer(supabase, userId)).role;
+}
+
+/**
+ * `resolvePlanViewerRole`, with the coach profile's id when one decided the
+ * role, so the coach loader that runs next need not read the same row again.
+ * No `coachId` for the user with no profile at all: `ensureCoachId` still
+ * reads, refuses a parent and creates the profile for them, as before.
+ */
+export async function resolvePlanViewer(
+  supabase: Client,
+  userId: string,
+): Promise<{ role: PlanViewerRole; coachId?: string }> {
   const coach = await supabase
     .from("coach_profiles")
     .select("id")
     .eq("user_id", userId)
     .maybeSingle();
   if (coach.error) dbError(coach.error);
-  if (coach.data) return "coach";
+  if (coach.data) return { role: "coach", coachId: coach.data.id };
 
   const parent = await supabase
     .from("parent_profiles")
@@ -95,20 +108,20 @@ export async function resolvePlanViewerRole(
     .eq("user_id", userId)
     .maybeSingle();
   if (parent.error) dbError(parent.error);
-  if (parent.data) return "parent";
+  if (parent.data) return { role: "parent" };
 
   const athlete = await supabase.from("athletes").select("id").eq("user_id", userId).maybeSingle();
   if (athlete.error) dbError(athlete.error);
-  if (athlete.data) return "athlete";
+  if (athlete.data) return { role: "athlete" };
 
-  return "coach";
+  return { role: "coach" };
 }
 
 export async function getPlanForViewer(
   ctx: PlanDetailContext,
   id: string,
 ): Promise<RoleAwarePlanDetailDTO> {
-  const role = await resolvePlanViewerRole(ctx.supabase, ctx.userId);
+  const { role, coachId } = await resolvePlanViewer(ctx.supabase, ctx.userId);
 
   // A plan the caller wrote as an athlete (PRD §6.14): served to its author in
   // any status, as theirs. Checked first for an athlete, and for a parent who
@@ -125,7 +138,7 @@ export async function getPlanForViewer(
   if (role === "coach") {
     let plan;
     try {
-      plan = await getPlan({ userId: ctx.userId, supabase: ctx.supabase }, id);
+      plan = await getPlan({ userId: ctx.userId, supabase: ctx.supabase, coachId }, id);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         const own = await getAuthoredPlanDetail(ctx, id);
@@ -242,12 +255,14 @@ export function requireCoachViewer(role: PlanViewerRole): void {
  * For the coach-only plan and library routes: refuses parents and athletes
  * before any coach loader runs (the web's `ensureCoachId` would otherwise
  * create a coach profile for an athlete on first touch), and hands back the
- * context the shared coach modules take.
+ * context the shared coach modules take. It carries the coach's id when this
+ * check read it, so those modules do not read `coach_profiles` a second time.
  */
 export async function requirePlansCoach(ctx: {
   userId: string;
   supabase: Client;
-}): Promise<{ userId: string; supabase: Client }> {
-  requireCoachViewer(await resolvePlanViewerRole(ctx.supabase, ctx.userId));
-  return { userId: ctx.userId, supabase: ctx.supabase };
+}): Promise<{ userId: string; supabase: Client; coachId?: string }> {
+  const { role, coachId } = await resolvePlanViewer(ctx.supabase, ctx.userId);
+  requireCoachViewer(role);
+  return { userId: ctx.userId, supabase: ctx.supabase, coachId };
 }

@@ -42,7 +42,16 @@ export type FeedbackScope = "plan" | "moves";
 
 type Client = SupabaseClient<Database>;
 
-export type PlansContext = { userId: string; supabase: Client };
+export type PlansContext = {
+  userId: string;
+  supabase: Client;
+  /**
+   * The caller's `coach_profiles.id`, when the route has already read it for
+   * this `userId` (`requirePlansCoach`, `getPlanForViewer`): the functions
+   * here then skip reading it again. Never taken from a request.
+   */
+  coachId?: string;
+};
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
@@ -158,6 +167,11 @@ export async function ensureCoachId(supabase: Client, userId: string): Promise<s
   return created.data.id;
 }
 
+/** The caller's coach id: the one the route already read, else `ensureCoachId`. */
+async function coachIdOf(ctx: PlansContext): Promise<string> {
+  return ctx.coachId ?? (await ensureCoachId(ctx.supabase, ctx.userId));
+}
+
 export interface LibraryMoveSnapshotDTO {
   id: string;
   name: string;
@@ -229,7 +243,7 @@ export interface AthleteOptionDTO {
 /* ---------------- roster helpers ---------------- */
 
 export async function listCoachAthletes(ctx: PlansContext): Promise<AthleteOptionDTO[]> {
-  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   // Every coach_athlete_sports row for this coach is a rostered athlete's (the insert trigger
   // checks the link), so both reads only need the coach and can run together.
   const [rosterRes, sportsRes] = await Promise.all([
@@ -266,7 +280,7 @@ export async function listCoachAthletes(ctx: PlansContext): Promise<AthleteOptio
 }
 
 export async function listCoachSports(ctx: PlansContext): Promise<string[]> {
-  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   const { data, error } = await ctx.supabase
     .from("coach_levels")
     .select("sport")
@@ -289,7 +303,7 @@ export async function listPlans(
   data: z.infer<typeof listPlansInput>,
 ): Promise<PlanSummaryDTO[]> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   // Paged and chunked throughout (`db-batch.ts`): one plan shared with a squad
   // adds a plan row per athlete, which takes this list past the database's
@@ -496,7 +510,7 @@ function sumSessions(
 
 export async function getPlan(ctx: PlansContext, id: string): Promise<PlanDetailDTO> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   const { data: plan, error } = await plansTable(supabase)
     .select(
@@ -649,7 +663,7 @@ export async function savePlan(
   now: Date = new Date(),
 ): Promise<{ id: string }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   if (data.kind === "plan" && !data.athleteId) {
     throw unprocessable("Assign plan to an athlete or save it as a template.");
@@ -726,7 +740,7 @@ export async function getAthleteActivePlans(
   athleteId: string,
   excludePlanId?: string,
 ): Promise<{ id: string; title: string }[]> {
-  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   let q = plansTable(ctx.supabase)
     .select("id, title")
     .eq("coach_id", coachId)
@@ -852,7 +866,7 @@ export async function setPlanStatus(
   announce: typeof announcePlansActivated = announcePlansActivated,
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   if (data.status === "active") {
     const { data: owned, error: ownErr } = await plansTable(supabase)
@@ -1096,7 +1110,7 @@ export async function sharePlan(
   data: z.infer<typeof sharePlanInput>,
   announce?: ShareAnnouncers,
 ): Promise<{ id: string; shared: number }> {
-  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   return sharePlanFor(ctx.supabase, coachId, id, data, new Date(), announce);
 }
 
@@ -1107,7 +1121,7 @@ export async function updatePlanCopies(
   data: z.infer<typeof updateCopiesInput>,
   announce?: ShareAnnouncers,
 ): Promise<{ ok: true; updated: number }> {
-  const coachId = await ensureCoachId(ctx.supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   return updateCopiesFor(ctx.supabase, coachId, id, data, new Date(), announce);
 }
 
@@ -1125,7 +1139,7 @@ async function assertPlanOwned(supabase: Client, planId: string, coachId: string
 /** Only templates, drafts, and deleted (benched) plans may be removed for good; an active plan is deleted first. */
 export async function deletePlan(ctx: PlansContext, id: string): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   const plan = await assertPlanOwned(supabase, id, coachId);
   const deletable =
@@ -1164,7 +1178,7 @@ export async function createPlan(
   data: z.infer<typeof createPlanInput>,
 ): Promise<{ id: string }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   if (data.kind === "plan" && data.athleteId) {
     await assertAthleteOnRoster(supabase, coachId, data.athleteId);
   }
@@ -1247,7 +1261,7 @@ export async function addMoveToPlan(
   now: Date = new Date(),
 ): Promise<{ planId: string; planTitle: string }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   const { data: plan, error: planErr } = await plansTable(supabase)
     .select("id, title, coach_id")
@@ -1313,7 +1327,7 @@ export async function updatePlan(
   now: Date = new Date(),
 ): Promise<{ ok: true; forkedId?: string }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   await assertPlanOwned(supabase, id, coachId);
 
   // Load current row so we can keep the kind/status/athlete combination
@@ -1453,7 +1467,7 @@ export async function updatePlanMove(
   now: Date = new Date(),
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   const { data: pm, error: pmErr } = await supabase
     .from("plan_moves")
@@ -1505,7 +1519,7 @@ export async function removePlanMove(
   record: RecordCoachReason = recordCoachReason,
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
 
   const { data: pm, error: pmErr } = await supabase
     .from("plan_moves")
@@ -1560,7 +1574,7 @@ export async function reorderPlanMoves(
   orderedIds: string[],
 ): Promise<{ ok: true }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   await assertPlanOwned(supabase, planId, coachId);
 
   // Update positions one at a time (small lists; simple + safe under RLS).
@@ -1586,7 +1600,7 @@ export async function addLibraryMovesToPlan(
   now: Date = new Date(),
 ): Promise<{ inserted: number }> {
   const supabase = ctx.supabase;
-  const coachId = await ensureCoachId(supabase, ctx.userId);
+  const coachId = await coachIdOf(ctx);
   await assertPlanOwned(supabase, planId, coachId);
 
   const { data: moves, error: mErr } = await supabase

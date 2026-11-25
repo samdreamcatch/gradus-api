@@ -42,6 +42,13 @@ export interface SessionCounts {
   sessionsTotal: number;
 }
 
+/** A `plan_sessions` page's error, kept until the `plans` read beside it is checked. */
+class HeldReadError extends Error {
+  constructor(readonly error: { message?: string; code?: string }) {
+    super("plan_sessions read failed");
+  }
+}
+
 /**
  * Load real session counts for a set of plan ids. Works for both parents
  * and coaches: RLS on plan_sessions restricts what each role can read.
@@ -64,29 +71,49 @@ export async function loadSessionsByPlanIds(
   type SessionRow = { plan_id: string; athlete_id: string; state_index: number };
   const data: SessionRow[] = [];
   for (const ids of chunks(Array.from(new Set(planIds)))) {
-    const { data: plans, error: pErr } = await supabase
-      .from("plans")
-      .select("id, athlete_id")
-      .in("id", ids);
-    if (pErr) dbError(pErr);
-    for (const p of plans ?? []) planAthlete.set(p.id, p.athlete_id);
-
-    data.push(
-      ...(await readAll<SessionRow>(
+    // Neither read needs the other's answer, so they are sent together: two
+    // requests open at once, where a caller that runs this beside other reads
+    // has to count them (a Worker holds six).
+    let plansFailed = false;
+    const [plansRes, sessions] = await Promise.all([
+      (async () => {
+        const res = await supabase.from("plans").select("id, athlete_id").in("id", ids);
+        // No further pages once this has failed: its error is the answer.
+        if (res.error) plansFailed = true;
+        return res;
+      })(),
+      readAll<SessionRow>(
         (from, to) =>
-          supabase
-            .from("plan_sessions")
-            .select("plan_id, athlete_id, state_index", { count: "exact" })
-            .in("plan_id", ids)
-            .order("id", { ascending: true })
-            .range(from, to) as unknown as PromiseLike<{
-            data: SessionRow[] | null;
-            error: { message?: string; code?: string } | null;
-            count: number | null;
-          }>,
-        dbError,
-      )),
-    );
+          plansFailed
+            ? Promise.resolve({ data: [], error: null, count: 0 })
+            : (supabase
+                .from("plan_sessions")
+                .select("plan_id, athlete_id, state_index", { count: "exact" })
+                .in("plan_id", ids)
+                .order("id", { ascending: true })
+                .range(from, to) as unknown as PromiseLike<{
+                data: SessionRow[] | null;
+                error: { message?: string; code?: string } | null;
+                count: number | null;
+              }>),
+        // Held, not logged, until the plans read has been checked.
+        (error) => {
+          throw new HeldReadError(error);
+        },
+      ).then(
+        (rows) => ({ rows, failed: false as const }),
+        (error: unknown) => ({ error, failed: true as const }),
+      ),
+    ]);
+    // In the order they used to run: a failed plans read answers (and is the
+    // one logged) before a failed sessions read.
+    if (plansRes.error) dbError(plansRes.error);
+    if (sessions.failed) {
+      if (sessions.error instanceof HeldReadError) dbError(sessions.error.error);
+      throw sessions.error;
+    }
+    for (const p of plansRes.data ?? []) planAthlete.set(p.id, p.athlete_id);
+    data.push(...sessions.rows);
   }
 
   for (const row of data) {
