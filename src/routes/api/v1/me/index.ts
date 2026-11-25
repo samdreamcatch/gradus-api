@@ -79,6 +79,28 @@ const outputSchema = z.object({
 
 type MeOutput = z.infer<typeof outputSchema>;
 
+/** What a coach's or an athlete's `/me` reads once the role is known. */
+type RoleReads = { sports?: string[]; invoiceCurrency?: string };
+type Settled<T> = { ok: true; value: T } | { ok: false; error: unknown };
+
+/**
+ * The role the coach, parent and athlete rows decide, in `getMyRole`'s order:
+ * an onboarded coach, then a parent, then an athlete, then a coach who has
+ * not finished onboarding. `null` means none of them: only then does an org
+ * admin row count.
+ */
+function profileRole(
+  coach: { onboarded_at: string | null } | null,
+  parent: object | null,
+  athlete: object | null,
+): { role: "coach" | "parent" | "athlete" | null; onboardingComplete: boolean | null } {
+  if (coach?.onboarded_at) return { role: "coach", onboardingComplete: true };
+  if (parent) return { role: "parent", onboardingComplete: null };
+  if (athlete) return { role: "athlete", onboardingComplete: null };
+  if (coach) return { role: "coach", onboardingComplete: false };
+  return { role: null, onboardingComplete: null };
+}
+
 /**
  * Minimal `GET /me` (PRD Appendix A): role, onboarding state, and terms
  * status, which is what the iOS app shell needs to pick the tab bar and the
@@ -111,10 +133,16 @@ export function getMeRouteOptions(): DefineApiRouteOptions<undefined, MeOutput> 
     output: outputSchema,
     handler: async ({ ctx }) => {
       const { admin, userId } = requireContext(ctx);
-      // Six requests, and no more: a Worker holds six open at once and queues
-      // the rest, so a seventh here would wait behind one of these.
-      const [coach, parent, athlete, orgAdmin, terms, aiConsent] = await Promise.all([
-        admin.from("coach_profiles").select("id, onboarded_at").eq("user_id", userId).maybeSingle(),
+      // The three reads that decide a coach, parent or athlete role. The coach
+      // and athlete rows carry the sports PostgREST can embed, so those cost
+      // no request of their own. `athlete_goals` is not among them: its
+      // `athlete_id` has no foreign key, and embedding it answers PGRST200.
+      const profiles = Promise.all([
+        admin
+          .from("coach_profiles")
+          .select("id, onboarded_at, coach_levels(sport)")
+          .eq("user_id", userId)
+          .maybeSingle(),
         admin
           .from("parent_profiles")
           .select(PARENT_VERIFICATION_COLUMNS)
@@ -124,9 +152,63 @@ export function getMeRouteOptions(): DefineApiRouteOptions<undefined, MeOutput> 
         // user_id must surface (PGRST116) instead of an arbitrary row.
         admin
           .from("athletes")
-          .select("id, account_state, birthdate")
+          .select("id, account_state, birthdate, coach_athlete_sports(sport)")
           .eq("user_id", userId)
           .maybeSingle(),
+      ]);
+
+      // What a coach or an athlete still needs a request for (the coach's
+      // invoice currency, the athlete's goal sports). It starts when those
+      // three reads have answered, not after all six, so it overlaps the
+      // slower of the other three instead of following them. Those three
+      // have closed by then: with this one there are at most four open, and
+      // never more than six (a Worker holds six and queues the rest). Its
+      // failure is kept, not thrown, so a failed read below answers first and
+      // nothing is left unhandled when that answer does not wait for it.
+      const roleReads: Promise<Settled<RoleReads>> = profiles
+        .then(async ([coach, parent, athlete]): Promise<RoleReads> => {
+          // The 500 below answers; nothing more is read.
+          if (coach.error || parent.error || athlete.error) return {};
+          const { role } = profileRole(coach.data, parent.data, athlete.data);
+          if (role === "coach" && coach.data) {
+            const [sports, invoiceCurrency] = await Promise.all([
+              // No request: the levels came with the coach row.
+              callerSports(admin, {
+                role: "coach",
+                coachId: coach.data.id,
+                levels: coach.data.coach_levels,
+              }),
+              // Coach only, so no request for anyone else. Its own query, and
+              // `undefined` whenever it can't be read (the column may not
+              // exist yet): it never fails `/me`. By role, so an account
+              // whose role resolved to something else (a parent with a
+              // leftover coach row) gets none.
+              getInvoiceCurrency(admin, userId),
+            ]);
+            return { sports, invoiceCurrency };
+          }
+          if (role === "athlete" && athlete.data) {
+            return {
+              // One request (the goals); the coached sports came with the athlete row.
+              sports: await callerSports(admin, {
+                role: "athlete",
+                athleteId: athlete.data.id,
+                coachSports: athlete.data.coach_athlete_sports,
+              }),
+            };
+          }
+          return {};
+        })
+        .then(
+          (value) => ({ ok: true as const, value }),
+          (error: unknown) => ({ ok: false as const, error }),
+        );
+
+      // Six requests in the first wave, and no more: a Worker holds six open
+      // at once and queues the rest, so a seventh here would wait behind one
+      // of these.
+      const [[coach, parent, athlete], orgAdmin, terms, aiConsent] = await Promise.all([
+        profiles,
         admin.from("org_admins").select("id").eq("user_id", userId).limit(1).maybeSingle(),
         admin
           .from("terms_acceptances")
@@ -150,36 +232,24 @@ export function getMeRouteOptions(): DefineApiRouteOptions<undefined, MeOutput> 
         });
       }
 
-      let role: "coach" | "parent" | "athlete" | "org_admin" | null = null;
-      let onboardingComplete: boolean | null = null;
-      if (coach.data?.onboarded_at) {
-        role = "coach";
-        onboardingComplete = true;
-      } else if (parent.data) role = "parent";
-      else if (athlete.data) role = "athlete";
-      else if (coach.data) {
-        role = "coach";
-        onboardingComplete = false;
-      } else if (orgAdmin.data) role = "org_admin";
+      const fromProfiles = profileRole(coach.data, parent.data, athlete.data);
+      const role: MeOutput["role"] = fromProfiles.role ?? (orgAdmin.data ? "org_admin" : null);
+      const { onboardingComplete } = fromProfiles;
 
-      const [sports, invoiceCurrency] = await Promise.all([
-        callerSports(
-          admin,
-          role === "coach" && coach.data
-            ? { role: "coach", coachId: coach.data.id as string }
-            : role === "parent" && parent.data
-              ? { role: "parent", parentId: (parent.data as { id: string }).id }
-              : role === "athlete" && athlete.data
-                ? { role: "athlete", athleteId: athlete.data.id as string }
-                : { role: "none" },
-        ),
-        // Coach only, beside the coach's sports read, so it adds no round trip
-        // and no request for anyone else. Its own query, and `undefined`
-        // whenever it can't be read (the column may not exist yet): it never
-        // fails `/me`. By role, so an account whose role resolved to something
-        // else (a parent with a leftover coach row) gets none.
-        role === "coach" ? getInvoiceCurrency(admin, userId) : undefined,
-      ]);
+      // Awaited only now, after the checks above: a failed first-wave read
+      // answers without waiting for it, and its own failure answers only
+      // after them, as when it ran after them.
+      const roleRead = await roleReads;
+      if (!roleRead.ok) throw roleRead.error;
+      const { invoiceCurrency } = roleRead.value;
+      // A parent's sports are read here, as before: every athlete they guard.
+      const sports =
+        role === "parent" && parent.data
+          ? await callerSports(admin, {
+              role: "parent",
+              parentId: (parent.data as { id: string }).id,
+            })
+          : (roleRead.value.sports ?? []);
 
       const parentRow = parent.data as ParentVerificationRow | null;
       const athleteRow = athlete.data as {
