@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -11,7 +12,7 @@ export const TEST_EMAIL_ADDRESS = "support@gradussports.com";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-const SITE_URL = "https://gradus.training";
+const SITE_URL = siteUrl();
 
 async function assertAdmin(context: { userId: string; supabase: any }) {
   const { data, error } = await context.supabase.rpc("has_role", {

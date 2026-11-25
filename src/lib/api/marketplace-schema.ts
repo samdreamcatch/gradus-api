@@ -25,6 +25,8 @@ export const marketplacePlanSchema = z.object({
   rating: z.object({ average: z.number().nullable(), count: z.number() }),
   /** Cover to show: default artwork, or a signed link (an hour) to the coach's photo; null when none. */
   media: z.string().nullable(),
+  /** Cover video to show instead of `media` (a signed link, an hour): only when there is no coach-uploaded image. */
+  mediaVideo: z.string().nullable(),
   /** When the coach made the plan. */
   createdAt: z.string(),
   updatedAt: z.string(),

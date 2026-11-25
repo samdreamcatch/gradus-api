@@ -9,15 +9,16 @@
  * first read for the web's onboarding flow, which a parent or athlete
  * calling this route must never trigger.
  */
+import { siteUrl } from "@/lib/site-url";
 import type { CoachProfileDTO } from "./coach-profile-types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import { getCoachProfile, type CoachContext } from "./coach-onboarding.server";
 
 /** The web's plan section (billing portal): update the card, cancel. */
-export const BILLING_MANAGE_URL = "https://gradus.training/coach/settings";
+export const BILLING_MANAGE_URL = `${siteUrl()}/coach/settings`;
 /** The web paywall: choose or change a plan. */
-export const BILLING_PAYWALL_URL = "https://gradus.training/coach/paywall";
+export const BILLING_PAYWALL_URL = `${siteUrl()}/coach/paywall`;
 
 /**
  * Where "Manage your plan" in the app should land. A coach with a live

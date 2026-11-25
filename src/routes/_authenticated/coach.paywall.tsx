@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { returnToAppAfterBilling } from "@/lib/app-return";
 import { Sparkles, Building2, Check, ArrowLeft, Tag, Loader2 } from "lucide-react";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
@@ -256,6 +257,7 @@ function PaywallPage() {
     // entitlement flip, regardless of any upgrade/manage intent that
     // may have been set on the pre-checkout URL.
     if (checkoutStatus === "return") {
+      returnToAppAfterBilling();
       navigate({ to: onboardedAt ? "/coach/roster" : "/coach/onboarding", replace: true });
       return;
     }
@@ -351,6 +353,7 @@ function PaywallPage() {
           toast.success(`Switched to ${tier === "coach_pro" ? "Coach Pro" : "Coach"}.`);
         }
         await qc.invalidateQueries({ queryKey: ["coach-profile"] });
+        returnToAppAfterBilling();
         navigate({ to: "/coach/roster" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Couldn't switch plans");
@@ -843,6 +846,7 @@ function PaywallPage() {
                         if ("error" in res) throw new Error(res.error);
                         await qc.invalidateQueries({ queryKey: ["coach-profile"] });
                         toast.success("Switched to your free Founding Coach plan.");
+                        returnToAppAfterBilling();
                         navigate({ to: "/coach/roster" });
                       } catch (err) {
                         toast.error(err instanceof Error ? err.message : "Couldn't switch plans");

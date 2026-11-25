@@ -2,6 +2,7 @@
  * Server-only sender for coach visibility requests (Team plan). Best-effort:
  * logs and swallows errors so a failed send can never break the toggle itself.
  */
+import { siteUrl } from "@/lib/site-url";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { CoachVisibilityEmail, coachVisibilitySubject } from "./email-templates/coach-visibility";
@@ -11,7 +12,7 @@ import { buildAppEmailPayload } from "./email-queue-payload";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-export const SITE_URL = "https://gradus.training";
+export const SITE_URL = siteUrl();
 
 export async function sendCoachVisibilityRequest(params: {
   to: string;

@@ -24,6 +24,11 @@ import {
   type LucideIcon,
   BookOpen,
   PauseCircle,
+  Store,
+  LayoutGrid,
+  Flag,
+  BadgeDollarSign,
+  Receipt,
 } from "lucide-react";
 import {
   Sidebar,
@@ -77,6 +82,16 @@ const GROUPS: Group[] = [
   {
     label: "Revenue",
     items: [{ to: "/admin/billing", label: "Billing", icon: CreditCard }],
+  },
+  {
+    label: "Marketplace",
+    items: [
+      { to: "/admin/marketplace", label: "Overview", icon: Store, exact: true },
+      { to: "/admin/marketplace/listings", label: "Listings", icon: LayoutGrid },
+      { to: "/admin/marketplace/flags", label: "Flags", icon: Flag },
+      { to: "/admin/marketplace/sellers", label: "Sellers", icon: BadgeDollarSign },
+      { to: "/admin/marketplace/purchases", label: "Purchases", icon: Receipt },
+    ],
   },
   {
     label: "Content",

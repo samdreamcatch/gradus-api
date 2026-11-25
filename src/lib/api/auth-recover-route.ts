@@ -11,6 +11,7 @@
  * `{ ok: true }` (a recovery endpoint that says "not found" is an
  * account-enumeration oracle). The email is never logged.
  */
+import { siteUrl } from "@/lib/site-url";
 import { z } from "zod";
 import type { DefineApiRouteOptions } from "./define-route";
 import { goTrueRequest } from "./gotrue";
@@ -21,7 +22,7 @@ import { goTrueRequest } from "./gotrue";
  * new-password form. Without this, GoTrue falls back to the Site URL and the
  * link lands on the home page with a recovery session and nowhere to use it.
  */
-export const RECOVERY_REDIRECT_URL = "https://gradus.training/reset-password";
+export const RECOVERY_REDIRECT_URL = `${siteUrl()}/reset-password`;
 
 /**
  * Custom-scheme landing for the native app (`client: "app"`): the iOS shell

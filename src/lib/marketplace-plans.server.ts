@@ -17,7 +17,7 @@ import { ApiError } from "./api/errors";
 import { signedCoachPhotoUrl, signedCoachPhotoUrls } from "./coach-photo.server";
 import { coachRatingSummary } from "./coach-ratings.server";
 import { dbError } from "./db-error";
-import { listingCoverUrls } from "./plan-marketplace-fields.server";
+import { isDefaultPlanMedia, listingCover, listingCoverUrls } from "./plan-marketplace-fields.server";
 import { guardianAthleteAccess } from "./team.server";
 
 type Admin = SupabaseClient<Database>;
@@ -62,6 +62,11 @@ export interface MarketplacePlanDTO {
    * coach's uploaded photo; null when there's none.
    */
   media: string | null;
+  /**
+   * The cover video to show instead, a signed link (an hour): set only when the plan has no
+   * coach-uploaded image but has a video. Clients play it in place of `media`.
+   */
+  mediaVideo: string | null;
   /** When the coach made the plan. */
   createdAt: string;
   updatedAt: string;
@@ -262,6 +267,7 @@ type ListingRow = {
   rating_avg: number | string | null;
   rating_count: number | null;
   media: string | null;
+  media_video: string | null;
   created_at: string;
   updated_at: string;
   coach: {
@@ -306,7 +312,7 @@ export async function getMarketplacePlans(
   let query = admin
     .from("plans")
     .select(
-      "id, title, kind, price, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled)",
+      "id, title, kind, price, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count, rating_avg, rating_count, media, media_video, created_at, updated_at, coach:coach_profiles!inner(id, first_name, last_name, checklist, photo_url, subscription_tier, organization_id, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled)",
     )
     .eq("status", "active")
     .eq("coach.subscription_tier", "coach_pro")
@@ -374,11 +380,18 @@ export async function getMarketplacePlans(
     }
   }
 
-  const [covers, coachPhotos, bought] = await Promise.all([
-    listingCoverUrls(
-      admin as unknown as Parameters<typeof listingCoverUrls>[0],
-      page.map((row) => row.media),
-    ),
+  // The coach's own image, else their video, else default artwork (`listingCover`):
+  // images and videos are signed in the same call.
+  const chosen = page.map((row) => listingCover(row.media, row.media_video));
+  const imageUrls = page.map((row, i) =>
+    chosen[i]?.kind === "image" ? chosen[i]!.url : row.media && isDefaultPlanMedia(row.media) ? row.media : null,
+  );
+  const videoUrls = chosen.map((c) => (c?.kind === "video" ? c.url : null));
+  const [signedCovers, coachPhotos, bought] = await Promise.all([
+    listingCoverUrls(admin as unknown as Parameters<typeof listingCoverUrls>[0], [
+      ...imageUrls,
+      ...videoUrls,
+    ]),
     signedCoachPhotoUrls(
       admin as unknown as Parameters<typeof signedCoachPhotoUrls>[0],
       page.map((row) => ({ id: row.coach.id, photoUrl: row.coach.photo_url })),
@@ -390,6 +403,8 @@ export async function getMarketplacePlans(
       page.map((row) => row.id),
     ),
   ]);
+  const covers = signedCovers.slice(0, page.length);
+  const videos = signedCovers.slice(page.length);
 
   return {
     items: page.map((row, i) => ({
@@ -413,6 +428,7 @@ export async function getMarketplacePlans(
         count: row.rating_count ?? 0,
       },
       media: covers[i],
+      mediaVideo: videos[i],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       sampleMove: samples.get(row.id) ?? null,

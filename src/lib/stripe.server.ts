@@ -14,7 +14,27 @@ export function getConnectionApiKey(env: StripeEnv): string {
   return env === "sandbox" ? getEnv("STRIPE_SANDBOX_API_KEY") : getEnv("STRIPE_LIVE_API_KEY");
 }
 
+/**
+ * Off-Lovable sandbox (dev/localhost/Vercel): when a plain Stripe test secret
+ * key is set, talk to Stripe directly instead of through Lovable's connector
+ * gateway. Sandbox only — live always goes through the gateway, so prod
+ * (hosted on Lovable, which never sets this var) is unchanged.
+ */
+function directSandboxKey(env: StripeEnv): string | null {
+  if (env !== "sandbox") return null;
+  const key = process.env.STRIPE_SANDBOX_SECRET_KEY;
+  return key && key.startsWith("sk_test_") ? key : null;
+}
+
 export function createStripeClient(env: StripeEnv): Stripe {
+  const directKey = directSandboxKey(env);
+  if (directKey) {
+    return new Stripe(directKey, {
+      apiVersion: "2026-07-29.dahlia",
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+  }
+
   const connectionApiKey = getConnectionApiKey(env);
   const lovableApiKey = getEnv("LOVABLE_API_KEY");
 

@@ -194,7 +194,9 @@ export async function getPlanForViewer(
           }
         : {}),
       // Only the owner can load the image (the plan-media storage policies).
-      ...(marketplace && plan.isOwner ? { media: marketplace.media } : {}),
+      ...(marketplace && plan.isOwner
+        ? { media: marketplace.media, mediaVideo: marketplace.mediaVideo }
+        : {}),
     };
   }
 

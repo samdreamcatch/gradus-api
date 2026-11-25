@@ -5,6 +5,7 @@
  * coach picks a listed sport in the meantime. Shared by the web's server
  * function (sport-requests.functions.ts) and `POST /api/v1/sport-requests`.
  */
+import { siteUrl } from "@/lib/site-url";
 import { z } from "zod";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
@@ -68,7 +69,7 @@ export function sportRequestEmail(args: {
   const article = role === "admin" || role === "athlete" ? "An" : "A";
   const who = `${article} ${role}${args.email ? ` (${args.email})` : ""}`;
   const where = SOURCE_LABELS[args.source];
-  const link = "https://gradus.training/admin/leads";
+  const link = `${siteUrl()}/admin/leads`;
   return {
     to: GRADUS_SUPPORT_EMAIL,
     subject: `Sport request: ${args.sport}`,

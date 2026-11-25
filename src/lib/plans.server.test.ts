@@ -227,6 +227,41 @@ describe("setPlanStatus", () => {
     expect(payloads).toEqual([{ status: "active" }]);
   });
 
+  it("a basic coach can't publish a plan with no athlete (a marketplace listing): it stays a draft", async () => {
+    const writes: string[] = [];
+    const supabase = {
+      ...fakeClient(
+        { ...coach, plans: { id: "p1", athlete_id: null, title: "Edges", status: "draft", kind: "plan" } },
+        {},
+        { writes },
+      ),
+      rpc: async () => ({ data: "coach", error: null }),
+    };
+    const err = await caught(() => setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" }));
+    expect(err?.status).toBe(403);
+    expect(err?.code).toBe("coach_pro_required");
+    expect(writes).toEqual([]);
+  });
+
+  it("a Coach Pro coach publishes a plan with no athlete", async () => {
+    const payloads: unknown[] = [];
+    const calls: unknown[] = [];
+    const supabase = {
+      ...fakeClient(
+        { ...coach, plans: { id: "p1", athlete_id: null, title: "Edges", status: "draft", kind: "plan" } },
+        {},
+        { payloads },
+      ),
+      rpc: async (fn: string, args: unknown) => {
+        calls.push([fn, args]);
+        return { data: "coach_pro", error: null };
+      },
+    };
+    await setPlanStatus({ userId: "u", supabase }, "p1", { status: "active" });
+    expect(calls).toEqual([["coach_effective_tier", { _coach_id: "coach-1" }]]);
+    expect(payloads).toEqual([{ status: "active" }]);
+  });
+
   it("a parent account is refused before any plan is read", async () => {
     const supabase = fakeClient({ parent_profiles: { id: "parent-1" } });
     const err = await caught(() =>

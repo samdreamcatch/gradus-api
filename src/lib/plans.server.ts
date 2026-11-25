@@ -15,11 +15,13 @@ import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
 import {
   assertPlanMediaOwned,
+  assertPlanMediaVideoOwned,
   getPlanMarketplaceFields,
   marketplaceFieldsForCopy,
   planDescriptionInput,
   planLessonCountInput,
   planMediaInput,
+  planMediaVideoInput,
   planPriceInput,
   planProductTypeInput,
   planSelectedLevelInput,
@@ -510,6 +512,7 @@ export const savePlanInput = z.object({
   price: planPriceInput.optional(),
   /** The plan's image (see plan-marketplace-fields.server.ts); null removes it. */
   media: planMediaInput.nullable().optional(),
+  mediaVideo: planMediaVideoInput.nullable().optional(),
   ...marketplaceDetailInputs,
 });
 
@@ -526,6 +529,7 @@ export async function savePlan(
     throw unprocessable("Assign plan to an athlete or save it as a template.");
   }
   if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
+  if (data.mediaVideo) await assertPlanMediaVideoOwned(supabase, coachId, data.mediaVideo);
 
   const planRow = {
     coach_id: coachId,
@@ -702,6 +706,22 @@ export const recordCoachReason: RecordCoachReason = async (input) => {
  * benched, this plan, another athlete's), nothing is benched and the
  * activation still goes through.
  */
+export const COACH_PRO_REQUIRED_TO_PUBLISH =
+  "Publishing to the marketplace needs Coach Pro. Your plan is saved as a draft: upgrade to Coach Pro to publish it.";
+
+/** Refuses unless the coach's effective tier is Coach Pro (`coach_effective_tier`). */
+async function assertCoachProForPublish(supabase: PlansContext["supabase"], coachId: string) {
+  const { data: tier, error } = await supabase.rpc("coach_effective_tier", { _coach_id: coachId });
+  if (error) dbError(error);
+  if (tier !== "coach_pro") {
+    throw new ApiError({
+      code: "coach_pro_required",
+      status: 403,
+      message: COACH_PRO_REQUIRED_TO_PUBLISH,
+    });
+  }
+}
+
 export async function setPlanStatus(
   ctx: PlansContext,
   id: string,
@@ -715,12 +735,19 @@ export async function setPlanStatus(
   if (data.status === "active") {
     const { data: owned, error: ownErr } = await supabase
       .from("plans")
-      .select("id, athlete_id, title, status")
+      .select("id, athlete_id, title, status, kind")
       .eq("id", id)
       .eq("coach_id", coachId)
       .maybeSingle();
     if (ownErr) dbError(ownErr);
     if (!owned) throw notFound("Plan not found");
+
+    // A plan with no athlete goes live as a marketplace listing: Coach Pro only. A basic
+    // coach can draft one (scope: "can still draft a plan so the upgrade has a clear
+    // payoff") but not publish it. Activating a plan for a rostered athlete is unchanged.
+    if (!owned.athlete_id && (owned.kind ?? "plan") === "plan" && owned.status !== "active") {
+      await assertCoachProForPublish(supabase, coachId);
+    }
 
     // Athlete-scoped conflict logic only runs when an athlete is assigned.
     // A plan with no athlete is a public/social share and activates directly.
@@ -916,6 +943,7 @@ export const createPlanInput = z.object({
   price: planPriceInput.optional(),
   /** The plan's image (see plan-marketplace-fields.server.ts); a copy never takes its source's. */
   media: planMediaInput.nullable().optional(),
+  mediaVideo: planMediaVideoInput.nullable().optional(),
   ...marketplaceDetailInputs,
 });
 
@@ -946,6 +974,7 @@ export async function createPlan(
     await assertAthleteOnRoster(supabase, coachId, data.athleteId);
   }
   if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
+  if (data.mediaVideo) await assertPlanMediaVideoOwned(supabase, coachId, data.mediaVideo);
 
   const sourceId = data.fromPlanId ?? data.fromTemplateId;
   let marketplace: PlanMarketplaceInput = data;
@@ -1090,6 +1119,7 @@ export const updatePlanPatch = z.object({
   price: planPriceInput.optional(),
   /** The plan's image (see plan-marketplace-fields.server.ts); null removes it. */
   media: planMediaInput.nullable().optional(),
+  mediaVideo: planMediaVideoInput.nullable().optional(),
   ...marketplaceDetailInputs,
 });
 
@@ -1108,6 +1138,7 @@ export async function updatePlan(
   const coachId = await ensureCoachId(supabase, ctx.userId);
   await assertPlanOwned(supabase, id, coachId);
   if (data.media) await assertPlanMediaOwned(supabase, coachId, data.media);
+  if (data.mediaVideo) await assertPlanMediaVideoOwned(supabase, coachId, data.mediaVideo);
 
   // Load current row so we can keep the kind/status/athlete combination
   // valid per the plans_kind_athlete_chk constraint.
