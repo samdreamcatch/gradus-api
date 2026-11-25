@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { z } from "zod";
 import { createApiRouteHandler, ifNoneMatchMatches, weakETag } from "./define-route";
 import { ApiError } from "./errors";
+import { runWithRequestContext } from "@/lib/background";
 import type { ApiContext } from "./auth";
 
 /**
@@ -514,6 +515,290 @@ describe("rate limiter degraded (table unreachable)", () => {
       codes.push((await POST!({ request: makeRequest({ method: "POST" }) })).status);
     }
     expect(codes).toEqual([200, 200, 429]);
+  });
+});
+
+describe("Server-Timing", () => {
+  /** A fake admin whose every database call moves the fake clock forward. */
+  function timedAdmin(clock: { t: number }, costs: { rpc: number; table: number }) {
+    const admin = createFakeAdmin() as unknown as {
+      from: (table: string) => unknown;
+      rpc: (fn: string, params: Record<string, unknown>) => Promise<unknown>;
+    };
+    return {
+      from(table: string) {
+        clock.t += costs.table;
+        return admin.from(table);
+      },
+      async rpc(fn: string, params: Record<string, unknown>) {
+        clock.t += costs.rpc;
+        return admin.rpc(fn, params);
+      },
+    } as unknown as ApiContext["admin"];
+  }
+
+  it("reports the wait in each phase of an idempotent, rate-limited POST", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const clock = { t: 5_000 };
+    const admin = timedAdmin(clock, { rpc: 40, table: 25 });
+    const ctx: ApiContext = { userId: "user-1", supabase: {} as ApiContext["supabase"], admin };
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "user",
+        idempotent: true,
+        rateLimit: { windowSeconds: 60, max: 10 },
+        input: z.object({ name: z.string() }),
+        output: outputSchema,
+        handler: async () => {
+          clock.t += 230;
+          return { ok: true };
+        },
+      },
+      {
+        admin,
+        authenticate: async () => {
+          clock.t += 12;
+          return ctx;
+        },
+        now: () => clock.t,
+        wasCold: async () => false,
+      },
+    );
+
+    const res = await POST!({
+      request: makeRequest({
+        method: "POST",
+        headers: { authorization: "Bearer t", "idempotency-key": "timing-1" },
+        body: JSON.stringify({ name: "x" }),
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    // idem is the reserve and complete calls (40 + 40), not the handler inside them.
+    expect(res.headers.get("server-timing")).toBe(
+      "auth;dur=12, ratelimit;dur=25, body;dur=0, idem;dur=80, handler;dur=230, total;dur=347",
+    );
+  });
+
+  it("is sent on errors too, and marks a request that waited for a new server instance", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const clock = { t: 0 };
+    const { GET } = createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/test",
+        auth: "user",
+        output: outputSchema,
+        handler: async () => ({ ok: true }),
+      },
+      {
+        admin: createFakeAdmin(),
+        authenticate: async () => {
+          clock.t += 7;
+          return null;
+        },
+        now: () => clock.t,
+        wasCold: async () => true,
+      },
+    );
+
+    const res = await GET!({ request: makeRequest() });
+    expect(res.status).toBe(401);
+    expect(res.headers.get("server-timing")).toBe("auth;dur=7, total;dur=7, cold");
+  });
+
+  it("on a replay lists the reserve call and no handler; a failed handler counts its release", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const clock = { t: 0 };
+    const admin = timedAdmin(clock, { rpc: 40, table: 25 });
+    const ctx: ApiContext = { userId: "user-1", supabase: {} as ApiContext["supabase"], admin };
+    let fail = false;
+    const { POST } = createApiRouteHandler(
+      {
+        method: "POST",
+        path: "/api/v1/test",
+        auth: "user",
+        idempotent: true,
+        output: outputSchema,
+        handler: async () => {
+          clock.t += 100;
+          if (fail) throw new ApiError({ code: "conflict", status: 409, message: "No." });
+          return { ok: true };
+        },
+      },
+      { admin, authenticate: async () => ctx, now: () => clock.t, wasCold: async () => false },
+    );
+    const send = (key?: string) =>
+      POST!({
+        request: makeRequest({
+          method: "POST",
+          headers: { authorization: "Bearer t", ...(key ? { "idempotency-key": key } : {}) },
+        }),
+      });
+
+    const first = await send("replay-1");
+    expect(first.headers.get("server-timing")).toBe(
+      "auth;dur=0, body;dur=0, idem;dur=80, handler;dur=100, total;dur=180",
+    );
+    const replay = await send("replay-1");
+    expect(replay.status).toBe(200);
+    expect(replay.headers.get("server-timing")).toBe(
+      "auth;dur=0, body;dur=0, idem;dur=40, total;dur=40",
+    );
+
+    fail = true;
+    const refused = await send("fails-1");
+    expect(refused.status).toBe(409);
+    // reserve + release around a handler that took 100.
+    expect(refused.headers.get("server-timing")).toBe(
+      "auth;dur=0, body;dur=0, idem;dur=80, handler;dur=100, total;dur=180",
+    );
+
+    // No Idempotency-Key: nothing was reserved, so no idem phase is listed.
+    fail = false;
+    const unkeyed = await send();
+    expect(unkeyed.headers.get("server-timing")).toBe(
+      "auth;dur=0, body;dur=0, handler;dur=100, total;dur=100",
+    );
+  });
+
+  it("is left off public writes, which answer alike for a known and an unknown account", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const clock = { t: 0 };
+    const make = (method: "GET" | "POST") =>
+      createApiRouteHandler(
+        {
+          method,
+          path: "/api/v1/auth/recover",
+          auth: "public",
+          output: outputSchema,
+          handler: async () => {
+            clock.t += 3_500;
+            return { ok: true };
+          },
+        },
+        {
+          admin: createFakeAdmin(),
+          authenticate: async () => null,
+          now: () => clock.t,
+          wasCold: async () => true,
+        },
+      );
+
+    const lines: unknown[][] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => void lines.push(args);
+    let post: Response;
+    let get: Response;
+    try {
+      post = await make("POST").POST!({ request: makeRequest({ method: "POST" }) });
+      get = await make("GET").GET!({ request: makeRequest() });
+    } finally {
+      console.warn = original;
+    }
+
+    expect(post.status).toBe(200);
+    expect(post.headers.get("server-timing")).toBeNull();
+    expect(get.headers.get("server-timing")).toBe(
+      "auth;dur=0, handler;dur=3500, total;dur=3500, cold",
+    );
+    // The server's own log still records both.
+    expect(lines).toHaveLength(2);
+  });
+
+  it("reads the cold mark from the request scope the Worker entry sets", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { GET } = createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/test",
+        auth: "public",
+        output: outputSchema,
+        handler: async () => ({ ok: true }),
+      },
+      { admin: createFakeAdmin(), authenticate: async () => null, now: () => 0 },
+    );
+
+    const cold = await runWithRequestContext(undefined, () => GET!({ request: makeRequest() }), {
+      cold: true,
+    });
+    const warm = await runWithRequestContext(undefined, () => GET!({ request: makeRequest() }));
+    expect(cold.headers.get("server-timing")).toBe("auth;dur=0, handler;dur=0, total;dur=0, cold");
+    expect(warm.headers.get("server-timing")).toBe("auth;dur=0, handler;dur=0, total;dur=0");
+  });
+
+  it("still answers when the cold check itself fails", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const { GET } = createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/test",
+        auth: "public",
+        output: outputSchema,
+        handler: async () => ({ ok: true }),
+      },
+      {
+        admin: createFakeAdmin(),
+        authenticate: async () => null,
+        now: () => 0,
+        wasCold: async () => {
+          throw new Error("no request scope");
+        },
+      },
+    );
+
+    const res = await GET!({ request: makeRequest() });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("server-timing")).toBe("auth;dur=0, handler;dur=0, total;dur=0");
+  });
+
+  it("logs a slow request with its route template and phases, and nothing for a fast one", async () => {
+    process.env.API_V1_ENABLED = "true";
+    const clock = { t: 0 };
+    let handlerMs = 3_200;
+    const { GET } = createApiRouteHandler(
+      {
+        method: "GET",
+        path: "/api/v1/athletes/{id}",
+        auth: "public",
+        output: outputSchema,
+        handler: async () => {
+          clock.t += handlerMs;
+          return { ok: true };
+        },
+      },
+      {
+        admin: createFakeAdmin(),
+        authenticate: async () => null,
+        now: () => clock.t,
+        wasCold: async () => false,
+      },
+    );
+
+    const lines: unknown[][] = [];
+    const original = console.warn;
+    console.warn = (...args: unknown[]) => void lines.push(args);
+    try {
+      await GET!({ request: makeRequest() });
+      handlerMs = 200;
+      await GET!({ request: makeRequest() });
+    } finally {
+      console.warn = original;
+    }
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]![0]).toBe("[api] slow request");
+    expect(JSON.parse(lines[0]![1] as string)).toEqual({
+      method: "GET",
+      route: "/api/v1/athletes/{id}",
+      status: 200,
+      cold: false,
+      auth: 0,
+      handler: 3200,
+      total: 3200,
+    });
   });
 });
 

@@ -4,7 +4,8 @@
  *
  * Pipeline (in order): kill switch → rate limit → auth → JSON parse → input
  * validation → idempotency → handler → output validation → `Cache-Control:
- * no-store` → error mapping.
+ * no-store` → error mapping. Every answer carries `Server-Timing` with the
+ * time spent in each of those waits (server-timing.ts).
  *
  * Judgment call: rate limiting needs to key on the caller's user id "when
  * authenticated" (PRD §6.2), but the brief also orders rate-limit strictly
@@ -21,6 +22,8 @@ import { authenticateRequest, type ApiContext } from "./auth";
 import { hashRequestBody, withIdempotency } from "./idempotency";
 import { checkRateLimit, type RateLimitConfig } from "./rate-limit";
 import { registerApiRoute } from "./openapi";
+import { RequestTimer, SLOW_REQUEST_MS } from "./server-timing";
+import { requestWasCold } from "@/lib/background";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -91,6 +94,10 @@ export interface DefineApiRouteOptions<TInput, TOutput, TQuery = undefined> {
 export interface ApiRouteDeps {
   admin: ApiContext["admin"];
   authenticate: (request: Request) => Promise<ApiContext | null>;
+  /** Clock for `Server-Timing`; tests pass a fake one. Defaults to `Date.now`. */
+  now?: () => number;
+  /** Whether this request waited for a new Worker instance to load; tests set it. */
+  wasCold?: () => Promise<boolean>;
 }
 
 const defaultDeps: ApiRouteDeps = {
@@ -151,6 +158,7 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
     params?: Record<string, string>;
   }): Promise<Response> => {
     let response: Response;
+    const timer = new RequestTimer(deps.now);
 
     try {
       if (process.env.API_V1_ENABLED !== "true") {
@@ -160,17 +168,20 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       let ctx: ApiContext | null = null;
       let authError: ApiError | null = null;
       try {
-        ctx = await deps.authenticate(request);
+        ctx = await timer.measure("auth", () => deps.authenticate(request));
       } catch (err) {
         authError = err instanceof ApiError ? err : normalizeError(err);
       }
 
       if (options.rateLimit) {
-        const result = await checkRateLimit(deps.admin, options.rateLimit, {
-          route: options.path,
-          ip: getClientIp(request),
-          userId: ctx?.userId ?? null,
-        });
+        const rateLimit = options.rateLimit;
+        const result = await timer.measure("ratelimit", () =>
+          checkRateLimit(deps.admin, rateLimit, {
+            route: options.path,
+            ip: getClientIp(request),
+            userId: ctx?.userId ?? null,
+          }),
+        );
         if (!result.allowed) {
           throw ApiError.rateLimited(result.retryAfterSeconds);
         }
@@ -192,7 +203,7 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       // `withIdempotency` uses it to reject the same Idempotency-Key reused
       // with a different request instead of replaying the first response.
       const idempotencyBodyHash = options.idempotent
-        ? hashRequestBody(await request.clone().arrayBuffer())
+        ? hashRequestBody(await timer.measure("body", () => request.clone().arrayBuffer()))
         : "";
 
       let rawBody: unknown;
@@ -210,7 +221,7 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
         }
         let form: FormData;
         try {
-          form = await request.formData();
+          form = await timer.measure("body", () => request.formData());
         } catch {
           throw new ApiError({
             code: "validation_failed",
@@ -222,7 +233,7 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
         for (const [key, value] of form.entries()) fields[key] = value;
         rawBody = fields;
       } else if (options.input) {
-        const text = await request.text();
+        const text = await timer.measure("body", () => request.text());
         // Opt-in cap for JSON bodies (a route that sets `maxBodyBytes`
         // without `body: "multipart"`); others are unchanged.
         if (options.maxBodyBytes && new TextEncoder().encode(text).length > options.maxBodyBytes) {
@@ -260,7 +271,9 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
       }
 
       const runHandler = async (): Promise<{ status: number; body: unknown }> => {
-        const output = await options.handler({ ctx, input, query, request, params: params ?? {} });
+        const output = await timer.measure("handler", () =>
+          options.handler({ ctx, input, query, request, params: params ?? {} }),
+        );
         const parsedOutput = options.output.parse(output);
         return { status: 200, body: parsedOutput };
       };
@@ -270,13 +283,27 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
         if (!ctx) throw authError ?? ApiError.unauthenticated();
         const key = request.headers.get("idempotency-key");
         const redact = options.idempotencyStoredBody;
-        result = await withIdempotency(
-          ctx,
-          key,
-          idempotencyBodyHash,
-          runHandler,
-          redact ? (body) => redact(body as TOutput) : undefined,
-        );
+        const idempotentCtx = ctx;
+        const run = () =>
+          withIdempotency(
+            idempotentCtx,
+            key,
+            idempotencyBodyHash,
+            runHandler,
+            redact ? (body) => redact(body as TOutput) : undefined,
+          );
+        if (key) {
+          // Timed as a whole, then the handler's own share is taken back out,
+          // leaving `idem` as the reserve and complete (or release) calls.
+          const handlerBefore = timer.get("handler");
+          try {
+            result = await timer.measure("idem", run);
+          } finally {
+            timer.subtract("idem", timer.get("handler") - handlerBefore);
+          }
+        } else {
+          result = await run();
+        }
       } else {
         result = await runHandler();
       }
@@ -294,6 +321,32 @@ export function createApiRouteHandler<TInput, TOutput, TQuery = undefined>(
     }
 
     response.headers.set("Cache-Control", "no-store");
+
+    let cold = false;
+    try {
+      cold = await (deps.wasCold ?? requestWasCold)();
+    } catch {
+      // The marker is a diagnostic; never let it fail a request.
+    }
+    const timing = timer.snapshot();
+    // Public writes (sign-in, recovery) answer alike for a known and an
+    // unknown account; they get no per-phase durations (server-timing.ts).
+    if (!(options.auth === "public" && options.method !== "GET")) {
+      response.headers.set("Server-Timing", RequestTimer.header(timing, cold));
+    }
+    if (timing.total >= SLOW_REQUEST_MS) {
+      // The path is the route's template (`/athletes/{id}`), so no ids are logged.
+      console.warn(
+        "[api] slow request",
+        JSON.stringify({
+          method: options.method,
+          route: options.path,
+          status: response.status,
+          cold,
+          ...timing,
+        }),
+      );
+    }
     return response;
   };
 
