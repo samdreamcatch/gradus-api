@@ -3,6 +3,7 @@ import {
   assertPlanMediaOwned,
   DEFAULT_PLAN_MEDIA_URLS,
   getPlanMarketplaceFields,
+  listingCover,
   listingCoverUrls,
   marketplaceFieldsForCopy,
   planMediaFolder,
@@ -133,6 +134,7 @@ describe("plan marketplace fields", () => {
         id: PLAN,
         price: "24.50",
         media: null,
+        media_video: null,
         product_type: "plan",
         sport: "figure_skating",
         selected_level: "basic_skills",
@@ -146,6 +148,7 @@ describe("plan marketplace fields", () => {
     expect(await getPlanMarketplaceFields(client, PLAN)).toEqual({
       price: 24.5,
       media: null,
+      mediaVideo: null,
       productType: "plan",
       sport: "figure_skating",
       selectedLevel: "basic_skills",
@@ -163,6 +166,7 @@ describe("marketplaceFieldsForCopy", () => {
   const source = {
     price: 30,
     media: imageUrl(),
+    mediaVideo: null,
     productType: "program" as const,
     sport: "figure_skating",
     selectedLevel: "basic_skills",
@@ -225,6 +229,7 @@ describe("default artwork on copies", () => {
     const source = {
       price: 0,
       media: DEFAULT_PLAN_MEDIA_URLS[0],
+      mediaVideo: null,
       productType: "plan" as const,
       sport: null,
       selectedLevel: "Novice",
@@ -292,5 +297,19 @@ describe("listingCoverUrls", () => {
       null,
       DEFAULT_PLAN_MEDIA_URLS[0],
     ]);
+  });
+});
+
+describe("listingCover", () => {
+  const video = `${SUPABASE}/storage/v1/object/authenticated/plan-media/${PLAN}/cover.mp4`;
+  it("shows the coach's own image first, else the video, else default artwork", () => {
+    expect(listingCover(imageUrl(), video)).toEqual({ kind: "image", url: imageUrl() });
+    expect(listingCover(DEFAULT_PLAN_MEDIA_URLS[0], video)).toEqual({ kind: "video", url: video });
+    expect(listingCover(null, video)).toEqual({ kind: "video", url: video });
+    expect(listingCover(DEFAULT_PLAN_MEDIA_URLS[0], null)).toEqual({
+      kind: "image",
+      url: DEFAULT_PLAN_MEDIA_URLS[0],
+    });
+    expect(listingCover(null, null)).toBeNull();
   });
 });

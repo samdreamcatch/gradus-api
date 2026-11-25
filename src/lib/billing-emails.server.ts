@@ -5,6 +5,7 @@
 // every other app email uses, so retries, suppression and logging behave
 // identically.
 
+import { siteUrl } from "@/lib/site-url";
 import * as React from "react";
 import { render } from "@react-email/render";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -18,7 +19,7 @@ import { buildAppEmailPayload } from "@/lib/email-queue-payload";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-const SITE_URL = "https://gradus.training";
+const SITE_URL = siteUrl();
 const TEMPLATE = "billing-notice";
 
 export function planLabelFor(tier: string | null | undefined): string {

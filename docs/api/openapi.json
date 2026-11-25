@@ -8026,12 +8026,24 @@
                     "maxLength": 2048,
                     "format": "uri"
                   },
+                  "mediaVideo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
                   "productType": {
                     "type": "string",
                     "enum": [
                       "plan",
                       "program"
                     ]
+                  },
+                  "sport": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]{1,64}$"
                   },
                   "selectedLevel": {
                     "type": "string",
@@ -8382,6 +8394,12 @@
                         "null"
                       ]
                     },
+                    "mediaVideo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "productType": {
                       "type": [
                         "string",
@@ -8390,6 +8408,12 @@
                       "enum": [
                         "plan",
                         "program"
+                      ]
+                    },
+                    "sport": {
+                      "type": [
+                        "string",
+                        "null"
                       ]
                     },
                     "selectedLevel": {
@@ -8579,12 +8603,24 @@
                     "maxLength": 2048,
                     "format": "uri"
                   },
+                  "mediaVideo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
                   "productType": {
                     "type": "string",
                     "enum": [
                       "plan",
                       "program"
                     ]
+                  },
+                  "sport": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]{1,64}$"
                   },
                   "selectedLevel": {
                     "type": "string",
@@ -8737,12 +8773,24 @@
                     "maxLength": 2048,
                     "format": "uri"
                   },
+                  "mediaVideo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
                   "productType": {
                     "type": "string",
                     "enum": [
                       "plan",
                       "program"
                     ]
+                  },
+                  "sport": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]{1,64}$"
                   },
                   "selectedLevel": {
                     "type": "string",
@@ -20824,6 +20872,15 @@
           },
           {
             "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]{1,64}$"
+            },
+            "required": false,
+            "name": "sport",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": [
                 "number",
                 "null"
@@ -20910,6 +20967,12 @@
                               "program"
                             ]
                           },
+                          "sport": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "selectedLevel": {
                             "type": [
                               "string",
@@ -20965,6 +21028,12 @@
                             ]
                           },
                           "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "mediaVideo": {
                             "type": [
                               "string",
                               "null"
@@ -21092,6 +21161,7 @@
                           "moveCount",
                           "price",
                           "productType",
+                          "sport",
                           "selectedLevel",
                           "selectedLevelTo",
                           "description",
@@ -21100,6 +21170,7 @@
                           "lessonCount",
                           "rating",
                           "media",
+                          "mediaVideo",
                           "createdAt",
                           "updatedAt",
                           "sampleMove",
@@ -23748,6 +23819,12 @@
                               "program"
                             ]
                           },
+                          "sport": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "selectedLevel": {
                             "type": [
                               "string",
@@ -23803,6 +23880,12 @@
                             ]
                           },
                           "media": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "mediaVideo": {
                             "type": [
                               "string",
                               "null"
@@ -23930,6 +24013,7 @@
                           "moveCount",
                           "price",
                           "productType",
+                          "sport",
                           "selectedLevel",
                           "selectedLevelTo",
                           "description",
@@ -23938,6 +24022,7 @@
                           "lessonCount",
                           "rating",
                           "media",
+                          "mediaVideo",
                           "createdAt",
                           "updatedAt",
                           "sampleMove",

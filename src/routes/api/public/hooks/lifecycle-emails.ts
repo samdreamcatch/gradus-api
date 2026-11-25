@@ -6,6 +6,7 @@
 // template with any admin copy overrides applied, and hands it to the shared
 // email queue (same retries, suppression and logging as every other app email).
 
+import { siteUrl } from "@/lib/site-url";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -22,7 +23,7 @@ import { cronKeyMatches } from "@/lib/cron-auth";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-const SITE_URL = "https://gradus.training";
+const SITE_URL = siteUrl();
 const BATCH_SIZE = 50;
 
 const SETTINGS_PATH: Record<ActivationRole, string> = {

@@ -2,6 +2,7 @@
  * Server-only sender for Team plan guardian invites. Best-effort: logs and
  * swallows errors so a failed send can never break the invite itself.
  */
+import { siteUrl } from "@/lib/site-url";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { TeamInviteEmail, teamInviteSubject } from "./email-templates/team-invite";
@@ -11,7 +12,7 @@ import { buildAppEmailPayload } from "./email-queue-payload";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-export const SITE_URL = "https://gradus.training";
+export const SITE_URL = siteUrl();
 
 export function teamClaimUrl(token: string): string {
   return `${SITE_URL}/team/${token}`;

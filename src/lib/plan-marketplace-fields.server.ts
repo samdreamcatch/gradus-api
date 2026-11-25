@@ -6,7 +6,9 @@
  * (migration 20261111120000_plans_price_media); `productType`, `selectedLevel`
  * and `description` (20261111120100_plans_product_type_level_description); and
  * `selectedLevelTo`, the other end of a level range (20261111120400); and `sport`,
- * the sport the plan is for (20261124120000_plans_sport).
+ * the sport the plan is for (20261124120000_plans_sport); and `mediaVideo`, the plan's
+ * cover video in the same bucket (20261125120000_plans_media_video). The marketplace
+ * shows the coach's own image, else the video, else default artwork (`listingCover`).
  *
  * A level is one key in `selectedLevel`, or a range: the first pick there and the
  * second in `selectedLevelTo`. Sending `selectedLevel` alone makes it a single
@@ -31,6 +33,8 @@ const untyped = (client: Client) => client as unknown as Untyped;
 /** Fits `numeric(10, 2)`. */
 export const planPriceInput = z.number().min(0).max(99_999_999.99);
 export const planMediaInput = z.string().url().max(2048);
+/** A cover video: an MP4 or MOV upload in one of the coach's plan-media folders. */
+export const planMediaVideoInput = z.string().url().max(2048);
 export const planProductTypeInput = z.enum(["plan", "program"]);
 /** The level the coach picked for the plan, as the frontend sends it. */
 export const planSelectedLevelInput = z.string().trim().min(1).max(160);
@@ -146,6 +150,46 @@ export async function listingCoverUrls(
   });
 }
 
+const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v)$/i;
+
+/** Whether a stored cover URL names a video file. */
+export function isPlanMediaVideo(url: string): boolean {
+  try {
+    return VIDEO_EXTENSIONS.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** 422 unless `url` is a video in the folder of a plan this coach owns (no default artwork here). */
+export async function assertPlanMediaVideoOwned(
+  supabase: Client,
+  coachId: string,
+  url: string,
+): Promise<void> {
+  if (isDefaultPlanMedia(url) || !isPlanMediaVideo(url)) {
+    throw new ApiError({
+      code: "unprocessable",
+      status: 422,
+      message: "mediaVideo must be the URL of an MP4 or MOV uploaded to one of your plans in plan-media.",
+    });
+  }
+  await assertPlanMediaOwned(supabase, coachId, url);
+}
+
+/**
+ * Which cover the marketplace shows: the coach's own uploaded image, else their video, else
+ * the stored media (default artwork or nothing).
+ */
+export function listingCover(
+  media: string | null,
+  mediaVideo: string | null,
+): { kind: "image" | "video"; url: string } | null {
+  if (media && !isDefaultPlanMedia(media)) return { kind: "image", url: media };
+  if (mediaVideo) return { kind: "video", url: mediaVideo };
+  return media ? { kind: "image", url: media } : null;
+}
+
 /** 422 unless `url` is default artwork or an image in the folder of a plan this coach owns. */
 export async function assertPlanMediaOwned(
   supabase: Client,
@@ -170,6 +214,7 @@ export type PlanProductType = z.infer<typeof planProductTypeInput>;
 export type PlanMarketplaceFields = {
   price: number;
   media: string | null;
+  mediaVideo: string | null;
   productType: PlanProductType | null;
   sport: string | null;
   selectedLevel: string | null;
@@ -184,6 +229,8 @@ export type PlanMarketplaceFields = {
 export type PlanMarketplaceInput = {
   price?: number;
   media?: string | null;
+  /** null removes the cover video. */
+  mediaVideo?: string | null;
   productType?: PlanProductType;
   sport?: string;
   selectedLevel?: string;
@@ -204,7 +251,7 @@ export async function getPlanMarketplaceFields(
   const { data, error } = await untyped(supabase)
     .from("plans")
     .select(
-      "price, media, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count",
+      "price, media, media_video, product_type, sport, selected_level, selected_level_to, description, weeks, sessions_per_week, lesson_count",
     )
     .eq("id", planId)
     .maybeSingle();
@@ -214,6 +261,7 @@ export async function getPlanMarketplaceFields(
   return {
     price: Number(data.price),
     media: data.media ?? null,
+    mediaVideo: data.media_video ?? null,
     productType: data.product_type ?? null,
     sport: data.sport ?? null,
     selectedLevel: data.selected_level ?? null,
@@ -238,6 +286,7 @@ export async function setPlanMarketplaceFields(
   const columns = {
     ...(input.price !== undefined ? { price: input.price } : {}),
     ...(input.media !== undefined ? { media: input.media } : {}),
+    ...(input.mediaVideo !== undefined ? { media_video: input.mediaVideo } : {}),
     ...(input.productType !== undefined ? { product_type: input.productType } : {}),
     ...(input.sport !== undefined ? { sport: input.sport } : {}),
     ...(input.selectedLevel !== undefined ? { selected_level: input.selectedLevel } : {}),
@@ -275,6 +324,8 @@ export function marketplaceFieldsForCopy(
         : source?.media && isDefaultPlanMedia(source.media)
           ? source.media
           : undefined,
+    // Like an uploaded image, the source's video stays in the source plan's folder.
+    mediaVideo: sent.mediaVideo,
     productType: sent.productType ?? source?.productType ?? undefined,
     sport: sent.sport ?? source?.sport ?? undefined,
     selectedLevel: sent.selectedLevel ?? source?.selectedLevel ?? undefined,

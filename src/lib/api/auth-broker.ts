@@ -9,6 +9,7 @@
  * is cast the same way `src/routes/api/public/board/refresh.ts` already
  * does for ad-hoc table access.
  */
+import { siteUrl } from "@/lib/site-url";
 import { z } from "zod";
 import { SignJWT, importPKCS8 } from "jose";
 import type { ApiContext } from "./auth";
@@ -350,9 +351,9 @@ export type SignUpResult =
 export type CoachSignUpResult = SignUpResult;
 
 /** Where the confirmation email (if the project ever requires one) lands — the same pages the web's `emailRedirectTo` uses. */
-export const COACH_SIGNUP_REDIRECT_URL = "https://gradus.training/signup/coach";
-export const PARENT_SIGNUP_REDIRECT_URL = "https://gradus.training/signup/parent/athletes";
-export const ADULT_ATHLETE_SIGNUP_REDIRECT_URL = "https://gradus.training/athlete/onboarding";
+export const COACH_SIGNUP_REDIRECT_URL = `${siteUrl()}/signup/coach`;
+export const PARENT_SIGNUP_REDIRECT_URL = `${siteUrl()}/signup/parent/athletes`;
+export const ADULT_ATHLETE_SIGNUP_REDIRECT_URL = `${siteUrl()}/athlete/onboarding`;
 
 /**
  * Coach email/password sign-up through GoTrue's own `/signup` endpoint with

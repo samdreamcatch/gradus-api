@@ -124,6 +124,8 @@ export const planDetailSchema = z.object({
   // URL for the owning coach only. Optional for older clients and servers.
   price: z.number().optional(),
   media: z.string().nullable().optional(),
+  /** The cover video URL, for the owning coach only; null when none. */
+  mediaVideo: z.string().nullable().optional(),
   // Product type ("plan" or "program"), level and description, in the coach's
   // view; null on plans made before them. Optional for older clients and servers.
   productType: z.enum(["plan", "program"]).nullable().optional(),

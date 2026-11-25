@@ -6,6 +6,7 @@
  * Both are best-effort: they log and swallow errors so they can never break
  * the admin action that triggered them.
  */
+import { siteUrl } from "@/lib/site-url";
 import * as React from "react";
 import { render } from "@react-email/render";
 import { ClubInviteEmail, clubInviteSubject } from "./email-templates/club-invite";
@@ -16,7 +17,7 @@ import { buildAppEmailPayload } from "./email-queue-payload";
 const SITE_NAME = "Gradus Training";
 const SENDER_DOMAIN = "support.gradussports.com";
 const FROM_DOMAIN = "gradussports.com";
-export const SITE_URL = "https://gradus.training";
+export const SITE_URL = siteUrl();
 
 async function enqueue(opts: {
   to: string;
