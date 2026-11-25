@@ -1,4 +1,8 @@
 
+## Pending migrations — November 25
+- [x] Complete the saved security re-check, including the previously held-back club-admin lookup restriction; database permissions and profile guards verified.
+- [x] Apply scheduled-job history cleanup; active five-minute schedule, 5,000-row batch limit and seven-day retention verified. Original SQL is preserved after the required scheduling-review comment; no application data or email changes.
+
 ## Open
 - [x] Make Library the club entry page, remove the Coaching directory, and expose authorized weekly metrics as optional Users columns while preserving coach profiles; entry and legacy redirects, Columns and week switching verified, four metric tests pass, no emails or publishing.
 - [x] Rework acknowledgements into document-grouped selectable records, individual/document reminder review, CSV export and document-specific PDF downloads; verified 3-record group/1-record individual review, 13-row CSV and single-document PDF, no notifications sent. Twelve policy tests pass; full lint timed out.

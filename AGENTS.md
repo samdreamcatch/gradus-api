@@ -1,5 +1,6 @@
 
 - Club Trust Center readiness rules live in pure `src/lib/trust-center.ts` (unit-tested); `trust-center.server.ts` only gathers inputs, so the scoring stays testable and consistent.
+- Scheduled-job log retention uses a bounded, time-based database job rather than scheduler-write triggers, so old debugging history drains without a single large delete or contention on each job run.
 - DEV tools use the shared, tested preview-host predicate for main and numbered draft previews; published domains stay excluded to avoid exposing the account switcher there.
 - Club policies use club-scoped requirement and append-only evidence tables, with local draft schema types instead of editing generated clients; this isolates shared Gradus documents and retains legacy sign-offs.
 - Policy deadlines come from one pure helper shared through the matrix and overview, and PDF evidence generation stays server-only; this keeps status calculations consistent and private evidence off the client import chain.
