@@ -490,11 +490,11 @@ export async function mintSessionForEmail(
 
 // --- Sign in with Apple: authorization-code exchange and revoke -----------
 //
-// The app's Services ID / bundle ID (CLAUDE.md, capacitor.config.ts) —
-// public, not a secret. Duplicated from provider-verify.ts's APPLE_AUDIENCE
-// rather than exported/shared, since the two modules verify different
-// things (an inbound identity token vs. an outbound client-secret JWT) and
-// a rename in one should not silently change the other.
+// The app's Services ID / bundle ID (CLAUDE.md) — public, not a secret.
+// Duplicated from provider-verify.ts's APPLE_AUDIENCE rather than
+// exported/shared, since the two modules verify different things (an inbound
+// identity token vs. an outbound client-secret JWT) and a rename in one
+// should not silently change the other.
 const APPLE_CLIENT_ID = "training.gradus.app";
 
 async function buildAppleClientSecret(): Promise<string | null> {

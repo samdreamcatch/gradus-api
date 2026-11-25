@@ -33,29 +33,21 @@ Fonts: EB Garamond (display; Fraunces only for the Gradus wordmark), Atkinson Hy
 JetBrains Mono. Buttons use the `press` / `press-soft` utilities, not `hover:`.
 Overlays: Sheet, Popover/Dropdown, AlertDialog only — plain `Dialog` is retired.
 
-## Mobile (Capacitor)
+## Mobile apps
 
-The iOS/Android apps are a **Capacitor shell** around the hosted site at
-`https://gradus.training` — see `docs/mobile/README.md`, `signing.md`, and
-`submission.md`. Key points for native work:
+The iOS/watchOS app is native Swift (repo `gradus-ios`) and the Android app is
+native Kotlin; neither wraps this site. They call `/api/v1` here, described by
+`docs/api/openapi.json`; see `docs/ios/PRD.md` and `docs/android/PRD.md`.
 
-- App ID `training.gradus.app`; config in `capacitor.config.ts`;
-  `webDir` is `native/fallback` (offline page only).
-- Native code paths are guarded by `isNativeApp()` in `src/lib/native.ts` and
-  are inert on the web. Helpers: haptics, `openExternal` (Stripe MUST use it),
-  native share, `captureNativePhoto`, `initNativeShell` (status bar, Android
-  back button, deep links, splash).
-- Push: `src/lib/native-push.ts` (device) + `src/lib/push.functions.ts` +
-  `device_tokens` table (server). Sending is not implemented yet — see
-  `docs/mobile/signing.md` § Server side.
-- Biometric unlock: `src/lib/native-biometric.ts` +
-  `src/components/native/biometric-gate.tsx`, opt-in per device.
-- `ios/` and `android/` are generated with `bunx cap add ios|android` on a Mac;
-  run `bunx cap sync` after any plugin or config change.
+- Bundle ID / applicationId: `training.gradus.app`.
+- Push: the apps register tokens through `/api/v1/devices`
+  (`src/lib/push.server.ts`, table `device_tokens`).
+- This repo is web only. Do not add Capacitor, native shells, or runtime
+  checks for running inside an app.
+- Open links that leave the page (Stripe MUST use it) with `openExternal`, and
+  share with `canShareNatively` / `shareNatively`, all from
+  `src/lib/browser-actions.ts`.
 
 ## When making changes
 
-- Keep the web and native paths in one component, branched on `isNativeApp()`.
-  Do not fork screens per platform.
-- Never move Stripe checkout or the billing portal into the webview.
 - Run `bun run lint` before finishing.

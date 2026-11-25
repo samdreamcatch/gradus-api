@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { canShareNatively, shareNatively } from "@/lib/native";
+import { canShareNatively, shareNatively } from "@/lib/browser-actions";
 
 /**
  * Open the OS-native share sheet with the invoice text.

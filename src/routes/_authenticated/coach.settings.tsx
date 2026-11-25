@@ -51,10 +51,9 @@ import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
 import { requestSport } from "@/lib/sport-requests.functions";
-import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { LegalSection } from "@/components/settings/legal-section";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 
 export const Route = createFileRoute("/_authenticated/coach/settings")({
   loader: ({ context }) => {
@@ -123,7 +122,6 @@ function SettingsPage() {
 
         <SettingsGroup label="Support">
           <SettingsList>
-            <NativeAppSection />
             <FeedbackSettingsRow />
           </SettingsList>
         </SettingsGroup>

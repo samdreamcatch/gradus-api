@@ -17,7 +17,7 @@ import {
   createParentBillingPortalSession,
 } from "@/lib/parent-checkout.functions";
 import { CoachVisibilitySection } from "@/components/parent/coach-visibility-toggles";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 
 type Interval = "month" | "year";
 

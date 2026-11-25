@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 
 export function PendingPolicyAcknowledgements() {

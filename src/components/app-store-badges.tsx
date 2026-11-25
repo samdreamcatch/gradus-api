@@ -1,5 +1,5 @@
 import appStoreBadge from "@/assets/app-store-badge.svg.asset.json";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 
 export const APP_STORE_URL = "https://apps.apple.com/us/app/gradus-training/id6816124994";

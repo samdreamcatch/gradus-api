@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { canShareNatively, shareNatively } from "@/lib/native";
+import { canShareNatively, shareNatively } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 import {
   getPlan,
