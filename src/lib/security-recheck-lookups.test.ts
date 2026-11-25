@@ -10,11 +10,29 @@ import { fileURLToPath } from "node:url";
  * replay of the migrations (see PR #301). These checks read SQL as text, so
  * they catch the ordinary ways a later migration reopens something, not
  * every way; a change they flag needs a person to look at it.
+ *
+ * What runs in production is Lovable's applied copy (APPLIED_COPY), so the
+ * checks of what the fix does read that file. It differs from the saved
+ * migration in one place: Lovable's migration tool refused to take
+ * is_any_org_admin away from signed-in members, so it is members-only here.
+ * Signed-out callers lost it as planned. Accepted 2026-11-22: a member who
+ * already has someone's user id can only learn whether that person runs a
+ * club, and no app code calls it.
  */
 
 const FIX_MIGRATION = "20261121120000_security_recheck_lookups_and_test_flag.sql";
-/** Lovable's applied record is numbered. Its copy of the fix gets the next number, so anything from this number up, except this file, is "later". */
+/** Lovable's applied record is numbered. Its copy of the fix (APPLIED_COPY) came after this file, so anything from this number up, except this file, is "later". */
 const LAST_APPLIED_BEFORE_FIX = "0050_rls_audit_hardening.sql";
+/** Lovable's applied copy of the fix: what production actually ran. */
+const APPLIED_COPY = "0052_security_recheck_lookups_and_test_flag.sql";
+
+/** The only statements where the applied copy may differ from the saved migration: applied form → saved form. */
+const ACCEPTED_DIFFERENCES: Record<string, string> = {
+  "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO authenticated, service_role":
+    "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO service_role",
+  "REVOKE EXECUTE ON FUNCTION public.is_any_org_admin(uuid) FROM PUBLIC, anon":
+    "REVOKE EXECUTE ON FUNCTION public.is_any_org_admin(uuid) FROM PUBLIC, anon, authenticated",
+};
 
 /**
  * Migrations from before the fix that define, drop or grant these functions
@@ -41,13 +59,21 @@ const SERVER_ONLY = [
   "get_parent_by_invite_code",
   "get_adult_athlete_by_invite_code",
   "users_blocked",
-  "is_any_org_admin",
   "coaches_linked_for_athlete",
   "team_plan_active",
 ];
 
-/** Row-level policies call these as the signed-in member; signed-out callers have no use for them. */
-const MEMBERS_ONLY = ["has_role", "has_org_admin", "is_direct_room_participant"];
+/**
+ * Row-level policies call these as the signed-in member; signed-out callers
+ * have no use for them. is_any_org_admin is here because Lovable kept it open
+ * to members (see the note at the top).
+ */
+const MEMBERS_ONLY = [
+  "has_role",
+  "has_org_admin",
+  "is_direct_room_participant",
+  "is_any_org_admin",
+];
 
 /** The test-flag trigger function, and the function it trusts to tell the server from a member. */
 const GUARD_FUNCTIONS = ["protect_profile_test_flag", "is_service_caller"];
@@ -193,12 +219,23 @@ function problems(sql: string): string[] {
 
 describe("lookup functions stay closed (migrations)", () => {
   const supabaseFiles = sqlFiles(supabaseDir);
+  const drizzleFiles = sqlFiles(drizzleDir);
   const fixIndex = supabaseFiles.indexOf(FIX_MIGRATION);
-  const fixSql = fixIndex >= 0 ? readFileSync(`${supabaseDir}/${FIX_MIGRATION}`, "utf8") : "";
+  const appliedIndex = drizzleFiles.indexOf(APPLIED_COPY);
+  const fixSql = appliedIndex >= 0 ? readFileSync(`${drizzleDir}/${APPLIED_COPY}`, "utf8") : "";
   const fix = statements(fixSql);
+  const savedSql = fixIndex >= 0 ? readFileSync(`${supabaseDir}/${FIX_MIGRATION}`, "utf8") : "";
+
+  it("applied copy matches the saved migration apart from the accepted difference", () => {
+    // Tests below only look for the statements they need, so anything else
+    // added to either file (a grant, a dropped trigger) is caught here.
+    expect(fix.length).toBeGreaterThan(0);
+    expect(fix.map((s) => ACCEPTED_DIFFERENCES[s] ?? s)).toEqual(statements(savedSql));
+  });
 
   it("closes the server-only lookups to members and signed-out callers", () => {
     expect(fixIndex).toBeGreaterThanOrEqual(0);
+    expect(appliedIndex).toBeGreaterThanOrEqual(0);
     for (const fn of SERVER_ONLY) {
       const revoke = fix.find((s) => s.startsWith(`REVOKE EXECUTE ON FUNCTION public.${fn}(`));
       expect(revoke).toBeDefined();
@@ -220,10 +257,13 @@ describe("lookup functions stay closed (migrations)", () => {
     const later: Array<[string, string]> = supabaseFiles
       .filter((file) => file !== FIX_MIGRATION && !SETTLED_BY_THE_FIX.has(file))
       .map((file) => [`supabase/migrations/${file}`, `${supabaseDir}/${file}`]);
-    for (const file of sqlFiles(drizzleDir)) {
+    for (const file of drizzleFiles) {
+      const number = Number.parseInt(file, 10);
       if (
         file !== LAST_APPLIED_BEFORE_FIX &&
-        Number.parseInt(file, 10) >= Number.parseInt(LAST_APPLIED_BEFORE_FIX, 10)
+        file !== APPLIED_COPY &&
+        // A file without a leading number could have been added at any time.
+        (Number.isNaN(number) || number >= Number.parseInt(LAST_APPLIED_BEFORE_FIX, 10))
       ) {
         later.push([`drizzle/migrations/${file}`, `${drizzleDir}/${file}`]);
       }
@@ -231,8 +271,6 @@ describe("lookup functions stay closed (migrations)", () => {
     const offenders: string[] = [];
     for (const [label, path] of later) {
       const sql = readFileSync(path, "utf8");
-      // Lovable's applied copy of the fix itself.
-      if (statements(sql).join(";") === fix.join(";")) continue;
       for (const why of problems(sql)) offenders.push(`${label}: ${why}`);
     }
     // Call these from the server with the admin client instead of reopening
@@ -280,8 +318,11 @@ describe("lookup functions stay closed (migrations)", () => {
       true,
     );
     expect(
-      flagged("GRANT EXECUTE ON ROUTINE public.is_any_org_admin(uuid) TO authenticated;"),
+      flagged(
+        "GRANT EXECUTE ON ROUTINE public.coaches_linked_for_athlete(uuid, uuid, uuid) TO authenticated;",
+      ),
     ).toBe(true);
+    expect(flagged("GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO anon;")).toBe(true);
     expect(
       flagged('GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO "anon";'),
     ).toBe(true);
@@ -383,6 +424,11 @@ describe("lookup functions stay closed (migrations)", () => {
     ).toBe(false);
     expect(
       flagged("GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;"),
+    ).toBe(false);
+    expect(
+      flagged(
+        "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO authenticated, service_role;",
+      ),
     ).toBe(false);
     expect(flagged("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;")).toBe(false);
     expect(
