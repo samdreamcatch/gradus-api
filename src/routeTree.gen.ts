@@ -112,6 +112,9 @@ import { Route as AuthenticatedAdminEmailsIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminEmailsNameRouteImport } from './routes/_authenticated/admin.emails.$name'
 import { Route as AuthenticatedAdminErrorsIdRouteImport } from './routes/_authenticated/admin.errors.$id'
 import { Route as AuthenticatedAdminListKindRouteImport } from './routes/_authenticated/admin.list.$kind'
+import { Route as AuthenticatedAdminMarketplaceIndexRouteImport } from './routes/_authenticated/admin.marketplace.index'
+import { Route as AuthenticatedAdminMarketplaceFlagsRouteImport } from './routes/_authenticated/admin.marketplace.flags'
+import { Route as AuthenticatedAdminMarketplacePurchasesRouteImport } from './routes/_authenticated/admin.marketplace.purchases'
 import { Route as AuthenticatedAdminPlansPlanIdRouteImport } from './routes/_authenticated/admin.plans.$planId'
 import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin.users.index'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated/admin.users.$userId'
@@ -228,6 +231,10 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as AuthenticatedAdminMarketplaceListingsIndexRouteImport } from './routes/_authenticated/admin.marketplace.listings.index'
+import { Route as AuthenticatedAdminMarketplaceListingsPlanIdRouteImport } from './routes/_authenticated/admin.marketplace.listings.$planId'
+import { Route as AuthenticatedAdminMarketplaceSellersIndexRouteImport } from './routes/_authenticated/admin.marketplace.sellers.index'
+import { Route as AuthenticatedAdminMarketplaceSellersCoachIdRouteImport } from './routes/_authenticated/admin.marketplace.sellers.$coachId'
 import { Route as ApiV1AdultAthleteCoachLinkRouteImport } from './routes/api/v1/adult-athlete/coach/link'
 import { Route as ApiV1AdultAthleteCoachPreviewRouteImport } from './routes/api/v1/adult-athlete/coach/preview'
 import { Route as ApiV1AdultAthleteCoachSportsOfferedRouteImport } from './routes/api/v1/adult-athlete/coach/sports-offered'
@@ -968,6 +975,24 @@ const AuthenticatedAdminListKindRoute =
     path: '/list/$kind',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminMarketplaceIndexRoute =
+  AuthenticatedAdminMarketplaceIndexRouteImport.update({
+    id: '/marketplace/',
+    path: '/marketplace/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMarketplaceFlagsRoute =
+  AuthenticatedAdminMarketplaceFlagsRouteImport.update({
+    id: '/marketplace/flags',
+    path: '/marketplace/flags',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMarketplacePurchasesRoute =
+  AuthenticatedAdminMarketplacePurchasesRouteImport.update({
+    id: '/marketplace/purchases',
+    path: '/marketplace/purchases',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPlansPlanIdRoute =
   AuthenticatedAdminPlansPlanIdRouteImport.update({
     id: '/plans/$planId',
@@ -1597,6 +1622,30 @@ const LovableEmailTransactionalPreviewRoute =
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedAdminMarketplaceListingsIndexRoute =
+  AuthenticatedAdminMarketplaceListingsIndexRouteImport.update({
+    id: '/marketplace/listings/',
+    path: '/marketplace/listings/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMarketplaceListingsPlanIdRoute =
+  AuthenticatedAdminMarketplaceListingsPlanIdRouteImport.update({
+    id: '/marketplace/listings/$planId',
+    path: '/marketplace/listings/$planId',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMarketplaceSellersIndexRoute =
+  AuthenticatedAdminMarketplaceSellersIndexRouteImport.update({
+    id: '/marketplace/sellers/',
+    path: '/marketplace/sellers/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMarketplaceSellersCoachIdRoute =
+  AuthenticatedAdminMarketplaceSellersCoachIdRouteImport.update({
+    id: '/marketplace/sellers/$coachId',
+    path: '/marketplace/sellers/$coachId',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const ApiV1AdultAthleteCoachLinkRoute =
   ApiV1AdultAthleteCoachLinkRouteImport.update({
@@ -2709,6 +2758,8 @@ export interface FileRoutesByFullPath {
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/admin/marketplace/flags': typeof AuthenticatedAdminMarketplaceFlagsRoute
+  '/admin/marketplace/purchases': typeof AuthenticatedAdminMarketplacePurchasesRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -2808,6 +2859,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
+  '/admin/marketplace/': typeof AuthenticatedAdminMarketplaceIndexRoute
   '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
@@ -2826,6 +2878,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/resources/': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/saved-answers/': typeof ApiV1SavedAnswersIndexRoute
+  '/admin/marketplace/listings/$planId': typeof AuthenticatedAdminMarketplaceListingsPlanIdRoute
+  '/admin/marketplace/sellers/$coachId': typeof AuthenticatedAdminMarketplaceSellersCoachIdRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
   '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
   '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
@@ -2903,6 +2957,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
   '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
   '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/admin/marketplace/listings/': typeof AuthenticatedAdminMarketplaceListingsIndexRoute
+  '/admin/marketplace/sellers/': typeof AuthenticatedAdminMarketplaceSellersIndexRoute
   '/api/v1/adult-athlete/coaches/': typeof ApiV1AdultAthleteCoachesIndexRoute
   '/api/v1/adult-athlete/schedules/': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/athlete/goals/': typeof ApiV1AthleteGoalsIndexRoute
@@ -3099,6 +3155,8 @@ export interface FileRoutesByTo {
   '/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/admin/marketplace/flags': typeof AuthenticatedAdminMarketplaceFlagsRoute
+  '/admin/marketplace/purchases': typeof AuthenticatedAdminMarketplacePurchasesRoute
   '/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -3198,6 +3256,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/admin/emails': typeof AuthenticatedAdminEmailsIndexRoute
+  '/admin/marketplace': typeof AuthenticatedAdminMarketplaceIndexRoute
   '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
   '/athlete/messages': typeof AuthenticatedAthleteMessagesIndexRoute
   '/athlete/plans': typeof AuthenticatedAthletePlansIndexRoute
@@ -3216,6 +3275,8 @@ export interface FileRoutesByTo {
   '/api/v1/resources': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms': typeof ApiV1RoomsIndexRoute
   '/api/v1/saved-answers': typeof ApiV1SavedAnswersIndexRoute
+  '/admin/marketplace/listings/$planId': typeof AuthenticatedAdminMarketplaceListingsPlanIdRoute
+  '/admin/marketplace/sellers/$coachId': typeof AuthenticatedAdminMarketplaceSellersCoachIdRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
   '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
   '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
@@ -3293,6 +3354,8 @@ export interface FileRoutesByTo {
   '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
   '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
   '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/admin/marketplace/listings': typeof AuthenticatedAdminMarketplaceListingsIndexRoute
+  '/admin/marketplace/sellers': typeof AuthenticatedAdminMarketplaceSellersIndexRoute
   '/api/v1/adult-athlete/coaches': typeof ApiV1AdultAthleteCoachesIndexRoute
   '/api/v1/adult-athlete/schedules': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/athlete/goals': typeof ApiV1AthleteGoalsIndexRoute
@@ -3497,6 +3560,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/emails/$name': typeof AuthenticatedAdminEmailsNameRoute
   '/_authenticated/admin/errors/$id': typeof AuthenticatedAdminErrorsIdRoute
   '/_authenticated/admin/list/$kind': typeof AuthenticatedAdminListKindRoute
+  '/_authenticated/admin/marketplace/flags': typeof AuthenticatedAdminMarketplaceFlagsRoute
+  '/_authenticated/admin/marketplace/purchases': typeof AuthenticatedAdminMarketplacePurchasesRoute
   '/_authenticated/admin/plans/$planId': typeof AuthenticatedAdminPlansPlanIdRoute
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/athlete/messages/$roomId': typeof AuthenticatedAthleteMessagesRoomIdRoute
@@ -3596,6 +3661,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/admin/emails/': typeof AuthenticatedAdminEmailsIndexRoute
+  '/_authenticated/admin/marketplace/': typeof AuthenticatedAdminMarketplaceIndexRoute
   '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
   '/_authenticated/athlete/messages/': typeof AuthenticatedAthleteMessagesIndexRoute
   '/_authenticated/athlete/plans/': typeof AuthenticatedAthletePlansIndexRoute
@@ -3614,6 +3680,8 @@ export interface FileRoutesById {
   '/api/v1/resources/': typeof ApiV1ResourcesIndexRoute
   '/api/v1/rooms/': typeof ApiV1RoomsIndexRoute
   '/api/v1/saved-answers/': typeof ApiV1SavedAnswersIndexRoute
+  '/_authenticated/admin/marketplace/listings/$planId': typeof AuthenticatedAdminMarketplaceListingsPlanIdRoute
+  '/_authenticated/admin/marketplace/sellers/$coachId': typeof AuthenticatedAdminMarketplaceSellersCoachIdRoute
   '/api/v1/adult-athlete/coach/link': typeof ApiV1AdultAthleteCoachLinkRoute
   '/api/v1/adult-athlete/coach/preview': typeof ApiV1AdultAthleteCoachPreviewRoute
   '/api/v1/adult-athlete/coach/sports-offered': typeof ApiV1AdultAthleteCoachSportsOfferedRoute
@@ -3691,6 +3759,8 @@ export interface FileRoutesById {
   '/api/v1/signup/parent/start': typeof ApiV1SignupParentStartRoute
   '/api/v1/signup/parent/status': typeof ApiV1SignupParentStatusRoute
   '/api/v1/signup/parent/validate-code': typeof ApiV1SignupParentValidateCodeRoute
+  '/_authenticated/admin/marketplace/listings/': typeof AuthenticatedAdminMarketplaceListingsIndexRoute
+  '/_authenticated/admin/marketplace/sellers/': typeof AuthenticatedAdminMarketplaceSellersIndexRoute
   '/api/v1/adult-athlete/coaches/': typeof ApiV1AdultAthleteCoachesIndexRoute
   '/api/v1/adult-athlete/schedules/': typeof ApiV1AdultAthleteSchedulesIndexRoute
   '/api/v1/athlete/goals/': typeof ApiV1AthleteGoalsIndexRoute
@@ -3895,6 +3965,8 @@ export interface FileRouteTypes {
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
+    | '/admin/marketplace/flags'
+    | '/admin/marketplace/purchases'
     | '/admin/plans/$planId'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
@@ -3994,6 +4066,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/admin/emails/'
+    | '/admin/marketplace/'
     | '/admin/users/'
     | '/athlete/messages/'
     | '/athlete/plans/'
@@ -4012,6 +4085,8 @@ export interface FileRouteTypes {
     | '/api/v1/resources/'
     | '/api/v1/rooms/'
     | '/api/v1/saved-answers/'
+    | '/admin/marketplace/listings/$planId'
+    | '/admin/marketplace/sellers/$coachId'
     | '/api/v1/adult-athlete/coach/link'
     | '/api/v1/adult-athlete/coach/preview'
     | '/api/v1/adult-athlete/coach/sports-offered'
@@ -4089,6 +4164,8 @@ export interface FileRouteTypes {
     | '/api/v1/signup/parent/start'
     | '/api/v1/signup/parent/status'
     | '/api/v1/signup/parent/validate-code'
+    | '/admin/marketplace/listings/'
+    | '/admin/marketplace/sellers/'
     | '/api/v1/adult-athlete/coaches/'
     | '/api/v1/adult-athlete/schedules/'
     | '/api/v1/athlete/goals/'
@@ -4285,6 +4362,8 @@ export interface FileRouteTypes {
     | '/admin/emails/$name'
     | '/admin/errors/$id'
     | '/admin/list/$kind'
+    | '/admin/marketplace/flags'
+    | '/admin/marketplace/purchases'
     | '/admin/plans/$planId'
     | '/admin/users/$userId'
     | '/athlete/messages/$roomId'
@@ -4384,6 +4463,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/admin/emails'
+    | '/admin/marketplace'
     | '/admin/users'
     | '/athlete/messages'
     | '/athlete/plans'
@@ -4402,6 +4482,8 @@ export interface FileRouteTypes {
     | '/api/v1/resources'
     | '/api/v1/rooms'
     | '/api/v1/saved-answers'
+    | '/admin/marketplace/listings/$planId'
+    | '/admin/marketplace/sellers/$coachId'
     | '/api/v1/adult-athlete/coach/link'
     | '/api/v1/adult-athlete/coach/preview'
     | '/api/v1/adult-athlete/coach/sports-offered'
@@ -4479,6 +4561,8 @@ export interface FileRouteTypes {
     | '/api/v1/signup/parent/start'
     | '/api/v1/signup/parent/status'
     | '/api/v1/signup/parent/validate-code'
+    | '/admin/marketplace/listings'
+    | '/admin/marketplace/sellers'
     | '/api/v1/adult-athlete/coaches'
     | '/api/v1/adult-athlete/schedules'
     | '/api/v1/athlete/goals'
@@ -4682,6 +4766,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/emails/$name'
     | '/_authenticated/admin/errors/$id'
     | '/_authenticated/admin/list/$kind'
+    | '/_authenticated/admin/marketplace/flags'
+    | '/_authenticated/admin/marketplace/purchases'
     | '/_authenticated/admin/plans/$planId'
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/athlete/messages/$roomId'
@@ -4781,6 +4867,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/admin/emails/'
+    | '/_authenticated/admin/marketplace/'
     | '/_authenticated/admin/users/'
     | '/_authenticated/athlete/messages/'
     | '/_authenticated/athlete/plans/'
@@ -4799,6 +4886,8 @@ export interface FileRouteTypes {
     | '/api/v1/resources/'
     | '/api/v1/rooms/'
     | '/api/v1/saved-answers/'
+    | '/_authenticated/admin/marketplace/listings/$planId'
+    | '/_authenticated/admin/marketplace/sellers/$coachId'
     | '/api/v1/adult-athlete/coach/link'
     | '/api/v1/adult-athlete/coach/preview'
     | '/api/v1/adult-athlete/coach/sports-offered'
@@ -4876,6 +4965,8 @@ export interface FileRouteTypes {
     | '/api/v1/signup/parent/start'
     | '/api/v1/signup/parent/status'
     | '/api/v1/signup/parent/validate-code'
+    | '/_authenticated/admin/marketplace/listings/'
+    | '/_authenticated/admin/marketplace/sellers/'
     | '/api/v1/adult-athlete/coaches/'
     | '/api/v1/adult-athlete/schedules/'
     | '/api/v1/athlete/goals/'
@@ -6005,6 +6096,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminListKindRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/marketplace/': {
+      id: '/_authenticated/admin/marketplace/'
+      path: '/marketplace'
+      fullPath: '/admin/marketplace/'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/marketplace/flags': {
+      id: '/_authenticated/admin/marketplace/flags'
+      path: '/marketplace/flags'
+      fullPath: '/admin/marketplace/flags'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceFlagsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/marketplace/purchases': {
+      id: '/_authenticated/admin/marketplace/purchases'
+      path: '/marketplace/purchases'
+      fullPath: '/admin/marketplace/purchases'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplacePurchasesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/plans/$planId': {
       id: '/_authenticated/admin/plans/$planId'
       path: '/plans/$planId'
@@ -6816,6 +6928,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/marketplace/listings/': {
+      id: '/_authenticated/admin/marketplace/listings/'
+      path: '/marketplace/listings'
+      fullPath: '/admin/marketplace/listings/'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceListingsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/marketplace/listings/$planId': {
+      id: '/_authenticated/admin/marketplace/listings/$planId'
+      path: '/marketplace/listings/$planId'
+      fullPath: '/admin/marketplace/listings/$planId'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceListingsPlanIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/marketplace/sellers/': {
+      id: '/_authenticated/admin/marketplace/sellers/'
+      path: '/marketplace/sellers'
+      fullPath: '/admin/marketplace/sellers/'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceSellersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/marketplace/sellers/$coachId': {
+      id: '/_authenticated/admin/marketplace/sellers/$coachId'
+      path: '/marketplace/sellers/$coachId'
+      fullPath: '/admin/marketplace/sellers/$coachId'
+      preLoaderRoute: typeof AuthenticatedAdminMarketplaceSellersCoachIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/api/v1/adult-athlete/coach/link': {
       id: '/api/v1/adult-athlete/coach/link'
@@ -8095,10 +8235,17 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminEmailsNameRoute: typeof AuthenticatedAdminEmailsNameRoute
   AuthenticatedAdminListKindRoute: typeof AuthenticatedAdminListKindRoute
+  AuthenticatedAdminMarketplaceFlagsRoute: typeof AuthenticatedAdminMarketplaceFlagsRoute
+  AuthenticatedAdminMarketplacePurchasesRoute: typeof AuthenticatedAdminMarketplacePurchasesRoute
   AuthenticatedAdminPlansPlanIdRoute: typeof AuthenticatedAdminPlansPlanIdRoute
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
   AuthenticatedAdminEmailsIndexRoute: typeof AuthenticatedAdminEmailsIndexRoute
+  AuthenticatedAdminMarketplaceIndexRoute: typeof AuthenticatedAdminMarketplaceIndexRoute
   AuthenticatedAdminUsersIndexRoute: typeof AuthenticatedAdminUsersIndexRoute
+  AuthenticatedAdminMarketplaceListingsPlanIdRoute: typeof AuthenticatedAdminMarketplaceListingsPlanIdRoute
+  AuthenticatedAdminMarketplaceSellersCoachIdRoute: typeof AuthenticatedAdminMarketplaceSellersCoachIdRoute
+  AuthenticatedAdminMarketplaceListingsIndexRoute: typeof AuthenticatedAdminMarketplaceListingsIndexRoute
+  AuthenticatedAdminMarketplaceSellersIndexRoute: typeof AuthenticatedAdminMarketplaceSellersIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -8130,10 +8277,24 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminEmailsNameRoute: AuthenticatedAdminEmailsNameRoute,
   AuthenticatedAdminListKindRoute: AuthenticatedAdminListKindRoute,
+  AuthenticatedAdminMarketplaceFlagsRoute:
+    AuthenticatedAdminMarketplaceFlagsRoute,
+  AuthenticatedAdminMarketplacePurchasesRoute:
+    AuthenticatedAdminMarketplacePurchasesRoute,
   AuthenticatedAdminPlansPlanIdRoute: AuthenticatedAdminPlansPlanIdRoute,
   AuthenticatedAdminUsersUserIdRoute: AuthenticatedAdminUsersUserIdRoute,
   AuthenticatedAdminEmailsIndexRoute: AuthenticatedAdminEmailsIndexRoute,
+  AuthenticatedAdminMarketplaceIndexRoute:
+    AuthenticatedAdminMarketplaceIndexRoute,
   AuthenticatedAdminUsersIndexRoute: AuthenticatedAdminUsersIndexRoute,
+  AuthenticatedAdminMarketplaceListingsPlanIdRoute:
+    AuthenticatedAdminMarketplaceListingsPlanIdRoute,
+  AuthenticatedAdminMarketplaceSellersCoachIdRoute:
+    AuthenticatedAdminMarketplaceSellersCoachIdRoute,
+  AuthenticatedAdminMarketplaceListingsIndexRoute:
+    AuthenticatedAdminMarketplaceListingsIndexRoute,
+  AuthenticatedAdminMarketplaceSellersIndexRoute:
+    AuthenticatedAdminMarketplaceSellersIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
