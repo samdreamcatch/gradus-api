@@ -6056,6 +6056,8 @@ export type Database = {
         Returns: number
       }
       my_coach_id: { Args: never; Returns: string }
+      my_coach_plan_ids: { Args: never; Returns: string[] }
+      my_practice_log_athlete_ids: { Args: never; Returns: string[] }
       new_guardian_claim_code: { Args: never; Returns: string }
       orphan_coach_upload_paths: {
         Args: { p_limit: number; p_older_than: string }
