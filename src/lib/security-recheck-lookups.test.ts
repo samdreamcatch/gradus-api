@@ -12,22 +12,21 @@ import { fileURLToPath } from "node:url";
  * every way; a change they flag needs a person to look at it.
  *
  * What runs in production is Lovable's applied copy (APPLIED_COPY), so the
- * checks of what the fix does read that file. It differs from the saved
- * migration in one place: Lovable's migration tool refused to take
- * is_any_org_admin away from signed-in members, so it is members-only here.
- * Signed-out callers lost it as planned. Accepted 2026-11-22: a member who
- * already has someone's user id can only learn whether that person runs a
- * club, and no app code calls it.
+ * checks of what the fix does read that file. Lovable applied it twice: first
+ * without taking is_any_org_admin away from signed-in members (PARTIAL_COPY,
+ * 2026-11-22), then the whole saved migration (2026-11-25).
  */
 
 const FIX_MIGRATION = "20261121120000_security_recheck_lookups_and_test_flag.sql";
-/** Lovable's applied record is numbered. Its copy of the fix (APPLIED_COPY) came after this file, so anything from this number up, except this file, is "later". */
+/** Lovable's applied record is numbered. Its copies of the fix came after this file, so anything from this number up, except this file and those copies, is "later". */
 const LAST_APPLIED_BEFORE_FIX = "0050_rls_audit_hardening.sql";
-/** Lovable's applied copy of the fix: what production actually ran. */
-const APPLIED_COPY = "0052_security_recheck_lookups_and_test_flag.sql";
+/** Lovable's first applied copy, which left is_any_org_admin open to members. APPLIED_COPY ran after it and settles everything it touched. */
+const PARTIAL_COPY = "0052_security_recheck_lookups_and_test_flag.sql";
+/** Lovable's applied copy of the whole fix: what production actually ran last. */
+const APPLIED_COPY = "0053_security_recheck_lookups_and_test_flag_complete.sql";
 
-/** The only statements where the applied copy may differ from the saved migration: applied form → saved form. */
-const ACCEPTED_DIFFERENCES: Record<string, string> = {
+/** The only statements where PARTIAL_COPY differs from the saved migration: applied form → saved form. */
+const PARTIAL_DIFFERENCES: Record<string, string> = {
   "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO authenticated, service_role":
     "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO service_role",
   "REVOKE EXECUTE ON FUNCTION public.is_any_org_admin(uuid) FROM PUBLIC, anon":
@@ -59,21 +58,13 @@ const SERVER_ONLY = [
   "get_parent_by_invite_code",
   "get_adult_athlete_by_invite_code",
   "users_blocked",
+  "is_any_org_admin",
   "coaches_linked_for_athlete",
   "team_plan_active",
 ];
 
-/**
- * Row-level policies call these as the signed-in member; signed-out callers
- * have no use for them. is_any_org_admin is here because Lovable kept it open
- * to members (see the note at the top).
- */
-const MEMBERS_ONLY = [
-  "has_role",
-  "has_org_admin",
-  "is_direct_room_participant",
-  "is_any_org_admin",
-];
+/** Row-level policies call these as the signed-in member; signed-out callers have no use for them. */
+const MEMBERS_ONLY = ["has_role", "has_org_admin", "is_direct_room_participant"];
 
 /** The test-flag trigger function, and the function it trusts to tell the server from a member. */
 const GUARD_FUNCTIONS = ["protect_profile_test_flag", "is_service_caller"];
@@ -226,11 +217,16 @@ describe("lookup functions stay closed (migrations)", () => {
   const fix = statements(fixSql);
   const savedSql = fixIndex >= 0 ? readFileSync(`${supabaseDir}/${FIX_MIGRATION}`, "utf8") : "";
 
-  it("applied copy matches the saved migration apart from the accepted difference", () => {
+  it("applied copy matches the saved migration", () => {
     // Tests below only look for the statements they need, so anything else
     // added to either file (a grant, a dropped trigger) is caught here.
     expect(fix.length).toBeGreaterThan(0);
-    expect(fix.map((s) => ACCEPTED_DIFFERENCES[s] ?? s)).toEqual(statements(savedSql));
+    expect(fix).toEqual(statements(savedSql));
+  });
+
+  it("first applied copy holds nothing else that the complete copy would not settle", () => {
+    const partial = statements(readFileSync(`${drizzleDir}/${PARTIAL_COPY}`, "utf8"));
+    expect(partial.map((s) => PARTIAL_DIFFERENCES[s] ?? s)).toEqual(statements(savedSql));
   });
 
   it("closes the server-only lookups to members and signed-out callers", () => {
@@ -261,6 +257,7 @@ describe("lookup functions stay closed (migrations)", () => {
       const number = Number.parseInt(file, 10);
       if (
         file !== LAST_APPLIED_BEFORE_FIX &&
+        file !== PARTIAL_COPY &&
         file !== APPLIED_COPY &&
         // A file without a leading number could have been added at any time.
         (Number.isNaN(number) || number >= Number.parseInt(LAST_APPLIED_BEFORE_FIX, 10))
@@ -323,6 +320,11 @@ describe("lookup functions stay closed (migrations)", () => {
       ),
     ).toBe(true);
     expect(flagged("GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO anon;")).toBe(true);
+    expect(
+      flagged(
+        "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO authenticated, service_role;",
+      ),
+    ).toBe(true);
     expect(
       flagged('GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO "anon";'),
     ).toBe(true);
@@ -424,11 +426,6 @@ describe("lookup functions stay closed (migrations)", () => {
     ).toBe(false);
     expect(
       flagged("GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;"),
-    ).toBe(false);
-    expect(
-      flagged(
-        "GRANT EXECUTE ON FUNCTION public.is_any_org_admin(uuid) TO authenticated, service_role;",
-      ),
     ).toBe(false);
     expect(flagged("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;")).toBe(false);
     expect(
