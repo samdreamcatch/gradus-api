@@ -9,7 +9,9 @@
  * machine can be unit-tested with an injected extractor and never loads
  * pdf.js in tests.
  */
-import { getDocumentProxy } from "unpdf";
+// `unpdf` is 2.2 MB of pdf.js. It is imported where it is used, not at the top
+// of the file, so a new Worker instance does not load it before answering
+// requests that never open a PDF (every route shares one module graph).
 
 export type PdfPageExtractor = (
   bytes: Uint8Array,
@@ -20,6 +22,7 @@ export type PdfPageExtractor = (
 type TextItem = { str?: string; hasEOL?: boolean };
 
 export const extractPdfPages: PdfPageExtractor = async (bytes, from, to) => {
+  const { getDocumentProxy } = await import("unpdf");
   const pdf = await getDocumentProxy(bytes);
   const pageCount = pdf.numPages;
   const pages: Array<{ page: number; text: string }> = [];
