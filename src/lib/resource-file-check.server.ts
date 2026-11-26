@@ -25,7 +25,9 @@
  * caller also holds: a false hold costs a review, a missed photo breaks the
  * promise.
  */
-import { getDocumentProxy, getResolvedPDFJS } from "unpdf";
+// `unpdf` (2.2 MB of pdf.js) is imported inside `checkPdfForPictures`, not
+// here: every route shares one module graph, and a new Worker instance should
+// not load pdf.js before answering requests that never open a PDF.
 
 export type PdfCheck =
   | { verdict: "not_pdf" }
@@ -205,6 +207,7 @@ export async function checkPdfForPictures(
 
   const maxPages = opts.maxPages ?? PDF_CHECK_MAX_PAGES;
   try {
+    const { getDocumentProxy, getResolvedPDFJS } = await import("unpdf");
     const pdfjs = await getResolvedPDFJS();
     const ops = pdfjs.OPS as Record<string, number>;
     const pictureOps = new Set(

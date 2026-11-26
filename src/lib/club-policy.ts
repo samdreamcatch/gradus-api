@@ -4,6 +4,13 @@ export type DeadlinePack = {
   archivedAt?: string | null;
 };
 
+/** Selected keys are intersected with the current authorized, outstanding roster. */
+export function selectedOutstandingSigners<
+  T extends { key: string; acknowledgedAt: string | null },
+>(signers: T[], keys?: string[]): T[] {
+  return signers.filter((s) => !s.acknowledgedAt && (!keys || keys.includes(s.key)));
+}
+
 export function policyDeadline(resourceId: string, packs: DeadlinePack[]): string | null {
   const dates = packs
     .filter((p) => !p.archivedAt && p.resourceIds.includes(resourceId))

@@ -1,13 +1,12 @@
 /**
- * Device push-token registration — the single source of truth for the web
- * server functions (push.functions.ts) and the `POST /api/v1/devices` /
- * `DELETE /api/v1/devices/{token}` routes (PRD §6.6 "Token lifecycle",
- * Appendix A). Extracted without behavior changes; user-facing messages are
- * kept verbatim. Unregistering goes through the caller's RLS client, as on
- * the web: `device_tokens` grants the authenticated role full access to its
- * own rows and RLS scopes every query to `auth.uid()`. Registering writes
- * with the service role, because a token that still belongs to the
- * device's previous account is a row RLS hides from the new one.
+ * Device push-token registration — the single source of truth for the
+ * `POST /api/v1/devices` / `DELETE /api/v1/devices/{token}` routes
+ * (PRD §6.6 "Token lifecycle", Appendix A). User-facing messages are kept
+ * verbatim. Unregistering goes through the caller's RLS client:
+ * `device_tokens` grants the authenticated role full access to its own rows
+ * and RLS scopes every query to `auth.uid()`. Registering writes with
+ * the service role, because a token that still belongs to the device's
+ * previous account is a row RLS hides from the new one.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";

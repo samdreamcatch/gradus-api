@@ -1,6 +1,14 @@
 // Server-only: compact schema summary handed to the model when translating a
 // plain-English admin question into SQL. Keep this in sync with the tables that
 // matter for reporting — it does not need to be exhaustive.
+//
+// Invoice currency (decision #69): `invoices.currency` and
+// `coach_profiles.invoice_currency` arrive with migration 20261121120000, which
+// Lovable applies before or after this code is deployed. They are deliberately
+// not listed as columns: SQL naming one fails with "column does not exist"
+// until then. The note below reads the currency through `to_jsonb`, which is
+// NULL while the column is missing. Once the migration is applied everywhere,
+// list the two columns and shorten the note to a plain `invoices.currency`.
 
 export const REPORTING_SCHEMA = `
 coach_profiles(id, user_id, first_name, last_name, onboarded_at, created_at, is_test, promo_code, last_seen_at, organization_id, entitlement, subscription_status, subscription_tier, trial_ends_at, current_period_end, founding_coach, is_org_admin)
@@ -35,5 +43,6 @@ Notes:
 - Internal/demo accounts are flagged with is_test = true on coach_profiles, parent_profiles and athletes. Exclude them unless the question asks otherwise.
 - An "assigned plan" is a plans row with athlete_id not null and kind = 'plan' and status in ('active','benched').
 - Athlete display name: first_name || ' ' || last_name. Same for coaches and parents.
+- Invoices are not all in one currency. invoices.total_cents and invoice_lines.amount_cents are in the minor units (cents, pence) of the invoice's own currency, an ISO 4217 code such as USD or GBP. It is not a plain column you can name: read it as coalesce(to_jsonb(i)->>'currency', 'USD') where i is the alias you gave invoices. Never add, average or rank invoice amounts across currencies: return that currency as a column and GROUP BY it, so each row is one currency. This is about invoices and invoice_lines (what a coach bills a family), not billing_events.
 - Emails live in auth.users(id, email, created_at, last_sign_in_at) and can be joined via coach_profiles.user_id / parent_profiles.user_id / athletes.user_id.
 `.trim();

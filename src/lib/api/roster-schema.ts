@@ -36,8 +36,12 @@ export const rosterSlotSchema = z.object({
       status: z.enum(["canceled", "rescheduled"]),
       startMinute: z.number().int().nullable(),
       endMinute: z.number().int().nullable(),
+      // Decision #68: optional so an older build decodes the roster unchanged.
+      billable: z.boolean().optional(),
     }),
   ),
+  groupId: z.string().optional(),
+  priceCents: z.number().int().optional(),
 });
 
 export const rosterAthleteSchema = z.object({
@@ -87,6 +91,12 @@ export const addAthleteResultSchema = z.object({
 }) satisfies z.ZodType<AddAthleteResult>;
 
 export const slotIdSchema = z.object({ id: z.string() });
+
+/** `POST /api/v1/coach/lesson-groups` response: the group's id and its member slots. */
+export const lessonGroupCreatedSchema = z.object({
+  id: z.string(),
+  slotIds: z.array(z.string()),
+});
 
 const planStatusSchema = z.enum(["active", "benched"]);
 const sessionsByStateSchema = z.object({
@@ -215,6 +225,16 @@ export const pendingWrapUpSchema = z.object({
   lessonDate: z.string(),
   lessonEndMinute: z.number().int(),
   activePlanId: z.string().nullable(),
+  // Optional, as every field added to an existing response is: a client
+  // generated from this contract must still decode a server that predates it.
+  // This server sends it on every row.
+  activePlans: z
+    .array(z.object({ id: z.string(), title: z.string() }))
+    .optional()
+    .describe(
+      "The coach's own active plans for this athlete, newest first: the same plans, in the same order, as GET /coach/athletes/{id}/active-plans returns. Always present from this server version on, empty when there are none; `activePlanId` is the first one, the most recent. Absent only from an older server: read the per-athlete route then.",
+    ),
+  groupId: z.string().optional(),
 }) satisfies z.ZodType<PendingWrapUp>;
 
 export const pendingWrapUpsSchema = z.object({ wrapUps: z.array(pendingWrapUpSchema) });
@@ -231,6 +251,7 @@ export const upNextLessonSchema = z.object({
   inProgress: z.boolean(),
   briefingCached: z.boolean(),
   activePlanId: z.string().nullable(),
+  groupId: z.string().optional(),
 }) satisfies z.ZodType<UpNextLesson>;
 
 export const upNextSchema = z.object({ upNext: z.array(upNextLessonSchema) });

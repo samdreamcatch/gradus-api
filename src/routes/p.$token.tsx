@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { isNativeApp } from "@/lib/native";
 import { AppStoreBadges } from "@/components/app-store-badges";
 import { PublicPlanShare } from "@/components/share/public-plan-share";
 import { sharedPlanByline } from "@/lib/plan-share-byline";
@@ -83,7 +82,7 @@ function SharedPlanPage() {
 
   if (!plan) return <NotFound />;
   // Signed-out visitors get the storefront page; its buttons open this plan in the app.
-  if (!isNativeApp() && signedIn !== true) {
+  if (signedIn !== true) {
     return <PublicPlanShare plan={plan} appPath={`p/${token}`} />;
   }
 
@@ -239,9 +238,7 @@ function ImportCTA({ token }: { token: string }) {
           </p>
           <p className="text-[13px] text-text-secondary">
             {authState === "anon"
-              ? isNativeApp()
-                ? "Sign in to save this to your library or plans."
-                : "Open it in the Gradus app for iPhone and Apple Watch."
+              ? "Open it in the Gradus app for iPhone and Apple Watch."
               : authState === "user" && !canSave
                 ? "Only coaches and athletes can save shared plans."
                 : role === "athlete"
@@ -252,7 +249,7 @@ function ImportCTA({ token }: { token: string }) {
 
         {authState === "anon" ? (
           <div className="flex shrink-0 flex-col gap-1.5 sm:items-end">
-            {!isNativeApp() && <AppStoreBadges appPath={redirectTo} />}
+            <AppStoreBadges appPath={redirectTo} />
             <p className="text-[12px] text-text-secondary">
               Already have an account?{" "}
               <Link

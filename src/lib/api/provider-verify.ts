@@ -33,7 +33,7 @@ function optionalString(value: unknown): string | null {
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys";
-// The app's bundle ID (CLAUDE.md, capacitor.config.ts) — public, not a secret.
+// The app's bundle ID (CLAUDE.md) — public, not a secret.
 const APPLE_AUDIENCE = "training.gradus.app";
 
 const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];

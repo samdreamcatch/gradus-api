@@ -2,17 +2,21 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { LessonCalendar, coachTone } from "@/components/org-admin/lesson-calendar";
+import { LessonPracticeRing } from "@/components/org-admin/lesson-practice-ring";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { toIso } from "@/lib/club-lesson-calendar";
+import { toIso, lessonInvitationReview } from "@/lib/club-lesson-calendar";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send } from "lucide-react";
+import { Download, Upload, Pencil, Eye, Table2, CalendarDays, Send, Bell, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { lessonReminderRecipients } from "@/lib/club-lesson-reminders";
 import { toast } from "sonner";
 import { clubCoachesOptions } from "@/components/org-admin/club-coaches-data";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { StatusDot } from "@/components/org-admin/status-dot";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
+import { ClubPrimaryAction } from "@/components/org-admin/club-primary-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +41,10 @@ import {
   CLUB_SCHEDULE_TEMPLATE,
   parseClubSchedule,
   clubScheduleErrors,
+  clubScheduleCommitErrors,
+  matchClubScheduleStudent,
+  partitionClubSchedule,
+  clubCoachHandoffs,
   inviteDestination,
   type ClubScheduleRow,
 } from "@/lib/club-schedule";
@@ -54,6 +62,8 @@ import {
   saveClubScheduleReview,
   getClubLessonCalendar,
   sendClubLessonInvites,
+  getClubScheduleStudents,
+  commitClubScheduleReview,
 } from "@/lib/club-schedule.functions";
 import { ClubDataGrid, useClubGrid, type ClubColumn } from "@/components/org-admin/club-data-grid";
 import {
@@ -89,8 +99,8 @@ export const Route = createFileRoute("/_authenticated/org-admin/schedule")({
   }),
   validateSearch: zodValidator(
     z.object({
-      tab: fallback(z.string(), "imports").default("imports"),
-      view: fallback(z.string(), "grid").default("grid"),
+      tab: fallback(z.string(), "calendar").default("calendar"),
+      view: fallback(z.enum(["grid", "calendar"]), "calendar").default("calendar"),
       range: fallback(z.string(), "week").default("week"),
       date: fallback(z.string(), "").default(""),
       coach: fallback(z.string(), "all").default("all"),
@@ -111,6 +121,16 @@ function ClubSchedulePage() {
   const reviewFn = useServerFn(getClubScheduleReview);
   const saveFn = useServerFn(saveClubScheduleReview);
   const calendarFn = useServerFn(getClubLessonCalendar);
+  const studentsFn = useServerFn(getClubScheduleStudents);
+  const commitFn = useServerFn(commitClubScheduleReview);
+  const students = useQuery({
+    queryKey: ["club-schedule-students", org.id],
+    queryFn: () => studentsFn({ data: { organizationId: org.id } }),
+    retry: false,
+  });
+  const [committed, setCommitted] = useState(false);
+  const [handoffOpen, setHandoffOpen] = useState(false);
+  const [startDate, setStartDate] = useState(toIso(new Date()));
   const seats = useQuery({
     queryKey: ["club-schedule-seats", org.id],
     queryFn: () => seatsFn({ data: { organizationId: org.id } }),
@@ -139,7 +159,7 @@ function ClubSchedulePage() {
   const navigate = useNavigate({ from: "/org-admin/schedule" });
   const setSp = (patch: Partial<typeof sp>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
-  const view = sp.view === "calendar" ? "calendar" : "grid";
+  const view = sp.view === "grid" ? "grid" : "calendar";
   const range = sp.range === "month" ? "month" : "week";
   const calDate = /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : toIso(new Date());
   const allLessons = calendar.data ?? [];
@@ -158,12 +178,47 @@ function ClubSchedulePage() {
   );
   const activeFilters =
     (sp.coach !== "all" ? 1 : 0) + (sp.invite !== "all" ? 1 : 0) + (lessonSearch ? 1 : 0);
-  const inviteable = [
-    ...new Map(lessons.filter((l) => l.canInvite).map((l) => [l.athleteId, l])).values(),
-  ];
+  const invitationReview = lessonInvitationReview(lessons);
+  const [invitationReviewOpen, setInvitationReviewOpen] = useState(false);
   const sendFn = useServerFn(sendClubLessonInvites);
   const [sending, setSending] = useState(false);
   const [confirmSend, setConfirmSend] = useState<string[] | null>(null);
+  const [reminderSelection, setReminderSelection] = useState<Set<string>>(new Set());
+  const [reminderReview, setReminderReview] = useState<ClubLesson[] | null>(null);
+  const [reminding, setReminding] = useState(false);
+  const pendingReminders = lessonReminderRecipients(lessons);
+  const selectedReminders = pendingReminders.filter((r) => reminderSelection.has(r.athleteId));
+  function selectReminders(rows: ClubLesson[], on: boolean) {
+    setReminderSelection((prev) => {
+      const next = new Set(prev);
+      for (const r of lessonReminderRecipients(rows)) {
+        if (on) next.add(r.athleteId);
+        else next.delete(r.athleteId);
+      }
+      return next;
+    });
+  }
+  function reminderControl(rows: ClubLesson[], label: string) {
+    const eligible = lessonReminderRecipients(rows);
+    const count = eligible.filter((r) => reminderSelection.has(r.athleteId)).length;
+    return <Checkbox aria-label={label} disabled={!eligible.length}
+      checked={count > 0 && count === eligible.length ? true : count > 0 ? "indeterminate" : false}
+      onCheckedChange={(on) => selectReminders(rows, on === true)} />;
+  }
+  async function sendReminders() {
+    if (!reminderReview?.length) return;
+    setReminding(true);
+    try {
+      const result = await sendFn({ data: { organizationId: org.id,
+        athleteIds: lessonReminderRecipients(reminderReview).map((r) => r.athleteId) } });
+      await qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] });
+      toast.success(`${result.sent} invitation reminders queued${result.skipped ? ` · ${result.skipped} skipped` : ""}.`);
+      setReminderReview(null);
+      setReminderSelection(new Set());
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send reminders.");
+    } finally { setReminding(false); }
+  }
   async function sendInvites(ids: string[]) {
     setSending(true);
     try {
@@ -185,7 +240,23 @@ function ClubSchedulePage() {
     {
       key: "student",
       label: "Student",
-      render: (r) => r.studentName,
+      headerControl: <label className="mr-3 inline-flex items-center gap-2">
+        {reminderControl(lessons, "Select all pending invitations")}<span>Select all</span>
+      </label>,
+      render: (r) => (
+        <span className="flex items-center gap-2">
+          <span onClick={(e) => e.stopPropagation()}>
+            {reminderControl([r], `Select ${r.studentName} for reminder`)}
+          </span>
+          <LessonPracticeRing
+            practiceMin={r.practiceMin}
+            targetMin={r.targetMin}
+            muted={r.invitationStatus !== "Connected"}
+            size={24}
+          />
+          <span>{r.studentName}</span>
+        </span>
+      ),
       sortValue: (r) => r.studentName,
     },
     {
@@ -268,6 +339,16 @@ function ClubSchedulePage() {
       className: "min-w-48",
     },
     {
+      key: "remind",
+      label: "",
+      render: (r) => lessonReminderRecipients([r]).length > 0 && (
+        <Button variant="ghost" size="sm" aria-label={`Remind ${r.studentName}`}
+          onClick={(e) => { e.stopPropagation(); setReminderReview([r]); }}>
+          <Bell className="size-4" /> Remind
+        </Button>
+      ),
+    },
+    {
       key: "invitedAt",
       label: "Invited",
       render: (r) => r.invitedAt?.slice(0, 10) ?? "—",
@@ -290,8 +371,10 @@ function ClubSchedulePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const seatedCoaches = coaches.filter((c) => seats.data?.some((s) => s.coach_id === c.coachId));
   const sports = [...new Set(coaches.flatMap((c) => c.levels.map((l) => l.sport)))];
-  const issues = clubScheduleErrors(rows);
+  const issues = step >= 2 ? clubScheduleCommitErrors(rows) : clubScheduleErrors(rows);
   const decisions = rows.filter((r) => (issues[r.id]?.length ?? 0) > 0).length;
+  const partition = partitionClubSchedule(rows);
+  const handoffs = clubCoachHandoffs(rows);
   const groups = [...new Set(rows.map((r) => r.coachName))];
   const shown = rows.filter(
     (r) =>
@@ -334,6 +417,7 @@ function ClubSchedulePage() {
       };
     });
     setRows(next);
+    setCommitted(false);
     setFileName(file.name);
     setStep(1);
     setSearch("");
@@ -344,8 +428,8 @@ function ClubSchedulePage() {
       await saveFn({ data: { organizationId: org.id, fileName, rows } });
       await qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] });
       toast.success("Review saved. No invitations sent.");
-    } catch {
-      toast.error("Could not save the review. Accept the draft to enable import history.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save the review.");
     } finally {
       setBusy(false);
     }
@@ -354,10 +438,53 @@ function ClubSchedulePage() {
     setBusy(true);
     try {
       setRows(await reviewFn({ data: { organizationId: org.id, importId: id } }));
+      setCommitted(!!history.data?.find((r) => r.id === id)?.committed_at);
       setFileName(name);
       setStep(2);
     } catch {
       toast.error("Could not open this import.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  function matchStudents() {
+    setRows((current) =>
+      current.map((r) => ({
+        ...r,
+        athleteId: matchClubScheduleStudent(r, students.data ?? []),
+        startsOn: r.startsOn ?? startDate,
+      })),
+    );
+    setStep(2);
+  }
+  async function createLessons() {
+    if (!partition.ready.length) return;
+    setBusy(true);
+    try {
+      // Save the full review first, preserving unmatched students for later roster matching.
+      if (partition.waiting.length)
+        await saveFn({ data: { organizationId: org.id, fileName, rows } });
+      const review = await saveFn({
+        data: { organizationId: org.id, fileName, rows: partition.ready },
+      });
+      const result = await commitFn({ data: { organizationId: org.id, importId: review.id } });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["club-schedule-history", org.id] }),
+        qc.invalidateQueries({ queryKey: ["club-lesson-calendar", org.id] }),
+      ]);
+      if (partition.waiting.length) {
+        setRows(partition.waiting);
+        setCommitted(false);
+        setStep(2);
+      } else {
+        setCommitted(true);
+        setStep(3);
+      }
+      toast.success(
+        `${result.added} lessons added · ${result.skipped} already scheduled. No emails sent.`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create lessons.");
     } finally {
       setBusy(false);
     }
@@ -381,59 +508,70 @@ function ClubSchedulePage() {
     );
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-8 [&_button]:min-h-11">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PageTitle>Schedule</PageTitle>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}
-          >
-            <Download className="size-4" />
-            CSV template
-          </Button>
-          <Button onClick={() => fileRef.current?.click()}>
-            <Upload className="size-4" />
-            Import CSV
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.tsv,text/csv,text/tab-separated-values"
-            className="hidden"
-            aria-label="Upload club schedule CSV"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload(file);
-              e.target.value = "";
-            }}
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8 [&_button:not([role=checkbox])]:min-h-11">
+      <ClubPageHeader
+        title="Schedule"
+        actions={
+          <ClubPrimaryAction
+            label="Add students"
+            to="/org-admin/people"
+            search={{ tab: "students", add: true }}
           />
-        </div>
-      </div>
+        }
+      />
       <Tabs
         value={sp.tab === "calendar" ? "calendar" : "imports"}
         onValueChange={(v) => setSp({ tab: v })}
         className="min-w-0"
       >
         <TabsList className="h-auto">
-          <TabsTrigger value="imports" className="min-h-11 press-soft">
-            Imports
-          </TabsTrigger>
           <TabsTrigger value="calendar" className="min-h-11 press-soft">
             Lessons
           </TabsTrigger>
+          <TabsTrigger value="imports" className="min-h-11 press-soft">
+            Imports
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="imports" className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-h3">Import lessons</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-11 min-h-11"
+                onClick={() => downloadCsv("gradus-club-schedule-template.csv", CLUB_SCHEDULE_TEMPLATE)}
+              >
+                <Download className="size-4" />
+                Download template
+              </Button>
+              <Button className="h-11 min-h-11" onClick={() => fileRef.current?.click()}>
+                <Upload className="size-4" />
+                Import lesson CSV
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv,.tsv,text/csv,text/tab-separated-values"
+                className="hidden"
+                aria-label="Upload club schedule CSV"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void upload(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
           {seats.isError && (
             <p role="status" className="text-sm text-text-secondary">
-              Seated-coach matching becomes available when this draft is accepted.
+              Could not load seated coaches. Retry by refreshing this page.
             </p>
           )}
           <ol
             aria-label="Import progress"
             className="grid grid-cols-2 gap-2 border-y border-divider py-3 sm:grid-cols-4"
           >
-            {["Upload", "Match coaches", "Review rows", "Send invites"].map((label, i) => (
+            {["Upload", "Match coaches", "Match students", "Lessons & invites"].map((label, i) => (
               <li
                 key={label}
                 aria-current={step === i ? "step" : undefined}
@@ -507,7 +645,7 @@ function ClubSchedulePage() {
                             <TableCell className="font-mono text-right">{group.length}</TableCell>
                             <TableCell>
                               <Button asChild variant="ghost">
-                                <Link to="/org-admin/roster">Invite a coach</Link>
+                                <Link to="/org-admin/people" search={{ tab: "coaches", invite: true }}>Invite a coach</Link>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -515,8 +653,21 @@ function ClubSchedulePage() {
                       })}
                     </TableBody>
                   </ClubTable>
-                  <Button disabled={rows.some((r) => !r.coachId)} onClick={() => setStep(2)}>
-                    Review rows
+                  <div className="space-y-1">
+                    <Label htmlFor="import-start-date">Lessons start on</Label>
+                    <Input
+                      id="import-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="max-w-56"
+                    />
+                  </div>
+                  <Button
+                    disabled={rows.some((r) => !r.coachId) || !students.data || !startDate}
+                    onClick={matchStudents}
+                  >
+                    Match students
                   </Button>
                 </section>
               )}
@@ -561,7 +712,7 @@ function ClubSchedulePage() {
                         {[
                           "Athlete as written",
                           "Coach",
-                          "Age",
+                          "Existing student",
                           "Day / start",
                           "Min",
                           "Invite goes to",
@@ -581,7 +732,31 @@ function ClubSchedulePage() {
                           <TableCell>
                             {coaches.find((c) => c.coachId === r.coachId)?.firstName ?? r.coachName}
                           </TableCell>
-                          <TableCell className="font-mono text-right">{r.age ?? "—"}</TableCell>
+                          <TableCell className="min-w-56">
+                            <FilterPill
+                              aria-label={`Match student ${r.firstName} ${r.lastName}`}
+                              value={r.athleteId ?? "none"}
+                              disabled={committed}
+                              options={[
+                                { value: "none", label: "Choose existing student" },
+                                ...(students.data ?? [])
+                                  .filter((s) => r.coachId && s.coachIds.includes(r.coachId))
+                                  .map((s) => ({
+                                    value: s.id,
+                                    label: `${s.firstName} ${s.lastName} · ${s.id.slice(0, 6)}`,
+                                  })),
+                              ]}
+                              onValueChange={(v) =>
+                                setRows((current) =>
+                                  current.map((item) =>
+                                    item.id === r.id
+                                      ? { ...item, athleteId: v === "none" ? null : v }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            />
+                          </TableCell>
                           <TableCell className="whitespace-nowrap">
                             {IMPORT_DAYS.find((d) => d.value === r.dayOfWeek)?.short ?? "—"} ·{" "}
                             {r.startMinute === null ? "—" : formatTimeLabel(r.startMinute)}
@@ -593,7 +768,11 @@ function ClubSchedulePage() {
                           <TableCell className="min-w-48">
                             <StatusDot
                               status={issues[r.id]?.length ? "attention" : "informational"}
-                              label={issues[r.id]?.[0] ?? "Ready for matching"}
+                              label={
+                                committed
+                                  ? "Lessons created"
+                                  : (issues[r.id]?.[0] ?? "Ready to create")
+                              }
                             />
                           </TableCell>
                           <TableCell>
@@ -602,6 +781,7 @@ function ClubSchedulePage() {
                               size="icon"
                               className="size-11"
                               aria-label={`Edit ${r.firstName} ${r.lastName}`}
+                              disabled={committed}
                               onClick={() => setEditing({ ...r })}
                             >
                               <Pencil className="size-4" />
@@ -627,20 +807,57 @@ function ClubSchedulePage() {
                       </TableRow>
                     </TableFooter>
                   </ClubTable>
-                  {step === 2 && (
-                    <Button disabled={decisions > 0} onClick={() => setStep(3)}>
-                      Continue to invites
-                    </Button>
+                  {step === 2 && !committed && (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button disabled={!partition.ready.length || busy} onClick={createLessons}>
+                        {busy ? "Creating…" : `Create lessons · ${partition.ready.length}`}
+                      </Button>
+                      {!!handoffs.length && (
+                        <Button variant="outline" onClick={() => setHandoffOpen(true)}>
+                          <Download className="size-4" />
+                          New students · coach handoff
+                        </Button>
+                      )}
+                      {!!partition.waiting.length && (
+                        <span className="text-sm text-text-secondary">
+                          {partition.waiting.length} lessons remain in review.
+                        </span>
+                      )}
+                      <Button
+                        variant="outline"
+                        disabled={busy || students.isFetching}
+                        onClick={async () => {
+                          const updated = await students.refetch();
+                          if (updated.error) {
+                            toast.error("Could not refresh coach rosters.");
+                            return;
+                          }
+                          setRows((current) =>
+                            current.map((r) => ({
+                              ...r,
+                              athleteId:
+                                r.athleteId ?? matchClubScheduleStudent(r, updated.data ?? []),
+                            })),
+                          );
+                        }}
+                      >
+                        Refresh student matches
+                      </Button>
+                    </div>
                   )}
-                  {step === 3 && (
+                  {committed && (
                     <div className="space-y-3 border-t border-divider pt-4">
-                      <h2 className="font-display text-h3">Invitations not sent</h2>
-                      <p className="text-sm text-text-secondary">
-                        This review has not added lessons or sent emails. Once a coach adds these
-                        students to their roster, send family invites from the Lessons tab.
-                      </p>
-                      <Button variant="outline" onClick={() => setStep(2)}>
-                        Back to review
+                      <h2 className="font-display text-h3">
+                        Lessons created · no invitations sent
+                      </h2>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setLessonSearch("");
+                          void setSp({ tab: "calendar", coach: "all", invite: "all" });
+                        }}
+                      >
+                        Review lessons & invites
                       </Button>
                     </div>
                   )}
@@ -651,9 +868,7 @@ function ClubSchedulePage() {
           <section className="space-y-3">
             <h2 className="font-display text-h3">Past imports</h2>
             {history.isError ? (
-              <p className="text-sm text-text-secondary">
-                Import history becomes available when this draft is accepted.
-              </p>
+              <p className="text-sm text-text-secondary">Could not load import history.</p>
             ) : (
               <ClubTable>
                 <TableHeader>
@@ -672,7 +887,11 @@ function ClubSchedulePage() {
                         <StatusDot
                           status="informational"
                           label={
-                            record.status === "ready" ? "Review ready · not sent" : "In review"
+                            record.committed_at
+                              ? "Lessons created"
+                              : record.status === "ready"
+                                ? "Review ready · not sent"
+                                : "In review"
                           }
                         />
                       </TableCell>
@@ -757,20 +976,39 @@ function ClubSchedulePage() {
               Export CSV
             </Button>
           </div>
+          {invitationReview.lessons.length ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-divider bg-card px-4 py-3">
+              <p className="text-sm text-text-primary">
+                {invitationReview.notInvited.length} not invited · {invitationReview.awaitingAcceptance.length} awaiting acceptance
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setInvitationReviewOpen(true)}>
+                  Review
+                </Button>
+                {invitationReview.notInvited.length > 0 && <Button
+                  disabled={sending}
+                  onClick={() => setConfirmSend(invitationReview.notInvited.map((l) => l.athleteId))}
+                >
+                  <Send className="size-4" />
+                  Send {invitationReview.notInvited.length}
+                </Button>}
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-divider bg-elevated px-2 py-2">
             <ToggleGroup
               type="single"
               value={view}
-              onValueChange={(v) => v && setSp({ view: v })}
+              onValueChange={(v) => (v === "calendar" || v === "grid") && setSp({ view: v })}
               aria-label="Lesson view"
             >
-              <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3">
-                <Table2 className="size-4" />
-                Grid
-              </ToggleGroupItem>
               <ToggleGroupItem value="calendar" className="press-soft gap-1.5 px-3">
                 <CalendarDays className="size-4" />
                 Calendar
+              </ToggleGroupItem>
+              <ToggleGroupItem value="grid" className="press-soft gap-1.5 px-3">
+                <Table2 className="size-4" />
+                Grid
               </ToggleGroupItem>
             </ToggleGroup>
             <span className="mx-1 h-6 w-px bg-divider" aria-hidden />
@@ -819,15 +1057,6 @@ function ClubSchedulePage() {
                 {lessonGrid.menu}
               </>
             )}
-            <Button
-              size="sm"
-              className="ml-auto"
-              disabled={!inviteable.length || sending}
-              onClick={() => setConfirmSend(inviteable.map((l) => l.athleteId))}
-            >
-              <Send className="size-3.5" />
-              Send invites · {inviteable.length}
-            </Button>
             {view === "calendar" && !!lessonCoaches.length && (
               <div className="ml-auto flex flex-wrap gap-1.5">
                 {lessonCoaches.map(([id, name]) => (
@@ -857,8 +1086,20 @@ function ClubSchedulePage() {
             <p role="alert">Could not load the club calendar.</p>
           ) : (
             view === "grid" && (
+              <>
+              {selectedReminders.length > 0 && <div className="flex items-center gap-3 py-2">
+                <span className="font-mono text-sm">{selectedReminders.length} selected</span>
+                <Button onClick={() => setReminderReview(selectedReminders)}><Bell className="size-4" /> Remind selected</Button>
+                <Button variant="ghost" onClick={() => setReminderSelection(new Set())}>Clear selection</Button>
+              </div>}
               <ClubDataGrid
                 grid={lessonGrid}
+                groupControl={(label, rows) => reminderControl(rows, `Select pending invitations for ${label}`)}
+                groupActions={(_label, rows) => <Button variant="outline"
+                  disabled={!lessonReminderRecipients(rows).length}
+                  onClick={() => setReminderReview(lessonReminderRecipients(rows))}>
+                  <Bell className="size-4" /> Remind outstanding
+                </Button>}
                 rowKey={(r) => r.id}
                 onRowClick={setSelectedLesson}
                 rowLabel={(r) => `lesson for ${r.studentName}`}
@@ -869,10 +1110,115 @@ function ClubSchedulePage() {
                 }}
                 empty={calendar.isPending ? "Loading lessons…" : "No recurring lessons."}
               />
+              </>
             )
           )}
         </TabsContent>
       </Tabs>
+      <Sheet open={!!reminderReview} onOpenChange={(open) => !open && !reminding && setReminderReview(null)}>
+        <SheetContent className="overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Review reminders</SheetTitle>
+            <SheetDescription>{reminderReview?.length ?? 0} students awaiting acceptance. Resend their existing invitation to the recipient below.</SheetDescription>
+          </SheetHeader>
+          <ul className="my-4 divide-y divide-divider">
+            {reminderReview?.map((r) => <li key={r.athleteId} className="py-3">
+              <p className="font-semibold">{r.studentName}</p>
+              <p className="text-sm text-text-secondary">{r.coachName}</p>
+              <p className="break-all text-sm text-text-secondary">{r.recipient} · {r.contactEmail}</p>
+            </li>)}
+          </ul>
+          <Button disabled={reminding || !reminderReview?.length} onClick={sendReminders}>
+            {reminding ? <Loader2 className="size-4 animate-spin" /> : <Bell className="size-4" />}
+            {reminding ? "Sending…" : "Send reminders"}
+          </Button>
+        </SheetContent>
+      </Sheet>
+      <Sheet open={invitationReviewOpen} onOpenChange={setInvitationReviewOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-5xl">
+          <SheetHeader>
+            <SheetTitle>Scheduled student invitations</SheetTitle>
+            <SheetDescription>
+              {invitationReview.notInvited.length} not invited · {invitationReview.awaitingAcceptance.length} awaiting acceptance
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 overflow-x-auto">
+            <ClubTable>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Coach</TableHead>
+                  <TableHead>Lesson</TableHead>
+                  <TableHead>Recipient</TableHead>
+                  <TableHead>Invitation</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitationReview.lessons.map((lesson) => (
+                  <TableRow key={lesson.id}>
+                    <TableCell>{lesson.studentName}</TableCell>
+                    <TableCell>{lesson.coachName}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div>{dayName(lesson.day)} · {formatTimeLabel(lesson.start)}–{formatTimeLabel(lesson.end)}</div>
+                      <div className="text-xs text-text-secondary">{recurrence(lesson)}</div>
+                    </TableCell>
+                    <TableCell className="min-w-48 whitespace-normal break-words">
+                      <div>{lesson.recipient === "Guardian" ? lesson.guardianName : lesson.studentName} · {lesson.recipient}</div>
+                      <div className="text-xs text-text-secondary">{lesson.contactEmail}</div>
+                    </TableCell>
+                    <TableCell className="min-w-44">
+                      <StatusDot status={lesson.invitedAt ? "informational" : "attention"} label={lesson.invitedAt ? "Awaiting acceptance" : "Not invited"} />
+                      {lesson.invitedAt && <div className="mt-1 text-xs text-text-secondary">Invite recorded {lesson.invitedAt.slice(0, 10)}</div>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </ClubTable>
+          </div>
+          {invitationReview.notInvited.length > 0 && (
+            <Button className="mt-6" disabled={sending} onClick={() => setConfirmSend(invitationReview.notInvited.map((lesson) => lesson.athleteId))}>
+              <Send className="size-4" />Send {invitationReview.notInvited.length} invites
+            </Button>
+          )}
+        </SheetContent>
+      </Sheet>
+      <Sheet open={handoffOpen} onOpenChange={setHandoffOpen}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>New students · coach handoff</SheetTitle>
+            <SheetDescription>
+              Roster setup stays with each coach. No accounts or invitations are created here.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            {handoffs.map((h) => (
+              <div key={h.coachId} className="border-b border-divider pb-4">
+                <h3 className="font-display text-h3">
+                  {coaches.find((c) => c.coachId === h.coachId)
+                    ? `${coaches.find((c) => c.coachId === h.coachId)?.firstName} ${coaches.find((c) => c.coachId === h.coachId)?.lastName}`
+                    : h.coachName}
+                </h3>
+                <p className="mb-2 text-sm text-text-secondary">{h.lessons} unmatched lessons</p>
+                {h.adultLessons > 0 && (
+                  <p className="mb-2 text-sm text-text-secondary">
+                    {h.adultLessons} adult lessons: the coach should use the adult athlete
+                    invitation flow, not the guardian-only web CSV import.
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    downloadCsv(`coach-new-students-${h.coachId.slice(0, 8)}.csv`, h.csv)
+                  }
+                >
+                  <Download className="size-4" />
+                  Download coach CSV
+                </Button>
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
       <Sheet
         open={!!selectedLesson}
         onOpenChange={(open) => {
@@ -900,6 +1246,12 @@ function ClubSchedulePage() {
                 ["Invite recipient", selectedLesson.recipient],
                 ["Contact email", selectedLesson.contactEmail ?? "Not recorded"],
                 ["Invitation", selectedLesson.invitationStatus],
+                [
+                  "Practice last week",
+                  selectedLesson.targetMin === null
+                    ? `${selectedLesson.practiceMin ?? 0} min · no target set`
+                    : `${selectedLesson.practiceMin ?? 0} of ${selectedLesson.targetMin} min`,
+                ],
                 [
                   "Invite recorded at",
                   selectedLesson.invitedAt
@@ -1065,6 +1417,33 @@ function ClubSchedulePage() {
                   setEditing({ ...editing, frequency: v as ClubScheduleRow["frequency"] })
                 }
               />
+              <div className="space-y-1">
+                <Label htmlFor="lesson-start-date">Starts on</Label>
+                <Input
+                  id="lesson-start-date"
+                  type="date"
+                  value={editing.startsOn ?? ""}
+                  onChange={(e) => setEditing({ ...editing, startsOn: e.target.value })}
+                />
+              </div>
+              {(editing.frequency === "monthly" || editing.frequency === "twice_monthly") && (
+                <div className="space-y-1">
+                  <Label>Weeks of month</Label>
+                  <ToggleGroup
+                    type="multiple"
+                    value={(editing.weeksOfMonth ?? []).map(String)}
+                    onValueChange={(values) =>
+                      setEditing({ ...editing, weeksOfMonth: values.map(Number).sort() })
+                    }
+                  >
+                    {[1, 2, 3, 4, 5].map((w) => (
+                      <ToggleGroupItem key={w} value={String(w)} aria-label={`Week ${w}`}>
+                        {w}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   setRows((current) => current.map((r) => (r.id === editing.id ? editing : r)));

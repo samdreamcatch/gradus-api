@@ -38,6 +38,9 @@ const unprocessable = (message: string) =>
 /** Same message `createSelfManagedAthlete` gives the trigger's check violation (adult-athlete.server.ts). */
 export const UNDER_18_NEEDS_GUARDIAN = "Athletes under 18 need a parent or guardian email.";
 
+/** An athlete cannot change a birthdate that is already on file (RLS audit, 2026-11-19). */
+export const BIRTHDATE_LOCKED = "Your birthdate can't be changed. Contact support if it's wrong.";
+
 export type AthleteSettingsDTO = {
   id: string;
   firstName: string;
@@ -97,24 +100,31 @@ export async function getAthleteSettings(
   };
 }
 
-/** Update the caller's own name and birthdate. See `AthleteSelfOptions` for the API's stricter answers. */
+/** Update the caller's own name, and set their birthdate if none is on file. See `AthleteSelfOptions` for the API's stricter answers. */
 export async function updateAthleteSelf(
   ctx: AthleteSettingsContext,
   input: AthleteSelfInput,
   opts: AthleteSelfOptions = {},
 ): Promise<{ ok: true }> {
   const { userId, admin } = ctx;
-  if (opts.apiContract) {
-    const row = await admin.from("athletes").select("id").eq("user_id", userId).maybeSingle();
-    if (row.error) dbError(row.error);
-    if (!row.data) throw notFound("Athlete not found");
-  }
+  const row = await admin
+    .from("athletes")
+    .select("id, birthdate")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (row.error) dbError(row.error);
+  if (!row.data && opts.apiContract) throw notFound("Athlete not found");
+  // A birthdate is entered once. Age gates read it, so an athlete who could
+  // change it could make themselves an adult. A row with none on file (a
+  // coach-added athlete) may still set it the first time.
+  const onFile = (row.data?.birthdate as string | null | undefined) ?? null;
+  if (onFile !== null && input.birthdate !== onFile) throw unprocessable(BIRTHDATE_LOCKED);
   const upd = await admin
     .from("athletes")
     .update({
       first_name: input.firstName,
       last_name: input.lastName,
-      birthdate: input.birthdate,
+      ...(onFile === null ? { birthdate: input.birthdate } : {}),
     })
     .eq("user_id", userId);
   if (upd.error) {

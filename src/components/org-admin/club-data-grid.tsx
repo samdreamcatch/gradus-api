@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, Columns3, Group, SlidersHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -32,11 +32,14 @@ import {
   type SortValue,
 } from "@/lib/club-grid";
 import { cn } from "@/lib/utils";
+import { ClubNumber } from "./club-number";
 
 export type ClubColumn<T> = {
   key: string;
   label: string;
-  render: (row: T) => ReactNode;
+  headerControl?: ReactNode;
+  render?: (row: T) => ReactNode;
+  numeric?: (row: T) => number | null;
   /** Value used to sort; omit to make the column unsortable. */
   sortValue?: (row: T) => SortValue;
   /** Label used to group; omit to keep the column out of "Group by". */
@@ -82,7 +85,10 @@ export function useClubGrid<T>(
   };
 
   const byKey = new Map(columns.map((c) => [c.key, c]));
-  const shown = visibleKeys(keys, prefs.hidden).map((k) => byKey.get(k)!);
+  const shown = visibleKeys(keys, prefs.hidden).flatMap((k) => {
+    const column = byKey.get(k);
+    return column ? [column] : [];
+  });
   const sorted = useMemo(
     () => sortRows(rows, prefs.sort, (r, k) => byKey.get(k)?.sortValue?.(r)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,124 +96,53 @@ export function useClubGrid<T>(
   );
   const groupCol = prefs.group ? byKey.get(prefs.group) : undefined;
   const groups = groupCol?.groupValue ? groupRows(sorted, groupCol.groupValue) : null;
-  const changed =
-    prefs.hidden.join() !== defaults.hidden.join() ||
-    !!prefs.sort ||
-    prefs.group !== defaults.group;
-
   const menu = (
-    <div className="flex items-center gap-1">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="press-soft">
-            <Columns3 className="size-3.5" />
-            Fields
-            {prefs.hidden.length > 0 && (
-              <span className="font-mono text-xs text-text-secondary">
-                {prefs.hidden.length} hidden
-              </span>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Show fields</DropdownMenuLabel>
-          {columns.map((c, i) => (
-            <DropdownMenuCheckboxItem
-              key={c.key}
-              disabled={i === 0}
-              checked={i === 0 || !prefs.hidden.includes(c.key)}
-              onSelect={(e) => e.preventDefault()}
-              onCheckedChange={(on) =>
-                setPrefs({
-                  ...prefs,
-                  hidden: on ? prefs.hidden.filter((k) => k !== c.key) : [...prefs.hidden, c.key],
-                })
-              }
-            >
-              {c.label}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="press-soft">
-            <SlidersHorizontal className="size-3.5" />
-            Sort
-            {prefs.sort && (
-              <span className="text-xs text-text-secondary">
-                {byKey.get(prefs.sort.key)?.label} {prefs.sort.dir === "asc" ? "↑" : "↓"}
-              </span>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={prefs.sort?.key ?? "none"}
-            onValueChange={(k) =>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="min-h-11 border-border-strong font-sans press-soft">
+          Columns
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 font-sans">
+        <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+        {columns.map((c, i) => (
+          <DropdownMenuCheckboxItem
+            className="min-h-11"
+            key={c.key}
+            disabled={i === 0}
+            checked={i === 0 || !prefs.hidden.includes(c.key)}
+            onSelect={(e) => e.preventDefault()}
+            onCheckedChange={(on) =>
               setPrefs({
                 ...prefs,
-                sort: k === "none" ? null : { key: k, dir: prefs.sort?.dir ?? "asc" },
+                hidden: on ? prefs.hidden.filter((k) => k !== c.key) : [...prefs.hidden, c.key],
               })
             }
           >
-            <DropdownMenuRadioItem value="none">Default order</DropdownMenuRadioItem>
-            {columns
-              .filter((c) => c.sortValue)
-              .map((c) => (
-                <DropdownMenuRadioItem key={c.key} value={c.key}>
-                  {c.label}
-                </DropdownMenuRadioItem>
-              ))}
-          </DropdownMenuRadioGroup>
-          {prefs.sort && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={prefs.sort.dir}
-                onValueChange={(d) =>
-                  setPrefs({ ...prefs, sort: { key: prefs.sort!.key, dir: d as "asc" | "desc" } })
-                }
-              >
-                <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {groupable.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="press-soft">
-              <Group className="size-3.5" />
-              Group
-              {groupCol && <span className="text-xs text-text-secondary">{groupCol.label}</span>}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
+            {c.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+        {groupable.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
             <DropdownMenuLabel>Group by</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={prefs.group ?? "none"}
               onValueChange={(k) => setPrefs({ ...prefs, group: k === "none" ? null : k })}
             >
-              <DropdownMenuRadioItem value="none">No grouping</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem className="min-h-11" value="none">
+                No grouping
+              </DropdownMenuRadioItem>
               {groupable.map((k) => (
-                <DropdownMenuRadioItem key={k} value={k}>
-                  {byKey.get(k)!.label}
+                <DropdownMenuRadioItem className="min-h-11" key={k} value={k}>
+                  {byKey.get(k)?.label}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-      {changed && (
-        <Button variant="link" size="sm" onClick={() => setPrefs(defaults)}>
-          Reset view
-        </Button>
-      )}
-    </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return {
@@ -228,20 +163,26 @@ export function ClubDataGrid<T>({
   rowKey,
   onRowClick,
   rowLabel,
+  groupControl,
+  groupActions,
   empty,
   filtered,
   onClear,
   showFooter,
   className,
+  noun = { one: "record", many: "records" },
 }: {
   grid: ClubGridState<T>;
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
   rowLabel?: (row: T) => string;
+  groupControl?: (label: string, rows: T[]) => ReactNode;
+  groupActions?: (label: string, rows: T[]) => ReactNode;
   empty: ReactNode;
   filtered: boolean;
   onClear?: () => void;
   showFooter?: boolean;
+  noun?: { one: string; many: string };
   className?: string;
 }) {
   const cols = grid.columns;
@@ -268,18 +209,19 @@ export function ClubDataGrid<T>({
           key={c.key}
           className={cn(
             c.align === "right" && "text-right font-mono tabular-nums",
-            i === 0 && "sticky left-0 z-[1] bg-card font-medium text-text-primary",
+            i === 0 && "sticky left-0 z-[1] font-medium text-text-primary",
+            i === 0 && onRowClick && "underline underline-offset-4",
             c.className,
           )}
         >
-          {c.render(row)}
+          {c.render ? c.render(row) : c.numeric ? <ClubNumber value={c.numeric(row)} /> : null}
         </TableCell>
       ))}
     </TableRow>
   );
 
   return (
-    <div className={cn("max-h-[70vh] overflow-auto rounded-md", className)}>
+    <div className={cn("max-h-[70vh] overflow-auto rounded-md border border-divider", className)}>
       <ClubTable className="[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-[2]">
         <TableHeader>
           <TableRow>
@@ -293,16 +235,19 @@ export function ClubDataGrid<T>({
                   }
                   className={cn(
                     "whitespace-nowrap",
+                    active && "text-text-primary!",
                     c.align === "right" && "text-right",
                     i === 0 && "sticky left-0 z-[3]",
                   )}
                 >
+                  {c.headerControl}
                   {c.sortValue ? (
-                    <button
+                    <Button
+                      variant="ghost"
                       type="button"
                       onClick={() => grid.toggleSort(c.key)}
                       className={cn(
-                        "press-soft inline-flex min-h-9 items-center gap-1 font-semibold",
+                        "group press-soft inline-flex min-h-11 items-center gap-1 rounded-none p-0 font-sans text-xs font-semibold text-inherit",
                         c.align === "right" && "flex-row-reverse",
                       )}
                     >
@@ -312,9 +257,9 @@ export function ClubDataGrid<T>({
                       ) : active === "desc" ? (
                         <ArrowDown className="size-3" />
                       ) : (
-                        <ArrowUpDown className="size-3 text-text-tertiary" />
+                        <ArrowUpDown className="size-3 text-text-tertiary opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
                       )}
-                    </button>
+                    </Button>
                   ) : (
                     c.label
                   )}
@@ -328,8 +273,18 @@ export function ClubDataGrid<T>({
             ? grid.groups.flatMap((g) => [
                 <ClubGroupRow
                   key={`g-${g.label}`}
-                  label={g.label}
+                  label={
+                    groupControl ? (
+                      <span className="inline-flex items-center gap-3">
+                        {groupControl(g.label, g.rows)}
+                        {g.label}
+                      </span>
+                    ) : (
+                      g.label
+                    )
+                  }
                   count={g.rows.length}
+                  actions={groupActions?.(g.label, g.rows)}
                   colSpan={cols.length}
                 />,
                 ...g.rows.map(renderRow),
@@ -352,10 +307,14 @@ export function ClubDataGrid<T>({
                   key={c.key}
                   className={cn(
                     c.align === "right" && "text-right font-mono tabular-nums",
-                    i === 0 && "sticky left-0 bg-elevated",
+                    i === 0 && "sticky left-0 z-[1]",
                   )}
                 >
-                  {c.footer ? c.footer(grid.rows) : i === 0 ? `${grid.rows.length} records` : null}
+                  {c.footer
+                    ? c.footer(grid.rows)
+                    : i === 0
+                      ? `${grid.rows.length} ${grid.rows.length === 1 ? noun.one : noun.many}`
+                      : null}
                 </TableCell>
               ))}
             </TableRow>

@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { canShareNatively, shareNatively } from "@/lib/native";
+import { canShareNatively, shareNatively } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 import { getOrCreateShareToken } from "@/lib/plan-share.functions";
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -33,7 +33,7 @@ export function ClubGridToolbar({
   end?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-divider bg-elevated px-2 py-2">
+    <div className="flex flex-wrap items-center gap-2 font-sans [&_button:not([role=switch])]:min-h-11">
       {views && views.length > 1 && (
         <>
           <ToggleGroup
@@ -43,8 +43,11 @@ export function ClubGridToolbar({
             aria-label="View"
           >
             {views.map((v) => (
-              <ToggleGroupItem key={v.value} value={v.value} className="press-soft gap-1.5 px-3">
-                {v.icon}
+              <ToggleGroupItem
+                key={v.value}
+                value={v.value}
+                className="min-h-11 press-soft px-3 font-sans"
+              >
                 {v.label}
               </ToggleGroupItem>
             ))}
@@ -63,14 +66,13 @@ export function ClubGridToolbar({
             placeholder={searchLabel}
             value={search ?? ""}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 pl-9"
+            className="h-11 border-border-strong pl-9 font-sans"
           />
         </div>
       )}
       {children}
       {activeFilters > 0 && onClear && (
         <Button variant="ghost" size="sm" onClick={onClear}>
-          <X className="size-3.5" />
           Clear · {activeFilters}
         </Button>
       )}
@@ -103,19 +105,21 @@ export function ClubGroupRow({
   label,
   count,
   colSpan,
+  actions,
 }: {
   label: ReactNode;
   count: number;
   colSpan: number;
+  actions?: ReactNode;
 }) {
   return (
-    <TableRow className="bg-elevated! hover:bg-elevated">
-      <TableCell
-        colSpan={colSpan}
-        className="py-1.5! text-caption uppercase tracking-wide text-text-secondary"
-      >
-        <span className="font-semibold text-text-primary">{label}</span>
-        <span className="ml-2 font-mono">{count}</span>
+    <TableRow className="club-group-row">
+      <TableCell colSpan={colSpan} className="py-2! text-sm text-text-secondary">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="font-semibold text-text-primary">{label}</span>
+          <span className="font-mono">{count}</span>
+          {actions && <span className="ml-auto inline-flex flex-wrap items-center gap-3">{actions}</span>}
+        </div>
       </TableCell>
     </TableRow>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { buildClubLessons, type CalendarSlot, type CalendarStudent } from "./club-lesson-calendar";
+import { buildClubLessons, lessonInvitationReview, type CalendarSlot, type CalendarStudent } from "./club-lesson-calendar";
 
 const student: CalendarStudent = {
   id: "student",
@@ -35,6 +35,28 @@ const input = {
   guardians: [],
 };
 describe("Club lesson calendar", () => {
+  it("counts each uninvited student once while retaining all scheduled lessons for review", () => {
+    const review = lessonInvitationReview(buildClubLessons({
+      ...input,
+      slots: [slot, { ...slot, id: "second", day_of_week: 6 }],
+    }));
+    expect(review.notInvited.map((lesson) => lesson.athleteId)).toEqual(["student"]);
+    expect(review.lessons.map((lesson) => lesson.id)).toEqual(["morning", "second"]);
+  });
+  it("separates recorded invitations from the unsent bulk invitation list", () => {
+    const review = lessonInvitationReview(buildClubLessons({
+      ...input,
+      students: [{ ...student, guardian_invited_at: "2026-11-01T00:00:00Z" }],
+    }));
+    expect(review.notInvited).toEqual([]);
+    expect(review.awaitingAcceptance.map((lesson) => lesson.athleteId)).toEqual(["student"]);
+  });
+  it("excludes connected and paused students from actionable invitation review", () => {
+    for (const changed of [{ parent_id: "parent" }, { account_state: "paused" }]) {
+      const review = lessonInvitationReview(buildClubLessons({ ...input, students: [{ ...student, ...changed }] }));
+      expect(review.lessons).toEqual([]);
+    }
+  });
   it("returns one row per lesson with its own start and end instead of a daily span", () => {
     const lessons = buildClubLessons({
       ...input,
@@ -110,5 +132,36 @@ describe("Club lesson calendar placement", () => {
     const l = { ...base, frequency: "monthly", weeksOfMonth: [2] };
     expect(lessonOccursOn(l, "2026-11-10")).toBe(true);
     expect(lessonOccursOn(l, "2026-11-03")).toBe(false);
+  });
+});
+
+import { compactHours, practiceFor, practiceState } from "./club-lesson-calendar";
+describe("lesson practice to target", () => {
+  const base = {
+    goals: [{ id: "g", athlete_id: "a", coach_id: "c", sport: "skate", current_level_key: "bronze", updated_at: "2026-01-01" }],
+    primaries: [{ athlete_id: "a", sport: "skate", coach_id: "c" }],
+    levels: [{ coach_id: "c", sport: "skate", level_key: "bronze", practice_hours_per_week: 2 }],
+    targets: [],
+    sessions: [{ coach_id: "c", athlete_id: "a", duration_seconds: 3600 }],
+  };
+  it("uses the level target and last week's practice", () => {
+    const p = practiceFor("c", "a", base);
+    expect(p).toEqual({ practiceMin: 60, targetMin: 120 });
+    expect(practiceState(p)).toBe("below");
+  });
+  it("prefers the coach's own target for the student", () => {
+    const p = practiceFor("c", "a", { ...base, targets: [{ coach_id: "c", athlete_id: "a", sport: "skate", hours_per_week: 1 }] });
+    expect(practiceState(p)).toBe("met");
+  });
+  it("reports no target when a sport has none", () => {
+    const p = practiceFor("c", "a", { ...base, levels: [] });
+    expect(practiceState(p)).toBe("no_target");
+  });
+});
+describe("compact week hours", () => {
+  it("trims before the first and after the last lesson but keeps midday hours", () => {
+    const { rows } = compactHours([{ start: 360, end: 420 }, { start: 1020, end: 1080 }], 56, 24);
+    expect(rows.every((r) => r.kind === "hour")).toBe(true);
+    expect(rows.map((r) => (r.kind === "hour" ? r.hour : -1))).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
   });
 });

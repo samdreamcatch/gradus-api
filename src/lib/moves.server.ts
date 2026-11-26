@@ -42,28 +42,33 @@ export type LibraryLinkResult =
 
 type Client = SupabaseClient<Database>;
 
-export type MovesContext = { userId: string; supabase: Client };
+export type MovesContext = {
+  userId: string;
+  supabase: Client;
+  /**
+   * The caller's `coach_profiles.id`, when the route has already read it for
+   * this `userId` (`requirePlansCoach`): the functions here then skip reading
+   * it again. Never taken from a request.
+   */
+  coachId?: string;
+};
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
   new ApiError({ code: "unprocessable", status: 422, message });
 
-async function requireCoachId(supabase: Client, userId: string): Promise<string> {
-  const { data, error } = await supabase
-    .from("coach_profiles")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) dbError(error);
-  if (!data) throw unprocessable("Coach profile not found");
-  return data.id;
+async function requireCoachId(ctx: MovesContext): Promise<string> {
+  const coachId = await findCoachId(ctx);
+  if (!coachId) throw unprocessable("Coach profile not found");
+  return coachId;
 }
 
-async function findCoachId(supabase: Client, userId: string): Promise<string | null> {
-  const { data, error } = await supabase
+async function findCoachId(ctx: MovesContext): Promise<string | null> {
+  if (ctx.coachId !== undefined) return ctx.coachId;
+  const { data, error } = await ctx.supabase
     .from("coach_profiles")
     .select("id")
-    .eq("user_id", userId)
+    .eq("user_id", ctx.userId)
     .maybeSingle();
   if (error) dbError(error);
   return data?.id ?? null;
@@ -99,7 +104,7 @@ const MOVE_COLUMNS =
 /** The library, seeding the curriculum for the coach's sports on every read (idempotent). */
 export async function listMoves(ctx: MovesContext): Promise<MoveLibraryDTO> {
   const supabase = ctx.supabase;
-  const coachId = await findCoachId(supabase, ctx.userId);
+  const coachId = await findCoachId(ctx);
   if (!coachId) {
     // Non-coach user (or coach onboarding not complete) — degrade gracefully
     // instead of blank-screening the route.
@@ -186,7 +191,7 @@ export async function upsertMove(
   data: z.infer<typeof moveInput>,
 ): Promise<UpsertMoveResult> {
   const supabase = ctx.supabase;
-  const coachId = await requireCoachId(supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
 
   const row = {
     coach_id: coachId,
@@ -273,7 +278,7 @@ export async function importMoves(
   input: z.infer<typeof importMovesInput>,
 ): Promise<ImportMovesResult> {
   const supabase = ctx.supabase;
-  const coachId = await requireCoachId(supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
 
   const { data: live, error: liveErr } = await supabase
     .from("moves")
@@ -365,7 +370,7 @@ export async function archiveMove(
   id: string,
   now: Date = new Date(),
 ): Promise<{ ok: true }> {
-  const coachId = await requireCoachId(ctx.supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
   const { error } = await ctx.supabase
     .from("moves")
     .update({ archived_at: now.toISOString() })
@@ -431,7 +436,7 @@ export async function addPlanMoveToLibrary(
   data: z.infer<typeof addPlanMoveToLibraryInput>,
 ): Promise<LibraryLinkResult> {
   const supabase = ctx.supabase;
-  const coachId = await requireCoachId(supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
   const pm = await loadOwnedPlanMove(supabase, coachId, data.planMoveId);
   if (pm.move_id) return { ok: true, moveId: pm.move_id };
 
@@ -494,7 +499,7 @@ export async function updateLibraryMoveFromPlanMove(
   expectedMoveId?: string,
 ): Promise<{ moveId: string }> {
   const supabase = ctx.supabase;
-  const coachId = await requireCoachId(supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
   const pm = await loadOwnedPlanMove(supabase, coachId, planMoveId);
   if (!pm.move_id) throw unprocessable("This move is not linked to a library move yet");
   if (expectedMoveId && pm.move_id !== expectedMoveId) {
@@ -545,7 +550,7 @@ export async function forkPlanMoveToLibrary(
   data: z.infer<typeof forkPlanMoveToLibraryInput>,
 ): Promise<LibraryLinkResult> {
   const supabase = ctx.supabase;
-  const coachId = await requireCoachId(supabase, ctx.userId);
+  const coachId = await requireCoachId(ctx);
   const pm = await loadOwnedPlanMove(supabase, coachId, data.planMoveId);
 
   const { cue, why } = requireCueAndWhy(

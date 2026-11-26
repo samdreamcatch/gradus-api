@@ -1,5 +1,5 @@
 import appStoreBadge from "@/assets/app-store-badge.svg.asset.json";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import { APP_STORE_URL, openInAppOrStore } from "@/lib/open-in-app";
 import { cn } from "@/lib/utils";
 

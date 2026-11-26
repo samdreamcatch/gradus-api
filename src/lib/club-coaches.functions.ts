@@ -11,7 +11,7 @@ type CoachDatabase = Omit<Database, "public"> & {
     Tables: Database["public"]["Tables"] & {
       org_coach_week_stats: { Row: CoachWeek & { organization_id: string }; Insert: never; Update: never; Relationships: [] };
     };
-    Functions: Database["public"]["Functions"] & { refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined } };
+    Functions: Database["public"]["Functions"] & { refresh_club_coaching_metrics: { Args: { p_org: string }; Returns: undefined } };
   };
 };
 
@@ -30,12 +30,56 @@ export const getClubCoachWeeks = createServerFn({ method: "POST" })
     if (latest.error) dbError(latest.error);
     const last = latest.data?.[0]?.computed_at;
     if (!last || Date.now() - new Date(last).getTime() > 10 * 60_000) {
-      const refresh = await admin.rpc("refresh_club_coach_weeks", { p_org: data.organizationId });
+      const refresh = await admin.rpc("refresh_club_coaching_metrics", { p_org: data.organizationId });
       if (refresh.error) dbError(refresh.error);
     }
     const result = await admin.from("org_coach_week_stats")
-      .select("coach_id,week_start,students,minors,practice_min,target_min,sessions,computed_at")
+      .select("coach_id,week_start,students,minors,practice_min,target_min,sessions,students_meeting_target,lessons,computed_at")
       .eq("organization_id", data.organizationId).order("week_start", { ascending: false });
     if (result.error) dbError(result.error);
     return { viewerId: context.userId, weeks: result.data ?? [] };
+  });
+
+export const getClubCoachStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ organizationId: z.string().uuid(), coachId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const permission = await context.supabase.rpc("has_org_admin", { _user_id: context.userId, _org_id: data.organizationId });
+    if (permission.error) dbError(permission.error);
+    if (!permission.data) throw new Error("Not authorized for this club.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const coach = await supabaseAdmin.from("coach_profiles").select("id")
+      .eq("id", data.coachId).eq("organization_id", data.organizationId).maybeSingle();
+    if (coach.error) dbError(coach.error);
+    if (!coach.data) throw new Error("Coach not found in this club.");
+    const links = await supabaseAdmin.from("coach_athletes").select("athlete_id").eq("coach_id", data.coachId);
+    if (links.error) dbError(links.error);
+    const ids = [...new Set((links.data ?? []).map((l) => l.athlete_id))];
+    if (!ids.length) return [];
+    const [students, guardians] = await Promise.all([
+      supabaseAdmin.from("athletes").select("id,first_name,last_name,parent_id,self_managed,guardian_first_name,guardian_last_name").in("id", ids).eq("account_state", "active"),
+      supabaseAdmin.from("athlete_guardians").select("athlete_id,parent_profiles(first_name,last_name)").in("athlete_id", ids),
+    ]);
+    if (students.error) dbError(students.error);
+    if (guardians.error) dbError(guardians.error);
+    const parentIds = [...new Set((students.data ?? []).flatMap((s) => s.parent_id ? [s.parent_id] : []))];
+    const parents = parentIds.length
+      ? await supabaseAdmin.from("parent_profiles").select("id,first_name,last_name").in("id", parentIds)
+      : { data: [], error: null };
+    if (parents.error) dbError(parents.error);
+    return (students.data ?? []).map((s) => {
+      const primary = parents.data?.find((p) => p.id === s.parent_id);
+      const names = [
+        primary ? [primary.first_name, primary.last_name].filter(Boolean).join(" ") : "",
+        ...(guardians.data ?? []).filter((g) => g.athlete_id === s.id).map((g) => [g.parent_profiles?.first_name, g.parent_profiles?.last_name].filter(Boolean).join(" ")),
+      ].filter(Boolean);
+      const pendingName = [s.guardian_first_name, s.guardian_last_name].filter(Boolean).join(" ");
+      return {
+        id: s.id,
+        name: [s.first_name, s.last_name].filter(Boolean).join(" "),
+        parents: [...new Set(names)],
+        pendingParent: names.length ? null : pendingName || null,
+        selfManaged: s.self_managed,
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name));
   });

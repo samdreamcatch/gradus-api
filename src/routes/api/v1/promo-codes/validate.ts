@@ -18,8 +18,8 @@ export const Route = createFileRoute("/api/v1/promo-codes/validate")({
       input: inputSchema,
       output: promoValidationSchema,
       handler: async ({ ctx, input }) => {
-        const { supabase } = requireContext(ctx);
-        return validatePromoCode({ supabase }, input.code);
+        const { admin } = requireContext(ctx);
+        return validatePromoCode({ admin }, input.code);
       },
     }),
   },

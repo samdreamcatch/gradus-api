@@ -7,7 +7,7 @@
  * and `description` (20261111120100_plans_product_type_level_description); and
  * `selectedLevelTo`, the other end of a level range (20261111120400); and `sport`,
  * the sport the plan is for (20261124120000_plans_sport); and `mediaVideo`, the plan's
- * cover video in the same bucket (20261125120000_plans_media_video). The marketplace
+ * cover video in the same bucket (20261126120000_plans_media_video). The marketplace
  * shows the coach's own image, else the video, else default artwork (`listingCover`).
  *
  * A level is one key in `selectedLevel`, or a range: the first pick there and the

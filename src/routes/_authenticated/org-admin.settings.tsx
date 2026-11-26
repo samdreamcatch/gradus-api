@@ -4,12 +4,13 @@ import { useState } from "react";
 import { getOrgAdminContext } from "@/lib/org-admin.functions";
 import { getClubContract } from "@/lib/club-contract.functions";
 import { sportDisplayLabel } from "@/lib/coach-sports";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClubTable } from "@/components/org-admin/club-table";
 import { ClubStatusLegend } from "@/components/org-admin/status-dot";
 import { TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
+import { ClubAddSeats } from "@/components/org-admin/club-add-seats";
 
 const settingsOptions = () =>
   queryOptions({
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/settings")({
 
 function OrgSettings() {
   const {
-    data: { club, sports, code },
+    data: { club, sports, code, seats },
   } = useSuspenseQuery(settingsOptions());
   const [search, setSearch] = useState("");
   const clubRows = [
@@ -55,7 +56,13 @@ function OrgSettings() {
   ];
   const contractRows = [
     ["Coach seats", String(club.coach_seats)],
-    ["Admin seats", String(club.admin_seats)],
+    ["Filled coach seats", String(seats.filter((s) => s.coach_id).length)],
+    [
+      "Reserved coach seats",
+      String(seats.filter((s) => !s.coach_id && s.reserved_invite_id).length),
+    ],
+    ["Open coach seats", String(seats.filter((s) => !s.coach_id && !s.reserved_invite_id).length)],
+    ["Administrators", "Unlimited"],
     ["Storefront share", `${club.storefront_share_bps / 100}%`],
     ["Term", `${club.contract_starts_on ?? "Not set"} – ${club.contract_ends_on ?? "Not set"}`],
     ["Signed", club.contract_signed_on ?? "Not set"],
@@ -79,7 +86,7 @@ function OrgSettings() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <PageTitle>Settings</PageTitle>
+        <ClubPageHeader title="Settings" />
         <Button variant="outline" className="min-h-11" onClick={exportCsv}>
           Export CSV
         </Button>
@@ -122,7 +129,14 @@ function OrgSettings() {
                         section.name === "Contract" ? "font-mono tabular-nums" : "break-words"
                       }
                     >
-                      {value}
+                      {key === "Coach seats" ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <span>{value}</span>
+                          <ClubAddSeats club={club} />
+                        </div>
+                      ) : (
+                        value
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -32,10 +32,12 @@ export type PromoValidation =
 
 /** `validatePromoCode`: what a code is worth, or an inert shape when unknown/inactive. */
 export async function validatePromoCode(
-  ctx: { supabase: Client },
+  ctx: { admin: Admin },
   code: string,
 ): Promise<PromoValidation> {
-  const { data: row, error } = await ctx.supabase
+  // Admin read: members have no SELECT on promo_codes (they could list every
+  // code), so a code is only ever looked up here, one exact match at a time.
+  const { data: row, error } = await ctx.admin
     .from("promo_codes")
     .select("code, label, active, percent_off, duration, duration_in_months")
     .eq("code", code)
@@ -69,7 +71,7 @@ export async function applyPromoCodeToMyProfile(
 ): Promise<{ applied: boolean }> {
   if (!code) return { applied: false };
 
-  const { data: row, error: lookupErr } = await ctx.supabase
+  const { data: row, error: lookupErr } = await ctx.admin
     .from("promo_codes")
     .select("code, active")
     .eq("code", code)

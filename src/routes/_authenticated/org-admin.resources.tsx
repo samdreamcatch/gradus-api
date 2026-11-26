@@ -13,7 +13,7 @@ import {
   ClubEmptyRow,
 } from "@/components/org-admin/club-grid-toolbar";
 import { supabase } from "@/integrations/supabase/client";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { ClubLibraryNav } from "@/components/org-admin/club-library-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,7 @@ function OrgResourcesPage() {
     if (!sport && sports.length) setSport(sports[0]);
   }, [sports, sport]);
   const [showArchived, setShowArchived] = useState(false);
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("gallery");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<OrgResourceRow | "new" | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -296,8 +296,8 @@ function OrgResourcesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-7xl">
-      <PageTitle>Resource library</PageTitle>
+    <div className="px-4 py-6 md:px-6 md:py-8 space-y-5 max-w-7xl">
+      <ClubPageHeader title="Resource library" />
       <ClubLibraryNav />
       {q.isPending ? (
         <Loader2 className="size-5 animate-spin text-text-tertiary" />
@@ -307,8 +307,8 @@ function OrgResourcesPage() {
         <>
           <ClubGridToolbar
             views={[
-              { value: "grid", label: "Grid", icon: <Table2 className="size-4" /> },
               { value: "gallery", label: "Gallery", icon: <LayoutGrid className="size-4" /> },
+              { value: "grid", label: "Grid", icon: <Table2 className="size-4" /> },
             ]}
             view={view}
             onViewChange={setView}

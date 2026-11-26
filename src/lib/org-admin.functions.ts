@@ -255,6 +255,8 @@ export type OrgCoachInvite = {
   code: string;
   token: string;
   status: "pending" | "accepted" | "revoked" | "expired";
+  sports: string[];
+  levels: { sport: string; levelKey: string }[];
   createdAt: string;
   expiresAt: string;
   acceptedAt: string | null;
@@ -270,7 +272,7 @@ export const listOrgCoachInvites = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("org_coach_invites")
       .select(
-        "id, email, phone, invite_code, invite_token, status, created_at, expires_at, accepted_at",
+        "id, email, phone, invite_code, invite_token, status, sports, levels, created_at, expires_at, accepted_at",
       )
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
@@ -285,6 +287,8 @@ export const listOrgCoachInvites = createServerFn({ method: "POST" })
         code: r.invite_code,
         token: r.invite_token,
         status: r.status as OrgCoachInvite["status"],
+        sports: r.sports ?? [],
+        levels: (r.levels as OrgCoachInvite["levels"] | null) ?? [],
         createdAt: r.created_at,
         expiresAt: r.expires_at,
         acceptedAt: r.accepted_at,
@@ -300,6 +304,11 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
         organizationId: z.string().uuid(),
         email: z.string().trim().email().optional().or(z.literal("")),
         phone: z.string().trim().max(32).optional().or(z.literal("")),
+        sports: z.array(z.string().min(1).max(64)).max(30).default([]),
+        levels: z
+          .array(z.object({ sport: z.string().min(1).max(64), levelKey: z.string().min(1).max(64) }))
+          .max(200)
+          .default([]),
       })
       .refine((v) => (v.email && v.email.length > 0) || (v.phone && v.phone.length > 0), {
         message: "Provide an email or phone",
@@ -323,6 +332,8 @@ export const createOrgCoachInvite = createServerFn({ method: "POST" })
         invite_code: code,
         invite_token: token,
         invited_by: context.userId,
+        sports: data.sports,
+        levels: data.levels.filter((l) => data.sports.includes(l.sport)),
       })
       .select("id, invite_code, invite_token")
       .single();
@@ -453,7 +464,7 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
 
     const invite = await supabaseAdmin
       .from("org_coach_invites")
-      .select("id, organization_id, status, expires_at")
+      .select("id, organization_id, status, expires_at, levels")
       .eq("invite_code", data.code)
       .maybeSingle();
     if (invite.error) dbError(invite.error);
@@ -488,6 +499,33 @@ export const acceptOrgCoachInvite = createServerFn({ method: "POST" })
       p_user_id: context.userId,
     });
     if (accepted.error) dbError(accepted.error);
+
+    // Pre-fill the levels the club chose, without overwriting sports the coach already set.
+    const invitedLevels = (invite.data.levels as { sport: string; levelKey: string }[] | null) ?? [];
+    const coachId = coach.data.id;
+    if (invitedLevels.length) {
+      const held = await supabaseAdmin
+        .from("coach_levels")
+        .select("sport")
+        .eq("coach_id", coachId);
+      if (held.error) dbError(held.error);
+      const heldSports = new Set((held.data ?? []).map((r) => r.sport));
+      const { SPORTS } = await import("./coach-sports");
+      const rows = invitedLevels
+        .filter((l) => !heldSports.has(l.sport))
+        .map((l) => ({
+          coach_id: coachId,
+          sport: l.sport,
+          level_key: l.levelKey,
+          practice_hours_per_week:
+            SPORTS.find((s) => s.key === l.sport)?.levels.find((x) => x.key === l.levelKey)
+              ?.suggestedHours ?? 0,
+        }));
+      if (rows.length) {
+        const ins = await supabaseAdmin.from("coach_levels").insert(rows);
+        if (ins.error) console.error("acceptOrgCoachInvite: level prefill failed", ins.error);
+      }
+    }
 
     return { ok: true, organizationId: invite.data.organization_id };
   });

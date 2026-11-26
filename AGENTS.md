@@ -1,5 +1,6 @@
 
 - Club Trust Center readiness rules live in pure `src/lib/trust-center.ts` (unit-tested); `trust-center.server.ts` only gathers inputs, so the scoring stays testable and consistent.
+- Scheduled-job log retention uses a bounded, time-based database job rather than scheduler-write triggers, so old debugging history drains without a single large delete or contention on each job run.
 - DEV tools use the shared, tested preview-host predicate for main and numbered draft previews; published domains stay excluded to avoid exposing the account switcher there.
 - Club policies use club-scoped requirement and append-only evidence tables, with local draft schema types instead of editing generated clients; this isolates shared Gradus documents and retains legacy sign-offs.
 - Policy deadlines come from one pure helper shared through the matrix and overview, and PDF evidence generation stays server-only; this keeps status calculations consistent and private evidence off the client import chain.
@@ -7,15 +8,35 @@
 - Admin social-plan updates use an admin-authorized transactional RPC and preserve share tokens; attribution uses draft-local schema extensions, never generated-client edits.
 - Clipboard operations use a selection fallback and expose a selectable link when copying is denied, never report false success.
 - Gradus Club contract reads use draft-local schema types and privileged clients only after caller authorization; database triggers enforce seat capacity across web/native membership writers so entry paths cannot bypass seat limits.
+- Club seat expansion uses an org-locked, idempotent service-only RPC that verifies the actor and quoted daily-prorated term rate, adds seats and records an awaiting-invoice true-up atomically; missing rates block expansion and no invoice delivery is implied.
 - Club spreadsheet pages compose the existing Table through ClubTable and one semantic StatusDot; this keeps desktop density and themed status semantics isolated from mobile app tables.
 - Club Notifications store source-scoped statuses, per-admin read receipts and append-only evidence notes; Home receives only aggregate counts and anonymized acknowledgement activity to keep athlete identities out of its data.
 - App notification inbox storage is separate from club notifications, uses plain user UUIDs and server-only writes, and allows owners only read, clear, or read-state updates; this prevents client-authored alerts and auth-schema foreign-key coupling.
 - Club coach analytics use organization-scoped weekly snapshots with explicit aggregate-only DTOs; missing historical roster/targets remain null, and session mood ratings never imply effort, mastery, or development.
-- Club schedule review uses separate org-scoped import storage and a transactional save; parsing, matching, and saving never create lessons or send invitations, so delivery remains an explicit later action.
+- Coach profile Students tabs use a separate authorized, coach-and-club-scoped roster DTO containing names and relationship state only; family identities never enter aggregate analytics responses.
+- Club schedule review uses org-scoped snapshots and explicit transactional lesson commit, restricted to active students on seated coaches' existing rosters; parsing/saving never create lessons, commit is idempotent and never emails, and invitations remain a separate action.
+- Club schedule commits partition ready lessons from unresolved rows, preserving the complete review; unmatched student CSV handoffs return roster onboarding to the coach instead of impersonating them.
+- Home setup completion uses authorized club-scoped aggregate counts of real coaches, lessons, released resources and live policy requirements; demo data and family identities never enter its DTO.
 - Club Schedule returns one row per recurring lesson from club-authorized coaches and current coach/student links; family contacts stay exclusive to the operational Schedule view, and recorded invitation timestamps never imply email delivery.
+- Schedule invitation review uses the same filtered lesson rows as its banner, deduplicates student counts, and bulk-sends only unrecorded invitations; this keeps review connected to the schedule without silently resending existing invites.
 - Club content pages share Library navigation while preserving their existing URLs, so acknowledgement, move, level, and template workflows stay accessible without duplicate screens.
 - Club template plans live in org-scoped service-role tables; sending copies them into each matching coach's own templates and records a deployment, so resending never overwrites a coach's edits. Matching rules are pure and tested in `src/lib/org-templates.ts`.
 - The club resource builder writes drafts with Claude via ANTHROPIC_API_KEY and renders PDFs server-side with pdf-lib built-in fonts (text passed through pdfSafe); finished PDFs go through the normal club resource save so the picture check still applies.
 - Club admin grids use `useClubGrid`/`ClubDataGrid` (pure sort/group rules in `src/lib/club-grid.ts`, device-saved view settings) inside `ClubGridToolbar`; the club panel always follows the device light/dark setting.
 - Club admin database pages share `ClubGridToolbar` (view switch, search, filters, clear count) and `ClubTable`; calendar placement of recurring lessons is pure and tested in `club-lesson-calendar.ts`, so every page filters and reads the same way.
-- Club-level coach access is decided only in `coach_effective_tier` (club member + active contract dates), and staff name club admins into `org_admins` from internal Organizations; this keeps the native onboarding untouched and the club panel on one admin list.
+- Club-level coach access is decided in `coach_effective_tier` (club membership, occupied seat and active contract dates); profile/billing DTOs use that result and fall back to personal entitlement. Staff name club admins into `org_admins` from internal Organizations; native onboarding stays untouched.
+
+- Club presentation primitives live under components/org-admin and wrap shared UI without changing it; the club layout aligns its single-line desktop navigation and page content in one max-width container, with scrollable tabs below the identity on narrow screens and subordinate Library text tabs, to preserve page space and hierarchy. Page headers have no sidebar dependency and grid Columns combines device-saved visibility and grouping.
+
+- Settings and Users share ClubAddSeats for the existing seat-increase confirmation, so pricing and refreshed seat counts stay consistent across entry points.
+
+- Plan-copy reads and writes use a local plansTable schema extension to cover migration fields without editing generated clients or changing caller authorization.
+- Coach invitations live in the Users table (pending invites as "Invited" rows) with the shared ClubInviteCoachSheet; the old Roster URL only redirects there, so there is one place to manage coaches.
+- Club student and coach CSV controls share ClubCsvControls and Papa Parse; coach imports review rows before using the existing authorized invite action, retaining only failed rows for retry.
+- Manual club move entry reuses the authorized move import action; category names live on moves, so a new category is saved with its first move rather than a separate taxonomy.
+- Acknowledgements use document-grouped ClubDataGrid records; reminder selections are intersected with the current authorized outstanding roster server-side, and PDF evidence remains document-scoped.
+- Schedule is the club entry route and notifications open from a header bell tray (full history page kept, off the main menu); the legacy Coaching directory redirects to Users, whose optional columns reuse authorized weekly coach snapshots and retain individual coach-profile links.
+- Schedule lessons carry last-full-week practice vs target computed by the pure, tested practiceFor (same rule as weekly coach snapshots), and the week calendar collapses empty hours via compactHours, so calendar markers and coach metrics agree.
+- Schedule uses the shared student-entry action for manual/CSV roster entry; lesson CSV tools stay in Imports so roster creation and lesson review cannot be confused.
+- Schedule reminders reuse the authorized family-invitation sender after review; pure recipient selection deduplicates students and excludes unrecorded or non-actionable invitations.
+- Club Insights answers only governed questions: pure, tested reports in `src/lib/club-insights.ts` over org-authorized data, and the AI only routes typed questions to a report ID (never sees club data or writes queries), so answers stay tenant-safe and verifiable. Its difficulty scale is isolated from prototype session-state labels so mobile ratings are not described as mood.

@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Pause, Play, X } from "lucide-react";
-import { haptic, hapticNotify } from "@/lib/native";
 import { cn } from "@/lib/utils";
 
 /** Idle state — slide right to start logging session time. */
@@ -52,7 +51,6 @@ export function IdleSlide({ onStart }: { onStart: () => void }) {
             transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
           });
           if (triggered) {
-            void haptic("medium");
             onStart();
           }
           setArmed(false);
@@ -109,7 +107,6 @@ export function RunningPill({
       <button
         type="button"
         onClick={() => {
-          void haptic("light");
           onTogglePause();
         }}
         aria-label={running ? "Pause session timer" : "Resume session timer"}
@@ -152,7 +149,6 @@ export function RunningPill({
               transition: { type: "spring", stiffness: 520, damping: 22, mass: 0.7 },
             });
             if (triggered) {
-              void hapticNotify("success");
               onEnd();
             }
             setArmed(false);

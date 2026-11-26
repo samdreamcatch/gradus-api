@@ -37,6 +37,7 @@ import {
 import { adoptStarterPlan } from "@/lib/starter-programs.functions";
 import { setPracticeTarget, clearPracticeTarget } from "@/lib/practice-targets.functions";
 import { useCoachProfile } from "@/hooks/use-coach-profile";
+import { invoiceCurrencyQueryOptions } from "@/hooks/use-invoice-currency";
 import {
   buildSampleAiSummary,
   buildSampleAthleteDetail,
@@ -69,7 +70,7 @@ export function AthleteDetailSheet({
   );
 }
 
-function AthleteDetailBody({ athleteId }: { athleteId: string }) {
+export function AthleteDetailBody({ athleteId }: { athleteId: string }) {
   const fetchDetail = useServerFn(getCoachAthleteDetail);
   const fetchSummary = useServerFn(getCoachAthleteAiSummary);
   const fetchBilling = useServerFn(getAthleteBilling);
@@ -103,6 +104,9 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
     queryFn: () => fetchBilling({ data: { athleteId } }),
     enabled: !isSample,
   });
+  // The same for the coach's invoice currency, which the section also waits
+  // for (the same options object as its hook, so one request).
+  useQuery(invoiceCurrencyQueryOptions);
 
   // Auto-run AI summary once we know there's at least some signal.
   useEffect(() => {
@@ -245,7 +249,7 @@ function AthleteDetailBody({ athleteId }: { athleteId: string }) {
       <section className="pb-2">
         <SectionHeader title="Plans" />
         {d.plans.length === 0 ? (
-          <EmptyLine>No active or benched plans for {d.firstName} yet.</EmptyLine>
+          <EmptyLine>No active or recently deleted plans for {d.firstName} yet.</EmptyLine>
         ) : (
           <PlansList plans={d.plans} />
         )}
@@ -525,7 +529,7 @@ function PlansList({ plans }: { plans: PlanRow[] }) {
         <Collapsible open={benchedOpen} onOpenChange={setBenchedOpen}>
           <CollapsibleTrigger className="press-soft flex w-full items-center justify-between text-left">
             <Eyebrow size="micro" tone="tertiary" weight="black" as="span">
-              Benched ({benched.length})
+              Recently deleted ({benched.length})
             </Eyebrow>
             <ChevronDown
               className={cn(

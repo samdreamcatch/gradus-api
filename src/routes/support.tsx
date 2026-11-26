@@ -108,7 +108,7 @@ function SupportPage() {
             >
               U.S. Center for SafeSport
             </a>{" "}
-            (1-866-367-6272). If anyone is in immediate danger, call 911.
+            (1-833-587-7233). If anyone is in immediate danger, call 911.
           </p>
         </section>
 

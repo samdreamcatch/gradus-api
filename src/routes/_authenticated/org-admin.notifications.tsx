@@ -20,7 +20,7 @@ import {
 } from "@/lib/club-notifications.functions";
 import { notificationTotals, type ClubNotification } from "@/lib/club-notifications";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { PageTitle } from "@/components/page-title";
+import { ClubPageHeader } from "@/components/org-admin/club-page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,7 +70,7 @@ export const Route = createFileRoute("/_authenticated/org-admin/notifications")(
   loader: ({ context }) => context.queryClient.ensureQueryData(feedOptions()),
   errorComponent: () => (
     <div className="p-8 space-y-4">
-      <PageTitle>Notifications</PageTitle>
+      <ClubPageHeader title="Notifications" />
       <p role="alert" className="text-text-secondary">
         Club notifications could not be loaded. New notification records become available after this
         draft is accepted.
@@ -230,9 +230,9 @@ function NotificationsPage() {
   ];
   const grid = useClubGrid("notifications", columns, filtered);
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <PageTitle>Notifications</PageTitle>
+        <ClubPageHeader title="Notifications" />
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={exportFeed}>
             <Download className="size-4" />

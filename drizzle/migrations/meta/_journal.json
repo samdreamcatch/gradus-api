@@ -274,6 +274,125 @@
       "when": 1794281608324,
       "tag": "0038_club_people_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794330703437,
+      "tag": "0039_club_schedule_lesson_commit",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794447965565,
+      "tag": "0040_club_effective_tier_requires_seat",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794531882722,
+      "tag": "0041_club_seat_trueups",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794533071910,
+      "tag": "0042_unlimited_club_admins",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794535019604,
+      "tag": "0043_coach_invite_sports",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794703770082,
+      "tag": "0044_message_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794703818833,
+      "tag": "0045_plan_copies_for_several_athletes",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794703849698,
+      "tag": "0046_delete_replaces_bench",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794703876125,
+      "tag": "0047_room_summaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794707090727,
+      "tag": "0048_mark_room_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1794884137937,
+      "tag": "0049_lesson_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795232792725,
+      "tag": "0050_rls_audit_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795369889344,
+      "tag": "0051_invoice_currency",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795370231417,
+      "tag": "0052_security_recheck_lookups_and_test_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795569327761,
+      "tag": "0053_security_recheck_lookups_and_test_flag_complete",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795569363459,
+      "tag": "0054_cron_history_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795641597041,
+      "tag": "0055_practice_log_read_policies",
+      "breakpoints": true
     }
   ]
 }

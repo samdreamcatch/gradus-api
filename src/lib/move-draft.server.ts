@@ -233,7 +233,9 @@ function oneLine(s: string): string {
 
 async function requireCoachProfile(ctx: MoveDraftContext): Promise<void> {
   // 403 for parents and athletes, like every coach move route.
-  await requirePlansCoach(ctx);
+  const { coachId } = await requirePlansCoach(ctx);
+  // That check read the coach's profile: no need to read it again.
+  if (coachId) return;
   // A role-less user passes that check; a paid AI call needs a real coach.
   const { data, error } = await ctx.supabase
     .from("coach_profiles")

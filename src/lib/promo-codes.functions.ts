@@ -36,9 +36,10 @@ async function assertAdmin(context: { userId: string; supabase: any }) {
 export const validatePromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ code: codeSchema }).parse(input))
-  .handler(async ({ data, context }) =>
-    validatePromoCodeShared({ supabase: context.supabase as Client }, data.code),
-  );
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return validatePromoCodeShared({ admin: supabaseAdmin }, data.code);
+  });
 
 export const applyPromoCodeToMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

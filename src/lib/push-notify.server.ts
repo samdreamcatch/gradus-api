@@ -21,8 +21,9 @@ import {
   type ApnsPushType,
   type ApnsRequest,
 } from "./apns.server";
+import { chunks, eachLimited } from "./db-batch";
 import { recordNotifications } from "./notifications.server";
-import { teamPlanActive } from "./team.server";
+import { teamPlanActive, teamPlanActiveFrom } from "./team.server";
 
 type Admin = SupabaseClient<Database>;
 
@@ -264,6 +265,114 @@ async function notifyUsersUnguarded(
   return report;
 }
 
+/**
+ * Many notifications in one go (a plan shared with a whole squad): each item
+ * has its own recipients and message. Unlike calling `notifyUsers` per item,
+ * the device tokens are read once for everyone, the sends run a bounded
+ * number at a time, and every inbox row is recorded before the first push
+ * goes out, so a run cut short by the runtime costs late recipients the push
+ * but never the row in the app. Never throws.
+ */
+export async function notifyMany(
+  admin: Admin,
+  items: Array<{ userIds: string[]; message: PushMessage }>,
+  deps: PushDeps = {},
+): Promise<PushReport> {
+  const batches = items
+    .map((item) => ({
+      userIds: Array.from(new Set(item.userIds.filter((id) => !!id))),
+      message: item.message,
+    }))
+    .filter((item) => item.userIds.length > 0);
+  const everyone = Array.from(new Set(batches.flatMap((b) => b.userIds)));
+  const report: PushReport = {
+    recipients: everyone.length,
+    tokens: 0,
+    sent: 0,
+    failed: 0,
+    pruned: 0,
+  };
+  if (!everyone.length) return { ...report, skipped: "no_recipients" };
+  try {
+    await eachLimited(batches, 6, async ({ userIds, message }) => {
+      const inboxTitle = message.title ?? message.body;
+      if (message.silent || message.inbox === false || !inboxTitle) return;
+      await recordNotifications(admin, userIds, {
+        type: message.type,
+        title: inboxTitle,
+        body: message.title ? message.body : undefined,
+        route: message.route,
+        collapseKey: message.collapseId,
+        actorUserId: message.actorUserId,
+        athleteId: message.athleteId,
+      });
+    });
+
+    const config = deps.config === undefined ? apnsConfigFromEnv() : deps.config;
+    if (!config) return { ...report, skipped: "no_config" };
+
+    const tokensByUser = new Map<string, string[]>();
+    for (const ids of chunks(everyone)) {
+      const res = await admin
+        .from("device_tokens")
+        .select("token, user_id")
+        .in("user_id", ids)
+        .eq("platform", "ios");
+      if (res.error) {
+        console.error("[push] device_tokens lookup failed", res.error);
+        continue;
+      }
+      for (const row of (res.data ?? []) as { token: string; user_id: string }[]) {
+        const list = tokensByUser.get(row.user_id);
+        if (list) list.push(row.token);
+        else tokensByUser.set(row.user_id, [row.token]);
+        report.tokens += 1;
+      }
+    }
+    if (!report.tokens) return { ...report, skipped: "no_tokens" };
+
+    const send = deps.send ?? sendApnsRequest;
+    const sends = batches.flatMap(({ userIds, message }) =>
+      userIds.flatMap((userId) =>
+        (tokensByUser.get(userId) ?? []).map((token) => ({ userId, token, message })),
+      ),
+    );
+    const dead: string[] = [];
+    await eachLimited(sends, 20, async ({ userId, token, message }) => {
+      const { payload, pushType, priority } = pushPayload(message, userId);
+      const ttl = message.expiresInSeconds ?? (message.silent ? 0 : DEFAULT_ALERT_EXPIRY_SECONDS);
+      const outcome = await send(config, {
+        token,
+        payload,
+        pushType,
+        priority,
+        expiration: ttl > 0 ? Math.floor(Date.now() / 1000) + ttl : 0,
+        ...(message.collapseId ? { collapseId: message.collapseId } : {}),
+      });
+      if (outcome.ok) {
+        report.sent += 1;
+        return;
+      }
+      report.failed += 1;
+      if (outcome.dead) dead.push(token);
+      else
+        console.warn("[push] send failed", {
+          status: outcome.status,
+          reason: outcome.reason,
+          type: message.type,
+        });
+    });
+    for (const tokens of chunks(dead)) {
+      const del = await admin.from("device_tokens").delete().in("token", tokens);
+      if (del.error) console.error("[push] pruning dead tokens failed", del.error);
+      else report.pruned += tokens.length;
+    }
+  } catch (err) {
+    console.error("[push] notifyMany failed", err instanceof Error ? err.message : err);
+  }
+  return report;
+}
+
 /* ------------------------------------------------------------- recipients */
 
 export async function coachUserId(admin: Admin, coachId: string): Promise<string | null> {
@@ -320,6 +429,70 @@ export async function athleteHouseholdUserIds(
     }
   }
   return Array.from(out);
+}
+
+/**
+ * `athleteHouseholdUserIds` for many athletes at once, in a fixed handful of
+ * reads however many there are: athlete id → the user ids to tell. The same
+ * rule: the athlete's own login, the primary parent, and co-guardians while
+ * the primary parent's Team plan is active.
+ */
+export async function householdsUserIds(
+  admin: Admin,
+  athleteIds: string[],
+): Promise<Map<string, string[]>> {
+  const out = new Map<string, Set<string>>();
+  const ids = Array.from(new Set(athleteIds.filter((id) => !!id)));
+  if (!ids.length) return new Map();
+
+  const athletes: { id: string; user_id: string | null; parent_id: string | null }[] = [];
+  for (const part of chunks(ids)) {
+    const res = await admin.from("athletes").select("id, user_id, parent_id").in("id", part);
+    athletes.push(...((res.data ?? []) as typeof athletes));
+  }
+  type ParentRow = {
+    id: string;
+    user_id: string | null;
+    subscription_status: string | null;
+    current_period_end: string | null;
+  };
+  const parents = new Map<string, ParentRow>();
+  const loadParents = async (parentIds: string[]) => {
+    const missing = Array.from(new Set(parentIds)).filter((id) => !parents.has(id));
+    for (const part of chunks(missing)) {
+      const res = await admin
+        .from("parent_profiles")
+        .select("id, user_id, subscription_status, current_period_end")
+        .in("id", part);
+      for (const row of (res.data ?? []) as ParentRow[]) parents.set(row.id, row);
+    }
+  };
+  await loadParents(athletes.map((a) => a.parent_id).filter((id): id is string => !!id));
+
+  const withTeam: string[] = [];
+  for (const athlete of athletes) {
+    const users = new Set<string>();
+    if (athlete.user_id) users.add(athlete.user_id);
+    const primary = athlete.parent_id ? parents.get(athlete.parent_id) : undefined;
+    if (primary?.user_id) users.add(primary.user_id);
+    if (primary && teamPlanActiveFrom(primary)) withTeam.push(athlete.id);
+    out.set(athlete.id, users);
+  }
+
+  const guardians: { athlete_id: string; parent_id: string }[] = [];
+  for (const part of chunks(withTeam)) {
+    const res = await admin
+      .from("athlete_guardians")
+      .select("athlete_id, parent_id")
+      .in("athlete_id", part);
+    guardians.push(...((res.data ?? []) as typeof guardians));
+  }
+  await loadParents(guardians.map((g) => g.parent_id));
+  for (const g of guardians) {
+    const userId = parents.get(g.parent_id)?.user_id;
+    if (userId) out.get(g.athlete_id)?.add(userId);
+  }
+  return new Map(Array.from(out, ([id, users]) => [id, Array.from(users)]));
 }
 
 /** Drop anyone who blocked the sender, or whom the sender blocked. */

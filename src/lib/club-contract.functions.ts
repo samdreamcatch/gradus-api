@@ -21,6 +21,8 @@ export type ClubContract = {
   contract_ends_on: string | null;
   contract_signed_on: string | null;
   contract_file_url: string | null;
+  contract_seat_rate_cents: number | null;
+  contract_currency: string;
 };
 export type ClubSeat = {
   id: string;
@@ -76,7 +78,7 @@ export const getClubContract = createServerFn({ method: "POST" })
       admin
         .from("organizations")
         .select(
-          "id,name,city,region,slug,is_listed,logo_url,coach_seats,admin_seats,storefront_share_bps,storefront_enabled,contract_starts_on,contract_ends_on,contract_signed_on,contract_file_url",
+          "id,name,city,region,slug,is_listed,logo_url,coach_seats,admin_seats,storefront_share_bps,storefront_enabled,contract_starts_on,contract_ends_on,contract_signed_on,contract_file_url,contract_seat_rate_cents,contract_currency",
         )
         .eq("id", data.organizationId)
         .single(),
@@ -120,7 +122,8 @@ export const updateClubContract = createServerFn({ method: "POST" })
       .object({
         organizationId: z.string().uuid(),
         coach_seats: z.number().int().min(0).max(10000),
-        admin_seats: z.number().int().min(1).max(1000),
+        contract_seat_rate_cents: z.number().int().min(0).max(100000000).nullable(),
+        contract_currency: z.string().regex(/^[a-z]{3}$/),
         storefront_share_bps: z.number().int().min(0).max(10000),
         storefront_enabled: z.boolean(),
         contract_starts_on: z.string().date().nullable(),
@@ -176,7 +179,7 @@ export const getStaffClubContract = createServerFn({ method: "POST" })
     const result = await admin
       .from("organizations")
       .select(
-        "id,name,city,region,slug,is_listed,logo_url,coach_seats,admin_seats,storefront_share_bps,storefront_enabled,contract_starts_on,contract_ends_on,contract_signed_on,contract_file_url",
+        "id,name,city,region,slug,is_listed,logo_url,coach_seats,admin_seats,storefront_share_bps,storefront_enabled,contract_starts_on,contract_ends_on,contract_signed_on,contract_file_url,contract_seat_rate_cents,contract_currency",
       )
       .eq("id", data.organizationId)
       .single();
@@ -226,9 +229,7 @@ async function clubRpc(
 export const setClubAdminRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    orgInput
-      .extend({ adminId: z.string().uuid(), role: z.enum(["owner", "admin"]) })
-      .parse(input),
+    orgInput.extend({ adminId: z.string().uuid(), role: z.enum(["owner", "admin"]) }).parse(input),
   )
   .handler(({ data, context }) =>
     clubRpc(context.supabase, context.userId, data.organizationId, "club_set_admin_role", {
@@ -268,4 +269,28 @@ export const removeClubAdmin = createServerFn({ method: "POST" })
     });
     if (result.error) dbError(result.error);
     return { ok: true };
+  });
+
+export const expandClubContract = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    orgInput
+      .extend({
+        seats: z.number().int().min(1).max(1000),
+        expectedAmount: z.number().int().min(0),
+        requestKey: z.string().uuid(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const admin = await authorizedClient(context.supabase, context.userId, data.organizationId);
+    const result = await (admin as unknown as SupabaseClient).rpc("club_expand_contract", {
+      p_org_id: data.organizationId,
+      p_actor: context.userId,
+      p_seats: data.seats,
+      p_expected_amount: data.expectedAmount,
+      p_request_key: data.requestKey,
+    });
+    if (result.error) dbError(result.error);
+    return { id: result.data as string };
   });

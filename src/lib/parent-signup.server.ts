@@ -5,6 +5,7 @@
  * (PRD §7.1 "Parent sign-up", Appendix A). Extracted without behavior
  * changes; user-facing messages are kept verbatim and carried on ApiError.
  */
+import { replaceFamilySlots } from "./lesson-group-guard.server";
 import { z } from "zod";
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { SPORT_KEYS } from "@/lib/coach-sports";
@@ -571,27 +572,9 @@ export async function saveAthleteSchedule(
   await assertParentOwnsAthlete(admin, userId, data.athleteId);
 
   // Replace only the rows scoped to this coach (or coach-less rows when
-  // no code) so each coach owns their own schedule blocks.
-  const delQuery = admin.from("athlete_lesson_slots").delete().eq("athlete_id", data.athleteId);
-  const del = await (coachId ? delQuery.eq("coach_id", coachId) : delQuery.is("coach_id", null));
-  if (del.error) dbError(del.error);
-
-  if (data.slots.length > 0) {
-    const ins = await admin.from("athlete_lesson_slots").insert(
-      data.slots.map((s) => ({
-        athlete_id: data.athleteId,
-        coach_id: coachId,
-        day_of_week: s.dayOfWeek,
-        start_minute: s.startMinute,
-        end_minute: s.endMinute,
-        frequency: s.frequency,
-        weeks_of_month:
-          s.frequency === "biweekly" || s.frequency === "weekly" ? [] : s.weeksOfMonth,
-        starts_on: s.frequency === "biweekly" ? s.startsOn : null,
-      })),
-    );
-    if (ins.error) dbError(ins.error);
-  }
+  // no code) so each coach owns their own schedule blocks. A coach's group
+  // lesson stays (decision #68).
+  await replaceFamilySlots(admin, data.athleteId, coachId, data.slots);
   return { ok: true as const };
 }
 

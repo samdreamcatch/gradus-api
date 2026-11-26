@@ -10,6 +10,7 @@ import { generateObject } from "ai";
 import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
+import { chunks, readAll } from "./db-batch";
 import { dbError } from "./db-error";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { PROMPT_INJECTION_GUARD, sanitizeUserContent, wrapUntrusted } from "./ai-prompt-safety";
@@ -41,6 +42,13 @@ export interface SessionCounts {
   sessionsTotal: number;
 }
 
+/** A `plan_sessions` page's error, kept until the `plans` read beside it is checked. */
+class HeldReadError extends Error {
+  constructor(readonly error: { message?: string; code?: string }) {
+    super("plan_sessions read failed");
+  }
+}
+
 /**
  * Load real session counts for a set of plan ids. Works for both parents
  * and coaches: RLS on plan_sessions restricts what each role can read.
@@ -56,23 +64,59 @@ export async function loadSessionsByPlanIds(
   if (planIds.length === 0) return map;
 
   // Fetch each plan's current athlete_id so we can exclude sessions left over
-  // from a previous athlete after the plan was reassigned.
-  const { data: plans, error: pErr } = await supabase
-    .from("plans")
-    .select("id, athlete_id")
-    .in("id", planIds);
-  if (pErr) dbError(pErr);
-  const planAthlete = new Map<string, string | null>(
-    (plans ?? []).map((p) => [p.id, p.athlete_id]),
-  );
+  // from a previous athlete after the plan was reassigned. A hundred plans at
+  // a time and every page of each: a plan shared with a squad puts hundreds of
+  // plan ids and thousands of sessions behind one list.
+  const planAthlete = new Map<string, string | null>();
+  type SessionRow = { plan_id: string; athlete_id: string; state_index: number };
+  const data: SessionRow[] = [];
+  for (const ids of chunks(Array.from(new Set(planIds)))) {
+    // Neither read needs the other's answer, so they are sent together: two
+    // requests open at once, where a caller that runs this beside other reads
+    // has to count them (a Worker holds six).
+    let plansFailed = false;
+    const [plansRes, sessions] = await Promise.all([
+      (async () => {
+        const res = await supabase.from("plans").select("id, athlete_id").in("id", ids);
+        // No further pages once this has failed: its error is the answer.
+        if (res.error) plansFailed = true;
+        return res;
+      })(),
+      readAll<SessionRow>(
+        (from, to) =>
+          plansFailed
+            ? Promise.resolve({ data: [], error: null, count: 0 })
+            : (supabase
+                .from("plan_sessions")
+                .select("plan_id, athlete_id, state_index", { count: "exact" })
+                .in("plan_id", ids)
+                .order("id", { ascending: true })
+                .range(from, to) as unknown as PromiseLike<{
+                data: SessionRow[] | null;
+                error: { message?: string; code?: string } | null;
+                count: number | null;
+              }>),
+        // Held, not logged, until the plans read has been checked.
+        (error) => {
+          throw new HeldReadError(error);
+        },
+      ).then(
+        (rows) => ({ rows, failed: false as const }),
+        (error: unknown) => ({ error, failed: true as const }),
+      ),
+    ]);
+    // In the order they used to run: a failed plans read answers (and is the
+    // one logged) before a failed sessions read.
+    if (plansRes.error) dbError(plansRes.error);
+    if (sessions.failed) {
+      if (sessions.error instanceof HeldReadError) dbError(sessions.error.error);
+      throw sessions.error;
+    }
+    for (const p of plansRes.data ?? []) planAthlete.set(p.id, p.athlete_id);
+    data.push(...sessions.rows);
+  }
 
-  const { data, error } = await supabase
-    .from("plan_sessions")
-    .select("plan_id, athlete_id, state_index")
-    .in("plan_id", planIds);
-  if (error) dbError(error);
-
-  for (const row of data ?? []) {
+  for (const row of data) {
     if (planAthlete.get(row.plan_id) !== row.athlete_id) continue;
     const entry = map.get(row.plan_id);
     if (!entry) continue;

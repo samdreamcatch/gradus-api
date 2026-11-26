@@ -10,7 +10,9 @@ import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
+import { purgeAtField } from "./plan-deletion";
 
 type Client = SupabaseClient<Database>;
 
@@ -48,6 +50,8 @@ export interface ParentPlanSummaryDTO {
   sessionsTotal: number;
   /** `"athlete"` for a plan the athlete wrote (then `coachName` is the athlete's first name); omitted otherwise. */
   source?: string;
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 export interface ParentPlanMoveDTO {
@@ -79,6 +83,8 @@ export interface ParentPlanDetailDTO {
   source?: string;
   /** "plan" or "moves": what the check-in rates after practice. */
   feedbackScope?: "plan" | "moves";
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 export interface ParentPlansDTO {
@@ -140,9 +146,8 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
   const athleteIds = athletes.filter((a) => !a.locked).map((a) => a.id);
   if (!athleteIds.length) return { athletes, plans: [] };
 
-  let planQuery = supabase
-    .from("plans")
-    .select("id, title, status, athlete_id, coach_id, updated_at, source")
+  let planQuery = plansTable(supabase)
+    .select("id, title, status, athlete_id, coach_id, updated_at, source, deleted_at")
     .in("athlete_id", athleteIds)
     .eq("kind", "plan")
     .in("status", ["active", "benched"]);
@@ -199,6 +204,7 @@ export async function listParentPlans(ctx: ParentPlansContext): Promise<ParentPl
         sessionsTotal: 0,
       };
       return {
+        ...purgeAtField(p.deleted_at),
         id: p.id,
         title: p.title || "Untitled plan",
         status: p.status as ParentPlanStatus,
@@ -233,10 +239,9 @@ export async function getParentPlan(
   const parentId = await getParentId(supabase, ctx.userId);
   if (!parentId) throw notFound();
 
-  const { data: plan, error } = await supabase
-    .from("plans")
+  const { data: plan, error } = await plansTable(supabase)
     .select(
-      "id, title, notes, status, athlete_id, coach_id, updated_at, kind, source, feedback_scope",
+      "id, title, notes, status, athlete_id, coach_id, updated_at, kind, source, feedback_scope, deleted_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -299,6 +304,7 @@ export async function getParentPlan(
   const coachLast = coachRes.data?.last_name ?? "";
 
   return {
+    ...purgeAtField(plan.deleted_at),
     id: plan.id,
     title: plan.title || "Untitled plan",
     notes: plan.notes,

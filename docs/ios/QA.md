@@ -25,7 +25,7 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] An account with no profile (started on the web, or Apple as above) signing in with email + password: role chooser; "Sign out" there returns to sign-in; the chooser is never shown to a coach, parent or athlete.
 - [ ] **No Terms sheet mid sign-up** (regression, 2026-10-02): parent and adult-athlete email sign-ups reach their onboarding with no "Our terms have changed" sheet in the way; after onboarding, Settings → Legal shows the terms accepted. The sheet still appears for an existing coach, parent or athlete after the terms version is bumped.
 - [ ] Google button is hidden (no client ID yet) — confirm it does not appear.
-- [ ] "Remember me" keeps the identifier after sign-out; Face ID lock (Settings → Device) locks on background after the chosen delay; passcode fallback works; nothing behind the lock is reachable.
+- [ ] "Remember me" keeps the identifier after sign-out. (The Face ID lock check was dropped with the lock, PRD decision #63.)
 - [ ] Coach sign-up: promo code applied (Settings → Plan shows it); terms checkbox required; onboarding: name → sports → levels/hours → invite code; sample athlete and starter plan appear for figure skating; club join skippable.
 - [ ] Parent sign-up: athletes (name + birthdate) → goals → schedule per coach; kill the app mid-flow and reopen → resumes at the same step.
 - [ ] Minor athlete sign-up with the parent's code: identity confirmed, username availability check debounces, password set, lands in the athlete app.
@@ -65,6 +65,23 @@ Test-user rule: the demo accounts are flagged as test users on the server, so th
 - [ ] Plan editor: add moves from the library, reorder, inline edits, save to library, remove; template → clone.
 - [ ] Voice FAB: hold to record ≤ 90 s, cancel by slide, transcript → new plan with AI-touched fields highlighted; edit mode on an open plan.
 - [ ] Starter program adopt; share plan → `/p/<token>`.
+
+## 3a. Group lessons (PRD §6.16, decision #68, GL1–GL5)
+
+Needs migration `20261115120000_lesson_groups.sql` applied. Use a coach with at least three athletes, one of them with an active plan, and a parent account linked to one of them.
+
+- [ ] **Create (GL2):** Create new lesson with two to eight athletes makes one card on the Schedule titled with first names (three, then "+N") and a "Group" tag; a ninth athlete is refused; the week strip counts the group once.
+- [ ] **Change (GL2):** moving the group's time, changing its price, adding or removing an athlete applies to every member; removing down to one athlete leaves a private lesson.
+- [ ] **One date (GL2):** on one date, mark one athlete out with "Still bill" on (the default for a group): the others' lesson is unchanged and nobody's price changes. With everyone out the date stays on the agenda as Canceled.
+- [ ] **Billing (GL3):** the Bill sheet tags the group's lines "Group" and the canceller's line "Canceled · billed"; each athlete gets their own invoice at their own price; the invoice text says "Group lesson" / "Canceled, billed". A private lesson's cancel offers "Cancel, still bill" (off by default).
+- [ ] **Wrap-up (GL4):** when a group of three ends there is **one** push ("Group lesson with … just ended.") and one alert, "Group lesson just ended."; Wrap up opens the group sheet with an Everyone row (Re-deploy, New plan) and a row per athlete; "Lesson didn't happen" clears all of them; the sheet closes itself when every athlete is ticked. Not now leaves one banner for the group.
+- [ ] **Wrap-up offline (GL4):** with the sheet open in airplane mode, Everyone → Re-deploy shows one "Saved" message, the ticks stay, and nothing reappears as pending after reconnecting.
+- [ ] **Today widget (GL5):** a group lesson is one line: first names then "+N", its time, and "Group lesson" where the practice week would be; tapping it opens the Roster. A private lesson before or after still shows its student's week.
+- [ ] **Watch (GL5):** the group is one stop on the day's dial and one row in Up next ("3 left today" counts it once); its button is **Athletes**, which lists the members; each opens that athlete's lesson with Briefing and plan. The watch face reads "Greta +2".
+- [ ] **Watch wrap-up:** after a group lesson ends it is one stop behind the dial ("Greta +2", ended time), not one per athlete. **Wrap up** lists who is still waiting; a row opens that athlete's own wrap-up; **No changes** keeps the plan for everyone who has one; **Didn't happen** asks first, then clears everyone left. With one athlete left the stop reads as that athlete's own lesson.
+- [ ] **Import (GL5):** import a schedule where three athletes share Tuesday 4:00 PM: the review shows a **Same time** card naming them. Without tapping it, the import makes three private lessons. With **Link as a group** it makes one group card on the Schedule. Changing one athlete's time on the review removes them from the card and unlinks it. Importing the same schedule again with the link on, after one athlete was skipped the first time, completes the group. Athletes sharing an every-other-week or monthly time get no card.
+- [ ] **Parent (GL5):** the parent's athlete page tags the lesson "Group lesson" and shows no other names anywhere (schedule, reminder, invoice, notification). In the lessons editor the group lesson is listed above the editable ones and can't be changed; saving the editor leaves it in place; a new or moved lesson that overlaps it is refused in the editor before anything is sent, naming both lessons (try it in Airplane Mode: nothing is queued); a lesson at exactly the group's time is left out on save.
+- [ ] **VoiceOver (GL5):** the Same time card reads the names, the time and whether it is linked, and its button says who it links; the group's widget line and watch stop read "Group lesson" and every name; the parent's line reads "…, group lesson".
 
 ## 4. Messaging (PRD §7.5) — all roles
 
@@ -136,6 +153,21 @@ Any role, any plan with moves. On the device, download one Premium American Engl
 - [ ] Competition results linking, post-event card ("No one competed" confirmed), generate a plan from results.
 - [ ] Billing: plan status banners; "Manage your plan" opens Safari; athlete rates, draft invoice from lessons, create, mark paid, share, delete unpaid (confirmed).
 - [ ] Settings: profile, appearance (light/dark/system), account & security (change password, change email, **delete account** — the impact preview lists everything, typed confirmation, and for a Sign in with Apple account the Apple credential is revoked: Settings → Apple ID → Sign in with Apple no longer lists Gradus), device (push toggle reflects the permission state), legal (opens Safari, licenses screen), feedback, sign out, connections hub, pending changes.
+
+## 7a. Invoice currency (PRD decision #69)
+
+Needs migration `20261121120000_invoice_currency.sql` applied. The server and the web screens are built. The app's part (the Settings row, the symbol in the amount fields, amounts in the chosen currency) is **gradus-ios: in progress**: until that build is on TestFlight, set the currency with `PUT /api/v1/me/invoice-currency` and run the server and web lines; the last three lines are the pass for the app once it lands. Use a coach with an athlete who has a rate and at least one invoice created while the coach was in US dollars.
+
+- [ ] **Default:** a coach who has never chosen is in US dollars: `GET /me` carries `invoiceCurrency: "USD"`, and every amount and every shared invoice reads exactly as it did before (no code on the Total line).
+- [ ] **Set (server):** `PUT /me/invoice-currency` with `{ "currency": "GBP" }` answers 200 `{ "invoiceCurrency": "GBP" }` and `GET /me` then reports it. Any code outside USD, CAD, AUD, NZD, GBP answers 400 `validation_failed`; a parent or athlete session answers 403 `wrong_role`. Before the migration is applied the write answers 503 `unavailable` and `/me` has no `invoiceCurrency`.
+- [ ] **Web, a coach in pounds:** reload the web after the `PUT` (an open tab keeps its copy of the coach's currency for five minutes). The athlete page's Invoicing section shows the rate as "£70 per session"; the Create invoice sheet, opened from there or from Roster → Billing (which lists athletes and recent invoice totals, no rate), shows the draft total in pounds; the rate field is labelled "Amount". A new invoice reads "£" in the list, the detail and the shared text, and the shared text's last amount line reads "Total: £140.00 GBP".
+- [ ] **Earlier invoices keep their currency:** the invoice created in dollars still reads "$" in the list, the detail and its shared text ("Total: $140.00", no code) after the switch to pounds, and marking it paid or unpaid does not change that. `GET /coach/invoices/{id}` carries `currency: "USD"` for it and `"GBP"` for the new one.
+- [ ] **Create right after a switch (web):** with the web's Create invoice sheet already open in dollars, switch to pounds with the `PUT`, then Create & share without reloading: the "Invoice created" text and what is shared read "£" and "Total: … GBP", the same as the invoice's detail afterwards (`POST /coach/invoices` answers with the new invoice's `currency`).
+- [ ] **A shared symbol:** with Canadian, Australian or New Zealand dollars every amount reads "$" and the shared text's Total line ends with the code ("Total: $140.00 CAD").
+- [ ] **Nothing is converted:** switching currency changes the symbol only; the stored rate, lesson prices and every invoice total keep their numbers.
+- [ ] **App, Settings (gradus-ios: in progress):** Settings → Coaching shows "Invoice currency" under Connections with the value "US dollar · $"; it opens a list of the five currencies with the caption "Amounts aren't converted."; choosing one saves. The row is hidden only while the app has never been given a currency (a server without the migration); one `GET /me` without `invoiceCurrency` after that (its read failed) hides nothing and leaves every amount in the currency already chosen. Offline or on a failed save the earlier choice comes back.
+- [ ] **App, amounts (gradus-ios: in progress):** after choosing pounds, without relaunching: the rate, a lesson's price, To bill, the Bill sheet's lines and total, and a new invoice all read "£"; the three amount fields show the symbol inside the field; the price field's helper reads "Leave it empty to bill each athlete their normal rate."; the shared invoice text matches the web's character for character for an invoice of ordinary private lessons (on a group lesson's line and a billed cancellation's the app adds its #68 note after the amount, which the web's text does not have).
+- [ ] **App, VoiceOver (gradus-ios: in progress):** the Settings row reads its name and the chosen currency, each choice says whether it is selected, and the symbol inside an amount field is not read as a separate element.
 
 ## 8. Cross-cutting
 

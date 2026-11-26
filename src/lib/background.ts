@@ -11,7 +11,7 @@
  * inline instead — same result, just not deferred.
  */
 type WaitUntil = (promise: Promise<unknown>) => void;
-type RequestScope = { waitUntil: WaitUntil | null };
+type RequestScope = { waitUntil: WaitUntil | null; cold: boolean };
 
 type Storage = {
   run<T>(store: RequestScope, fn: () => T): T;
@@ -41,11 +41,28 @@ function extractWaitUntil(ctx: unknown): WaitUntil | null {
   return null;
 }
 
-/** Run `fn` with the Worker's execution context in scope for `inBackground`. */
-export async function runWithRequestContext<T>(ctx: unknown, fn: () => Promise<T>): Promise<T> {
+/**
+ * Run `fn` with the Worker's execution context in scope for `inBackground`.
+ * `cold` says this request arrived before the Worker instance had loaded the
+ * app (`src/server.ts`), so the API can mark its answer (`requestWasCold`).
+ */
+export async function runWithRequestContext<T>(
+  ctx: unknown,
+  fn: () => Promise<T>,
+  options: { cold?: boolean } = {},
+): Promise<T> {
   const als = await storage();
   if (!als) return fn();
-  return als.run({ waitUntil: extractWaitUntil(ctx) }, fn);
+  return als.run({ waitUntil: extractWaitUntil(ctx), cold: options.cold === true }, fn);
+}
+
+/**
+ * True when the current request waited for a new Worker instance to load the
+ * app's code. False outside a Worker (tests, `bun run dev`).
+ */
+export async function requestWasCold(): Promise<boolean> {
+  const als = await storage();
+  return als?.getStore()?.cold === true;
 }
 
 /**

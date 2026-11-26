@@ -243,14 +243,60 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
     };
   }, [roomId, viewerRole, queryClient]);
 
+  // The message check (PRD #64): a held message waits here for "Edit" or "Send anyway".
+  const [held, setHeld] = useState<{
+    body: string;
+    planId: string | null;
+    message: string;
+    canSendAnyway: boolean;
+    showSafeSport: boolean;
+  } | null>(null);
+  const [draft, setDraft] = useState<{ key: number; text: string }>({ key: 0, text: "" });
+  const [crisisLine, setCrisisLine] = useState(false);
+  // The route keeps this component when only the room changes: nothing held in
+  // one conversation may follow the user into another.
+  useEffect(() => {
+    setHeld(null);
+    setDraft((d) => ({ key: d.key + 1, text: "" }));
+    setCrisisLine(false);
+  }, [roomId]);
+
   const sendTextMutation = useMutation({
-    mutationFn: (vars: { body: string; planId: string | null }) =>
-      sendFn({ data: { roomId, kind: "text", body: vars.body, planId: vars.planId, viewerRole } }),
-    onSuccess: (result) => {
+    mutationFn: (vars: {
+      roomId: string;
+      body: string;
+      planId: string | null;
+      sendAnyway?: boolean;
+    }) =>
+      sendFn({
+        data: {
+          roomId: vars.roomId,
+          kind: "text",
+          body: vars.body,
+          planId: vars.planId,
+          viewerRole,
+          ...(vars.sendAnyway ? { sendAnyway: true } : {}),
+        },
+      }),
+    onSuccess: (result, vars) => {
       if (result && "ok" in result && result.ok === false) {
+        if (result.reason === "content_blocked") {
+          // The answer is for a conversation the user has since left.
+          if (vars.roomId !== roomId) return;
+          setHeld({
+            body: vars.body,
+            planId: vars.planId,
+            message: result.message,
+            canSendAnyway: result.canSendAnyway,
+            showSafeSport: result.showSafeSport,
+          });
+          return;
+        }
         toast.error("Couldn't send", { description: result.message });
         return;
       }
+      setHeld(null);
+      if (result && "crisisLine" in result && result.crisisLine) setCrisisLine(true);
       queryClient.invalidateQueries({
         queryKey: ["message-room", viewerRole ?? "default", roomId],
       });
@@ -407,14 +453,81 @@ export function RoomView({ roomId, viewerRole }: { roomId: string; viewerRole?: 
           {room.messagingClosedMessage}
         </p>
       ) : (
-        <Composer
-          roomId={roomId}
-          roomKind={room.kind}
-          viewerRole={viewerRole}
-          disabled={sendTextMutation.isPending}
-          textOnly={room.viewerTextOnly}
-          onSendText={(body, planId) => sendTextMutation.mutate({ body, planId })}
-        />
+        <>
+          {crisisLine ? (
+            <p
+              role="status"
+              className="mt-3 rounded-xl border border-divider bg-elevated p-3 text-sm text-text-secondary"
+            >
+              If you're struggling, you can{" "}
+              <a href="tel:988" className="font-bold text-text-primary underline">
+                call
+              </a>{" "}
+              or{" "}
+              <a href="sms:988" className="font-bold text-text-primary underline">
+                text 988
+              </a>{" "}
+              at any time.
+            </p>
+          ) : null}
+          {held ? (
+            <div
+              role="alert"
+              className="mt-3 space-y-2 rounded-xl border border-attention/40 bg-attention/10 p-3"
+            >
+              <p className="text-sm font-black text-text-primary">Check your message</p>
+              <p className="text-sm text-text-secondary">{held.message}</p>
+              {held.showSafeSport ? (
+                <p className="text-sm text-text-secondary">
+                  If someone is making you uncomfortable,{" "}
+                  <Link to="/athlete/resources" className="font-bold text-text-primary underline">
+                    Safe Sport help is here
+                  </Link>
+                  .
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft((d) => ({ key: d.key + 1, text: held.body }));
+                    setHeld(null);
+                  }}
+                  className="rounded-full bg-accent px-4 py-2 text-xs font-black uppercase tracking-widest text-accent-foreground"
+                >
+                  Edit message
+                </button>
+                {held.canSendAnyway ? (
+                  <button
+                    type="button"
+                    disabled={sendTextMutation.isPending}
+                    onClick={() =>
+                      sendTextMutation.mutate({
+                        roomId,
+                        body: held.body,
+                        planId: held.planId,
+                        sendAnyway: true,
+                      })
+                    }
+                    className="rounded-full bg-elevated px-4 py-2 text-xs font-black uppercase tracking-widest text-text-primary ring-1 ring-divider disabled:opacity-50"
+                  >
+                    Send anyway
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+          <Composer
+            key={draft.key}
+            initialText={draft.text}
+            roomId={roomId}
+            roomKind={room.kind}
+            viewerRole={viewerRole}
+            disabled={sendTextMutation.isPending || !!held}
+            textOnly={room.viewerTextOnly}
+            onSendText={(body, planId) => sendTextMutation.mutate({ roomId, body, planId })}
+          />
+        </>
       )}
       <OtherCoachPlansSheet
         coach={otherPlanData?.coach ?? null}
@@ -450,8 +563,11 @@ function Composer({
   viewerRole,
   disabled,
   textOnly = false,
+  initialText = "",
   onSendText,
 }: {
+  /** Text put back after the message check held it (PRD #64). */
+  initialText?: string;
   roomId: string;
   roomKind: RoomKind;
   viewerRole?: RoleInRoom;
@@ -460,7 +576,7 @@ function Composer({
   textOnly?: boolean;
   onSendText: (body: string, planId: string | null) => void;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [transcribing, setTranscribing] = useState(false);
   const [attachedPlan, setAttachedPlan] = useState<{ id: string; title: string } | null>(null);
   const transcribeFn = useServerFn(voiceTranscribe);

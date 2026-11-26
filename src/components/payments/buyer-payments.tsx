@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import { confirmMyPaymentFn, getMyPaymentsFn, payMyPurchaseFn } from "@/lib/payments.functions";
 import type { MyPlanPurchaseDTO } from "@/lib/plan-purchases.server";
 import { PaymentsPage } from "./payment-pages";

@@ -14,6 +14,7 @@ import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { planSessionsTable } from "./plan-schema";
 import { goalsAuthorship } from "./goals-history.server";
 import { loadCoachAthleteProfile, type LoadCoachAthleteProfile } from "./athlete-profile.server";
 import { getSportLevel, getSport, getSuggestedHours, sportDisplayLabel } from "./coach-sports";
@@ -339,9 +340,8 @@ export async function getCoachAthleteDetail(
       .in("status", ["active", "benched"])
       .order("status", { ascending: true }) // active < benched alphabetically
       .order("updated_at", { ascending: false }),
-    admin
-      .from("plan_sessions")
-      .select("plan_id, state_index, duration_seconds, logged_at, parent_id")
+    planSessionsTable(admin)
+      .select("plan_id, state_index, duration_seconds, logged_at, parent_id, plan_coach_id")
       .eq("athlete_id", athleteId)
       .gte("logged_at", since),
     admin
@@ -412,6 +412,8 @@ export async function getCoachAthleteDetail(
     duration_seconds: number | null;
     logged_at: string;
     parent_id: string | null;
+    /** Whose plan it was, kept on the session once the plan is removed (decision #67). */
+    plan_coach_id: string | null;
   };
   const sessions30d = (sessionsRes.data ?? []) as SessionRow[];
 
@@ -452,7 +454,13 @@ export async function getCoachAthleteDetail(
 
   const practiceSecondsTotal = sessions30d.reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
   const practiceSecondsMine = sessions30d
-    .filter((s) => planCoachMap.get(s.plan_id) === coachId)
+    // The stamp on the session is trusted only once its plan is gone: while the
+    // plan exists it says whose it is, even when that is nobody (a plan the
+    // athlete wrote), so a value planted on a session at insert never counts.
+    .filter(
+      (s) =>
+        (planCoachMap.has(s.plan_id) ? planCoachMap.get(s.plan_id) : s.plan_coach_id) === coachId,
+    )
     .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0);
   const practiceMinutesTotal = Math.round(practiceSecondsTotal / 60);
   const practiceMinutesMine = Math.round(practiceSecondsMine / 60);

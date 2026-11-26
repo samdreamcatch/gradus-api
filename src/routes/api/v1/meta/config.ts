@@ -13,6 +13,10 @@ const outputSchema = z.object({
   coachProEnabled: z.boolean(),
   foundingCoachCutoff: z.string(),
   termsVersion: z.string(),
+  // This server runs the message check on every send (PRD #64). Optional so an app built
+  // against this contract still reads a server from before the check: there the app holds
+  // flagged messages itself.
+  messageCheck: z.boolean().optional(),
 });
 
 export const Route = createFileRoute("/api/v1/meta/config")({
@@ -28,6 +32,7 @@ export const Route = createFileRoute("/api/v1/meta/config")({
         coachProEnabled: isCoachProAvailable(),
         foundingCoachCutoff: FOUNDING_COACH_CUTOFF.toISOString(),
         termsVersion: CURRENT_TERMS_VERSION,
+        messageCheck: true,
       }),
     }),
   },

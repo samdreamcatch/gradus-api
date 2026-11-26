@@ -6,6 +6,8 @@ export type CoachWeek = {
   practice_min: number;
   target_min: number | null;
   sessions: number;
+  students_meeting_target?: number | null;
+  lessons?: number | null;
   computed_at: string;
 };
 
@@ -17,6 +19,11 @@ export function weekStart(value = new Date()): string {
 
 export function targetPercent(practice: number, target: number | null): number | null {
   return target === null || target <= 0 ? null : Math.round(practice / target * 100);
+}
+
+export function practiceAdherence(meeting: number | null | undefined, students: number | null): number | null {
+  if (meeting == null || students == null || students <= 0) return null;
+  return Math.round(meeting / students * 100);
 }
 
 export function sumCoachWeeks(rows: CoachWeek[]) {

@@ -170,6 +170,18 @@ describe("buildDesignTokens on the real stylesheet", () => {
     });
     expect(tokens.colorAliases.primary).toBe("accent");
     expect(tokens.colorAliases.destructive).toBe("destructive-ink");
+    // Every alias points at a colour the file defines; component-scoped ones are left out.
+    for (const target of Object.values(tokens.colorAliases)) {
+      expect(Object.keys(tokens.colors)).toContain(target);
+    }
+    expect(tokens.colorAliases["club-table-row"]).toBeUndefined();
+  });
+
+  it("leaves out only the aliases known to be component-scoped", () => {
+    // A new name here means an alias the apps will not get: check it is meant to be web-only.
+    const skipped: string[] = [];
+    buildDesignTokens(css, undefined, skipped);
+    expect(skipped.sort()).toEqual(["club-table-header", "club-table-row", "club-table-stripe"]);
   });
 
   it("every :root and .dark token is accounted for", () => {

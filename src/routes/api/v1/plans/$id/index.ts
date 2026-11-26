@@ -15,7 +15,7 @@ const planId = (params: Record<string, string>) => z.string().uuid().parse(param
  * whole-plan save (row plus a full replacement of its moves); PATCH is the
  * per-field update, which forks an active plan when its athlete changes;
  * DELETE removes templates, drafts, and benched plans (422 `not_deletable`
- * for an active plan — bench it first).
+ * for an active plan — it is deleted first, then removed for good).
  */
 export const Route = createFileRoute("/api/v1/plans/$id/")({
   server: {

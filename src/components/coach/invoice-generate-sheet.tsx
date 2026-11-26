@@ -25,15 +25,16 @@ import {
   type RateKind,
 } from "@/lib/invoicing.functions";
 import {
-  buildInvoiceText,
   formatMoney,
   formatShortDate,
+  invoiceShareText,
   parseMoneyToCents,
 } from "@/lib/invoice-format";
 import { cn } from "@/lib/utils";
 import { buildSampleInvoiceDraft, isSampleAthlete } from "@/data/sample-athlete";
 import { addSampleInvoice, billedSampleDates } from "@/data/sample-invoices";
 import { shareInvoiceNow } from "@/lib/share-invoice";
+import { useCoachInvoiceCurrency } from "@/hooks/use-invoice-currency";
 
 const STATE_LABEL: Record<DraftLineState, string> = {
   confirmed: "Confirmed",
@@ -77,7 +78,14 @@ export function InvoiceGenerateSheet({
   );
 }
 
-function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone: () => void }) {
+/** Exported for the render test; screens use `InvoiceGenerateSheet`. */
+export function InvoiceGenerateBody({
+  athleteId,
+  onDone,
+}: {
+  athleteId: string;
+  onDone: () => void;
+}) {
   const queryClient = useQueryClient();
   const preview = useServerFn(previewInvoice);
   const saveRate = useServerFn(setAthleteRate);
@@ -93,6 +101,13 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
   const [rateText, setRateText] = useState("");
 
   const isSample = isSampleAthlete(athleteId);
+
+  // A draft has no currency of its own: its total is in the coach's current
+  // one, which is the one the database stamps on the new invoice. The sheet
+  // waits for that read, so a pound coach's draft never shows a dollar sign
+  // first. If the read fails, the draft's amounts are shown as US dollars; the
+  // text of the invoice it becomes follows the invoice's own stamp either way.
+  const coachCurrency = useCoachInvoiceCurrency();
 
   const draft = useQuery({
     queryKey: ["coach", "invoice-preview", athleteId, periodStart, periodEnd],
@@ -189,16 +204,24 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
       };
     },
     onSuccess: async ({ result, athleteName, periodStart: ps, periodEnd: pe }) => {
-      const text = buildInvoiceText({
-        athleteName,
-        periodStart: ps,
-        periodEnd: pe,
-        lines: included.map((r) => ({
-          occurrenceDate: r.line.occurrenceDate,
-          amountCents: r.amountCents,
-        })),
-        totalCents: result.totalCents,
-      });
+      // The create result goes in whole: it carries the total and the currency
+      // the database stamped on the new invoice, so the text agrees with the
+      // stored invoice even when this screen's copy of the coach's currency is
+      // old. The sample invoice, and a server before the currency migration,
+      // carry none and read in the coach's.
+      const text = invoiceShareText(
+        {
+          ...result,
+          athleteName,
+          periodStart: ps,
+          periodEnd: pe,
+          lines: included.map((r) => ({
+            occurrenceDate: r.line.occurrenceDate,
+            amountCents: r.amountCents,
+          })),
+        },
+        coachCurrency.currency,
+      );
       setCreatedText(text);
       if (isSample) return;
       await queryClient.invalidateQueries({ queryKey: ["coach", "billing"] });
@@ -230,7 +253,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
     );
   }
 
-  if (!isSample && draft.isLoading) {
+  if ((!isSample && draft.isLoading) || coachCurrency.isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-5 w-5 animate-spin text-text-tertiary" />
@@ -275,7 +298,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <Label htmlFor="rate-amount" className="text-xs">
-                Amount (USD)
+                Amount
               </Label>
               <Input
                 id="rate-amount"
@@ -391,7 +414,7 @@ function InvoiceGenerateBody({ athleteId, onDone }: { athleteId: string; onDone:
           {included.length} session{included.length === 1 ? "" : "s"}
         </div>
         <div className="font-display text-2xl font-black text-text-primary">
-          {formatMoney(totalCents)}
+          {formatMoney(totalCents, coachCurrency.currency)}
         </div>
       </section>
 
