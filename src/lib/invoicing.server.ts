@@ -15,7 +15,8 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
-import { dbError } from "./db-error";
+import { dbError, isMissingColumn } from "./db-error";
+import { liveGroupIds } from "./lesson-group-guard.server";
 import {
   addDays,
   expandSlotOccurrences,
@@ -48,6 +49,14 @@ export interface DraftLineDTO {
   state: DraftLineState;
   /** Pre-checked on the review screen. */
   defaultIncluded: boolean;
+  /** A group lesson (decision #68). Absent on a private lesson. */
+  group?: boolean;
+  /**
+   * On a `canceled` line: the coach chose to bill it anyway, so it is
+   * pre-checked. A field rather than a new `state`, so a build that predates
+   * it still decodes the draft.
+   */
+  billable?: boolean;
 }
 
 export interface InvoicePreviewDTO {
@@ -64,6 +73,10 @@ export interface InvoicePreviewDTO {
 export interface InvoiceLineDTO {
   occurrenceDate: string;
   amountCents: number;
+  /** A group lesson (decision #68). Absent on a private lesson. */
+  group?: boolean;
+  /** A canceled lesson the coach billed anyway. Absent otherwise. */
+  canceledBilled?: boolean;
 }
 
 export interface InvoiceDTO {
@@ -76,6 +89,13 @@ export interface InvoiceDTO {
   status: InvoiceStatus;
   createdAt: string;
   lineCount: number;
+  /**
+   * The ISO 4217 code this invoice was created in (decision #69): the coach's
+   * invoice currency at that moment, kept by the database. Display only.
+   * Absent until migration 20261121120000 is applied; read a missing value as
+   * US dollars.
+   */
+  currency?: string;
 }
 
 export interface AthleteBillingDTO {
@@ -86,6 +106,9 @@ export interface AthleteBillingDTO {
 }
 
 const MAX_WINDOW_DAYS = 400;
+
+type Rows<T> = { data: T[] | null; error: { code?: string; message: string } | null };
+type OneRow<T> = { data: T | null; error: { code?: string; message: string } | null };
 
 const notFound = (message: string) => new ApiError({ code: "not_found", status: 404, message });
 const unprocessable = (message: string) =>
@@ -177,7 +200,29 @@ type InvoiceRow = {
   total_cents: number;
   status: string;
   created_at: string;
+  /** Arrives with migration 20261121120000; not selected before it. */
+  currency?: string | null;
 };
+
+const INVOICE_COLUMNS = "id, athlete_id, period_start, period_end, total_cents, status, created_at";
+
+/**
+ * Runs an invoice-header select with `currency`, and again without it while
+ * the column is missing (migration 20261121120000 not applied yet), so the
+ * invoice reads, and the header `createInvoice` asks back from its insert,
+ * work on either side of the migration. `run` builds a fresh query each time
+ * it is called.
+ */
+async function withInvoiceCurrency<R extends { error: { code?: string } | null }>(
+  run: (columns: string) => PromiseLike<R>,
+): Promise<R> {
+  const res = await run(`${INVOICE_COLUMNS}, currency`);
+  return isMissingColumn(res.error) ? run(INVOICE_COLUMNS) : res;
+}
+
+/** `currency` for an invoice DTO: the row's value, or no field at all. */
+const currencyOf = (row: InvoiceRow): { currency?: string } =>
+  row.currency ? { currency: row.currency } : {};
 
 /** Line counts + athlete names for a page of invoice header rows, as `InvoiceDTO`s. */
 async function hydrateInvoiceRows(supabase: Client, rows: InvoiceRow[]): Promise<InvoiceDTO[]> {
@@ -210,6 +255,7 @@ async function hydrateInvoiceRows(supabase: Client, rows: InvoiceRow[]): Promise
     status: r.status as InvoiceStatus,
     createdAt: r.created_at,
     lineCount: lineCounts.get(r.id) ?? 0,
+    ...currencyOf(r),
   }));
 }
 
@@ -218,17 +264,18 @@ async function loadInvoices(
   coachId: string,
   athleteId?: string,
 ): Promise<InvoiceDTO[]> {
-  let query = supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (athleteId) query = query.eq("athlete_id", athleteId);
-
-  const { data, error } = await query;
+  const { data, error } = await withInvoiceCurrency((columns) => {
+    let query = supabase
+      .from("invoices")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (athleteId) query = query.eq("athlete_id", athleteId);
+    return query as unknown as PromiseLike<Rows<InvoiceRow>>;
+  });
   if (error) dbError(error);
-  return hydrateInvoiceRows(supabase, (data ?? []) as InvoiceRow[]);
+  return hydrateInvoiceRows(supabase, data ?? []);
 }
 
 export async function getCoachInvoices(ctx: InvoicingContext): Promise<InvoiceDTO[]> {
@@ -278,22 +325,23 @@ export async function getCoachInvoicesPage(
   const { coachId } = await requireCoach(supabase, userId);
   const before = input.cursor ? decodeInvoiceCursor(input.cursor) : null;
 
-  let query = supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("coach_id", coachId)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (before) {
-    query = query.or(
-      `created_at.lt.${before.createdAt},and(created_at.eq.${before.createdAt},id.lt.${before.id})`,
-    );
-  }
-
-  const { data, error } = await query.limit(input.limit + 1);
+  const { data, error } = await withInvoiceCurrency((columns) => {
+    let query = supabase
+      .from("invoices")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (before) {
+      query = query.or(
+        `created_at.lt.${before.createdAt},and(created_at.eq.${before.createdAt},id.lt.${before.id})`,
+      );
+    }
+    return query.limit(input.limit + 1) as unknown as PromiseLike<Rows<InvoiceRow>>;
+  });
   if (error) dbError(error);
 
-  const rows = (data ?? []) as InvoiceRow[];
+  const rows = data ?? [];
   const hasMore = rows.length > input.limit;
   const page = hasMore ? rows.slice(0, input.limit) : rows;
   const oldest = page[page.length - 1];
@@ -338,24 +386,41 @@ export async function getInvoiceDetail(
   const { supabase, userId } = ctx;
   const { coachId } = await requireCoach(supabase, userId);
 
-  const { data: inv, error } = await supabase
-    .from("invoices")
-    .select("id, athlete_id, period_start, period_end, total_cents, status, created_at")
-    .eq("id", invoiceId)
-    .eq("coach_id", coachId)
-    .maybeSingle();
+  const { data: inv, error } = await withInvoiceCurrency(
+    (columns) =>
+      supabase
+        .from("invoices")
+        .select(columns)
+        .eq("id", invoiceId)
+        .eq("coach_id", coachId)
+        .maybeSingle() as unknown as PromiseLike<OneRow<InvoiceRow>>,
+  );
   if (error) dbError(error);
   if (!inv) throw notFound("Invoice not found");
 
-  const [{ data: lines, error: lErr }, names] = await Promise.all([
+  type LineRow = {
+    occurrence_date: string;
+    amount_cents: number;
+    is_group?: boolean | null;
+    included_reason?: string | null;
+  };
+  const selectLines = (columns: string) =>
     supabase
       .from("invoice_lines")
-      .select("occurrence_date, amount_cents")
+      .select(columns)
       .eq("invoice_id", inv.id)
-      .order("occurrence_date", { ascending: true }),
+      .order("occurrence_date", { ascending: true }) as unknown as Promise<Rows<LineRow>>;
+  // `is_group` arrives with migration 20261115120000; until then, the old columns.
+  const loadLines = async () => {
+    const res = await selectLines("occurrence_date, amount_cents, included_reason, is_group");
+    return isMissingColumn(res.error) ? selectLines("occurrence_date, amount_cents") : res;
+  };
+  const [linesRes, names] = await Promise.all([
+    loadLines(),
     athleteNameById(supabase, [inv.athlete_id]),
   ]);
-  if (lErr) dbError(lErr);
+  if (linesRes.error) dbError(linesRes.error);
+  const lines = linesRes.data;
 
   return {
     id: inv.id,
@@ -367,9 +432,12 @@ export async function getInvoiceDetail(
     status: inv.status as InvoiceStatus,
     createdAt: inv.created_at,
     lineCount: (lines ?? []).length,
+    ...currencyOf(inv),
     lines: (lines ?? []).map((l) => ({
       occurrenceDate: l.occurrence_date,
       amountCents: l.amount_cents,
+      ...(l.is_group ? { group: true } : {}),
+      ...(l.included_reason === "canceled_billed" ? { canceledBilled: true } : {}),
     })),
   };
 }
@@ -440,25 +508,58 @@ async function buildPreview(
   const floor = toIsoDate(addDays(parseIsoDate(periodEnd), -MAX_WINDOW_DAYS));
   if (parseIsoDate(periodStart) < parseIsoDate(floor)) periodStart = floor;
 
-  const { data: slots, error: sErr } = await supabase
-    .from("athlete_lesson_slots")
-    .select("id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on")
-    .eq("coach_id", coachId)
-    .eq("athlete_id", athleteId);
-  if (sErr) dbError(sErr);
+  type SlotRow = {
+    id: string;
+    day_of_week: number;
+    start_minute: number;
+    end_minute: number;
+    frequency: string;
+    weeks_of_month: number[] | null;
+    starts_on: string | null;
+    group_id?: string | null;
+    price_cents?: number | null;
+  };
+  const SLOT_COLUMNS =
+    "id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on";
+  const selectSlots = (columns: string) =>
+    supabase
+      .from("athlete_lesson_slots")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .eq("athlete_id", athleteId) as unknown as Promise<Rows<SlotRow>>;
+  // The group link and lesson price arrive with migration 20261115120000
+  // (decision #68); until it is applied, the draft is built as before.
+  let slotsRes = await selectSlots(`${SLOT_COLUMNS}, group_id, price_cents`);
+  if (isMissingColumn(slotsRes.error)) slotsRes = await selectSlots(SLOT_COLUMNS);
+  if (slotsRes.error) dbError(slotsRes.error);
+  const slots = slotsRes.data;
 
   const slotRows = slots ?? [];
   const slotIds = slotRows.map((s) => s.id);
 
+  type OverrideRow = {
+    slot_id: string;
+    occurrence_date: string;
+    status: string;
+    start_minute: number | null;
+    end_minute: number | null;
+    billable?: boolean | null;
+  };
+  const OVERRIDE_COLUMNS = "slot_id, occurrence_date, status, start_minute, end_minute";
+  const selectOverrides = (columns: string) =>
+    supabase
+      .from("lesson_slot_overrides")
+      .select(columns)
+      .in("slot_id", slotIds)
+      .gte("occurrence_date", periodStart)
+      .lte("occurrence_date", periodEnd) as unknown as Promise<Rows<OverrideRow>>;
+  const loadOverrides = async (): Promise<Rows<OverrideRow>> => {
+    if (!slotIds.length) return { data: [], error: null };
+    const res = await selectOverrides(`${OVERRIDE_COLUMNS}, billable`);
+    return isMissingColumn(res.error) ? selectOverrides(OVERRIDE_COLUMNS) : res;
+  };
   const [overridesRes, wrapUpsRes, invoicedRes] = await Promise.all([
-    slotIds.length
-      ? supabase
-          .from("lesson_slot_overrides")
-          .select("slot_id, occurrence_date, status, start_minute, end_minute")
-          .in("slot_id", slotIds)
-          .gte("occurrence_date", periodStart)
-          .lte("occurrence_date", periodEnd)
-      : Promise.resolve({ data: [], error: null }),
+    loadOverrides(),
     supabase
       .from("lesson_wrap_ups")
       .select("lesson_date, action")
@@ -468,7 +569,7 @@ async function buildPreview(
       .lte("lesson_date", periodEnd),
     supabase
       .from("invoices")
-      .select("id, invoice_lines(occurrence_date)")
+      .select("id, invoice_lines(occurrence_date, slot_id)")
       .eq("coach_id", coachId)
       .eq("athlete_id", athleteId),
   ]);
@@ -478,25 +579,26 @@ async function buildPreview(
 
   const overrideByKey = new Map<
     string,
-    { status: string; startMinute: number | null; endMinute: number | null }
+    { status: string; startMinute: number | null; endMinute: number | null; billable: boolean }
   >();
   for (const o of overridesRes.data ?? []) {
     overrideByKey.set(`${o.slot_id}::${o.occurrence_date}`, {
       status: o.status,
       startMinute: o.start_minute,
       endMinute: o.end_minute,
+      billable: o.status === "canceled" && o.billable === true,
     });
   }
 
   const wrapUpByDate = new Map<string, string>();
   for (const w of wrapUpsRes.data ?? []) wrapUpByDate.set(w.lesson_date, w.action);
 
-  const alreadyInvoiced = new Set<string>();
-  for (const inv of (invoicedRes.data ?? []) as Array<{
-    invoice_lines: { occurrence_date: string }[] | null;
-  }>) {
-    for (const l of inv.invoice_lines ?? []) alreadyInvoiced.add(l.occurrence_date);
-  }
+  const billed = billedIndex(invoicedRes.data as BilledInvoices);
+  // A slot whose group has shrunk to one athlete is a private lesson.
+  const liveGroups = await liveGroupIds(
+    supabase as never,
+    slotRows.map((s) => s.group_id).filter((id): id is string => id != null),
+  );
 
   const lines: DraftLineDTO[] = [];
   for (const slot of slotRows) {
@@ -512,7 +614,7 @@ async function buildPreview(
     );
 
     for (const date of dates) {
-      if (alreadyInvoiced.has(date)) continue;
+      if (billed.has(slot.id, date)) continue;
       const override = overrideByKey.get(`${slot.id}::${date}`);
       const startMinute =
         override?.status === "rescheduled" && override.startMinute != null
@@ -524,6 +626,7 @@ async function buildPreview(
           : slot.end_minute;
 
       const wrapUp = wrapUpByDate.get(date);
+      const billable = override?.status === "canceled" && override.billable;
       let state: DraftLineState = "scheduled";
       if (override?.status === "canceled") state = "canceled";
       else if (wrapUp === "did_not_happen") state = "did_not_happen";
@@ -534,9 +637,19 @@ async function buildPreview(
         occurrenceDate: date,
         startMinute,
         endMinute,
-        amountCents: rate ? amountForSlot(rate, startMinute, endMinute) : 0,
+        // The lesson's own price wins over the athlete's rate (PRD §6.16 B);
+        // nothing is ever split or recomputed from who turned up.
+        amountCents:
+          slot.price_cents != null
+            ? slot.price_cents
+            : rate
+              ? amountForSlot(rate, startMinute, endMinute)
+              : 0,
         state,
-        defaultIncluded: state === "confirmed" || state === "scheduled",
+        // A canceled lesson the coach chose to bill is on the invoice by default.
+        defaultIncluded: state === "confirmed" || state === "scheduled" || billable,
+        ...(slot.group_id && liveGroups.has(slot.group_id) ? { group: true } : {}),
+        ...(billable ? { billable: true } : {}),
       });
     }
   }
@@ -583,17 +696,126 @@ export const createInvoiceInput = z.object({
         startMinute: z.number().int().min(0).max(1440).nullable().default(null),
         endMinute: z.number().int().min(0).max(1440).nullable().default(null),
         amountCents: z.number().int().min(0).max(10_000_000),
-        includedReason: z.enum(["completed", "manual_add"]).default("completed"),
+        // "canceled_billed": a canceled lesson the coach billed anyway (decision #68).
+        includedReason: z.enum(["completed", "manual_add", "canceled_billed"]).default("completed"),
+        /** The lesson was a group lesson; kept on the line for the invoice text. */
+        group: z.boolean().optional(),
       }),
     )
     .min(1)
     .max(400),
 });
 
+/** The database half of decision #68 (migration 20261115120000) is not applied yet. */
+const groupLessonsNotReady = () =>
+  new ApiError({
+    code: "unavailable",
+    status: 503,
+    message: "Group lessons aren't switched on yet. Try again shortly.",
+  });
+
+type BilledInvoices = Array<{
+  invoice_lines: { occurrence_date: string; slot_id: string | null }[] | null;
+}> | null;
+
+/**
+ * What is already on an invoice for this athlete. A lesson is billed once: by
+ * its slot and date, so two lessons on one date (a private and a group
+ * lesson, say) are each billable. A line with no slot (a manual add, or a
+ * lesson whose slot has since been deleted) covers its whole date, as every
+ * line did before decision #68.
+ */
+function billedIndex(invoices: BilledInvoices) {
+  const dates = new Set<string>();
+  const slotDates = new Set<string>();
+  for (const inv of invoices ?? []) {
+    for (const l of inv.invoice_lines ?? []) {
+      if (l.slot_id) slotDates.add(`${l.slot_id}::${l.occurrence_date}`);
+      else dates.add(l.occurrence_date);
+    }
+  }
+  return {
+    has(slotId: string | null, date: string): boolean {
+      if (dates.has(date)) return true;
+      if (slotId) return slotDates.has(`${slotId}::${date}`);
+      // A manual line may not land on a date that already has a billed lesson.
+      for (const key of slotDates) if (key.endsWith(`::${date}`)) return true;
+      return false;
+    },
+  };
+}
+
+type CreateLine = z.infer<typeof createInvoiceInput>["lines"][number];
+
+/**
+ * The schedule's own answer, for the lines about to be billed, to "was this a
+ * group lesson?" and "was this date canceled?". `migrated` is false while
+ * migration 20261115120000 is not applied; then nothing is derived.
+ */
+async function lineFacts(
+  supabase: Client,
+  coachId: string,
+  athleteId: string,
+  lines: CreateLine[],
+): Promise<{
+  migrated: boolean;
+  /** This athlete's lesson slots with this coach. */
+  ownSlots: Set<string>;
+  isGroup: (l: CreateLine) => boolean;
+  reason: (l: CreateLine) => CreateLine["includedReason"];
+}> {
+  const selectSlots = (columns: string) =>
+    supabase
+      .from("athlete_lesson_slots")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .eq("athlete_id", athleteId) as unknown as Promise<
+      Rows<{ id: string; group_id?: string | null }>
+    >;
+  let slotsRes = await selectSlots("id, group_id");
+  const migrated = !isMissingColumn(slotsRes.error);
+  if (!migrated) slotsRes = await selectSlots("id");
+  if (slotsRes.error) dbError(slotsRes.error);
+  const slots = slotsRes.data ?? [];
+  const ownSlots = new Set(slots.map((s) => s.id));
+  if (!migrated) {
+    return { migrated, ownSlots, isGroup: () => false, reason: (l) => l.includedReason };
+  }
+  const live = await liveGroupIds(
+    supabase as never,
+    slots.map((s) => s.group_id).filter((id): id is string => id != null),
+  );
+  const groupSlots = new Set(
+    slots.filter((s) => s.group_id && live.has(s.group_id)).map((s) => s.id),
+  );
+
+  const slotIds = [...new Set(lines.map((l) => l.slotId).filter((id): id is string => !!id))];
+  const canceled = new Set<string>();
+  if (slotIds.length) {
+    const ovRes = await supabase
+      .from("lesson_slot_overrides")
+      .select("slot_id, occurrence_date, status")
+      .in("slot_id", slotIds)
+      .in("occurrence_date", [...new Set(lines.map((l) => l.occurrenceDate))])
+      .eq("status", "canceled");
+    if (ovRes.error) dbError(ovRes.error);
+    for (const o of ovRes.data ?? []) canceled.add(`${o.slot_id}::${o.occurrence_date}`);
+  }
+  return {
+    migrated: true,
+    ownSlots,
+    isGroup: (l) => l.slotId != null && groupSlots.has(l.slotId),
+    reason: (l) => {
+      if (l.includedReason === "manual_add" || !l.slotId) return l.includedReason;
+      return canceled.has(`${l.slotId}::${l.occurrenceDate}`) ? "canceled_billed" : "completed";
+    },
+  };
+}
+
 export async function createInvoice(
   ctx: InvoicingContext,
   data: z.infer<typeof createInvoiceInput>,
-): Promise<{ invoiceId: string; totalCents: number; lineCount: number }> {
+): Promise<{ invoiceId: string; totalCents: number; lineCount: number; currency?: string }> {
   const { supabase, userId } = ctx;
   const { coachId } = await requireCoach(supabase, userId);
   await assertRostered(supabase, coachId, data.athleteId);
@@ -603,35 +825,51 @@ export async function createInvoice(
   // that draft can go stale between preview and submit.
   const { data: existing, error: exErr } = await supabase
     .from("invoices")
-    .select("id, invoice_lines(occurrence_date)")
+    .select("id, invoice_lines(occurrence_date, slot_id)")
     .eq("coach_id", coachId)
     .eq("athlete_id", data.athleteId);
   if (exErr) dbError(exErr);
-  const billed = new Set<string>();
-  for (const inv of (existing ?? []) as Array<{
-    invoice_lines: { occurrence_date: string }[] | null;
-  }>) {
-    for (const l of inv.invoice_lines ?? []) billed.add(l.occurrence_date);
-  }
-  const fresh = data.lines.filter((l) => !billed.has(l.occurrenceDate));
+  const billed = billedIndex(existing as BilledInvoices);
+  const facts = await lineFacts(supabase, coachId, data.athleteId, data.lines);
+  // A slot id that isn't one of this athlete's lessons with this coach (the
+  // lesson was deleted since the preview, or the id is simply wrong) is
+  // dropped: the line then covers its whole date, as a line with no slot does.
+  const lines = data.lines.map((l) =>
+    l.slotId && !facts.ownSlots.has(l.slotId) ? { ...l, slotId: null } : l,
+  );
+  const fresh = lines.filter((l) => !billed.has(l.slotId, l.occurrenceDate));
   if (fresh.length === 0) {
     throw unprocessable("Those sessions have already been invoiced.");
+  }
+  if (!facts.migrated && fresh.some((l) => l.includedReason === "canceled_billed" || l.group)) {
+    throw groupLessonsNotReady();
   }
 
   const totalCents = fresh.reduce((sum, l) => sum + l.amountCents, 0);
 
-  const { data: invoice, error } = await supabase
-    .from("invoices")
-    .insert({
-      coach_id: coachId,
-      athlete_id: data.athleteId,
-      period_start: data.periodStart,
-      period_end: data.periodEnd,
-      total_cents: totalCents,
-      status: "unpaid",
-    })
-    .select("id")
-    .single();
+  // The header is asked back with the currency the database stamped on it, so
+  // the caller labels the invoice it just made from the invoice itself, not
+  // from its own copy of the coach's setting (which can be minutes old). While
+  // the column is missing the statement fails as a whole and inserts nothing,
+  // so running it again without the column cannot make a second invoice.
+  const { data: invoice, error } = await withInvoiceCurrency(
+    (columns) =>
+      supabase
+        .from("invoices")
+        .insert({
+          coach_id: coachId,
+          athlete_id: data.athleteId,
+          period_start: data.periodStart,
+          period_end: data.periodEnd,
+          total_cents: totalCents,
+          status: "unpaid",
+          // `currency` is never named here: the invoices_set_currency trigger
+          // (migration 20261121120000) sets it from the coach's invoice
+          // currency, and before that migration the column does not exist.
+        })
+        .select(columns)
+        .single() as unknown as PromiseLike<OneRow<InvoiceRow>>,
+  );
   // The insert is scoped to the caller's own coach_id, so the roster clause of
   // "Coaches manage own invoices" is the only one that can fail with 42501 (an
   // athlete removed from the roster since the check above).
@@ -650,8 +888,15 @@ export async function createInvoice(
       start_minute: l.startMinute,
       end_minute: l.endMinute,
       amount_cents: l.amountCents,
-      included_reason: l.includedReason,
-    })),
+      // Whether the lesson was canceled and whether it is a group lesson are
+      // read from the schedule, not taken from the client: a build that
+      // predates decision #68 sends "completed" and no group flag for both.
+      included_reason: facts.reason(l),
+      // Named on every row or on none (PostgREST fills a key missing from
+      // some rows of a bulk insert with NULL, which `is_group` refuses), and
+      // on none before migration 20261115120000.
+      ...(facts.migrated ? { is_group: facts.isGroup(l) } : {}),
+    })) as never,
   );
   if (lErr) {
     // Don't leave a header with no lines behind.
@@ -664,10 +909,20 @@ export async function createInvoice(
     if (lErr.code === "23505") {
       throw unprocessable("Those sessions have already been invoiced.");
     }
+    // Migration 20261115120000 only part-way in (or PostgREST's schema cache
+    // not reloaded yet): `is_group` or the new reason isn't accepted.
+    if (facts.migrated && (isMissingColumn(lErr) || lErr.code === "23514")) {
+      throw groupLessonsNotReady();
+    }
     dbError(lErr);
   }
 
-  return { invoiceId: invoice!.id, totalCents, lineCount: fresh.length };
+  return {
+    invoiceId: invoice!.id,
+    totalCents,
+    lineCount: fresh.length,
+    ...currencyOf(invoice!),
+  };
 }
 
 /** `PATCH /api/v1/coach/invoices/{id}/status` body (the invoice id is in the path). */

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import { getCoachPaymentHistoryFn, restrictSaleFn } from "@/lib/payments.functions";
 import {
   openStripeConnectDashboardFn,

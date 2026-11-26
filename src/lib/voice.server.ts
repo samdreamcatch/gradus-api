@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { assertVoiceAllowed } from "./minor-voice.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { createNameMask, nameSpellingKey, unmaskStrings } from "./ai-names";
@@ -1051,14 +1052,28 @@ export async function applyDraft(
       setPlanSource("notes", draft.sources?.notes);
     }
   } else {
-    const { data: plan, error } = await supabase
-      .from("plans")
-      .select("id, kind")
+    const { data: plan, error } = await plansTable(supabase)
+      .select("id, kind, athlete_id, shared_from_id")
       .eq("id", workingPlanId)
       .eq("coach_id", coachId)
       .maybeSingle();
     if (error) dbError(error);
     if (!plan) throw new Error("Plan not found");
+
+    // A plan several athletes hold (decision #66), or one athlete's copy of
+    // it, is never handed to someone else because a name was dictated: that
+    // would strand the copies, or give an athlete a second one. Who has it
+    // changes only through the plan's own athlete list.
+    let sharedPlan = !!plan.shared_from_id;
+    if (!sharedPlan && !plan.athlete_id && draft.athleteId && plan.kind === "plan") {
+      const { data: copies, error: copiesErr } = await plansTable(supabase)
+        .select("id")
+        .eq("shared_from_id", workingPlanId)
+        .eq("coach_id", coachId)
+        .limit(1);
+      if (copiesErr) dbError(copiesErr);
+      sharedPlan = (copies ?? []).length > 0;
+    }
 
     const patch: {
       updated_at: string;
@@ -1078,7 +1093,7 @@ export async function applyDraft(
       setPlanSource("notes", draft.sources?.notes);
     }
 
-    if (draft.athleteId && plan.kind === "plan") {
+    if (draft.athleteId && plan.kind === "plan" && !sharedPlan) {
       patch.athlete_id = draft.athleteId;
       touched.plan.athleteId = true;
       setPlanSource("athleteId", draft.sources?.athleteName);

@@ -6,10 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { InvoiceGenerateSheet } from "@/components/coach/invoice-generate-sheet";
 import { InvoiceDetailSheet } from "@/components/coach/invoice-detail-sheet";
-import { getCoachInvoices } from "@/lib/invoicing.functions";
+import { getCoachInvoices, type InvoiceDTO } from "@/lib/invoicing.functions";
 import { formatDateRange, formatMoney } from "@/lib/invoice-format";
+import { displayCurrency } from "@/lib/invoice-currency";
+import { useCoachInvoiceCurrency } from "@/hooks/use-invoice-currency";
 import type { RosterAthlete } from "@/lib/coach-roster.functions";
 import { useSampleInvoices } from "@/data/sample-invoices";
+
+type InvoiceRow = Pick<
+  InvoiceDTO,
+  "id" | "athleteName" | "periodStart" | "periodEnd" | "status" | "totalCents" | "currency"
+>;
 
 /**
  * Roster → Billing. One row per athlete to start an invoice, plus the recent
@@ -25,8 +32,12 @@ export function BillingTab({ athletes }: { athletes: RosterAthlete[] }) {
     queryFn: () => fetchInvoices(),
   });
 
+  // An invoice is shown in the currency it was created in; one that carries
+  // none (a sample, or a row read before the currency migration) in the coach's.
+  const coachCurrency = useCoachInvoiceCurrency().currency;
+
   const sampleInvoices = useSampleInvoices();
-  const allInvoices = [
+  const allInvoices: InvoiceRow[] = [
     ...sampleInvoices.map((inv) => ({
       id: inv.id,
       athleteName: inv.athleteName,
@@ -98,7 +109,7 @@ export function BillingTab({ athletes }: { athletes: RosterAthlete[] }) {
                     {inv.status}
                   </Tag>
                   <div className="text-sm font-bold text-text-primary">
-                    {formatMoney(inv.totalCents)}
+                    {formatMoney(inv.totalCents, displayCurrency(inv.currency, coachCurrency))}
                   </div>
                 </button>
               </li>

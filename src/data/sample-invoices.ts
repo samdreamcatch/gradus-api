@@ -3,7 +3,9 @@
  *
  * Sample invoices never touch the database — they live for the current browser
  * session so a coach can generate one, share it, mark it paid and delete it,
- * exactly like the real flow, without any server function being called.
+ * exactly like the real flow, without any invoice being read from or written to
+ * the server. The one server read on these screens is the coach's own invoice
+ * currency (`useCoachInvoiceCurrency`), which the sample's amounts are shown in.
  */
 
 import { useSyncExternalStore } from "react";

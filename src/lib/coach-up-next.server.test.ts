@@ -4,15 +4,39 @@ import { getUpNext, upNextInput } from "./coach-up-next.server";
 
 type Row = Record<string, unknown>;
 
-/** Exactly the query shapes `getUpNext` issues: select + eq/in filters + maybeSingle. */
+type Sort = { col: string; ascending: boolean };
+
+/**
+ * Exactly the query shapes `getUpNext` issues: select + eq/in filters + `order`
+ * (the first call is the main key, later calls break ties) + maybeSingle.
+ */
 function fakeAdmin(tables: Record<string, Row[]>): UpNextContext["admin"] {
-  const make = (rows: Row[]) => {
+  const make = (rows: Row[], sorts: Sort[] = []) => {
+    const sorted = () =>
+      [...rows].sort((a, b) => {
+        for (const { col, ascending } of sorts) {
+          const x = String(a[col] ?? "");
+          const y = String(b[col] ?? "");
+          if (x !== y) return (x < y ? -1 : 1) * (ascending ? 1 : -1);
+        }
+        return 0;
+      });
     const q = {
-      eq: (col: string, val: unknown) => make(rows.filter((r) => r[col] === val)),
-      in: (col: string, vals: unknown[]) => make(rows.filter((r) => vals.includes(r[col]))),
-      maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
+      eq: (col: string, val: unknown) =>
+        make(
+          rows.filter((r) => r[col] === val),
+          sorts,
+        ),
+      in: (col: string, vals: unknown[]) =>
+        make(
+          rows.filter((r) => vals.includes(r[col])),
+          sorts,
+        ),
+      order: (col: string, opts: { ascending?: boolean } = {}) =>
+        make(rows, [...sorts, { col, ascending: opts.ascending ?? true }]),
+      maybeSingle: async () => ({ data: sorted()[0] ?? null, error: null }),
       then: (resolve: (v: { data: Row[]; error: null }) => void) =>
-        resolve({ data: rows, error: null }),
+        resolve({ data: sorted(), error: null }),
     };
     return q;
   };
@@ -179,6 +203,24 @@ describe("getUpNext", () => {
     expect(out.map((l) => l.activePlanId)).toEqual(["p1", null]);
   });
 
+  it("with several active plans, names the newest (then the highest id), as wrap-ups do", async () => {
+    const mine = { athlete_id: "a1", coach_id: "coach-1", kind: "plan", status: "active" };
+    const out = await getUpNext(
+      ctx({
+        athlete_lesson_slots: [slot({ id: "s1" })],
+        // Stored oldest first, the opposite of the order asked for. The
+        // oldest has the highest id, so the id alone does not decide.
+        plans: [
+          { id: "p-z", ...mine, created_at: "2026-09-15T09:00:00Z" },
+          { id: "p-a", ...mine, created_at: "2026-10-02T09:00:00Z" },
+          { id: "p-b", ...mine, created_at: "2026-10-02T09:00:00Z" },
+        ],
+      }),
+      ask(8 * 60),
+    );
+    expect(out.map((l) => l.activePlanId)).toEqual(["p-b"]);
+  });
+
   it("shows only this coach's slots", async () => {
     const out = await getUpNext(
       ctx({ athlete_lesson_slots: [slot({ id: "s1" }), slot({ id: "s2", coach_id: "coach-2" })] }),
@@ -206,6 +248,54 @@ describe("getUpNext", () => {
     expect(
       await getUpNext(ctx({ athlete_lesson_slots: slots }), ask(8 * 60, { limit: 1 })),
     ).toHaveLength(1);
+  });
+
+  it("marks a group's members and counts the group as one lesson toward the limit", async () => {
+    const at = (n: number) => ({ start_minute: (9 + n) * 60, end_minute: (9 + n) * 60 + 30 });
+    const slots = [
+      slot({ id: "g1", athlete_id: "a1", group_id: "grp", ...at(1) }),
+      slot({ id: "g2", athlete_id: "a2", group_id: "grp", ...at(1) }),
+      slot({ id: "p1", athlete_id: "a3", ...at(2) }),
+      slot({ id: "p2", athlete_id: "a1", ...at(3) }),
+    ];
+    const out = await getUpNext(ctx({ athlete_lesson_slots: slots }), ask(8 * 60, { limit: 2 }));
+    expect(out.map((l) => [l.slotId, l.groupId])).toEqual([
+      ["g1", "grp"],
+      ["g2", "grp"],
+      ["p1", undefined],
+    ]);
+  });
+
+  it("drops the group id when only one member is left on this date", async () => {
+    const out = await getUpNext(
+      ctx({
+        athlete_lesson_slots: [
+          slot({ id: "g1", athlete_id: "a1", group_id: "grp" }),
+          slot({ id: "g2", athlete_id: "a2", group_id: "grp" }),
+        ],
+        lesson_slot_overrides: [
+          {
+            slot_id: "g2",
+            occurrence_date: DATE,
+            status: "canceled",
+            start_minute: null,
+            end_minute: null,
+          },
+        ],
+      }),
+      ask(8 * 60),
+    );
+    expect(out.map((l) => l.slotId)).toEqual(["g1"]);
+    expect("groupId" in out[0]).toBe(false);
+  });
+
+  it("leaves a lone leftover of a group reading as a private lesson", async () => {
+    const out = await getUpNext(
+      ctx({ athlete_lesson_slots: [slot({ group_id: "grp" })] }),
+      ask(8 * 60),
+    );
+    expect(out).toHaveLength(1);
+    expect("groupId" in out[0]).toBe(false);
   });
 
   it("lets the Today widget ask for 20 lessons, and no more", () => {

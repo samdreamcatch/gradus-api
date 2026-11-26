@@ -1,5 +1,21 @@
 
+## Pending migrations — November 25
+- [x] Complete the saved security re-check, including the previously held-back club-admin lookup restriction; database permissions and profile guards verified.
+- [x] Apply scheduled-job history cleanup; active five-minute schedule, 5,000-row batch limit and seven-day retention verified. Original SQL is preserved after the required scheduling-review comment; no application data or email changes.
+
 ## Open
+- [x] Make Library the club entry page, remove the Coaching directory, and expose authorized weekly metrics as optional Users columns while preserving coach profiles; entry and legacy redirects, Columns and week switching verified, four metric tests pass, no emails or publishing.
+- [x] Rework acknowledgements into document-grouped selectable records, individual/document reminder review, CSV export and document-specific PDF downloads; verified 3-record group/1-record individual review, 13-row CSV and single-document PDF, no notifications sent. Twelve policy tests pass; full lint timed out.
+- [x] Add manual move entry with existing or new categories; authenticated creation and edit readback verified, temporary QA move removed, targeted lint clean and build OK. Categories are saved with their first move.
+- [x] Refine the club top menu into an aligned 56px desktop line with understated active tabs, no disabled Storefront placeholder and subordinate Library links. Authenticated Schedule/Library navigation and 1074px/1440px/390px light/dark layouts verified without page overflow or runtime errors; targeted lint clean, build OK, full lint timed out. No data, emails or publishing changed.
+- [x] Move shared club navigation to the top; sidebar width and mobile trigger removed. Schedule/Users navigation, 1074px/390px layouts without page overflow, and dark appearance verified; targeted lint zero errors and build OK, full lint timed out.
+- [x] Correct Schedule invitation review: exact scheduled lessons/recipients, deduplicated student counts and unsent-only bulk action. Test Club review verified: 0 unsent, 3 awaiting acceptance across 4 lessons; 13 tests pass, targeted lint zero errors and build OK. No emails sent; full lint timed out.
+- [x] CSV uploads for students and coaches: shared import/template controls and editable review; authenticated upload/duplicate validation verified, 12 tests pass, targeted lint zero errors and build OK. No records or emails created; full lint timed out.
+- [x] Unified Users table: Coach/Admin/Unassigned, filtered all-user export, additional seats with confirmed prorated contract cost, persistent awaiting-invoice true-up and internal staff rate setup. Single table, missing-rate block and mobile verified; eight tests pass. No test bills or emails sent.
+- [ ] Contract true-up invoice delivery: needs real contract rates and the club billing recipient/payment arrangement; balances are recorded awaiting invoicing, not sent or charged. Test Club has no agreed rate, so its seat increase remains blocked.
+- [x] Coach profile: horizontal Profile, Sports & levels, Students, Practice tabs and authorized student-parent roster; seven students and parent relationships verified, all tabs exercised, mobile has no page overflow. No emails or account edits.
+- [x] Part 2 Group A: coach profile, Users and Roster sections/person cells/dates/numbers and confirmation sheets complete; both themes, 390px/1280px and destructive-confirm cancellation verified. Nine tests and targeted lint pass; automatic build OK, full lint timed out. Admin identity remains unavailable in the existing DTO; no data or emails changed. Stop for review before Group B.
+- [x] Part 1 club visual pass: shared layout, sidebar, table/grid/toolbar and presentation components; Coaching light/dark and mobile checked, Columns/week/profile controls verified; stop for visual review. No data or email changes. Full-project lint exceeded runner timeout; targeted lint has no errors.
 - [x] Apply 20261102120000_notifications_collapse_key.sql byte-for-byte as 0033_notifications_collapse_key; column, unique index and service-only function verified. All journal migrations applied; 26 notification/push tests pass, lint zero errors; no emails or pushes sent.
 - [x] Apply pending migrations: app notification inbox applied as 0032_notifications; club notifications already applied. Owner-only permissions and nightly 90-day cleanup verified; 20 notification tests pass, no emails or pushes sent.
 - [x] Replace club calendar coach/day summaries with individual lessons, recorded student/guardian contacts, and accurate schedule/invite tracking; nine lessons and details verified as club admin, ten tests pass. Missing contacts are explicit; club invite delivery remains the separate Stage 5 integration below.
@@ -58,10 +74,14 @@
 - [x] Post-publish check: Home, Notifications, Coaching, Policies, People, Schedule imports load live data; notification read receipt saves
 
 ## Real paying club, end to end (plan Nov 10)
+- [x] Nov 12: Home setup checklist, Settings contract contact/seat counts, partial schedule commit and coach CSV handoff built. Existing-student lesson creation/readback, unmatched-row retention, CSV download, empty-club isolation and unauthorized access denial verified; 39 targeted tests pass, automatic checks build OK; no emails sent.
 - [x] Club access follows contract dates (club tier only while contract is active); app onboarding unchanged
 - [x] Internal admin → Organizations → "Contract & admins": add/remove club admins by email (first becomes owner); not test-sent
 - [x] People: change admin roles, release seats, give waiting coaches a seat (invite resend/cancel already on Roster)
-- [ ] Schedule import: match existing athletes, create lessons, hand off to invites
+- [x] Schedule import: existing-roster student matching, explicit transactional lesson creation, duplicate protection and handoff to Lessons/invites. Buddy's existing-lesson import verified (0 added, 1 skipped); 20 tests pass, no emails sent.
+- [x] Schedule import follow-up: fresh lesson created/read back; new students handed to each coach's existing onboarding via CSV, then rosters can be refreshed/matched. Adult invitations stay with the adult flow. Temporary lesson/imports cleaned up.
 - [ ] Real email test (coach invite, family invite, reminders template choice, verification on)
-- [ ] Settings contract card + "contact your rep"; Home first-run checklist; fresh-account end-to-end check; demo cleanup
+- [x] Settings contract contact and Home checklist; empty-club isolation verified. Temporary empty QA club deactivated/unlisted because last-admin safeguards prevent deletion; original demo clubs preserved.
+- [ ] Fresh-account signup/invite end-to-end delivery check — blocked by the standing no-test-email instruction; no new signup or invitation was sent.
+- [x] Contract/seat access audit: database tier now requires an occupied seat; profile/billing reads authoritative tier and removes stale club entitlement without changing mobile signup.
 - [x] No open seat: coach finishes sign-up on their own plan; club admins get a "Coach joined without a seat" notice (clears when they get a seat)

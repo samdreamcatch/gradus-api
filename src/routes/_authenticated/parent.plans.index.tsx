@@ -105,7 +105,7 @@ function ParentPlansPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="benched">Benched</SelectItem>
+                <SelectItem value="benched">Recently deleted</SelectItem>
               </SelectContent>
             </Select>
 
@@ -202,7 +202,7 @@ function EmptyCard({ status }: { status: StatusFilter }) {
       <p className="font-hand text-2xl text-text-secondary">
         {status === "active"
           ? "No active plans — your coach will share one here."
-          : "No benched plans."}
+          : "Nothing deleted in the last 30 days."}
       </p>
     </div>
   );

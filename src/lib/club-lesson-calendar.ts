@@ -44,6 +44,10 @@ export type ClubLesson = {
   startsOn: string | null;
   weeksOfMonth: number[];
   scheduleStatus: string;
+  /** Minutes practised on this coach's plans in the last full week (Mon–Sun, UTC). */
+  practiceMin: number | null;
+  /** Weekly practice target in minutes; null when any of the student's sports has no target. */
+  targetMin: number | null;
 };
 
 // Called only with club-authorized inputs; require a current coach/student link as well as a slot.
@@ -104,6 +108,8 @@ export function buildClubLessons(input: {
           weeksOfMonth: slot.weeks_of_month,
           scheduleStatus:
             student.account_state === "active" ? "Scheduled" : `Student ${student.account_state}`,
+          practiceMin: null,
+          targetMin: null,
         },
       ];
     })
@@ -116,6 +122,17 @@ export function buildClubLessons(input: {
 }
 
 // ---- Calendar placement (pure; dates are ISO yyyy-mm-dd, computed in UTC to avoid DST drift) ----
+/** Review only actionable scheduled families; count students once but retain every lesson. */
+export function lessonInvitationReview(lessons: ClubLesson[]) {
+  const reviewLessons = lessons.filter((lesson) => lesson.canInvite);
+  const students = [...new Map(reviewLessons.map((lesson) => [lesson.athleteId, lesson])).values()];
+  return {
+    lessons: reviewLessons,
+    notInvited: students.filter((lesson) => !lesson.invitedAt),
+    awaitingAcceptance: students.filter((lesson) => !!lesson.invitedAt),
+  };
+}
+
 const DAY_MS = 86_400_000;
 const toDate = (iso: string) => new Date(`${iso}T00:00:00Z`);
 export const toIso = (d: Date) => d.toISOString().slice(0, 10);
@@ -168,4 +185,92 @@ export function lessonsOn<
   T extends Pick<ClubLesson, "day" | "frequency" | "startsOn" | "weeksOfMonth" | "start">,
 >(lessons: T[], iso: string): T[] {
   return lessons.filter((l) => lessonOccursOn(l, iso)).sort((a, b) => a.start - b.start);
+}
+
+// ---- Practice to target (mirrors the weekly coach snapshot's individual attainment rule) ----
+export type PracticeInputs = {
+  goals: { athlete_id: string; coach_id: string | null; sport: string; current_level_key: string | null; updated_at: string; id: string }[];
+  primaries: { athlete_id: string; sport: string; coach_id: string }[];
+  levels: { coach_id: string; sport: string; level_key: string; practice_hours_per_week: number | null }[];
+  targets: { coach_id: string; athlete_id: string; sport: string; hours_per_week: number | null }[];
+  /** Sessions already limited to the week and to plans owned by `coach_id`. */
+  sessions: { coach_id: string; athlete_id: string; duration_seconds: number | null }[];
+};
+export function practiceFor(coachId: string, athleteId: string, input: PracticeInputs) {
+  const bySport = new Map<string, PracticeInputs["goals"][number]>();
+  for (const g of [...input.goals]
+    .filter((g) => g.athlete_id === athleteId)
+    .sort(
+      (a, b) =>
+        Number(b.coach_id === coachId) - Number(a.coach_id === coachId) ||
+        b.updated_at.localeCompare(a.updated_at) ||
+        a.id.localeCompare(b.id),
+    ))
+    if (!bySport.has(g.sport)) bySport.set(g.sport, g);
+  const sports = [...bySport.values()].filter((g) =>
+    input.primaries.some((p) => p.athlete_id === athleteId && p.sport === g.sport && p.coach_id === coachId),
+  );
+  let targetMin: number | null = sports.length ? 0 : null;
+  for (const g of sports) {
+    const own = input.targets.find((t) => t.coach_id === coachId && t.athlete_id === athleteId && t.sport === g.sport)?.hours_per_week;
+    const level = input.levels.find((l) => l.coach_id === coachId && l.sport === g.sport && l.level_key === g.current_level_key)?.practice_hours_per_week;
+    const hours = own ?? level ?? null;
+    if (hours === null || targetMin === null) targetMin = null;
+    else targetMin += hours * 60;
+  }
+  if (targetMin !== null && targetMin <= 0) targetMin = null;
+  const practiceMin =
+    input.sessions
+      .filter((s) => s.coach_id === coachId && s.athlete_id === athleteId)
+      .reduce((sum, s) => sum + (s.duration_seconds ?? 0), 0) / 60;
+  return { practiceMin: Math.round(practiceMin), targetMin };
+}
+export type PracticeState = "met" | "below" | "no_target";
+export function practiceState(l: Pick<ClubLesson, "practiceMin" | "targetMin">): PracticeState {
+  if (l.targetMin === null || l.practiceMin === null) return "no_target";
+  return l.practiceMin >= l.targetMin ? "met" : "below";
+}
+
+// ---- Compact week view: hour rows from the first to the last lesson of the week ----
+export type HourRow = { kind: "hour"; hour: number; top: number; height: number } | { kind: "gap"; from: number; to: number; top: number; height: number };
+export function compactHours(
+  lessons: Pick<ClubLesson, "start" | "end">[],
+  hourPx: number,
+  gapPx: number,
+): { rows: HourRow[]; height: number; y: (minute: number) => number } {
+  if (!lessons.length) {
+    const rows: HourRow[] = Array.from({ length: 10 }, (_, i) => ({ kind: "hour", hour: 8 + i, top: i * hourPx, height: hourPx }));
+    return { rows, height: 10 * hourPx, y: (m) => ((m - 480) / 60) * hourPx };
+  }
+  const busy = new Set<number>();
+  for (const l of lessons)
+    for (let h = Math.floor(l.start / 60); h < Math.max(Math.ceil(l.end / 60), Math.floor(l.start / 60) + 1); h++) busy.add(h);
+  const first = Math.min(...busy);
+  const last = Math.max(...busy);
+  // Keep the working day continuous; only trim before the first and after the last lesson.
+  for (let h = first; h <= last; h++) busy.add(h);
+  const rows: HourRow[] = [];
+  let top = 0;
+  for (let h = first; h <= last; ) {
+    if (busy.has(h)) {
+      rows.push({ kind: "hour", hour: h, top, height: hourPx });
+      top += hourPx;
+      h++;
+    } else {
+      let to = h;
+      while (!busy.has(to)) to++;
+      rows.push({ kind: "gap", from: h, to, top, height: gapPx });
+      top += gapPx;
+      h = to;
+    }
+  }
+  const y = (minute: number) => {
+    const h = Math.floor(minute / 60);
+    const row = rows.find((r) => r.kind === "hour" && r.hour === h);
+    if (row) return row.top + ((minute - h * 60) / 60) * hourPx;
+    const gap = rows.find((r) => r.kind === "gap" && h >= r.from && h < r.to);
+    if (gap) return gap.top + gap.height;
+    return minute < first * 60 ? 0 : top;
+  };
+  return { rows, height: top, y };
 }

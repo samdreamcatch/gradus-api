@@ -37,6 +37,9 @@ export const draftLineSchema = z.object({
   amountCents: z.number(),
   state: draftLineStateSchema,
   defaultIncluded: z.boolean(),
+  // Decision #68: optional so an older build decodes the draft unchanged.
+  group: z.boolean().optional(),
+  billable: z.boolean().optional(),
 }) satisfies z.ZodType<DraftLineDTO>;
 
 export const invoicePreviewSchema = z.object({
@@ -52,6 +55,8 @@ export const invoicePreviewSchema = z.object({
 export const invoiceLineSchema = z.object({
   occurrenceDate: z.string(),
   amountCents: z.number(),
+  group: z.boolean().optional(),
+  canceledBilled: z.boolean().optional(),
 }) satisfies z.ZodType<InvoiceLineDTO>;
 
 export const invoiceSchema = z.object({
@@ -64,6 +69,10 @@ export const invoiceSchema = z.object({
   status: invoiceStatusSchema,
   createdAt: z.string(),
   lineCount: z.number(),
+  // Decision #69: the ISO 4217 code the invoice was created in. Optional so an
+  // older build decodes the invoice unchanged, and absent until the migration
+  // is applied; a string, not an enum, so a currency added later still decodes.
+  currency: z.string().optional(),
 }) satisfies z.ZodType<InvoiceDTO>;
 
 export const invoiceDetailSchema = invoiceSchema.extend({
@@ -87,4 +96,8 @@ export const createInvoiceResultSchema = z.object({
   invoiceId: z.string(),
   totalCents: z.number(),
   lineCount: z.number(),
+  // Decision #69: the code the database stamped on the new invoice, so the
+  // caller labels it from the invoice and not from its own copy of the coach's
+  // setting. Optional and a string for the reasons given on `invoiceSchema`.
+  currency: z.string().optional(),
 });

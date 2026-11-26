@@ -1,0 +1,3476 @@
+{
+  "description": "The message check (PRD decision #64). The first case carries the whole rule set (input { list: 'rules' }); the apps bundle this file and run the same engine as checkMessage. Every other case is a message and the one match the product acts on, or null when it passes. Normalization and matching are specified in the header of the source file.",
+  "source": "src/lib/message-rules.ts",
+  "cases": [
+    {
+      "input": {
+        "list": "rules"
+      },
+      "expected": {
+        "version": "2026-11-16",
+        "leet": {
+          "0": "o",
+          "1": "i",
+          "3": "e",
+          "4": "a",
+          "5": "s",
+          "7": "t",
+          "9": "g",
+          "@": "a",
+          "$": "s",
+          "!": "i"
+        },
+        "censored": [
+          "fuck",
+          "fucking",
+          "fucked",
+          "shit",
+          "bitch",
+          "cunt",
+          "dick",
+          "cock",
+          "pussy",
+          "slut",
+          "whore",
+          "asshole",
+          "nigger",
+          "nigga",
+          "faggot",
+          "retard",
+          "fag",
+          "dyke"
+        ],
+        "sets": {
+          "PBE": "(?:you are|youre|u r|u are|he is|hes|she is|shes|your (?:kid|daughter|son|child) is|that (?:kid|girl|boy) is)",
+          "OBJ": "(?:you|u|ya|him|her|them|your (?:whole |entire )?(?:kid|daughter|son|child|family|wife|husband)|that (?:kid|girl|boy))",
+          "IWILL": "(?:ill|i will|im going to|i am going to|im gonna|i am gonna|imma|ima|im finna|im about to|i want to|i wanna|i should|someone should|somebody should)",
+          "FILL": "(?:(?:so|such|really|very|just|too|a|an|the|total|complete|little|fucking|freaking|nothing but|kind of|getting|being|always|still) ){0,3}",
+          "ALSO": "(?:(?!qzq )[a-z]+ (?:and|or|but) )?",
+          "END": "(?:(?= qzq)|(?! ))",
+          "HARD": "(?:(?:fucking|literally|seriously|just|actually|absolutely|totally) ){0,2}"
+        },
+        "never": [
+          {
+            "id": "X1",
+            "label": "Latin honours",
+            "pattern": "(?:magna |summa )?cum laude"
+          },
+          {
+            "id": "X3",
+            "label": "Virgin in names and food",
+            "pattern": "virgin (?:islands?|mary|atlantic|america|mobile|galactic|olive)|extra virgin|virgin (?:mojitos?|margaritas?|daiquiris?|coladas?|pina coladas?|drinks?|cocktails?)|virgin (?:hotels?|run|voyage|flight)"
+          },
+          {
+            "id": "X4",
+            "label": "Place names, history and idioms that contain a listed word",
+            "pattern": "negro leagues?|coon rapids|maine coons?|squaw (?:valley|creek|peak)|homo sapiens?|chinks? in|spic and span|homo milk"
+          },
+          {
+            "id": "X5",
+            "label": "Suicide drills and the suicide squeeze",
+            "pattern": "suicides? (?:prevention|awareness|hotline|squad|drills?|sprints?|runs?|squeeze|pass|passes|play|hill)|(?:a|another|one more|each|every|per) suicide(?! note| attempt)|(?:run|running|ran|do|doing|did) (?:[a-z0-9]+ ){0,2}suicides?"
+          },
+          {
+            "id": "X7",
+            "label": "A title and a surname that is also a listed word (Coach Dyke, Mrs. Coon)",
+            "pattern": "(?:coach|mr|mrs|ms|miss|dr|mister|van|von|de)(?: qzq)? (?:dyke|dykes|coon|coons|hoe|cox|virgin)|(?:dyke|dykes|coon|coons) family|kike hernandez"
+          },
+          {
+            "id": "X8",
+            "label": "Sex ed, same-sex, opposite sex",
+            "pattern": "sex ed|sex education|same sex|opposite sex"
+          },
+          {
+            "id": "X6",
+            "label": "An insult the sender aims at themselves",
+            "pattern": "(?:i felt like|i feel like|i was|im|i am|i was being|i sounded like|i acted like) (?:a |an |such a |such an |being a |being an )?(?:total |complete |real |fucking |stupid )?(?:asshole|dumbass|dipshit|shithead|dickhead|douche|douchebag|scumbag|idiot|jerk)"
+          }
+        ],
+        "rules": [
+          {
+            "id": "S1",
+            "category": "sexual",
+            "label": "Named sex acts (blowjob, handjob …)",
+            "pattern": "blow ?jobs?|hand ?jobs?|rim ?jobs?|foot ?jobs?"
+          },
+          {
+            "id": "S2",
+            "category": "sexual",
+            "label": "Masturbation",
+            "pattern": "jerk(?:ing|ed)? (?:me |you |him )?off(?! the| of| his| her)|jack(?:ing|ed)? (?:me |you |him |it )?off|masturbat[a-z]*|wank[a-z]*"
+          },
+          {
+            "id": "S3",
+            "category": "sexual",
+            "label": "Cum, jizz",
+            "pattern": "cum|cumshots?|jizz[a-z]*|(?:im|i am|youre|hes|shes|keep|kept|was|were|not|stop) cumming"
+          },
+          {
+            "id": "S4",
+            "category": "sexual",
+            "label": "Arousal (horny, boner, erection)",
+            "pattern": "orgasm[a-z]*|horny|horney|boners?|erections?|(?:a|my|his|your) hard on{END}"
+          },
+          {
+            "id": "S5",
+            "category": "sexual",
+            "label": "Porn, nudes, sexting",
+            "pattern": "porn[a-z]*|onlyfans|(?:send|sent|any|your|my|her|his|trade|share|leaked?|some) nudes|nudes{END}|send (?:me )?(?:a )?nude|nude (?:pics?|photos?|pictures?|selfies?|videos?)|(?:pose|posing|get|youre|you are) nude{END}|in the nude|naked (?:pics?|photos?|pictures?|selfies?|videos?)|dick pics?|sext(?:s|ing|ed)?|get naked|got naked|naked for me|see (?:you|u) naked"
+          },
+          {
+            "id": "S6",
+            "category": "sexual",
+            "label": "Explicit acts",
+            "pattern": "deep ?throat[a-z]*|gang ?bang[a-z]*|threesomes?|creampie[a-z]*|anal sex|oral sex|(?:like|into|try) anal|cock ?suckers?|69ing"
+          },
+          {
+            "id": "S7",
+            "category": "sexual",
+            "label": "Crude words for body parts",
+            "pattern": "tits|titties|titty|boobies|clit|pussy|pussies|cunts?"
+          },
+          {
+            "id": "S8",
+            "category": "sexual",
+            "label": "Sexy",
+            "pattern": "sexy|sexier|sexiest"
+          },
+          {
+            "id": "S9",
+            "category": "sexual",
+            "label": "Having sex",
+            "pattern": "have sex|having sex|had sex|sex with|wants? sex|for sex{END}|sex tapes?|sex toys?"
+          },
+          {
+            "id": "S10",
+            "category": "sexual",
+            "label": "Making out, hooking up, sleeping with",
+            "pattern": "mak(?:e|ing) out with (?:him|her|you|me)|made out with (?:him|her|you|me)|hook(?:ed|ing) up with (?:him|her|you|me){END}|(?:want to|wanna|lets|we should|we could) hook up{END}|slept with (?:you|him|her){END}"
+          },
+          {
+            "id": "S11",
+            "category": "sexual",
+            "label": "Turned on",
+            "pattern": "turn(?:s|ed|ing)? (?:me|you|him|her) on{END}|turn(?:s|ed|ing)? (?:me|you|him|her) on so|(?:im|i am|i get|getting|so|really) turned on{END}|turned on (?:by you|right now|when you)"
+          },
+          {
+            "id": "S12",
+            "category": "sexual",
+            "label": "Fuck, used sexually",
+            "pattern": "fuck (?:me|her|him)(?! up| over)|fucked (?:me|her|him|you)(?! up| over)|fuckable|(?:want to|wanna|gonna|going to|like to|lets|we should) fuck(?! up| with| around| it| this| that| my)|fucking (?:you|u){END}|about fucking (?:you|u)"
+          },
+          {
+            "id": "S13",
+            "category": "sexual",
+            "label": "Suck my, lick your, ride me",
+            "pattern": "suck my|suck(?:ing)? (?:me|him) off|lick (?:my|your|her)(?! (?:wounds|lips|fingers|plate))|ride me|ride my (?:dick|cock)|(?:love|want|need) (?:your |my |some )?(?:cock|dick|pussy)|sit on my (?:face|lap)"
+          },
+          {
+            "id": "S14",
+            "category": "sexual",
+            "label": "Undressing",
+            "pattern": "topless|strip for|undress for me|get undressed for me|take (?:it|them) (?:all )?off for|take off your (?:clothes|shirt|top|pants|bra|underwear|dress|shorts|panties)(?:{END}| for me| now| slowly)|take your (?:clothes|shirt|top|pants|bra|underwear|dress|shorts|panties) off(?:{END}| for me| now| slowly)"
+          },
+          {
+            "id": "S15",
+            "category": "sexual",
+            "label": "Virgin, virginity",
+            "pattern": "virgins?|virginity"
+          },
+          {
+            "id": "S16",
+            "category": "sexual",
+            "label": "Touching yourself, fingering",
+            "pattern": "touch(?:ing)? (?:yourself|myself)(?! on| at| where| here)|finger(?:ed|ing)? (?:you|her|me)"
+          },
+          {
+            "id": "S17",
+            "category": "sexual",
+            "label": "Slut, whore, skank, hoe",
+            "pattern": "sluts?|thots?|slutty|whores?|skanks?|skanky|hoes|(?:a|you|that|little|stupid|fucking) hoe"
+          },
+          {
+            "id": "S20",
+            "category": "sexual",
+            "label": "Calling a person hot",
+            "pattern": "(?:youre|you are|you look|u look|u r|ur|you looked) (?:(?:so|really|very|fucking|smoking|super|damn) )+hot(?: right now| rn| tonight| today| af| as hell| as fuck| baby| babe| girl| in (?:that|those|this|your) [a-z]+)?{END}|(?:youre|you are|you look|u look|you looked) hot (?:af|in (?:that|those|this|your) [a-z]+)"
+          },
+          {
+            "id": "S21",
+            "category": "sexual",
+            "label": "Comments on a person's body",
+            "pattern": "(?:nice|great|love your|love that|look at that|look at your|sexy) (?:ass(?! goal| day| shot| move| game| save| play| time)|butt{END}|boobs|tits|thighs|lips)|(?:nice|hot|sexy|love your|i love your|look at that) body{END}|your (?:boobs|tits|ass|butt|rack|breasts) (?:look|looks) (?:so |really )?(?:great|good|amazing|hot|nice|sexy)"
+          },
+          {
+            "id": "S22",
+            "category": "sexual",
+            "label": "Asking for a picture of the person",
+            "pattern": "(?:send|show|text|snap) (?:me |us )?(?:a |some |another )?(?:pic|pics|photo|photos|picture|pictures|selfie|selfies|video|videos) of (?:(?:you|u|yourself){END}|(?:you|u) in (?:your|a|that|the) (?:bikini|underwear|bra|swimsuit|bathing suit|shower|bed|towel|lingerie|panties)|your (?:body|legs|butt|ass|chest|boobs|tits|abs|bikini|underwear|bra|dick|cock|penis|pussy))"
+          },
+          {
+            "id": "S23",
+            "category": "sexual",
+            "label": "What are you wearing",
+            "pattern": "what are (?:you|u) wearing(?: right now| rn| tonight| to bed| baby| babe| under[a-z]*)?{END}"
+          },
+          {
+            "id": "S24",
+            "category": "sexual",
+            "label": "In your underwear",
+            "pattern": "(?:you|u|yourself|pics?|photos?|pictures?|selfies?) (?:in|without) (?:your|just your|only your|a) (?:underwear|bra|panties|bikini|thong|undies|lingerie|boxers)"
+          },
+          {
+            "id": "S25",
+            "category": "sexual",
+            "label": "Wanting to kiss or touch the person",
+            "pattern": "(?:want to|wanna|going to|gonna|let me|can i|could i|wish i could|like to) (?:kiss|touch|taste|cuddle|lick|spank) (?:you|u)(?! (?:up|out|on that|back|base))|(?:kiss|lick|grope|fondle|caress) your (?:body|neck|legs?|thighs?|chest|butt|ass|breasts|boobs|stomach)"
+          },
+          {
+            "id": "S26",
+            "category": "sexual",
+            "label": "Kiss me, in bed with",
+            "pattern": "kiss me(?! by| goodbye| goodnight| good night| bye)|cuddle with me|come to bed with"
+          },
+          {
+            "id": "S27",
+            "category": "sexual",
+            "label": "Anatomical words next to a sexual verb",
+            "pattern": "(?:see|show|touch|feel|suck|lick|grab|rub|send|stroke|squeeze)(?: [a-z]+){0,3} (?:my|your|his|her) (?:dick|cock|penis|vagina|breasts|nipples|boobs|tits|crotch|privates|private parts|pussy)|(?:show|send)(?: me)? (?:your|ur) (?:ass|butt|boobs|tits)|see your ass{END}"
+          },
+          {
+            "id": "S28",
+            "category": "sexual",
+            "label": "Explicit demands",
+            "pattern": "suck (?:a|my|his) (?:dick|cock)|eat (?:me|you|her) out|blow me(?! away| off| out| over)|bend over for me|bend (?:you|her) over|you make me (?:so )?(?:hard|wet|horny)|(?:im|i am) (?:so |really )?horny|(?:im|i am) (?:so |really )?(?:hard|wet) for (?:you|u){END}"
+          },
+          {
+            "id": "S29",
+            "category": "sexual",
+            "label": "Sexualised names for a person",
+            "pattern": "(?:youre|you are|shes|she is|hes|he is) (?:such a |a |so |a total |a little )?(?:snack|hottie|babe){END}|jailbait|call me daddy"
+          },
+          {
+            "id": "S30",
+            "category": "sexual",
+            "label": "Rape and molestation",
+            "pattern": "rape[sd]?|raping|rapists?|molest[a-z]*"
+          },
+          {
+            "id": "L1",
+            "category": "slur",
+            "label": "Anti-Black slurs",
+            "pattern": "nigg(?:er|a|ah|uh)[a-z]*|jigaboos?|porch monkeys?|coons?|darkies?|darky|niqqas?"
+          },
+          {
+            "id": "L2",
+            "category": "slur",
+            "label": "Anti-Asian slurs",
+            "pattern": "chinks?|chinky|gooks?|japs?|zipperheads?|ching chong|slant ?eyes?|slant ?eyed"
+          },
+          {
+            "id": "L3",
+            "category": "slur",
+            "label": "Anti-Latino slurs",
+            "pattern": "spics?|wetbacks?|beaners?"
+          },
+          {
+            "id": "L4",
+            "category": "slur",
+            "label": "Antisemitic slurs",
+            "pattern": "kikes?|heebs?|dirty jews?"
+          },
+          {
+            "id": "L5",
+            "category": "slur",
+            "label": "Anti-Arab, anti-Muslim and anti-South-Asian slurs",
+            "pattern": "rag ?heads?|towel ?heads?|sand nigg[a-z]*|camel jockeys?|pakis?"
+          },
+          {
+            "id": "L6",
+            "category": "slur",
+            "label": "Anti-Native slurs",
+            "pattern": "squaws?|injuns?"
+          },
+          {
+            "id": "L7",
+            "category": "slur",
+            "label": "Anti-gay slurs",
+            "pattern": "faggots?|faggits?|faggy|fags?|homos?|dykes?|lesbos?"
+          },
+          {
+            "id": "L8",
+            "category": "slur",
+            "label": "Anti-trans slurs",
+            "pattern": "tranny|trannies|shemales?"
+          },
+          {
+            "id": "L9",
+            "category": "slur",
+            "label": "Retard and its compounds",
+            "pattern": "retards?|retarded|retarted|tards?|libtards?|fucktards?"
+          },
+          {
+            "id": "L10",
+            "category": "slur",
+            "label": "Other disability slurs",
+            "pattern": "mongoloids?|(?:you|that|fucking|little|stupid) cripple"
+          },
+          {
+            "id": "L11",
+            "category": "slur",
+            "label": "Go back to your country",
+            "pattern": "go back to your (?:own )?country|you people are all (?:the same|alike)"
+          },
+          {
+            "id": "L12",
+            "category": "slur",
+            "label": "Gay, queer or trans used as an insult",
+            "pattern": "(?:thats|that is|this is|its|it is|youre|you are|hes|shes) so gay|fucking (?:queers?|gays?|lesbians?|trans)"
+          },
+          {
+            "id": "T1",
+            "category": "threat",
+            "label": "I'll kill, hurt, slap, punch … you",
+            "pattern": "{IWILL} {HARD}(?:kill|murder|slap|smack|punch|choke|strangle|stab) (?:you|u|ya|all of you|him|them|your (?:whole |entire )?(?:kid|daughter|son|child|family|wife|husband|mom|dad|mother|father|brother|sister)|that (?:kid|girl|boy)|her(?:{END}| (?:if|when|and|so|too|for|myself|with|until|unless|again|now|tonight|tomorrow|i swear|i mean it|i promise)))|{IWILL} {HARD}hurt (?:you|u|your (?:whole |entire )?(?:kid|daughter|son|child|family|wife|husband|mom|dad|mother|father|brother|sister))|{IWILL} {HARD}end (?:you|u){END}|{IWILL} {HARD}(?:hit|shoot) (?:you|u|him|her|them)(?:{END}| in the| so hard| i swear| i mean it)|{IWILL} {HARD}beat (?:you|u|him|her|them) up|{IWILL} {HARD}(?:beat|kick) your ass(?! in| at| on)|{IWILL} {HARD}break (?:your|his|her) (?:legs?|neck|arms?|face|nose|jaw|kneecaps?|fingers?)|{IWILL} {HARD}(?:slit your throat|snap your neck|knock your teeth out|beat (?:you|him|her) to a pulp|put (?:you|him|her) in (?:the|a) hospital|burn your house down|cut you{END})"
+          },
+          {
+            "id": "T2",
+            "category": "threat",
+            "label": "Telling someone to kill themselves",
+            "pattern": "(?<!dont )(?<!need to )(?<!have to )kill (?:yourself|urself|your self|ur self)(?! trying| over| to get| rushing| getting| for| in | on )|kys|go die|drop dead(?! gorgeous| date)|hang yourself|end yourself|end your life|slit your wrists?|unalive yourself|(?:go|just|should) off yourself"
+          },
+          {
+            "id": "T3",
+            "category": "threat",
+            "label": "Hoping someone dies or is hurt",
+            "pattern": "(?:you should|u should|i hope you|i hope u|hope you|hope u|hope she|hope he|hope they|i hope she|i hope he|i hope they) (?:all )?(?:die|dies|get hurt{END}|gets hurt{END}|get cancer|gets cancer|get hit by|gets hit by|break your (?:leg|legs|neck|arm|ankle|back|face|nose)|breaks (?:her|his) (?:leg|neck|arm|ankle|back)|rot|rots)|hope your (?:kid|daughter|son|child) (?:dies|gets hurt|breaks (?:her|his) (?:leg|neck|arm|back))|(?:you|u|she|he|they) deserves? to (?:die|be shot|get hurt)|(?:you|u|she|he|they) should be shot"
+          },
+          {
+            "id": "T4",
+            "category": "threat",
+            "label": "You're dead",
+            "pattern": "(?:youre|you are|ur) (?:so |fucking )?dead{END}|(?:youre|you are) dead meat|(?:youre|you are) a dead (?:man|woman|girl|boy)"
+          },
+          {
+            "id": "T5",
+            "category": "threat",
+            "label": "I know where you live, watch your back",
+            "pattern": "i know where you live|(?:ill|i will) find you wherever|(?:ill|i will) find you and (?:kill|hurt|end|make)|(?:you )?better watch your back{END}|watch your back(?: qzq)? i mean it|you better watch yourself"
+          },
+          {
+            "id": "T6",
+            "category": "threat",
+            "label": "Beat the crap out of",
+            "pattern": "(?:beat|knock|slap|kick|smack) the (?:shit|crap|hell|snot|piss|fuck) out of (?:you|u|him|her|your)|{IWILL} {HARD}(?:beat|whoop) (?:your|ur|yo|ya|his|her) ass{END}"
+          },
+          {
+            "id": "T7",
+            "category": "threat",
+            "label": "You'll regret this",
+            "pattern": "(?:ill make you|im going to make you|you will|youll|youre going to|youre gonna) (?:regret this|pay for (?:this|what you (?:did|said)))(?: tomorrow| someday| soon| one day)?{END}"
+          },
+          {
+            "id": "T8",
+            "category": "threat",
+            "label": "Threats to a career",
+            "pattern": "(?:ill|i will) ruin (?:you|her|him){END}|(?:ill|i will) ruin your (?:life|career|reputation)|ill end your career|(?:youll|you will) never (?:coach|skate|play|compete|work) again{END}"
+          },
+          {
+            "id": "T9",
+            "category": "threat",
+            "label": "Weapons",
+            "pattern": "bring(?:ing)? a gun|i have a gun|i got a gun|shoot up (?:the|this|that|your) (?:rink|school|gym|arena|pool|building|locker room)|bring my (?:gun|knife)"
+          },
+          {
+            "id": "A1",
+            "category": "abuse",
+            "label": "You're worthless, useless, pathetic …",
+            "pattern": "{PBE} {FILL}(?:worthless|pathetic|disgrace|embarrassment|waste of (?:space|time|air|oxygen|talent)|failure|loser|disappointment|piece of (?:garbage|trash|crap))|{PBE} {FILL}(?:useless|hopeless|disgusting|waste|trash|garbage|joke|nothing)(?: honestly| lol| lmao)?{END}|{PBE} {FILL}{ALSO}{FILL}(?:worthless|pathetic|disgrace|embarrassment|waste of (?:space|time|air|oxygen|talent)|failure|loser|disappointment|piece of (?:garbage|trash|crap)|useless|hopeless|disgusting|waste|trash|garbage|joke|nothing){END}"
+          },
+          {
+            "id": "A2",
+            "category": "abuse",
+            "label": "You're stupid, an idiot, a moron",
+            "pattern": "{PBE} {FILL}(?:stupid(?! fast| strong| good| quick| easy)|dumb(?! luck)|idiot|idiotic|moron|imbecile|brainless|brain ?dead)|{PBE} {FILL}{ALSO}{FILL}(?:stupid|dumb|idiot|idiotic|moron|imbecile|brainless|brain ?dead){END}"
+          },
+          {
+            "id": "A3",
+            "category": "abuse",
+            "label": "You're fat, ugly, gross",
+            "pattern": "{PBE} {FILL}(?:fat|chubby|obese|whale|cow|ugly|hideous)|{PBE} {FILL}{ALSO}{FILL}(?:fat|chubby|obese|ugly|gross|hideous){END}|(?:you|she|he|your (?:kid|daughter|son|child)) (?:look|looks|got|is getting|are getting|have gotten|has gotten) (?:so |really |very |too )?(?:fat|chubby|ugly|gross)(?:{END}| in (?:that|those|your))|(?:youve|you have|shes|hes) gotten (?:so |really |too )?fat"
+          },
+          {
+            "id": "A4",
+            "category": "abuse",
+            "label": "Telling a person to lose weight or eat less",
+            "pattern": "(?<!think )(?<!thinks )(?<!said )(?<!say )(?:you|u|she|he|your (?:kid|daughter|son|child)) (?:need|needs|should|better|have|has|gotta|got) (?:to )?(?:lose (?:some |a little |more )?weight|go on a diet|stop eating so much|eat less|stop eating|skip (?:a )?meals?){END}|(?:you|u|she|he) needs? to lose [0-9]+ (?:pounds|lbs)"
+          },
+          {
+            "id": "A5",
+            "category": "abuse",
+            "label": "Names for a fat person",
+            "pattern": "fat ?ass|fatso|lard ?ass|tub of lard|porker|(?:you|hey|little|such a|a) fatty{END}"
+          },
+          {
+            "id": "A6",
+            "category": "abuse",
+            "label": "Nobody likes you, I hate you",
+            "pattern": "(?:nobody|no one) (?:likes|wants|cares about|loves) (?:you|u)(?:{END}| here| just| anyway)|(?:everyone|everybody|the whole team) hates (?:you|u)|i hate (?:you|u)|we all hate (?:you|u)|i hate your guts"
+          },
+          {
+            "id": "A7",
+            "category": "abuse",
+            "label": "You'll never be good enough",
+            "pattern": "(?:youll|you will|ull) never (?:be good enough|be anything|be any good|amount to)"
+          },
+          {
+            "id": "A8",
+            "category": "abuse",
+            "label": "You make me sick, you disgust me",
+            "pattern": "you make me sick|you disgust me|im ashamed of you|i am ashamed of you|youre dead to me|you are dead to me|wish you were never born"
+          },
+          {
+            "id": "A9",
+            "category": "abuse",
+            "label": "Crybaby, wuss, sissy",
+            "pattern": "cry ?baby|stop crying you (?:little |big )?(?:baby|brat|wimp)|you little baby|such a little baby|(?:stop|quit) (?:being|acting like) a (?:little )?baby|wuss|(?:you|a|such a|little|dont be a) sissy(?! squats?)|(?:you|a|such a|little) pansy|dont be (?:a|such a) (?:pussy|baby|girl|wimp)|man up you"
+          },
+          {
+            "id": "A10",
+            "category": "abuse",
+            "label": "You + insult (you little brat, stupid bitch)",
+            "pattern": "(?:you|you little|you stupid|you fat|you lazy|you ugly|you dumb|you fucking|u) (?:bitch|shit|brat|bastard|prick|twat|asshole|piece of shit|piece of crap|idiot|moron|loser|slut|whore|cunt|fucker|fuck)|(?:little|stupid|fat|lazy|ugly|dumb|fucking|crazy|shut up|what a|that) (?:bitch|bastard|prick|twat|asshole|moron|slut|whore|cunt)|(?:you|you fat|you stupid|you lazy|you ugly|fat|stupid) (?:cow|pig)"
+          },
+          {
+            "id": "A11",
+            "category": "abuse",
+            "label": "Insult nouns (asshole, dumbass, scumbag …)",
+            "pattern": "piece of shit|assholes?|dumbass(?:es)?|dipshits?|shitheads?|dickheads?|douche(?:bag|bags|s)?|scumbags?|mother ?fuckers?"
+          },
+          {
+            "id": "A12",
+            "category": "abuse",
+            "label": "Fuck you, fuck off, go to hell, you suck, stfu",
+            "pattern": "(?:fuck|fuk|fck|fuc|fuq|phuck|fvck) (?:you|u|off|yall|your mom|them all|(?:yourself|yourselves|urself|ur self|your self|ya self|yo self|yaself|yoself|youself|yourslef|yoursel|yorself|yself)(?! over| up)|right off)|fuckyou|fuckoff|fuckyourself|fuckurself|pissoff|fu ck you|eff (?:you|u|off)|f off{END}|(?:f|eff) (?:yourself|urself|ur self|your self)|shut the f up|(?:fuck|fuk|fck) your (?:mother|mum|mama|dad|family)|screw (?:yourself|urself|ur self|your self)(?! over| up)|get fucked|piss off{END}|(?<!pick )(?<!sign )(?<!heads )(?<!set )(?<!hold )(?<!look )(?<!picked )(?<!signed )up yours{END}|kiss my ass|(?<!i )(?<!to )(?<!gonna )(?<!and )(?<!always )eat shit{END}|eat (?:a|my) (?:dick|ass|shit)|(?<!can )(?<!could )go to hell{END}|(?:rot|burn) in hell{END}|(?:you|u) son of a bitch|(?<!when )(?<!if )(?<!time )(?:you|u) (?:really |totally |fucking |all |guys )?suck(?:{END}| at| so| ass| balls)|screw (?:you|u)(?! guys| over| up)|shut the fuck up|stfu"
+          },
+          {
+            "id": "A13",
+            "category": "abuse",
+            "label": "You're a bitch, a psycho, a head case",
+            "pattern": "{PBE} {FILL}(?:bitch|bastard|prick|dick|cunt|psycho|nut ?job|head ?case|brat|spoiled brat)|{PBE} {FILL}{ALSO}{FILL}(?:bitch|bastard|prick|dick|cunt|psycho|nut ?job|head ?case|brat|spoiled brat){END}"
+          },
+          {
+            "id": "A14",
+            "category": "abuse",
+            "label": "The worst coach, a terrible mother",
+            "pattern": "{PBE} the worst (?:coach|parent|mother|father|mom|dad|person)|worst coach (?:ever|in the world)|(?<!think )(?<!thinks )(?<!say )(?<!said ){PBE} {FILL}(?:terrible|horrible|awful|bad|unfit|shitty|lousy) (?:mother|father|mom|dad|parent|coach|person)|{PBE} unfit to be a (?:parent|mother|father|mom|dad|coach)"
+          },
+          {
+            "id": "A15",
+            "category": "abuse",
+            "label": "\"Your worthless\" (you're, misspelled)",
+            "pattern": "(?:your|ur) (?:so |such a |such an |a |an )?(?:worthless|useless|pathetic|disgusting){END}|(?:your|ur) so (?:stupid|dumb|ugly|fat|lazy){END}|ur (?:stupid|dumb|ugly|fat|gross){END}|(?:your|ur) (?:such a |such an |a |an )(?:fucking |stupid |little |total |complete )?(?:loser|bitch|idiot|moron|asshole|dick|whore|slut)"
+          },
+          {
+            "id": "H1",
+            "category": "self_harm",
+            "label": "Killing myself, suicide",
+            "pattern": "kill(?:ing)? myself(?! trying| to get| over| with| in practice| at practice| on )|(?<![0-9] )(?<!few )(?<!many )(?<!more )(?<!several )kms|end(?:ing)? my life|end(?:ing)? it all|tak(?:e|ing) my own life|suicide|suicidal|unalive myself"
+          },
+          {
+            "id": "H2",
+            "category": "self_harm",
+            "label": "I want to die, to disappear",
+            "pattern": "(?:i want to|i wanna|i wish i could|i just want to|i just wanna) (?:just )?(?:die|disappear|not exist|not be here|not wake up){END}|i want to end it{END}|i think about dying"
+          },
+          {
+            "id": "H3",
+            "category": "self_harm",
+            "label": "Better off without me, no reason to live",
+            "pattern": "i wish i (?:was|were) dead|i wish i was never born|i wish id never been born|i wish i wasnt alive|better off dead|better off without me|better off if i was gone|no reason to live|no point in living|nothing to live for|dont (?:want to|wanna) live{END}|dont (?:want to|wanna) live anymore|dont (?:want to|wanna) be alive|dont (?:want to|wanna) be here anymore{END}|i cant go on (?:anymore|living)"
+          },
+          {
+            "id": "H4",
+            "category": "self_harm",
+            "label": "Hurting, cutting or starving myself",
+            "pattern": "(?<!dont )(?<!didnt )(?<!do not )(?:want to|wanna|thinking about|thought about) (?:hurt|hurting|harm|harming) myself|(?:want to|wanna|going to|gonna|thinking about|thought about|started) (?:cut|cutting) myself(?! off| some| a | on| with)|been cutting myself(?! off| some| a | on| with)|been cutting{END}|been cutting again|self ?harm[a-z]*|starv(?:e|ing) myself(?! of)|mak(?:e|ing) myself throw up|i (?:cut|burned|burnt) myself on purpose|i cut myself (?:last night|again)(?! on| with)|i overdosed|took a bunch of pills"
+          },
+          {
+            "id": "H5",
+            "category": "self_harm",
+            "label": "I hate myself, nobody would miss me",
+            "pattern": "i hate myself{END}|(?:im|i am) worthless{END}|(?:im|i am) a burden{END}|(?:nobody|no one) would miss me{END}|(?:nobody|no one) would care if i"
+          }
+        ],
+        "notCounted": [
+          "Ordinary swearing with no person as its target (hell, damn, shit, fuck, bitch).",
+          "\"Shut up\" and \"shut your mouth\".",
+          "\"You're lazy\" on its own.",
+          "All emoji.",
+          "Anatomical words (penis, vagina, breasts) with no sexual verb, so an injury or a plainly worded disclosure passes.",
+          "\"Sexual\", \"SafeSport\" and other safeguarding words (sexual misconduct, sexual abuse, sex ed, same-sex).",
+          "Words people use to describe themselves: gay, lesbian, queer, trans, bisexual, Black, Jewish, Muslim, disabled, autistic.",
+          "Skating terms: spread eagle, death spiral, death drop, camel, layback, catch-foot, Biellmann.",
+          "Praise and cues: kill it, killed it, crushed it, attack the jump, break a leg.",
+          "Sport terms: kill (volleyball), sack, hooker (rugby), tight end, clean and jerk, snatch, hip thrust, strip the ball, penetration, shaft, butt end, breaststroke.",
+          "Youth hockey level names: Mite, Squirt, Peewee, Bantam, Midget.",
+          "Body cues and injuries: groin, glutes, butt, hips, chest, thigh, hamstring.",
+          "Capital letters and repeated exclamation marks.",
+          "Languages other than English."
+        ]
+      }
+    },
+    {
+      "input": {
+        "text": "Great lesson today! See you Thursday at 4."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Attack the jump and kill it out there"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You killed it at regionals!!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Tuck your butt under and squeeze your glutes"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Work on the spread eagle and the death spiral entry"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She pulled her groin, resting this week"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Cock your wrist a little earlier on the throw"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Clean and jerk, then snatch, 3 sets"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Our hooker and tight end both need new kit"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "The Squirt and Peewee teams skate at 6"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Run 5 kms before practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We did suicides at the end of practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "That was a suicide squeeze in the 7th"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Bring nude tights and the black dress"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She graduated magna cum laude"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Damn, that was a hell of a session. That jump is a bitch."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Shut up, that's amazing!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Stop being lazy with your free leg"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I completed my SafeSport sexual misconduct training"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She came out as gay last year and the team was great about it"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Send me a video of your axel when you can"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Can you send a pic of you landing the lutz"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "It's so hot in the rink today"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't be so hard on yourself"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Watch your back foot on the landing"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She'll beat you at regionals if you don't train"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll hit you up later about the schedule"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll shoot you a text tonight"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You're dead last in the warm-up group, hurry"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Break a leg tomorrow!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "That run-through was a waste of ice time"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I felt like an asshole for missing the lesson"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I hurt myself on the landing, ankle is swollen"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Great body position on that camel"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He/she needs to bring skates"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She bruised her breastbone in the fall"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "mustard and custard"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You're strong and smart and nothing like last year"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She is tired and sore but ready"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "The 10u and 12U groups, 1st and 2nd"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I can't make out what the judge wrote"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "What do you have on Tuesday?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "What do you have on your schedule next week?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "What are you wearing for the competition?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Great body language out there today!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Nice body check"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Great chest pass"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "great legs today"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm going to hold you accountable"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "squeeze your legs together"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "feel your chest lift"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "squeeze your butt"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "rub your legs if they cramp"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "touch your chest to your thigh"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He is hot and cold lately"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's hot-headed"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "you look hot, drink some water"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "a hard on-ice workout"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Turn her on her side"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He turned me on to a new skate tech"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You blow me away"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She had sex ed today"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "clean and jerk it off the rack"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We live in Cumming"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Ask Coach Dyke about the ice time"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Mrs. Dykes is driving"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Coach Coon moved the lesson"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "touch yourself on the hip to feel the alignment"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "she is sleeping with me tonight at the hotel"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll find you a slot next week"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll find you at the rink"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I will find you a time"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Watch your back on the deadlifts"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Watch your back when you land"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll shoot you both an email"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll hit you with the plan tomorrow"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm worried I could hurt her knee"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm going to end her session early"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You'll pay for it at the front desk"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You will pay for that through the club"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "hope you break your record"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She got a huge score today!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He got a huge personal best"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You got huge height on that axel"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She looks heavy on her landings"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She'll never make it by 5 with traffic"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He will never make it to practice on time"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He is unfit to compete this weekend"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Eat fatty fish"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He is getting nothing out of these lessons"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "you need to eat less sugar before practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "stop crying you did great"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Sorry, I can't go on Tuesday"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I can't do this anymore, the 5am sessions are too much"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's been cutting weight for the meet"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's been cutting corners"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We did 10 suicides at the end of practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "a few kms from the rink"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She is too hot in that jacket"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "send me a picture of your outfit for the show"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "go back to where you came from and restart the pattern"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "they are trash talking again"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Sissy is picking her up"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "hook up with me at the rink entrance"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "you should get hurt less with a proper warmup"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "lick your lips and smile at the judges"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "a virgin mojito for the banquet"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "spic and span locker room"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Go warm up, I'll come find you."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Text me when you get to the rink and I'll find you."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You look really hot, take a water break"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He is so hot right now, I think he has a fever."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's just getting a snack, be there in 5"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Send me a video of you jumping"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Send a pic of you in your new dress!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "send a picture of you and the team with the trophy"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I hurt myself yesterday at practice, can we go light today?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I burned myself today on the hair straightener"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm scared I'm going to hurt myself on the vault"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I keep hurting myself on that entry"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Worst mom ever - I forgot to pack her skates"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll shoot her mom a text"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll shoot you guys the schedule tonight"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll hit her some grounders after practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm worried I'll hurt her hamstring"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll kill her momentum"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Bring nude over the boot tights"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She needs a nude sports bra under the dress"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Wear the nude ones, not the tan"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Take some pressure off yourself and just skate"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't kill yourself trying to get here on time"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "No one wants you to get hurt"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Nobody cares about her score, just have fun"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "The rental skates are terrible, they're garbage"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Your son's gross motor skills are really improving"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He got a fat lip at hockey yesterday"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She is strong but dumb mistakes on beam cost her"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You know how talented she is, but stupid mistakes cost her"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's put on some weight this summer and looks strong"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She slept with her medal around her neck"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We hooked up with another team for a scrimmage"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's going to shoot up this summer"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I see you working your ass off every day, proud of you"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm so wet right now, the rain at the field is insane"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't skip breakfast, you'll regret it."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't ever think you're not good enough"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Skate to the blue line, then go back where you came from."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Nice rack position on the front squat"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "That was a suicide pass up the middle"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Emma Van Dyke got first in her flight"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "The Coon family is bringing snacks"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Trae el uniforme negro"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She has spastic cerebral palsy"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "On the deadlift, watch your back."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Eat before the meet or you'll be sorry!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I don't want to say more or I'll ruin your surprise"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You better watch out, she's coming for your record"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's not good enough on bars yet to move up"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Emma is going to sleep with you in room 204"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Tuck the mic pack in your bra"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He ran a suicide after every missed free throw"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm such a spaz, I forgot the music"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Ms. Virgin teaches the off-ice class"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I can't go on like this with the schedule changing every week"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm worried I'll hurt him if I push the stretch too far"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm gonna destroy you in the 50 free tmrw lol"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm going to kick her ass in the 200 fly this weekend, watch"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's hopeless at tying his own skates lol"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's useless before 9am, sorry in advance"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "dont forget ur trash from the bench"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Tights should be nude."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "For tights, go nude."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Pack both the nudes and the tans for the show."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Please remind the kids not to undress in the lobby."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Take off your top layer if you get warm."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Take off your dress before lunch so it doesn't get stained."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I can tell you're dead after yesterday, easy day today"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We're dead meat if we're late again"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I said some stupid shit after the game and I'm sorry"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm such a fucking idiot, I left her skates at home"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Nobody thinks you need to lose weight. You look strong and healthy."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I never said she needs to lose weight, I said she needs to fuel better."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He needs to lose weight to make 132 by Saturday's weigh-in"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "He's gained some weight this offseason, which is great for a lineman"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "lol ur stupid dog ate my glove"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I see you busting your ass every day and it shows"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You don't need to kill yourself in warm-ups, save it for the race."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Her new dress is drop dead gorgeous"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She came home crying saying everyone hates her"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She says nobody likes her. Can you keep an eye on the locker room?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't let anyone tell you you're not good enough."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's convinced she'll never be good enough"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "he's too lazy to pack his own bag, I swear"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't think you're a bad mom for missing one meet"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Your rack is too low on the front squat, elbows up"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "One more suicide and then water"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We finished the suicide prevention module for coaches"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Rest it properly or you'll never skate again at this level."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She's burning up. She is really hot. Keeping her home."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "She was up all night in bed with me with a fever, no practice today."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Does Emma want to sleep with you or in the girls' room?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Lily can sleep with me."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We beat the crap out of them, 8-0!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Skip the warm-up and you'll regret that later."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Watch your back or you'll round it on the deadlift"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Try a sissy squat to finish the quads"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Son of a bitch, we lost in a shootout again"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "The registration form asks for sex and date of birth, just FYI"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm gonna fuck up my program I just know it"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "holy c***"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "ugh I cut myself again on the toe pick, need a bandaid"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I didn't want to hurt myself so I bailed on the jump"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm killing myself trying to get this axel"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "omg i wanna die that was so embarrassing"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I wanted to die when my skirt ripped in front of everyone lol"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I don't want to be here anymore, this meet is taking forever"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I hate myself for eating that whole pizza lol"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I can't go on. My legs are jelly. Sub me out!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "you look so sexy in that dress"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S8"
+      }
+    },
+    {
+      "input": {
+        "text": "send nudes"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S5"
+      }
+    },
+    {
+      "input": {
+        "text": "send me a pic of you"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S22"
+      }
+    },
+    {
+      "input": {
+        "text": "what are you wearing rn"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S23"
+      }
+    },
+    {
+      "input": {
+        "text": "I want to kiss you"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S25"
+      }
+    },
+    {
+      "input": {
+        "text": "nice ass"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S21"
+      }
+    },
+    {
+      "input": {
+        "text": "you're so hot"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S20"
+      }
+    },
+    {
+      "input": {
+        "text": "show me your breasts"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S27"
+      }
+    },
+    {
+      "input": {
+        "text": "sexxxyyy"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S8"
+      }
+    },
+    {
+      "input": {
+        "text": "s3xy"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S8"
+      }
+    },
+    {
+      "input": {
+        "text": "blow job"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S1"
+      }
+    },
+    {
+      "input": {
+        "text": "take off your shirt"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S14"
+      }
+    },
+    {
+      "input": {
+        "text": "are you a virgin"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S15"
+      }
+    },
+    {
+      "input": {
+        "text": "p0rn"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S5"
+      }
+    },
+    {
+      "input": {
+        "text": "you f@gg0t"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L7"
+      }
+    },
+    {
+      "input": {
+        "text": "that's so gay"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L12"
+      }
+    },
+    {
+      "input": {
+        "text": "stop being retarded"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L9"
+      }
+    },
+    {
+      "input": {
+        "text": "go back to your country"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L11"
+      }
+    },
+    {
+      "input": {
+        "text": "n1gger"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L1"
+      }
+    },
+    {
+      "input": {
+        "text": "n*gger"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll slap her if she does that again"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "kys"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T2"
+      }
+    },
+    {
+      "input": {
+        "text": "k.y.s"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T2"
+      }
+    },
+    {
+      "input": {
+        "text": "k y s"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T2"
+      }
+    },
+    {
+      "input": {
+        "text": "I hope you break your leg"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T3"
+      }
+    },
+    {
+      "input": {
+        "text": "you're dead"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T4"
+      }
+    },
+    {
+      "input": {
+        "text": "you better watch your back"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T5"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll beat the crap out of him"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T6"
+      }
+    },
+    {
+      "input": {
+        "text": "you'll never coach again"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T8"
+      }
+    },
+    {
+      "input": {
+        "text": "I'm going to fucking kill you"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "You’ll regret this"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T7"
+      }
+    },
+    {
+      "input": {
+        "text": "you're worthless"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "You’re so lazy and worthless"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "she is slow and stupid"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A2"
+      }
+    },
+    {
+      "input": {
+        "text": "You are SO stupid"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A2"
+      }
+    },
+    {
+      "input": {
+        "text": "she's an idiot"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A2"
+      }
+    },
+    {
+      "input": {
+        "text": "you're getting fat"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A3"
+      }
+    },
+    {
+      "input": {
+        "text": "she needs to lose weight"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A4"
+      }
+    },
+    {
+      "input": {
+        "text": "nobody likes you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A6"
+      }
+    },
+    {
+      "input": {
+        "text": "you'll never amount to anything"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A7"
+      }
+    },
+    {
+      "input": {
+        "text": "you little brat"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A10"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck yourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck ur self"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "Fuck urself."
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuk your self"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "well fuck yourselves then"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "go fuck yourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "eff you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "Don't fuck yourself over by skipping the warm-up"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "you are a stupid who're"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S17"
+      }
+    },
+    {
+      "input": {
+        "text": "screw yourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "f off"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "go to hell"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "rot in hell"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "get fucked"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "piss off"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "kiss my ass"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "eat shit"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "you son of a bitch"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "you suck"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "u really suck at this"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "ur a loser"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A15"
+      }
+    },
+    {
+      "input": {
+        "text": "ur a bitch"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A15"
+      }
+    },
+    {
+      "input": {
+        "text": "ur ugly"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A15"
+      }
+    },
+    {
+      "input": {
+        "text": "your such an idiot"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A15"
+      }
+    },
+    {
+      "input": {
+        "text": "hope u die"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T3"
+      }
+    },
+    {
+      "input": {
+        "text": "ill beat ur ass"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T6"
+      }
+    },
+    {
+      "input": {
+        "text": "im gonna beat ya ass"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T6"
+      }
+    },
+    {
+      "input": {
+        "text": "I'm gonna beat you up"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "You suck in your stomach and lift the ribs"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "If you suck air through your nose it helps"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll kick your ass at ping pong after practice"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll beat you to the rink tomorrow"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "We went to hell and back in that program, so proud of you"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Son of a bitch, that ice was rough today"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Is that your idiot-proof checklist? Love it"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Check ur a.m. schedule"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "F you got the triple!"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Heads up, yours is the 4pm slot tomorrow"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Can you pick up yours at the front desk"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll pick up yours too when I grab mine."
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Sign me up, yours truly will bring snacks"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'll whip your butt into shape before regionals"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm gonna kick your butt on Saturday lol"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I'm gonna beat your butt to the wall"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "I totally eat shit every time I try the axel"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "You're gonna eat shit on that landing"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "go to hell week schedule attached"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "that program can go to hell honestly"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "Don't screw yourself over by skipping conditioning"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "When you suck at something, that's when you learn"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "What did you get on the test? F you?"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "your a failure to launch on that jump is just timing"
+      },
+      "expected": null
+    },
+    {
+      "input": {
+        "text": "up yours"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuckyourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck youself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck yourslef"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "f yourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "go eff yourself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuckoff"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuck right off"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "screw u"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "shut the f up"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "kill ur self"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T2"
+      }
+    },
+    {
+      "input": {
+        "text": "f*ck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "f u c k you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fuuuuck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "stfu"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "your daughter is a head case"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A13"
+      }
+    },
+    {
+      "input": {
+        "text": "you're a terrible mother"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A14"
+      }
+    },
+    {
+      "input": {
+        "text": "What an asshole."
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A11"
+      }
+    },
+    {
+      "input": {
+        "text": "sometimes I want to kill myself"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H1"
+      }
+    },
+    {
+      "input": {
+        "text": "I just want to disappear"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H2"
+      }
+    },
+    {
+      "input": {
+        "text": "everyone would be better off without me"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H3"
+      }
+    },
+    {
+      "input": {
+        "text": "I've been cutting myself"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H4"
+      }
+    },
+    {
+      "input": {
+        "text": "nobody would miss me"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H5"
+      }
+    },
+    {
+      "input": {
+        "text": "kms"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'm going to rape you"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S30"
+      }
+    },
+    {
+      "input": {
+        "text": "you should be raped"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S30"
+      }
+    },
+    {
+      "input": {
+        "text": "ima kill you"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll kill your whole family"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "show me your ass"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S27"
+      }
+    },
+    {
+      "input": {
+        "text": "i want to see your ass"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S27"
+      }
+    },
+    {
+      "input": {
+        "text": "your boobs look great in that dress"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S21"
+      }
+    },
+    {
+      "input": {
+        "text": "suck a dick"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S28"
+      }
+    },
+    {
+      "input": {
+        "text": "you make me hard"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S28"
+      }
+    },
+    {
+      "input": {
+        "text": "you're a dick"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A13"
+      }
+    },
+    {
+      "input": {
+        "text": "your worthless"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A15"
+      }
+    },
+    {
+      "input": {
+        "text": "you're a piece of garbage"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "worst coach ever"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A14"
+      }
+    },
+    {
+      "input": {
+        "text": "fuk you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "ni99er"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L1"
+      }
+    },
+    {
+      "input": {
+        "text": "fu​ck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "f*ck﻿you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "i cut myself last night"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H4"
+      }
+    },
+    {
+      "input": {
+        "text": "i dont want to be alive"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H3"
+      }
+    },
+    {
+      "input": {
+        "text": "You're so hot."
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S20"
+      }
+    },
+    {
+      "input": {
+        "text": "what are you wearing?"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S23"
+      }
+    },
+    {
+      "input": {
+        "text": "Watch your back - I mean it"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T5"
+      }
+    },
+    {
+      "input": {
+        "text": "You'll regret this tomorrow"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T7"
+      }
+    },
+    {
+      "input": {
+        "text": "You're so hot baby"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S20"
+      }
+    },
+    {
+      "input": {
+        "text": "You look so hot tonight 😍 can't wait to see you"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S20"
+      }
+    },
+    {
+      "input": {
+        "text": "You're a joke lol"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "You're unfit to be a parent."
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A14"
+      }
+    },
+    {
+      "input": {
+        "text": "f.u.c.k. you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "I'm going to break your legs"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "You deserve to die"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T3"
+      }
+    },
+    {
+      "input": {
+        "text": "You should be shot"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T3"
+      }
+    },
+    {
+      "input": {
+        "text": "You're worthless. Quit."
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "Nice ass, kid."
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S21"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll kill you!!! I mean it"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "send nudes"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S5"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll find you wherever you go"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T5"
+      }
+    },
+    {
+      "input": {
+        "text": "watch your back\nI mean it"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T5"
+      }
+    },
+    {
+      "input": {
+        "text": "send me a pic of your dick"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S22"
+      }
+    },
+    {
+      "input": {
+        "text": "let's fuck"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S12"
+      }
+    },
+    {
+      "input": {
+        "text": "I keep thinking about fucking you"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S12"
+      }
+    },
+    {
+      "input": {
+        "text": "you cocksucker"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S6"
+      }
+    },
+    {
+      "input": {
+        "text": "send me a naked selfie"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S5"
+      }
+    },
+    {
+      "input": {
+        "text": "retarted"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L9"
+      }
+    },
+    {
+      "input": {
+        "text": "f*g"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L7"
+      }
+    },
+    {
+      "input": {
+        "text": "faggit"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L7"
+      }
+    },
+    {
+      "input": {
+        "text": "towel head"
+      },
+      "expected": {
+        "category": "slur",
+        "ruleId": "L5"
+      }
+    },
+    {
+      "input": {
+        "text": "I will absolutely kill you"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll kill your mom"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll kill her, I swear"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'll shoot you in the face"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "I'm going to slit your throat"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "im finna kill u"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T1"
+      }
+    },
+    {
+      "input": {
+        "text": "kill your self"
+      },
+      "expected": {
+        "category": "threat",
+        "ruleId": "T2"
+      }
+    },
+    {
+      "input": {
+        "text": "fuckyou"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "fvck you"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "go fuck urself"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A12"
+      }
+    },
+    {
+      "input": {
+        "text": "you fat fuck"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A10"
+      }
+    },
+    {
+      "input": {
+        "text": "mother fucker"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A11"
+      }
+    },
+    {
+      "input": {
+        "text": "shut up bitch"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A10"
+      }
+    },
+    {
+      "input": {
+        "text": "you look so fat in that leotard"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A3"
+      }
+    },
+    {
+      "input": {
+        "text": "you've gotten so fat this year"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A3"
+      }
+    },
+    {
+      "input": {
+        "text": "you need to lose 10 pounds before regionals"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A4"
+      }
+    },
+    {
+      "input": {
+        "text": "nobody likes you, just quit"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A6"
+      }
+    },
+    {
+      "input": {
+        "text": "you're a joke, honestly"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A1"
+      }
+    },
+    {
+      "input": {
+        "text": "ur so hot"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S20"
+      }
+    },
+    {
+      "input": {
+        "text": "show me ur boobs"
+      },
+      "expected": {
+        "category": "sexual",
+        "ruleId": "S27"
+      }
+    },
+    {
+      "input": {
+        "text": "sometimes i think about ending it all"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H1"
+      }
+    },
+    {
+      "input": {
+        "text": "there's no point in living"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H3"
+      }
+    },
+    {
+      "input": {
+        "text": "i dont wanna live anymore"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H3"
+      }
+    },
+    {
+      "input": {
+        "text": "I burned myself on purpose"
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H4"
+      }
+    },
+    {
+      "input": {
+        "text": "I want to die."
+      },
+      "expected": {
+        "category": "self_harm",
+        "ruleId": "H2"
+      }
+    },
+    {
+      "input": {
+        "text": "I hate you and I want to die"
+      },
+      "expected": {
+        "category": "abuse",
+        "ruleId": "A6"
+      }
+    }
+  ]
+}

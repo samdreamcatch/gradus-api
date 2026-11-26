@@ -78,7 +78,6 @@ import { PageTitle } from "@/components/page-title";
 import { ThemeSelect } from "@/components/settings/theme-select";
 import { useCurrentUserEmail } from "@/hooks/use-current-user-email";
 import { FeedbackSettingsRow } from "@/components/feedback/feedback-fab";
-import { NativeAppSection } from "@/components/settings/native-app-section";
 import { AccountSecurityRow } from "@/components/settings/account-security-row";
 import { PaymentsRow } from "@/components/settings/payments-row";
 import { LegalSection } from "@/components/settings/legal-section";
@@ -107,7 +106,7 @@ import { cn } from "@/lib/utils";
 import { getSport, sportDisplayLabel } from "@/lib/coach-sports";
 
 import { z } from "zod";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 
 const searchSchema = z.object({
   linkCoach: z
@@ -269,7 +268,6 @@ function ParentSettingsPage() {
 
             <SettingsGroup label="Support">
               <SettingsList>
-                <NativeAppSection />
                 <FeedbackSettingsRow />
               </SettingsList>
             </SettingsGroup>

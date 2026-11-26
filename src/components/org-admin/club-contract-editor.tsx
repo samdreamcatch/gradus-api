@@ -31,7 +31,8 @@ export function ClubContractEditor({ organizationId }: { organizationId: string 
             data: {
               organizationId,
               coach_seats: values.coach_seats,
-              admin_seats: values.admin_seats,
+              contract_seat_rate_cents: values.contract_seat_rate_cents,
+              contract_currency: values.contract_currency,
               storefront_share_bps: values.storefront_share_bps,
               storefront_enabled: values.storefront_enabled,
               contract_starts_on: values.contract_starts_on,
@@ -53,7 +54,6 @@ export function ClubContractEditor({ organizationId }: { organizationId: string 
       {(
         [
           ["coach_seats", "Coach seats", 0, 10000],
-          ["admin_seats", "Admin seats", 1, 1000],
           ["storefront_share_bps", "Club share (basis points)", 0, 10000],
         ] as const
       ).map(([key, label, min, max]) => (
@@ -87,6 +87,37 @@ export function ClubContractEditor({ organizationId }: { organizationId: string 
           />
         </div>
       ))}
+      <div className="space-y-1.5">
+        <Label htmlFor="seat-term-rate">Per-coach price for the full contract term</Label>
+        <Input
+          id="seat-term-rate"
+          type="number"
+          min="0"
+          step="0.01"
+          value={
+            values.contract_seat_rate_cents == null ? "" : values.contract_seat_rate_cents / 100
+          }
+          onChange={(event) =>
+            setValues({
+              ...values,
+              contract_seat_rate_cents: event.target.value
+                ? Math.round(Number(event.target.value) * 100)
+                : null,
+            })
+          }
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="contract-currency">Currency</Label>
+        <Input
+          id="contract-currency"
+          maxLength={3}
+          value={values.contract_currency}
+          onChange={(event) =>
+            setValues({ ...values, contract_currency: event.target.value.toLowerCase() })
+          }
+        />
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="contract-file">Agreement URL</Label>
         <Input

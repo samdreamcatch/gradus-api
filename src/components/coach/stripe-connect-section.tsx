@@ -6,7 +6,7 @@ import { ExternalLink, Landmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 import {
   getStripeConnectStatusFn,
   openStripeConnectDashboardFn,

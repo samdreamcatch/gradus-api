@@ -1,7 +1,7 @@
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { canShareNatively, shareNatively } from "@/lib/native";
+import { canShareNatively, shareNatively } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 
 interface ShareInviteButtonProps {

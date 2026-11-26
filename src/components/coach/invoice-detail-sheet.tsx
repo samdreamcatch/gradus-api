@@ -24,11 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { deleteInvoice, getInvoiceDetail, setInvoiceStatus } from "@/lib/invoicing.functions";
 import {
-  buildInvoiceText,
   formatDateRange,
   formatMoney,
   formatShortDate,
+  invoiceShareText,
 } from "@/lib/invoice-format";
+import { displayCurrency } from "@/lib/invoice-currency";
+import { useCoachInvoiceCurrency } from "@/hooks/use-invoice-currency";
 import { shareInvoiceNow } from "@/lib/share-invoice";
 import {
   deleteSampleInvoice,
@@ -68,7 +70,14 @@ export function InvoiceDetailSheet({
   );
 }
 
-function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose: () => void }) {
+/** Exported for the render test; screens use `InvoiceDetailSheet`. */
+export function InvoiceDetailBody({
+  invoiceId,
+  onClose,
+}: {
+  invoiceId: string;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const fetchDetail = useServerFn(getInvoiceDetail);
   const updateStatus = useServerFn(setInvoiceStatus);
@@ -77,6 +86,7 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
 
   const isSample = isSampleInvoiceId(invoiceId);
   useSampleInvoices(); // re-render when the sample invoice changes
+  const coachCurrency = useCoachInvoiceCurrency().currency;
 
   const detail = useQuery({
     queryKey: ["coach", "invoice", invoiceId],
@@ -123,6 +133,10 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
   }
 
   const inv = sample ? { ...sample, lineCount: sample.lines.length } : detail.data!;
+  // The currency the invoice was created in, on screen and in the shared text.
+  // A sample invoice, or one read before the currency migration, has none and
+  // is shown in the coach's.
+  const currency = displayCurrency(sample ? undefined : detail.data?.currency, coachCurrency);
 
   return (
     <>
@@ -160,7 +174,9 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
               className="flex items-center justify-between gap-3 p-3 text-sm"
             >
               <span className="text-text-secondary">{formatShortDate(l.occurrenceDate)}</span>
-              <span className="font-bold text-text-primary">{formatMoney(l.amountCents)}</span>
+              <span className="font-bold text-text-primary">
+                {formatMoney(l.amountCents, currency)}
+              </span>
             </li>
           ))}
         </ul>
@@ -170,7 +186,7 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
             Total
           </span>
           <span className="font-display text-xl text-text-primary">
-            {formatMoney(inv.totalCents)}
+            {formatMoney(inv.totalCents, currency)}
           </span>
         </div>
 
@@ -179,15 +195,8 @@ function InvoiceDetailBody({ invoiceId, onClose }: { invoiceId: string; onClose:
             type="button"
             className="flex-1"
             onClick={() =>
-              shareInvoiceNow(
-                buildInvoiceText({
-                  athleteName: inv.athleteName,
-                  periodStart: inv.periodStart,
-                  periodEnd: inv.periodEnd,
-                  lines: inv.lines,
-                  totalCents: inv.totalCents,
-                }),
-              )
+              // The invoice itself goes in, so the text is in its own currency.
+              shareInvoiceNow(invoiceShareText(inv, coachCurrency))
             }
           >
             <Share2 className="size-4" aria-hidden />

@@ -11,16 +11,35 @@
  *              this only picks which features to show)
  *   athlete -> athlete_goals + coach_athlete_sports for themself
  * Sorted, de-duplicated. Org admins and profile-less callers get [].
+ *
+ * `/me` already reads the coach or athlete row, and PostgREST can carry the
+ * child rows on that read (`coach_levels(sport)` on `coach_profiles`,
+ * `coach_athlete_sports(sport)` on `athletes`). A caller that has them passes
+ * them in (`levels`, `coachSports`) and that request is not made here.
+ * `athlete_goals` cannot travel that way: its `athlete_id` has no foreign key,
+ * so an embedded select of it answers PGRST200. It is always read here.
  */
 import type { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dbError } from "./db-error";
 
 type Admin = typeof supabaseAdmin;
 
+type SportRow = { sport: string };
+
 export type CallerSportsInput =
-  | { role: "coach"; coachId: string }
+  | {
+      role: "coach";
+      coachId: string;
+      /** This coach's `coach_levels` rows, when the caller already read them. */
+      levels?: SportRow[] | null;
+    }
   | { role: "parent"; parentId: string }
-  | { role: "athlete"; athleteId: string }
+  | {
+      role: "athlete";
+      athleteId: string;
+      /** This athlete's `coach_athlete_sports` rows, when the caller already read them. */
+      coachSports?: SportRow[] | null;
+    }
   | { role: "none" };
 
 /** Who a parent guards; injectable so tests need not mock `team.server`. */
@@ -37,6 +56,7 @@ export async function callerSports(
   guardedAthletes: GuardedAthletes = defaultGuardedAthletes,
 ): Promise<string[]> {
   if (input.role === "coach") {
+    if (Array.isArray(input.levels)) return uniqueSorted(input.levels.map((r) => r.sport));
     const { data, error } = await admin
       .from("coach_levels")
       .select("sport")
@@ -53,9 +73,13 @@ export async function callerSports(
   }
   if (!athleteIds.length) return [];
 
+  const known =
+    input.role === "athlete" && Array.isArray(input.coachSports) ? input.coachSports : null;
   const [goals, coachSports] = await Promise.all([
     admin.from("athlete_goals").select("sport").in("athlete_id", athleteIds),
-    admin.from("coach_athlete_sports").select("sport").in("athlete_id", athleteIds),
+    known
+      ? { data: known, error: null }
+      : admin.from("coach_athlete_sports").select("sport").in("athlete_id", athleteIds),
   ]);
   if (goals.error) dbError(goals.error);
   if (coachSports.error) dbError(coachSports.error);

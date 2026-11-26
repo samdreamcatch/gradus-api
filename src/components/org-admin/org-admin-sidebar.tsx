@@ -1,46 +1,23 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  Users,
-  BookOpen,
-  CalendarDays,
-  Settings,
-  ShieldCheck,
-  Store,
-  Bell,
-  type LucideIcon,
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { Button } from "@/components/ui/button";
 import { useOrgId } from "./org-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getClubNotificationCounts } from "@/lib/club-notifications.functions";
+import { ClubNotificationTray } from "./club-notification-tray";
 
-type Item = { to: string; label: string; icon: LucideIcon; exact?: boolean };
-type Group = { label: string; items: Item[]; soon?: string[] };
+type Item = { to: string; label: string; exact?: boolean };
+const ITEMS: Item[] = [
+  { to: "/org-admin/schedule", label: "Schedule" },
+  { to: "/org-admin/people", label: "Users" },
+  { to: "/org-admin/insights", label: "Insights" },
+  { to: "/org-admin/resources", label: "Library" },
+  { to: "/org-admin/storefront", label: "Storefront" },
+  { to: "/org-admin/settings", label: "Settings" },
+];
 
-const GROUPS: Group[] = [{ label: "Club", items: [
-  { to: "/org-admin", label: "Home", icon: ShieldCheck, exact: true },
-  { to: "/org-admin/notifications", label: "Notifications", icon: Bell },
-  { to: "/org-admin/coaches", label: "Coaching", icon: Users },
-  { to: "/org-admin/people", label: "People", icon: Users },
-  { to: "/org-admin/resources", label: "Library", icon: BookOpen },
-  { to: "/org-admin/schedule", label: "Schedule", icon: CalendarDays },
-  { to: "/org-admin/settings", label: "Settings", icon: Settings },
-] }];
-
-export function OrgAdminSidebar() {
-  const { orgId, orgName } = useOrgId();
+export function OrgAdminNavigation({ onSignOut }: { onSignOut: () => void | Promise<void> }) {
+  const { orgId } = useOrgId();
   const countFn = useServerFn(getClubNotificationCounts);
   const counts = useQuery({
     queryKey: ["club-notification-counts", orgId],
@@ -54,62 +31,50 @@ export function OrgAdminSidebar() {
   });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (i: Item) =>
-    i.label === "Library" && ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) => pathname.startsWith(`/org-admin/${section}`)) ? true : i.exact
-      ? pathname === i.to || pathname === i.to + "/"
-      : pathname === i.to || pathname.startsWith(i.to + "/");
+    i.label === "Users" && pathname.startsWith("/org-admin/coaches/") ? true :
+    i.label === "Library" &&
+    ["resources", "policies", "moves", "levels", "templates", "builder"].some((section) =>
+      pathname.startsWith(`/org-admin/${section}`),
+    )
+      ? true
+      : i.exact
+        ? pathname === i.to || pathname === i.to + "/"
+        : pathname === i.to || pathname.startsWith(i.to + "/");
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-divider">
-        <div className="px-2 py-1">
-          <Eyebrow size="small" tone="accent-ink">
-            Club
-          </Eyebrow>
-          <p className="font-display text-h3 text-text-primary leading-tight">
-            {orgName || "Gradus Club"}
-          </p>
+    <header className="sticky top-0 z-30 w-full min-w-0 border-b border-divider bg-popover">
+      <div className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-4 md:px-6 lg:gap-x-5">
+        <nav
+          aria-label="Club menu"
+          className="col-start-1 row-start-1 flex min-w-0 gap-1 overflow-x-auto"
+        >
+          {ITEMS.map((item) => {
+            return (
+              <Button
+                key={item.to}
+                variant="ghost"
+                asChild
+                className={`press-soft h-12 shrink-0 rounded-none border-b-2 px-3 py-0 font-sans lg:h-14 ${isActive(item) ? "border-accent text-accent-ink font-semibold" : "border-transparent text-text-secondary"}`}
+              >
+                <Link to={item.to as never} aria-current={isActive(item) ? "page" : undefined}>
+                  <span>{item.label}</span>
+                </Link>
+              </Button>
+            );
+          })}
+        </nav>
+        <div className="col-start-2 row-start-1 flex items-center gap-2">
+        <ClubNotificationTray unread={counts.data?.unread ?? 0} />
+        <Button
+          variant="ghost"
+          onClick={onSignOut}
+          className="min-h-11 shrink-0 px-0 font-sans text-text-secondary"
+          title="Sign out"
+        >
+          Sign out
+        </Button>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        {GROUPS.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      {item.label === "Settings" && <SidebarMenuButton disabled tooltip="Storefront · not connected" className="mb-1"><Store className="size-4" /><span>Storefront</span><span className="ml-auto text-xs">Not connected</span></SidebarMenuButton>}
-                      <SidebarMenuButton asChild isActive={isActive(item)} tooltip={item.label}>
-                        <Link to={item.to as never}>
-                          <Icon className="size-4" />
-                          <span>{item.label}</span>
-                          {item.to === "/org-admin/notifications" &&
-                            counts.data &&
-                            counts.data.unread > 0 && (
-                              <span className="ml-auto font-mono text-xs">
-                                {counts.data.unread}
-                              </span>
-                            )}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-                {group.soon?.map((label) => (
-                  <SidebarMenuItem key={label}>
-                    <div className="flex items-center justify-between px-2 py-1.5 text-sm text-text-tertiary group-data-[collapsible=icon]:hidden">
-                      <span>{label}</span>
-                      <span className="font-mono text-nano uppercase">Soon</span>
-                    </div>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-    </Sidebar>
+      </div>
+    </header>
   );
 }

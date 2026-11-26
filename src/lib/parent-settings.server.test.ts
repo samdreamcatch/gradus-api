@@ -587,7 +587,7 @@ describe("replaceParentAthleteSchedule", () => {
     expect(err?.message).toBe("That coach isn't linked to this athlete.");
   });
 
-  it("replaces the coach's slots: delete then insert", async () => {
+  it("adds a new lesson without touching the rest (the diff itself is covered in lesson-groups.server.test.ts)", async () => {
     const writes: string[] = [];
     const admin = fakeClient(
       { athletes: ownedAthlete, coach_athletes: { id: "link" } },
@@ -601,7 +601,7 @@ describe("replaceParentAthleteSchedule", () => {
     expect(await replaceParentAthleteSchedule({ userId: "u", admin }, A, slots)).toEqual({
       ok: true,
     });
-    expect(writes).toEqual(["delete:athlete_lesson_slots", "insert:athlete_lesson_slots"]);
+    expect(writes).toEqual(["insert:athlete_lesson_slots"]);
   });
 
   it("normalizes weeks_of_month and starts_on per frequency on insert", async () => {
@@ -632,16 +632,8 @@ describe("replaceParentAthleteSchedule", () => {
       weeks_of_month,
       starts_on,
     });
-    expect(calls[0]).toMatchObject({
-      op: "delete",
-      table: "athlete_lesson_slots",
-      filters: [
-        ["eq", "athlete_id", A],
-        ["eq", "coach_id", C],
-      ],
-    });
-    expect(calls[1]).toMatchObject({ op: "insert", table: "athlete_lesson_slots" });
-    expect(calls[1].payload).toEqual([
+    expect(calls[0]).toMatchObject({ op: "insert", table: "athlete_lesson_slots" });
+    expect(calls[0].payload).toEqual([
       row("weekly", [], null),
       row("biweekly", [], "2026-09-07"),
       row("twice_monthly", [1, 3], null),

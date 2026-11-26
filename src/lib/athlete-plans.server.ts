@@ -9,7 +9,9 @@ import type { Database } from "@/integrations/supabase/types";
 import type { SessionsByState } from "@/components/plans/flow-state-bars";
 import { ApiError } from "./api/errors";
 import { dbError } from "./db-error";
+import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
+import { purgeAtField } from "./plan-deletion";
 
 type Client = SupabaseClient<Database>;
 
@@ -44,6 +46,8 @@ export interface AthletePlanSummaryDTO {
   sessionsTotal: number;
   /** `plans.source` as a plain string (never an enum on the wire); `"athlete"` marks the athlete's own plans so a client never captions them "from Gradus". Optional so an older server decodes. */
   source?: string;
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 /** An unfinished plan the athlete wrote (a voice-built draft, a blank "+"), listed only to its author. */
@@ -86,6 +90,8 @@ export interface AthletePlanDetailDTO {
   source?: string;
   /** "plan" or "moves": what the check-in rates after practice. */
   feedbackScope?: "plan" | "moves";
+  /** A deleted plan (decision #67): when it will be removed for good. Omitted otherwise. */
+  purgeAt?: string;
 }
 
 export interface AthletePlansDTO {
@@ -117,9 +123,8 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
   const { ensureStarterProgramsForAthlete } = await import("./starter-programs.server");
   await ensureStarterProgramsForAthlete(athlete.id);
 
-  const planQuery = supabase
-    .from("plans")
-    .select("id, title, status, coach_id, updated_at, source")
+  const planQuery = plansTable(supabase)
+    .select("id, title, status, coach_id, updated_at, source, deleted_at")
     .eq("athlete_id", athlete.id)
     .eq("kind", "plan")
     .in("status", ["active", "benched"]);
@@ -240,6 +245,7 @@ export async function listAthletePlans(ctx: AthletePlansContext): Promise<Athlet
       ? authoredSport || a.firstMoveSport
       : (cid && coachSport.get(cid)) || a.firstMoveSport || "";
     return {
+      ...purgeAtField(p.deleted_at),
       id: p.id,
       title: p.title || "Untitled plan",
       status: p.status as AthletePlanStatus,
@@ -284,10 +290,9 @@ export async function getAthletePlan(
   const athlete = await findMyAthleteRow(supabase, ctx.userId);
   if (!athlete) throw notFound();
 
-  const { data: plan, error } = await supabase
-    .from("plans")
+  const { data: plan, error } = await plansTable(supabase)
     .select(
-      "id, title, notes, status, athlete_id, coach_id, updated_at, kind, source, feedback_scope",
+      "id, title, notes, status, athlete_id, coach_id, updated_at, kind, source, feedback_scope, deleted_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -339,6 +344,7 @@ export async function getAthletePlan(
   const coachLast = coachRes.data?.last_name ?? "";
 
   return {
+    ...purgeAtField(plan.deleted_at),
     id: plan.id,
     title: plan.title || "Untitled plan",
     notes: plan.notes,

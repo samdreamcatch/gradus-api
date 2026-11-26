@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import {
+  BIRTHDATE_LOCKED,
   UNDER_18_NEEDS_GUARDIAN,
   athleteSelfInput,
   getAthleteSettings,
@@ -173,6 +174,33 @@ describe("updateAthleteSelf", () => {
       ok: true,
     });
     expect(updates).toEqual([written]);
+  });
+
+  it("a birthdate already on file cannot be changed or cleared, on the web or the API, and nothing is written", async () => {
+    for (const birthdate of ["1990-01-01", null]) {
+      for (const opts of [{}, { apiContract: true }]) {
+        const updates: Update[] = [];
+        const admin = fakeClient({ athletes: { id: "a1", birthdate: "2012-04-01" } }, { updates });
+        const err = await caughtAny(() =>
+          updateAthleteSelf({ userId: "u", admin }, { ...input, birthdate }, opts),
+        );
+        expect(err).toBeInstanceOf(ApiError);
+        expect((err as ApiError).status).toBe(422);
+        expect((err as ApiError).message).toBe(BIRTHDATE_LOCKED);
+        expect(updates).toEqual([]);
+      }
+    }
+  });
+
+  it("with a birthdate on file, sending the same date saves the name and leaves birthdate out of the write", async () => {
+    const updates: Update[] = [];
+    const admin = fakeClient({ athletes: { id: "a1", birthdate: "2012-04-01" } }, { updates });
+    expect(await updateAthleteSelf({ userId: "u", admin }, input, { apiContract: true })).toEqual({
+      ok: true,
+    });
+    expect(updates).toEqual([
+      { ...written, payload: { first_name: "Rory", last_name: "Gilmore" } },
+    ]);
   });
 
   const ageRule = {

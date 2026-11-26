@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import {
   coachShareCents,
   heldKind,
@@ -40,7 +40,7 @@ function row(over: Partial<PurchaseRow> = {}): PurchaseRow {
 }
 
 describe("sales", () => {
-  test("a paid, delivered purchase is a sale; canceled, pending and free ones aren't", () => {
+  it("a paid, delivered purchase is a sale; canceled, pending and free ones aren't", () => {
     expect(isSale(row())).toBe(true);
     expect(isSale(row({ status: "canceled" }))).toBe(false);
     expect(isSale(row({ status: "pending", payment_status: "payment_due" }))).toBe(false);
@@ -48,12 +48,12 @@ describe("sales", () => {
     expect(isSale(row({ payment_status: "awaiting_coach_setup" }))).toBe(false);
   });
 
-  test("a row from before payment_status counts as paid once delivered", () => {
+  it("a row from before payment_status counts as paid once delivered", () => {
     expect(isSale(row({ payment_status: null, status: "fulfilled" }))).toBe(true);
     expect(isSale(row({ payment_status: null, status: "fulfilling" }))).toBe(false);
   });
 
-  test("summarizes gross, Gradus fee, Stripe fee, payouts, discounts and free claims", () => {
+  it("summarizes gross, Gradus fee, Stripe fee, payouts, discounts and free claims", () => {
     const s = summarizeSales([
       row(),
       row({
@@ -77,7 +77,7 @@ describe("sales", () => {
     });
   });
 
-  test("a missing fee or payout falls back to the 3% split", () => {
+  it("a missing fee or payout falls back to the 3% split", () => {
     const r = row({ platform_fee_cents: null, coach_payout_cents: null, amount_cents: 1000 });
     expect(coachShareCents(r)).toBe(970);
     expect(summarizeSales([r]).platformFeeCents).toBe(30);
@@ -85,7 +85,7 @@ describe("sales", () => {
 });
 
 describe("held earnings", () => {
-  test("waiting on the coach's payouts, buyer payment due, or paid but not transferred", () => {
+  it("waiting on the coach's payouts, buyer payment due, or paid but not transferred", () => {
     expect(heldKind(row({ payment_status: "awaiting_coach_setup", status: "fulfilled" }))).toBe(
       "awaiting_coach_setup",
     );
@@ -96,7 +96,7 @@ describe("held earnings", () => {
     expect(heldKind(row())).toBeNull();
   });
 
-  test("abandoned checkouts, canceled and free purchases aren't held", () => {
+  it("abandoned checkouts, canceled and free purchases aren't held", () => {
     expect(heldKind(row({ status: "pending", payment_status: "payment_due" }))).toBeNull();
     expect(
       heldKind(row({ status: "canceled", payment_status: "awaiting_coach_setup" })),
@@ -104,7 +104,7 @@ describe("held earnings", () => {
     expect(heldKind(row({ amount_cents: 0, stripe_transfer_id: null }))).toBeNull();
   });
 
-  test("sums the coach's share per reason", () => {
+  it("sums the coach's share per reason", () => {
     const held = summarizeHeld([
       row({ payment_status: "awaiting_coach_setup", coach_payout_cents: null, amount_cents: 1000 }),
       row({ stripe_transfer_id: null }),
@@ -119,7 +119,7 @@ describe("held earnings", () => {
 });
 
 describe("promo codes and top plans", () => {
-  test("groups codes case-insensitively, most used first, with the discount given", () => {
+  it("groups codes case-insensitively, most used first, with the discount given", () => {
     const uses = promoUsage([
       row({ promo_code: "fall10", amount_cents: 900, original_amount_cents: 1000 }),
       row({ promo_code: "FALL10", amount_cents: 900, original_amount_cents: 1000 }),
@@ -132,7 +132,7 @@ describe("promo codes and top plans", () => {
     ]);
   });
 
-  test("counts sales, revenue and free claims per plan", () => {
+  it("counts sales, revenue and free claims per plan", () => {
     const byPlan = salesByPlan([
       row({ plan_id: "a" }),
       row({ plan_id: "a", amount_cents: 0 }),
@@ -143,7 +143,7 @@ describe("promo codes and top plans", () => {
     expect(byPlan.get("b")).toEqual({ planId: "b", sales: 1, grossCents: 1000, freeClaims: 0 });
   });
 
-  test("the window uses the paid date, else the created date", () => {
+  it("the window uses the paid date, else the created date", () => {
     const rows = [
       row({ paid_at: "2026-11-24T00:00:00Z" }),
       row({ paid_at: null, created_at: "2026-11-01T00:00:00Z" }),
@@ -154,7 +154,7 @@ describe("promo codes and top plans", () => {
 });
 
 describe("payout state", () => {
-  test("mirrors the coach's Stripe Connect flags", () => {
+  it("mirrors the coach's Stripe Connect flags", () => {
     const base = {
       stripe_connect_account_id: "acct_1",
       stripe_connect_charges_enabled: true,

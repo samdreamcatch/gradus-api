@@ -16,12 +16,13 @@ import { dbError } from "./db-error";
 import { isFoundingCoachWindowOpen } from "./paywall-flag";
 import {
   athleteLimitForTier,
-  computeEffectiveTier,
+  type CoachEffectiveTier,
   type CoachLevelDTO,
   type CoachProfileDTO,
 } from "./coach-profile-types";
 import { getSport } from "./coach-sports";
 import { getCoachSetupChecklist } from "./coach-setup-checklist.server";
+import { effectiveCoachEntitlement } from "./club-access";
 
 type Client = SupabaseClient<Database>;
 type Admin = typeof supabaseAdmin;
@@ -206,13 +207,22 @@ export async function getCoachProfile(ctx: CoachContext): Promise<CoachProfileRe
     rawEntitlement === "promo_free" &&
     Boolean(freeAccessUntil) &&
     new Date(freeAccessUntil as string) < new Date();
-  const effectiveEntitlement: CoachProfileDTO["entitlement"] = freeAccessExpired
+  const personalEntitlement: CoachProfileDTO["entitlement"] = freeAccessExpired
     ? "pending"
     : rawEntitlement;
 
   const organizationId = profile.organization_id ?? null;
   const subscriptionTier = (profile.subscription_tier as "coach" | "coach_pro" | null) ?? null;
-  const effectiveTier = computeEffectiveTier({ organizationId, subscriptionTier });
+  const tierResult = await admin.rpc("coach_effective_tier", { _coach_id: profile.id });
+  if (tierResult.error) dbError(tierResult.error);
+  const effectiveTier: CoachEffectiveTier =
+    tierResult.data === "club" ? "club" : tierResult.data === "coach_pro" ? "coach_pro" : "coach";
+  const effectiveEntitlement = effectiveCoachEntitlement({
+    entitlement: personalEntitlement,
+    tier: effectiveTier,
+    foundingCoach: Boolean(profile.founding_coach),
+    subscriptionStatus: profile.subscription_status ?? null,
+  });
   const athleteLimit = athleteLimitForTier(effectiveTier);
 
   // Legacy card-free trials: only hit Stripe when the coach is actually

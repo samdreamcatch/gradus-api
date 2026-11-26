@@ -206,7 +206,7 @@ function PlansFilterStrip({
         options={[
           { value: "active", label: "Active" },
           { value: "drafts", label: "Drafts" },
-          { value: "benched", label: "Benched" },
+          { value: "benched", label: "Recently deleted" },
           { value: "templates", label: "Templates" },
         ]}
       />
@@ -454,7 +454,7 @@ function PlanRow({ plan }: { plan: PlanSummaryDTO }) {
           : plan.status === "draft"
             ? "Draft"
             : plan.status === "benched"
-              ? "Benched"
+              ? "Deleted"
               : undefined;
   const edgeTone: "active" | "template" | "muted" =
     plan.kind === "template" ? "template" : plan.status === "active" ? "active" : "muted";
@@ -682,7 +682,7 @@ function shortName(full: string) {
 }
 
 function _statusToLabel(s: PlanStatus) {
-  return s === "active" ? "Active" : "Benched";
+  return s === "active" ? "Active" : "Deleted";
 }
 
 function formatRelative(iso: string) {

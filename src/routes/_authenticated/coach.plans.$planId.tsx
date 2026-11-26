@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { canShareNatively, shareNatively } from "@/lib/native";
+import { canShareNatively, shareNatively } from "@/lib/browser-actions";
 import { cn } from "@/lib/utils";
 import {
   getPlan,
@@ -1047,16 +1047,16 @@ function PlanEditorBody({
                   { data: { id: plan.id, status: "benched" } },
                   {
                     onSuccess: () => {
-                      toast.success("Plan benched");
+                      toast.success("Moved to Recently deleted");
                       onClose();
                     },
                   },
                 )
               }
               disabled={statusMutation.isPending}
-              className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-text-primary disabled:opacity-50"
+              className="text-xs font-bold uppercase tracking-widest text-text-tertiary hover:text-destructive disabled:opacity-50"
             >
-              Bench
+              Delete
             </button>
           ) : (
             <button

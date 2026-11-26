@@ -14,7 +14,7 @@ const planId = (params: Record<string, string>) => z.string().uuid().parse(param
 /**
  * One plan the athlete wrote (PRD §6.14 B): PATCH is the per-field update
  * (title, notes); DELETE removes a draft or a benched plan (422
- * `not_deletable` for an active one: bench it first). Reading it is
+ * `not_deletable` for an active one: it is deleted first). Reading it is
  * `GET /api/v1/plans/{id}`, which serves the author their own view.
  */
 export const Route = createFileRoute("/api/v1/athlete/plans/$id/")({

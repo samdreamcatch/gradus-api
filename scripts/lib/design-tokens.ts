@@ -358,7 +358,12 @@ function safeResolve(value: string, scope: Declarations): string {
 }
 
 /** Builds the token document from the contents of src/styles.css. */
-export function buildDesignTokens(css: string, source = "src/styles.css"): DesignTokens {
+export function buildDesignTokens(
+  css: string,
+  source = "src/styles.css",
+  /** Filled with the name of every alias left out (see `colorAliases` below). */
+  skippedAliases: string[] = [],
+): DesignTokens {
   const theme = extractBlock(css, "@theme inline");
   const root = extractBlock(css, ":root");
   const dark = extractBlock(css, ".dark");
@@ -441,7 +446,16 @@ export function buildDesignTokens(css: string, source = "src/styles.css"): Desig
     source,
     fonts: sortedRecord(fonts),
     radii: sortedRecord(radii),
-    colorAliases: sortedRecord(colorAliases),
+    // An alias is only a token when its target is one: `--color-club-table-row` points at a
+    // variable that exists only inside `.club-table`, so it has no value here and would leave
+    // the app code generators referring to a colour that doesn't exist.
+    colorAliases: sortedRecord(
+      colorAliases.filter(([alias, target]) => {
+        const defined = colors.some(([name]) => name === target);
+        if (!defined) skippedAliases.push(alias);
+        return defined;
+      }),
+    ),
     colors: sortedRecord(colors),
     numbers: sortedRecord(numbers),
     raw: sortedRecord(raw),

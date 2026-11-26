@@ -28,6 +28,7 @@ import { ApiError } from "./api/errors";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { athleteLimitForTier, computeEffectiveTier } from "./coach-profile-types";
 import { dbError } from "./db-error";
+import { slotsCoincide } from "./lesson-group-guard.server";
 import { applyCoachStartingLevels } from "./goals-history.server";
 import type { LessonFrequency } from "./lesson-recurrence";
 import { isRosterFullError } from "./roster-limits";
@@ -427,7 +428,204 @@ const slotSchema = z.object({
   startMinute: z.number().int().min(0).max(1439),
   endMinute: z.number().int().min(1).max(1440),
   frequency: z.enum(["weekly", "biweekly", "twice_monthly", "monthly"]),
+  /**
+   * Set by the review when the coach links rows that share a day and time
+   * into one group lesson (decision #68, GL5). Weekly slots of two to eight
+   * different athletes carrying the same key, at the same day and time, are
+   * linked as one group once they are saved (`linkImportedGroup`); anything
+   * else imports as private lessons, as before.
+   */
+  groupKey: z.string().min(1).max(100).optional(),
 });
+
+type ImportSlot = z.infer<typeof slotSchema>;
+
+/** One lesson time a `groupKey` asks to link, and the import rows (by group `key`) that carry it. */
+export type ImportGroupShape = {
+  dayOfWeek: number;
+  startMinute: number;
+  endMinute: number;
+  athleteKeys: string[];
+};
+
+/**
+ * The `groupKey`s the import may honor: the key is on the slots of two to
+ * eight different rows, every one of those slots is the same weekly lesson,
+ * and no row carries it twice. A key that fails any test is ignored (private
+ * lessons). Weekly only: the import stores other frequencies without the
+ * start date or weeks a group lesson requires, and the group editor on iPhone
+ * has no frequency or starting-date control to add them afterwards.
+ */
+export function importGroupShapes(
+  groups: Array<{ key: string; slots: ImportSlot[] }>,
+): Map<string, ImportGroupShape> {
+  const byKey = new Map<
+    string,
+    { athletes: Set<string>; shapes: Set<string>; twice: boolean; slot: ImportSlot }
+  >();
+  for (const g of groups) {
+    const mine = new Set<string>();
+    for (const s of g.slots) {
+      if (!s.groupKey) continue;
+      const entry = byKey.get(s.groupKey) ?? {
+        athletes: new Set(),
+        shapes: new Set(),
+        twice: false,
+        slot: s,
+      };
+      if (mine.has(s.groupKey)) entry.twice = true; // one athlete twice in a group is not a group
+      mine.add(s.groupKey);
+      entry.athletes.add(g.key);
+      entry.shapes.add(`${s.dayOfWeek}:${s.startMinute}:${s.endMinute}:${s.frequency}`);
+      byKey.set(s.groupKey, entry);
+    }
+  }
+  const out = new Map<string, ImportGroupShape>();
+  for (const [key, e] of byKey) {
+    if (e.twice || e.shapes.size !== 1 || e.slot.frequency !== "weekly") continue;
+    if (e.athletes.size < 2 || e.athletes.size > 8) continue;
+    out.set(key, {
+      dayOfWeek: e.slot.dayOfWeek,
+      startMinute: e.slot.startMinute,
+      endMinute: e.slot.endMinute,
+      athleteKeys: [...e.athletes],
+    });
+  }
+  return out;
+}
+
+type LinkRow = {
+  id: string;
+  athlete_id: string;
+  day_of_week: number;
+  start_minute: number;
+  end_minute: number;
+  frequency: string | null;
+  weeks_of_month: number[] | null;
+  starts_on: string | null;
+  group_id?: string | null;
+};
+
+/**
+ * Links the lessons of one same-time set into a group, after they are saved
+ * (decision #68, GL5). Run once the import's rows have landed, so a group is
+ * never made of athletes who were skipped or failed, and so importing again
+ * joins the ones a first attempt left out: the members are whoever has that
+ * exact weekly lesson now, not yet in a group. When two or more of the set
+ * are already one group at that time (a first attempt linked them), the rest
+ * join that group, at its price, if all of them fit within eight.
+ *
+ * An athlete with another lesson overlapping this one stays out (the same
+ * rule `createLessonGroup` enforces). With no group to join, fewer than two
+ * left or more than eight: nothing is linked and the lessons stay private.
+ * Never throws: a
+ * failure here leaves private lessons, which is what the import made before.
+ */
+async function linkImportedGroup(
+  admin: Admin,
+  coachId: string,
+  shape: ImportGroupShape,
+  athleteIds: string[],
+): Promise<void> {
+  if (athleteIds.length < 2) return;
+  const res = (await admin
+    .from("athlete_lesson_slots")
+    .select(
+      "id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on, group_id",
+    )
+    .eq("coach_id", coachId)
+    .eq("day_of_week", shape.dayOfWeek)
+    .in("athlete_id", athleteIds)) as unknown as {
+    data: LinkRow[] | null;
+    error: { code?: string; message: string } | null;
+  };
+  // No `group_id` column before migration 20261115120000: the lessons stay private.
+  if (res.error) {
+    if (!missingGroupColumn(res.error))
+      console.error("[schedule-import] group not linked", res.error);
+    return;
+  }
+  const rows = res.data ?? [];
+  const members: LinkRow[] = [];
+  for (const athleteId of new Set(athleteIds)) {
+    const mine = rows.filter((r) => r.athlete_id === athleteId);
+    const lesson = mine.find(
+      (r) =>
+        r.group_id == null &&
+        r.start_minute === shape.startMinute &&
+        r.end_minute === shape.endMinute &&
+        (r.frequency ?? "weekly") === "weekly",
+    );
+    if (!lesson) continue;
+    if (mine.some((r) => r.id !== lesson.id && slotsCoincide(r, lesson))) continue;
+    members.push(lesson);
+  }
+  // A group at exactly this lesson that already holds two or more of this
+  // set is the one a first attempt made: the rest join it. One athlete in
+  // some other group, two such groups, or no room left is not that case, and
+  // the ungrouped ones are linked among themselves as before.
+  const grouped = new Map<string, number>();
+  for (const r of rows) {
+    if (
+      r.group_id != null &&
+      r.start_minute === shape.startMinute &&
+      r.end_minute === shape.endMinute &&
+      (r.frequency ?? "weekly") === "weekly"
+    )
+      grouped.set(r.group_id, (grouped.get(r.group_id) ?? 0) + 1);
+  }
+  const firstAttempts = [...grouped].filter(([, n]) => n >= 2).map(([id]) => id);
+  if (firstAttempts.length === 1 && members.length > 0) {
+    const groupId = firstAttempts[0];
+    const group = (await admin
+      .from("athlete_lesson_slots")
+      .select("id, price_cents")
+      .eq("coach_id", coachId)
+      .eq("group_id", groupId)) as unknown as {
+      data: Array<{ id: string; price_cents: number | null }> | null;
+      error: { code?: string; message: string } | null;
+    };
+    if (group.error) {
+      if (!missingGroupColumn(group.error))
+        console.error("[schedule-import] group not joined", group.error);
+      return;
+    }
+    const current = group.data ?? [];
+    if (current.length >= 2 && current.length + members.length <= 8) {
+      // The group's price only when every member shares one (the rule
+      // `updateLessonGroup` reads it by); otherwise each athlete's usual rate.
+      const prices = new Set(current.map((g) => g.price_cents));
+      const price = prices.size === 1 ? current[0].price_cents : null;
+      const join = (await admin
+        .from("athlete_lesson_slots")
+        .update({ group_id: groupId, price_cents: price } as never)
+        .eq("coach_id", coachId)
+        .in(
+          "id",
+          members.map((m) => m.id),
+        )) as unknown as { error: { code?: string; message: string } | null };
+      if (join.error && !missingGroupColumn(join.error)) {
+        console.error("[schedule-import] group not joined", join.error);
+      }
+      return;
+    }
+  }
+  if (members.length < 2 || members.length > 8) return;
+  const upd = (await admin
+    .from("athlete_lesson_slots")
+    .update({ group_id: crypto.randomUUID() } as never)
+    .eq("coach_id", coachId)
+    .in(
+      "id",
+      members.map((m) => m.id),
+    )) as unknown as { error: { code?: string; message: string } | null };
+  if (upd.error && !missingGroupColumn(upd.error)) {
+    console.error("[schedule-import] group not linked", upd.error);
+  }
+}
+
+const missingGroupColumn = (error: { code?: string } | null) =>
+  error?.code === "42703" || error?.code === "PGRST204";
 
 /**
  * Verbatim from the web flow. Server leniency is deliberate parity: no email
@@ -564,6 +762,9 @@ export async function commitScheduleImport(
     athleteLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, athleteLimit - rosterCount);
 
   const outcomes: ImportOutcomeDTO[] = [];
+  // Linked after the lessons are saved (`linkImportedGroup`), from who actually landed.
+  const groupShapes = importGroupShapes(input.groups);
+  const athleteByKey = new Map<string, string>();
 
   for (const g of input.groups) {
     const name = `${g.firstName} ${g.lastName}`.trim();
@@ -734,6 +935,8 @@ export async function commitScheduleImport(
         .select("day_of_week, start_minute")
         .eq("coach_id", coachId)
         .eq("athlete_id", athleteId);
+      // Unread, a lesson already there would be added a second time.
+      if (existingSlots.error) throw groupFailure(existingSlots.error.message);
       const seen = new Set(
         (existingSlots.data ?? []).map((s) => `${s.day_of_week}:${s.start_minute}`),
       );
@@ -756,6 +959,7 @@ export async function commitScheduleImport(
         const slotIns = await admin.from("athlete_lesson_slots").insert(toInsert);
         if (slotIns.error) throw groupFailure(slotIns.error.message);
       }
+      athleteByKey.set(g.key, athleteId as string);
 
       outcomes.push({
         key: g.key,
@@ -784,6 +988,13 @@ export async function commitScheduleImport(
         limit: rosterFull ? athleteLimit : null,
       });
     }
+  }
+
+  for (const shape of groupShapes.values()) {
+    const athleteIds = shape.athleteKeys
+      .map((key) => athleteByKey.get(key))
+      .filter((id): id is string => id != null);
+    await linkImportedGroup(admin, coachId, shape, athleteIds);
   }
 
   return { outcomes };

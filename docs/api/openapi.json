@@ -71,6 +71,9 @@
                     },
                     "termsVersion": {
                       "type": "string"
+                    },
+                    "messageCheck": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -312,6 +315,9 @@
                         "version",
                         "decidedAt"
                       ]
+                    },
+                    "invoiceCurrency": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -697,6 +703,71 @@
                     "state",
                     "version",
                     "decidedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/invoice-currency": {
+      "put": {
+        "operationId": "putMeInvoiceCurrency",
+        "summary": "Set the currency the coach invoices in",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "USD",
+                      "CAD",
+                      "AUD",
+                      "NZD",
+                      "GBP"
+                    ]
+                  }
+                },
+                "required": [
+                  "currency"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoiceCurrency": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "invoiceCurrency"
                   ]
                 }
               }
@@ -4971,6 +5042,9 @@
                                     "string",
                                     "null"
                                   ]
+                                },
+                                "group": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -5277,6 +5351,9 @@
                                           "integer",
                                           "null"
                                         ]
+                                      },
+                                      "billable": {
+                                        "type": "boolean"
                                       }
                                     },
                                     "required": [
@@ -5286,6 +5363,12 @@
                                       "endMinute"
                                     ]
                                   }
+                                },
+                                "groupId": {
+                                  "type": "string"
+                                },
+                                "priceCents": {
+                                  "type": "integer"
                                 }
                               },
                               "required": [
@@ -5925,6 +6008,20 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "billable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -6051,6 +6148,495 @@
       "delete": {
         "operationId": "clearLessonOverride",
         "summary": "Remove a one-date override",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups": {
+      "post": {
+        "operationId": "createLessonGroup",
+        "summary": "Add a recurring group lesson for two to eight rostered athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "dayOfWeek": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6
+                  },
+                  "startMinute": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440
+                  },
+                  "endMinute": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1440
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "weekly",
+                      "biweekly",
+                      "twice_monthly",
+                      "monthly"
+                    ],
+                    "default": "weekly"
+                  },
+                  "weeksOfMonth": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    },
+                    "default": []
+                  },
+                  "startsOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "priceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 10000000
+                  }
+                },
+                "required": [
+                  "athleteIds",
+                  "dayOfWeek",
+                  "startMinute",
+                  "endMinute"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slotIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slotIds"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups/{id}": {
+      "patch": {
+        "operationId": "updateLessonGroup",
+        "summary": "Move a group lesson, set its price, or add and remove athletes",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "dayOfWeek": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 6
+                      },
+                      "startMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "endMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "frequency": {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "biweekly",
+                          "twice_monthly",
+                          "monthly"
+                        ],
+                        "default": "weekly"
+                      },
+                      "weeksOfMonth": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5
+                        },
+                        "default": []
+                      },
+                      "startsOn": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      }
+                    },
+                    "required": [
+                      "dayOfWeek",
+                      "startMinute",
+                      "endMinute"
+                    ]
+                  },
+                  "priceCents": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 10000000
+                  },
+                  "addAthleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  },
+                  "removeAthleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLessonGroup",
+        "summary": "Delete a recurring group lesson for every athlete in it",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/coach/lesson-groups/{id}/occurrences/{date}": {
+      "put": {
+        "operationId": "setGroupOccurrence",
+        "summary": "Set who is out, and any new times, for one date of a group lesson",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "date",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reschedule": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "startMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      },
+                      "endMinute": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1440
+                      }
+                    },
+                    "required": [
+                      "startMinute",
+                      "endMinute"
+                    ]
+                  },
+                  "out": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "athleteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "billable": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "athleteId"
+                      ]
+                    },
+                    "maxItems": 8,
+                    "default": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clearGroupOccurrence",
+        "summary": "Put one date of a group lesson back on the regular schedule",
         "security": [
           {
             "bearerAuth": []
@@ -6347,6 +6933,11 @@
                                   "twice_monthly",
                                   "monthly"
                                 ]
+                              },
+                              "groupKey": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
                               }
                             },
                             "required": [
@@ -7336,6 +7927,28 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "activePlans": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title"
+                              ]
+                            },
+                            "description": "The coach's own active plans for this athlete, newest first: the same plans, in the same order, as GET /coach/athletes/{id}/active-plans returns. Always present from this server version on, empty when there are none; `activePlanId` is the first one, the most recent. Absent only from an older server: read the per-athlete route then."
+                          },
+                          "groupId": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -7472,6 +8085,9 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "groupId": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -7922,6 +8538,18 @@
                           },
                           "sessionsTotal": {
                             "type": "integer"
+                          },
+                          "sharedCount": {
+                            "type": "integer",
+                            "description": "On a plan given to several athletes: how many have a copy. Its session counts are the copies', summed."
+                          },
+                          "sharedFromId": {
+                            "type": "string",
+                            "description": "On one athlete's copy: the plan it was copied from."
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [
@@ -8451,6 +9079,95 @@
                         "integer",
                         "null"
                       ]
+                    },
+                    "sharedCount": {
+                      "type": "integer"
+                    },
+                    "sharedFromId": {
+                      "type": "string"
+                    },
+                    "sharedWith": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "athleteId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "planId": {
+                            "type": "string",
+                            "description": "That athlete's own copy: an ordinary plan the coach can open."
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "The copy's status: active, benched, or draft. A plain string."
+                          },
+                          "sessionsTotal": {
+                            "type": "integer"
+                          },
+                          "tailored": {
+                            "type": "boolean",
+                            "description": "The coach changed this copy on its own, so sending it an update replaces those edits."
+                          },
+                          "behind": {
+                            "type": "boolean",
+                            "description": "The plan has changes this copy has not received."
+                          }
+                        },
+                        "required": [
+                          "athleteId",
+                          "name",
+                          "planId",
+                          "status",
+                          "sessionsTotal",
+                          "tailored",
+                          "behind"
+                        ]
+                      },
+                      "description": "Owning coach only: the athletes who each have a copy of this plan."
+                    },
+                    "pendingChanges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "planMoveId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The plan's move; null for a removed move or a change to the plan itself."
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "The move's name; empty for a change to the plan itself."
+                          },
+                          "change": {
+                            "type": "string",
+                            "description": "A plain string, never an enum: new, minutes, reps, changed, removed, title, notes, feedback, or order."
+                          }
+                        },
+                        "required": [
+                          "planMoveId",
+                          "name",
+                          "change"
+                        ]
+                      },
+                      "description": "With sharedWith: what changed since the copies last received this plan."
+                    },
+                    "updatedMoves": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Parent and athlete only: what the coach's last update changed on this plan, as plan move id to new, minutes, reps, or changed. Sent until practice is next logged on the plan."
+                    },
+                    "purgeAt": {
+                      "type": "string",
+                      "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                     }
                   },
                   "required": [
@@ -11803,6 +12520,10 @@
                           },
                           "source": {
                             "type": "string"
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [
@@ -11979,6 +12700,10 @@
                           },
                           "source": {
                             "type": "string"
+                          },
+                          "purgeAt": {
+                            "type": "string",
+                            "description": "A deleted plan (status benched, decision #67): the time it will be removed for good, 30 days after it was deleted. Omitted for any other plan."
                           }
                         },
                         "required": [
@@ -13833,6 +14558,175 @@
                   },
                   "required": [
                     "token"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/copies": {
+      "post": {
+        "operationId": "sharePlanWithAthletes",
+        "summary": "Give each chosen athlete their own copy of a plan",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "description": "The athletes who each get their own copy. An athlete who already has a copy of this plan is left as they are; nobody is removed by leaving them out."
+                  },
+                  "activate": {
+                    "type": "boolean",
+                    "description": "true: the copies go live now and each athlete's household is told. false: the copies are saved as drafts for the coach to adjust first."
+                  }
+                },
+                "required": [
+                  "athleteIds",
+                  "activate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The plan the coach keeps editing; its sharedWith lists the copies."
+                    },
+                    "shared": {
+                      "type": "integer",
+                      "description": "How many athletes now have a copy."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "shared"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/copies/update": {
+      "post": {
+        "operationId": "updatePlanCopies",
+        "summary": "Send the plan's changes to chosen athletes' copies",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "description": "The athletes whose copies are replaced with the plan as it is now. A copy the coach edited on its own loses those edits. Athletes left out keep their copy as it is."
+                  }
+                },
+                "required": [
+                  "athleteIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "description": "How many copies actually changed."
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "updated"
                   ]
                 }
               }
@@ -17278,6 +18172,9 @@
                         ],
                         "format": "uuid"
                       },
+                      "sendAnyway": {
+                        "type": "boolean"
+                      },
                       "viewerRole": {
                         "type": "string",
                         "enum": [
@@ -17380,6 +18277,12 @@
                         },
                         "id": {
                           "type": "string"
+                        },
+                        "crisisLine": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
                         }
                       },
                       "required": [
@@ -17405,11 +18308,19 @@
                             "provisional",
                             "paused",
                             "paused_by_parent",
-                            "text_only"
+                            "text_only",
+                            "messaging_suspended",
+                            "content_blocked"
                           ]
                         },
                         "message": {
                           "type": "string"
+                        },
+                        "canSendAnyway": {
+                          "type": "boolean"
+                        },
+                        "showSafeSport": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -18364,6 +19275,9 @@
                                           "string",
                                           "null"
                                         ]
+                                      },
+                                      "group": {
+                                        "type": "boolean"
                                       }
                                     },
                                     "required": [
@@ -25676,6 +26590,9 @@
                           },
                           "lineCount": {
                             "type": "number"
+                          },
+                          "currency": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -25790,6 +26707,9 @@
                           },
                           "lineCount": {
                             "type": "number"
+                          },
+                          "currency": {
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -25899,9 +26819,13 @@
                           "type": "string",
                           "enum": [
                             "completed",
-                            "manual_add"
+                            "manual_add",
+                            "canceled_billed"
                           ],
                           "default": "completed"
+                        },
+                        "group": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -25939,6 +26863,9 @@
                     },
                     "lineCount": {
                       "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -26083,6 +27010,12 @@
                           },
                           "defaultIncluded": {
                             "type": "boolean"
+                          },
+                          "group": {
+                            "type": "boolean"
+                          },
+                          "billable": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -26181,6 +27114,9 @@
                     "lineCount": {
                       "type": "number"
                     },
+                    "currency": {
+                      "type": "string"
+                    },
                     "lines": {
                       "type": "array",
                       "items": {
@@ -26191,6 +27127,12 @@
                           },
                           "amountCents": {
                             "type": "number"
+                          },
+                          "group": {
+                            "type": "boolean"
+                          },
+                          "canceledBilled": {
+                            "type": "boolean"
                           }
                         },
                         "required": [

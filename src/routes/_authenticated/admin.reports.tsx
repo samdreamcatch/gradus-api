@@ -9,9 +9,19 @@ import { REPORT_REASON_LABELS, REPORT_STATUS_LABELS, type ReportStatus } from "@
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Chip, chipClasses } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
+import { MessageFlagsPanel, MessageRulesPanel } from "@/components/admin/message-flags-panel";
+
+const TABS = ["reports", "flags", "rules"] as const;
+const TAB_LABELS: Record<(typeof TABS)[number], string> = {
+  reports: "Reports",
+  flags: "Flagged messages",
+  rules: "Message rules",
+};
 
 const searchSchema = z.object({
   open: fallback(z.boolean(), false).default(false),
+  /** Flagged messages and Message rules are the message check (PRD #64). */
+  tab: fallback(z.enum(TABS), "reports").default("reports"),
 });
 
 const STATUSES: ReportStatus[] = ["open", "reviewed", "actioned", "dismissed"];
@@ -22,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/admin/reports")({
 });
 
 function AdminReports() {
-  const { open } = Route.useSearch();
+  const { open, tab } = Route.useSearch();
   const listFn = useServerFn(adminListReports);
   const updateFn = useServerFn(adminUpdateReportStatus);
   const qc = useQueryClient();
@@ -53,17 +63,35 @@ function AdminReports() {
           <h1 className="font-display text-h1 text-text-primary">Reports</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            from={Route.fullPath}
-            search={(prev: any) => ({ ...prev, open: !open })}
-            className={chipClasses({ tone: "muted", selected: open })}
-          >
-            {open ? "Open only" : "All statuses"}
-          </Link>
+          {TABS.map((t) => (
+            <Link
+              key={t}
+              from={Route.fullPath}
+              search={(prev: any) => ({ ...prev, tab: t })}
+              className={chipClasses({ tone: "muted", selected: tab === t })}
+            >
+              {TAB_LABELS[t]}
+            </Link>
+          ))}
         </div>
+        {tab !== "rules" ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              from={Route.fullPath}
+              search={(prev: any) => ({ ...prev, open: !open })}
+              className={chipClasses({ tone: "muted", selected: open })}
+            >
+              {open ? "Open only" : "All statuses"}
+            </Link>
+          </div>
+        ) : null}
       </header>
 
-      {isLoading ? (
+      {tab === "flags" ? (
+        <MessageFlagsPanel openOnly={open} />
+      ) : tab === "rules" ? (
+        <MessageRulesPanel />
+      ) : isLoading ? (
         <p className="text-text-secondary">Loading…</p>
       ) : !data?.items.length ? (
         <p className="text-text-secondary">No reports.</p>

@@ -707,7 +707,9 @@ export type Database = {
           day_of_week: number
           end_minute: number
           frequency: string
+          group_id: string | null
           id: string
+          price_cents: number | null
           start_minute: number
           starts_on: string | null
           updated_at: string
@@ -720,7 +722,9 @@ export type Database = {
           day_of_week: number
           end_minute: number
           frequency?: string
+          group_id?: string | null
           id?: string
+          price_cents?: number | null
           start_minute: number
           starts_on?: string | null
           updated_at?: string
@@ -733,7 +737,9 @@ export type Database = {
           day_of_week?: number
           end_minute?: number
           frequency?: string
+          group_id?: string | null
           id?: string
+          price_cents?: number | null
           start_minute?: number
           starts_on?: string | null
           updated_at?: string
@@ -1155,6 +1161,62 @@ export type Database = {
           user_role?: string | null
         }
         Relationships: []
+      }
+      club_contract_trueups: {
+        Row: {
+          actor_user_id: string
+          amount_cents: number
+          contract_ends_on: string
+          created_at: string
+          currency: string
+          effective_on: string
+          id: string
+          invoice_reference: string | null
+          organization_id: string
+          rate_cents: number
+          request_key: string
+          seats_added: number
+          status: string
+        }
+        Insert: {
+          actor_user_id: string
+          amount_cents: number
+          contract_ends_on: string
+          created_at?: string
+          currency: string
+          effective_on: string
+          id?: string
+          invoice_reference?: string | null
+          organization_id: string
+          rate_cents: number
+          request_key: string
+          seats_added: number
+          status?: string
+        }
+        Update: {
+          actor_user_id?: string
+          amount_cents?: number
+          contract_ends_on?: string
+          created_at?: string
+          currency?: string
+          effective_on?: string
+          id?: string
+          invoice_reference?: string | null
+          organization_id?: string
+          rate_cents?: number
+          request_key?: string
+          seats_added?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_contract_trueups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_notification_reads: {
         Row: {
@@ -1697,6 +1759,7 @@ export type Database = {
           founding_pro_trial_used: boolean
           free_access_until: string | null
           id: string
+          invoice_currency: string
           is_org_admin: boolean
           is_test: boolean
           last_name: string
@@ -1724,6 +1787,7 @@ export type Database = {
           founding_pro_trial_used?: boolean
           free_access_until?: string | null
           id?: string
+          invoice_currency?: string
           is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
@@ -1751,6 +1815,7 @@ export type Database = {
           founding_pro_trial_used?: boolean
           free_access_until?: string | null
           id?: string
+          invoice_currency?: string
           is_org_admin?: boolean
           is_test?: boolean
           last_name?: string
@@ -2660,6 +2725,7 @@ export type Database = {
           id: string
           included_reason: string
           invoice_id: string
+          is_group: boolean
           occurrence_date: string
           slot_id: string | null
           start_minute: number | null
@@ -2673,6 +2739,7 @@ export type Database = {
           id?: string
           included_reason?: string
           invoice_id: string
+          is_group?: boolean
           occurrence_date: string
           slot_id?: string | null
           start_minute?: number | null
@@ -2686,6 +2753,7 @@ export type Database = {
           id?: string
           included_reason?: string
           invoice_id?: string
+          is_group?: boolean
           occurrence_date?: string
           slot_id?: string | null
           start_minute?: number | null
@@ -2726,6 +2794,7 @@ export type Database = {
           athlete_id: string
           coach_id: string
           created_at: string
+          currency: string
           id: string
           paid_at: string | null
           period_end: string
@@ -2738,6 +2807,7 @@ export type Database = {
           athlete_id: string
           coach_id: string
           created_at?: string
+          currency?: string
           id?: string
           paid_at?: string | null
           period_end: string
@@ -2750,6 +2820,7 @@ export type Database = {
           athlete_id?: string
           coach_id?: string
           created_at?: string
+          currency?: string
           id?: string
           paid_at?: string | null
           period_end?: string
@@ -2979,6 +3050,7 @@ export type Database = {
       }
       lesson_slot_overrides: {
         Row: {
+          billable: boolean
           created_at: string
           end_minute: number | null
           id: string
@@ -2989,6 +3061,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billable?: boolean
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -2999,6 +3072,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billable?: boolean
           created_at?: string
           end_minute?: number | null
           id?: string
@@ -3195,6 +3269,77 @@ export type Database = {
         }
         Relationships: []
       }
+      message_flags: {
+        Row: {
+          admin_notes: string
+          body: string | null
+          category: string
+          coach_id: string | null
+          created_at: string
+          direct_room_id: string | null
+          id: string
+          matched: string
+          message_id: string | null
+          outcome: string
+          room_has_minor: boolean
+          room_id: string | null
+          rule_id: string
+          sender_minor: boolean
+          sender_role: string
+          sender_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          body?: string | null
+          category: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id: string
+          sender_minor?: boolean
+          sender_role: string
+          sender_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          body?: string | null
+          category?: string
+          coach_id?: string | null
+          created_at?: string
+          direct_room_id?: string | null
+          id?: string
+          matched?: string
+          message_id?: string | null
+          outcome?: string
+          room_has_minor?: boolean
+          room_id?: string | null
+          rule_id?: string
+          sender_minor?: boolean
+          sender_role?: string
+          sender_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_flags_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           direct_room_id: string | null
@@ -3369,6 +3514,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messaging_suspensions: {
+        Row: {
+          created_at: string
+          note: string
+          paused_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          note?: string
+          paused_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          note?: string
+          paused_by?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       moves: {
         Row: {
@@ -3589,8 +3755,10 @@ export type Database = {
           invite_code: string
           invite_token: string
           invited_by: string | null
+          levels: Json
           organization_id: string
           phone: string | null
+          sports: string[]
           status: string
           updated_at: string
         }
@@ -3604,8 +3772,10 @@ export type Database = {
           invite_code: string
           invite_token: string
           invited_by?: string | null
+          levels?: Json
           organization_id: string
           phone?: string | null
+          sports?: string[]
           status?: string
           updated_at?: string
         }
@@ -3619,8 +3789,10 @@ export type Database = {
           invite_code?: string
           invite_token?: string
           invited_by?: string | null
+          levels?: Json
           organization_id?: string
           phone?: string | null
+          sports?: string[]
           status?: string
           updated_at?: string
         }
@@ -3638,33 +3810,39 @@ export type Database = {
         Row: {
           coach_id: string
           computed_at: string
+          lessons: number | null
           minors: number | null
           organization_id: string
           practice_min: number
           sessions: number
           students: number | null
+          students_meeting_target: number | null
           target_min: number | null
           week_start: string
         }
         Insert: {
           coach_id: string
           computed_at?: string
+          lessons?: number | null
           minors?: number | null
           organization_id: string
           practice_min?: number
           sessions?: number
           students?: number | null
+          students_meeting_target?: number | null
           target_min?: number | null
           week_start: string
         }
         Update: {
           coach_id?: string
           computed_at?: string
+          lessons?: number | null
           minors?: number | null
           organization_id?: string
           practice_min?: number
           sessions?: number
           students?: number | null
+          students_meeting_target?: number | null
           target_min?: number | null
           week_start?: string
         }
@@ -3925,6 +4103,9 @@ export type Database = {
       }
       org_schedule_imports: {
         Row: {
+          commit_counts: Json | null
+          committed_at: string | null
+          committed_by: string | null
           counts: Json
           created_at: string
           file_name: string
@@ -3934,6 +4115,9 @@ export type Database = {
           uploaded_by: string
         }
         Insert: {
+          commit_counts?: Json | null
+          committed_at?: string | null
+          committed_by?: string | null
           counts?: Json
           created_at?: string
           file_name: string
@@ -3943,6 +4127,9 @@ export type Database = {
           uploaded_by: string
         }
         Update: {
+          commit_counts?: Json | null
+          committed_at?: string | null
+          committed_by?: string | null
           counts?: Json
           created_at?: string
           file_name?: string
@@ -4289,8 +4476,10 @@ export type Database = {
           city: string | null
           coach_seats: number
           content_version: number
+          contract_currency: string
           contract_ends_on: string | null
           contract_file_url: string | null
+          contract_seat_rate_cents: number | null
           contract_signed_on: string | null
           contract_starts_on: string | null
           created_at: string
@@ -4311,8 +4500,10 @@ export type Database = {
           city?: string | null
           coach_seats?: number
           content_version?: number
+          contract_currency?: string
           contract_ends_on?: string | null
           contract_file_url?: string | null
+          contract_seat_rate_cents?: number | null
           contract_signed_on?: string | null
           contract_starts_on?: string | null
           created_at?: string
@@ -4333,8 +4524,10 @@ export type Database = {
           city?: string | null
           coach_seats?: number
           content_version?: number
+          contract_currency?: string
           contract_ends_on?: string | null
           contract_file_url?: string | null
+          contract_seat_rate_cents?: number | null
           contract_signed_on?: string | null
           contract_starts_on?: string | null
           created_at?: string
@@ -4632,7 +4825,9 @@ export type Database = {
           logged_at: string
           note: string
           parent_id: string | null
+          plan_coach_id: string | null
           plan_id: string
+          plan_title: string | null
           state_index: number
         }
         Insert: {
@@ -4644,7 +4839,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id: string
+          plan_title?: string | null
           state_index: number
         }
         Update: {
@@ -4656,7 +4853,9 @@ export type Database = {
           logged_at?: string
           note?: string
           parent_id?: string | null
+          plan_coach_id?: string | null
           plan_id?: string
+          plan_title?: string | null
           state_index?: number
         }
         Relationships: []
@@ -4666,6 +4865,7 @@ export type Database = {
           athlete_id: string | null
           coach_id: string | null
           created_at: string
+          deleted_at: string | null
           feedback_scope: string
           id: string
           is_org_template: boolean
@@ -4674,6 +4874,9 @@ export type Database = {
           organization_id: string | null
           share_token: string | null
           shared_at: string | null
+          shared_changes: Json | null
+          shared_from_id: string | null
+          shared_synced: Json | null
           social_coach_name: string
           source: string
           source_competition_id: string | null
@@ -4686,6 +4889,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -4694,6 +4898,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4706,6 +4913,7 @@ export type Database = {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string
+          deleted_at?: string | null
           feedback_scope?: string
           id?: string
           is_org_template?: boolean
@@ -4714,6 +4922,9 @@ export type Database = {
           organization_id?: string | null
           share_token?: string | null
           shared_at?: string | null
+          shared_changes?: Json | null
+          shared_from_id?: string | null
+          shared_synced?: Json | null
           social_coach_name?: string
           source?: string
           source_competition_id?: string | null
@@ -4742,6 +4953,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plans_shared_from_id_fkey"
+            columns: ["shared_from_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
           {
@@ -5637,6 +5855,20 @@ export type Database = {
         Args: { p_actor: string; p_org_id: string; p_request_id: string }
         Returns: undefined
       }
+      club_commit_schedule_review: {
+        Args: { p_import: string; p_org: string; p_user: string }
+        Returns: Json
+      }
+      club_expand_contract: {
+        Args: {
+          p_actor: string
+          p_expected_amount: number
+          p_org_id: string
+          p_request_key: string
+          p_seats: number
+        }
+        Returns: string
+      }
       club_open_seat_for: {
         Args: { p_org: string; p_user: string }
         Returns: string
@@ -5788,6 +6020,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_room_read: {
+        Args: { p_direct: boolean; p_room_id: string; p_user_id: string }
+        Returns: number
+      }
       match_knowledge_chunks: {
         Args: {
           p_coach_ids: string[]
@@ -5820,6 +6056,8 @@ export type Database = {
         Returns: number
       }
       my_coach_id: { Args: never; Returns: string }
+      my_coach_plan_ids: { Args: never; Returns: string[] }
+      my_practice_log_athlete_ids: { Args: never; Returns: string[] }
       new_guardian_claim_code: { Args: never; Returns: string }
       orphan_coach_upload_paths: {
         Args: { p_limit: number; p_older_than: string }
@@ -5838,6 +6076,7 @@ export type Database = {
         Args: { _resource_id: string }
         Returns: boolean
       }
+      purge_deleted_plans: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -5870,6 +6109,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_club_coach_weeks: { Args: { p_org: string }; Returns: undefined }
+      refresh_club_coaching_metrics: {
+        Args: { p_org: string }
+        Returns: undefined
+      }
       refresh_club_notifications: {
         Args: { p_org_id: string }
         Returns: undefined
@@ -5890,6 +6133,26 @@ export type Database = {
           response_body: Json
           response_status: number
           state: string
+        }[]
+      }
+      room_summaries: {
+        Args: {
+          p_athlete_room_ids: string[]
+          p_direct_room_ids: string[]
+          p_user_id: string
+        }
+        Returns: {
+          body: string
+          created_at: string
+          direct_room_id: string
+          id: string
+          kind: string
+          room_id: string
+          room_key: string
+          sender_deleted_at: string
+          sender_role: string
+          sender_user_id: string
+          unread_count: number
         }[]
       }
       seed_coach_library: { Args: { _coach_id: string }; Returns: number }

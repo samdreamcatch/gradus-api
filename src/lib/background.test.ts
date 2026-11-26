@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { inBackground, runWithRequestContext } from "./background";
+import { inBackground, requestWasCold, runWithRequestContext } from "./background";
 
 describe("inBackground", () => {
   it("hands the task to waitUntil when the request scope has one, without awaiting it", async () => {
@@ -68,5 +68,25 @@ describe("inBackground", () => {
     });
     expect(handed).toHaveLength(1);
     expect(ranInline).toBe(true);
+  });
+});
+
+describe("requestWasCold", () => {
+  it("is true only inside a request the Worker entry marked cold", async () => {
+    expect(await requestWasCold()).toBe(false);
+    await runWithRequestContext(undefined, async () => {
+      expect(await requestWasCold()).toBe(false);
+    });
+    await runWithRequestContext(
+      undefined,
+      async () => {
+        expect(await requestWasCold()).toBe(true);
+      },
+      { cold: true },
+    );
+    // The mark does not leak into the next request.
+    await runWithRequestContext(undefined, async () => {
+      expect(await requestWasCold()).toBe(false);
+    });
   });
 });

@@ -11,10 +11,15 @@
  * coach with the `coach/wrap-ups` route. The prompt card itself keeps
  * coming from the read-time computation; this only taps the coach on the
  * shoulder.
+ *
+ * Group lessons (PRD §6.16 F, decision #68): the members of a group that
+ * ended together are one prompt and one push. Every member's slot still gets
+ * its own dedupe row, so the table and its key are unchanged; the group's
+ * push goes out when any of those rows is new this tick.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { resolveOccurrenceTimes } from "./coach-day-lessons.server";
+import { liveGroupsAmong, resolveOccurrenceTimes } from "./coach-day-lessons.server";
 import { dbError } from "./db-error";
 import { nowInRinkTz } from "./lesson-reminders.server";
 import { expandSlotOccurrences, type LessonFrequency } from "./lesson-recurrence";
@@ -38,7 +43,17 @@ type SlotRow = {
   frequency: string | null;
   weeks_of_month: number[] | null;
   starts_on: string | null;
+  group_id?: string | null;
 };
+
+type DbError = { code?: string; message: string };
+const missingColumn = (e: DbError | null) => e?.code === "42703" || e?.code === "PGRST204";
+
+/** "Greta, Tobin, Ines" / "Greta, Tobin, Ines +5", the Schedule card's title. */
+export function groupNames(firstNames: string[]): string {
+  const shown = firstNames.slice(0, 3).join(", ");
+  return firstNames.length > 3 ? `${shown} +${firstNames.length - 3}` : shown;
+}
 
 type OverrideRow = {
   slot_id: string;
@@ -55,14 +70,23 @@ export async function computeLessonWrapUpPrompts(
   const { admin } = ctx;
   const { dateIso, minutes: nowMinutes, dayOfWeek } = nowInRinkTz(now);
 
-  const slotsRes = await admin
-    .from("athlete_lesson_slots")
-    .select(
-      "id, coach_id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on",
-    )
-    .eq("day_of_week", dayOfWeek);
+  const COLUMNS =
+    "id, coach_id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on";
+  const selectSlots = async (columns: string) =>
+    (await admin
+      .from("athlete_lesson_slots")
+      .select(columns)
+      .eq("day_of_week", dayOfWeek)) as unknown as {
+      data: SlotRow[] | null;
+      error: DbError | null;
+    };
+  let slotsRes = await selectSlots(`${COLUMNS}, group_id`);
+  // No `group_id` column until migration 20261115120000: every lesson is private.
+  if (missingColumn(slotsRes.error)) slotsRes = await selectSlots(COLUMNS);
   if (slotsRes.error) dbError(slotsRes.error);
-  const slots = ((slotsRes.data ?? []) as unknown as SlotRow[]).filter((s) => !!s.coach_id);
+  const slots = (slotsRes.data ?? []).filter((s) => !!s.coach_id);
+  // A group is real with two or more slots; a lone leftover link is a private lesson.
+  const liveGroups = liveGroupsAmong(slots);
   const scanned = slots.length;
   if (scanned === 0) return { scanned: 0, prompted: 0, sent: 0 };
 
@@ -150,7 +174,8 @@ export async function computeLessonWrapUpPrompts(
   if (fresh.length === 0) return { scanned, prompted: 0, sent: 0 };
 
   const coachIds = Array.from(new Set(fresh.map((s) => s.coach_id as string)));
-  const athleteIds = Array.from(new Set(fresh.map((s) => s.athlete_id)));
+  // Names for every athlete still to wrap up: a group's push names them all.
+  const athleteIds = Array.from(new Set(toPrompt.map((s) => s.athlete_id)));
   const [coachesRes, athletesRes] = await Promise.all([
     admin.from("coach_profiles").select("id, user_id").in("id", coachIds),
     admin.from("athletes").select("id, first_name, last_name").in("id", athleteIds),
@@ -161,23 +186,58 @@ export async function computeLessonWrapUpPrompts(
   for (const c of (coachesRes.data ?? []) as { id: string; user_id: string | null }[]) {
     coachUserById.set(c.id, c.user_id);
   }
+  const athleteFirstNameById = new Map<string, string>();
   const athleteNameById = new Map<string, string>();
   for (const a of (athletesRes.data ?? []) as {
     id: string;
     first_name: string | null;
     last_name: string | null;
   }[]) {
+    athleteFirstNameById.set(a.id, (a.first_name ?? "").trim());
     athleteNameById.set(
       a.id,
       `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "Your athlete",
     );
   }
 
+  // One prompt per lesson: a private lesson on its own, a group's members
+  // that ended at the same minute together.
+  const endBySlot = new Map<string, number>();
+  for (const s of justEnded) {
+    const times = resolveOccurrenceTimes(s, overrideBySlot.get(s.id));
+    if (times) endBySlot.set(s.id, times.endMinute);
+  }
+  const unitKey = (s: SlotRow) =>
+    s.group_id && liveGroups.has(s.group_id)
+      ? `group:${s.coach_id}:${s.group_id}:${endBySlot.get(s.id)}`
+      : `slot:${s.id}`;
+  // Everyone in the unit still to wrap up, whether or not their row is new, so
+  // a retried tick names the same athletes the first one would have.
+  const units = new Map<string, SlotRow[]>();
+  for (const s of toPrompt) {
+    const key = unitKey(s);
+    units.set(key, [...(units.get(key) ?? []), s]);
+  }
+  const freshKeys = new Set(fresh.map(unitKey));
+
   let sent = 0;
-  for (const s of fresh) {
-    const coachUser = coachUserById.get(s.coach_id as string) ?? null;
+  let prompted = 0;
+  for (const [key, members] of units) {
+    if (!freshKeys.has(key)) continue;
+    prompted += 1;
+    const first = members[0];
+    const coachUser = coachUserById.get(first.coach_id as string) ?? null;
     if (!coachUser) continue;
-    const name = athleteNameById.get(s.athlete_id) ?? "Your athlete";
+    const isGroup = members.length > 1;
+    const firstNames = members
+      .map((m) => athleteFirstNameById.get(m.athlete_id) ?? "")
+      .filter((n) => n.length > 0)
+      .sort((x, y) => x.localeCompare(y));
+    const body = !isGroup
+      ? `${athleteNameById.get(first.athlete_id) ?? "Your athlete"}'s lesson just ended. Edit, redeploy, or dismiss their plan.`
+      : firstNames.length > 0
+        ? `Group lesson with ${groupNames(firstNames)} just ended. Edit, redeploy, or dismiss their plans.`
+        : "Your group lesson just ended. Edit, redeploy, or dismiss their plans.";
     const report = await notifyUsers(
       admin,
       [coachUser],
@@ -185,23 +245,32 @@ export async function computeLessonWrapUpPrompts(
         type: "lesson_wrap_up",
         route: "coach/wrap-ups",
         title: "Lesson wrap-up",
-        body: `${name}'s lesson just ended. Edit, redeploy, or dismiss their plan.`,
-        collapseId: `wrapup:${s.id}:${dateIso}`,
-        athleteId: s.athlete_id,
+        body,
+        // The end minute keeps two halves of a group that ended apart from replacing each other.
+        collapseId: isGroup
+          ? `wrapup:group:${first.group_id}:${dateIso}:${endBySlot.get(first.id)}`
+          : `wrapup:${first.id}:${dateIso}`,
+        // A private lesson's inbox row is tied to its athlete, so it goes when
+        // the athlete does. A group's names several athletes and can be tied
+        // to none, so it stays out of the inbox: the push and the Roster's
+        // prompt carry it.
+        ...(isGroup ? { inbox: false } : { athleteId: first.athlete_id }),
       },
       ctx.push,
     );
     sent += report.sent;
-    // Nothing got through and a failure was transient: release the dedupe row so
+    // Nothing got through and a failure was transient: release the dedupe rows so
     // the next tick inside the window retries.
     if (report.sent === 0 && report.failed - report.pruned > 0) {
-      await bookkeeping
-        .from("lesson_wrap_up_prompts_sent")
-        .delete()
-        .eq("slot_id", s.id)
-        .eq("lesson_date", dateIso);
+      for (const m of members) {
+        await bookkeeping
+          .from("lesson_wrap_up_prompts_sent")
+          .delete()
+          .eq("slot_id", m.id)
+          .eq("lesson_date", dateIso);
+      }
     }
   }
 
-  return { scanned, prompted: fresh.length, sent };
+  return { scanned, prompted, sent };
 }

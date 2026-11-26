@@ -2,7 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { ApiError } from "./api/errors";
 import { requireContext, type ApiContext } from "./api/auth";
 import { createApiRouteHandler } from "./api/define-route";
-import { createInvoiceResultSchema } from "./api/invoicing-schema";
+import {
+  athleteBillingSchema,
+  createInvoiceResultSchema,
+  invoiceDetailSchema,
+  invoicePageSchema,
+} from "./api/invoicing-schema";
 import { addDays, parseIsoDate, toIsoDate } from "./lesson-recurrence";
 import {
   createInvoice,
@@ -109,6 +114,22 @@ function parseOrClause(clause: string): (row: Row) => boolean {
  * `.or()`.
  */
 function makeDb() {
+  /**
+   * Columns the database does not have yet, per table (a migration that is
+   * not applied): a select naming one fails with Postgres 42703 (also the
+   * columns an insert asks back, in which case nothing is inserted), an insert
+   * naming one with PostgREST's PGRST204. Set after `makeDb()`.
+   */
+  const missingColumns: Record<string, string[]> = {};
+  /**
+   * What the database itself does to a row on insert, per table (a BEFORE
+   * INSERT trigger): applied to the stored row after `inserts` has recorded
+   * what the client sent. Set after `makeDb()`.
+   */
+  const insertTriggers: Record<string, (row: Row) => Row> = {};
+  /** Every select string and insert payload that reached a table, in order. */
+  const selects: Array<{ table: string; columns: string }> = [];
+  const inserts: Array<{ table: string; rows: Row[] }> = [];
   const tables: Record<string, Row[]> = {
     coach_profiles: [],
     coach_athletes: [],
@@ -130,21 +151,45 @@ function makeDb() {
     let payload: Row | Row[] | null = null;
     let upsertConflict: string[] = [];
 
-    function project(row: Row): Row {
-      const out: Row = { ...row };
-      if (!selectCols) return out;
-      for (const part of selectCols.split(",").map((s) => s.trim())) {
-        const m = part.match(/^(\w+)\((.+)\)$/);
-        if (m) {
-          const [, relTable, relColsStr] = m;
-          const relCols = relColsStr!.split(",").map((s) => s.trim());
-          const relRows = tables[relTable!]!.filter((r) => r.invoice_id === row.id);
-          out[relTable!] = relRows.map((r) => {
-            const proj: Row = {};
-            for (const c of relCols) proj[c] = r[c];
-            return proj;
-          });
+    /** The error a real database gives when this call names a column it lacks. */
+    function missingColumnError(): { code: string; message: string } | null {
+      const missing = missingColumns[table] ?? [];
+      if (mode === "insert") {
+        const rows = Array.isArray(payload) ? payload : [payload!];
+        const bad = missing.find((c) => rows.some((r) => c in r));
+        if (bad) {
+          return {
+            code: "PGRST204",
+            message: `Could not find the '${bad}' column of '${table}' in the schema cache`,
+          };
         }
+        // No payload key is missing: fall through to the columns asked back
+        // (INSERT ... RETURNING), which fail the whole statement the same way.
+      }
+      if ((mode !== "select" && mode !== "insert") || !selectCols) return null;
+      const named = splitTopLevel(selectCols).map((s) => s.trim());
+      const bad = missing.find((c) => named.includes(c));
+      return bad ? { code: "42703", message: `column ${table}.${bad} does not exist` } : null;
+    }
+
+    /** Only the columns the select named (as PostgREST answers), plus embeds. */
+    function project(row: Row): Row {
+      if (!selectCols) return { ...row };
+      const out: Row = {};
+      for (const part of splitTopLevel(selectCols).map((s) => s.trim())) {
+        const m = part.match(/^(\w+)\((.+)\)$/);
+        if (!m) {
+          if (part in row) out[part] = row[part];
+          continue;
+        }
+        const [, relTable, relColsStr] = m;
+        const relCols = relColsStr!.split(",").map((s) => s.trim());
+        const relRows = tables[relTable!]!.filter((r) => r.invoice_id === row.id);
+        out[relTable!] = relRows.map((r) => {
+          const proj: Row = {};
+          for (const c of relCols) proj[c] = r[c];
+          return proj;
+        });
       }
       return out;
     }
@@ -163,9 +208,23 @@ function makeDb() {
       return rows.map(project);
     }
 
+    /** Records what the client sent, then stores the rows as the database keeps them. */
+    function storeInserted(): Row[] {
+      const rows = (Array.isArray(payload) ? payload : [payload!]).map((r) => ({
+        id: (r as Row).id ?? crypto.randomUUID(),
+        ...(r as Row),
+      }));
+      inserts.push({ table, rows });
+      const trigger = insertTriggers[table];
+      const stored = trigger ? rows.map(trigger) : rows;
+      tables[table]!.push(...stored);
+      return stored;
+    }
+
     const api = {
       select(cols: string) {
         selectCols = cols;
+        if (mode === "select") selects.push({ table, columns: cols });
         return api;
       },
       eq(col: string, val: unknown) {
@@ -217,13 +276,11 @@ function makeDb() {
         return api;
       },
       async maybeSingle() {
+        const refused = missingColumnError();
+        if (refused) return { data: null, error: refused };
         if (mode === "insert") {
-          const rows = (Array.isArray(payload) ? payload : [payload!]).map((r) => ({
-            id: (r as Row).id ?? crypto.randomUUID(),
-            ...(r as Row),
-          }));
-          tables[table]!.push(...rows);
-          return { data: rows[0] ?? null, error: null };
+          const stored = storeInserted();
+          return { data: stored[0] ? project(stored[0]) : null, error: null };
         }
         if (mode === "update") {
           const matched = tables[table]!.filter((r) => matches(r, filters));
@@ -235,16 +292,17 @@ function makeDb() {
       },
       async single() {
         const res = await api.maybeSingle();
+        if (res.error) return res;
         return res.data ? res : { data: null, error: { message: "no rows" } };
       },
       then(resolve: (v: { data: unknown; error: unknown }) => void) {
+        const refused = missingColumnError();
+        if (refused) {
+          resolve({ data: null, error: refused });
+          return;
+        }
         if (mode === "insert") {
-          const rows = (Array.isArray(payload) ? payload : [payload!]).map((r) => ({
-            id: (r as Row).id ?? crypto.randomUUID(),
-            ...(r as Row),
-          }));
-          tables[table]!.push(...rows);
-          resolve({ data: rows, error: null });
+          resolve({ data: storeInserted(), error: null });
           return;
         }
         if (mode === "upsert") {
@@ -277,6 +335,10 @@ function makeDb() {
 
   return {
     tables,
+    missingColumns,
+    insertTriggers,
+    selects,
+    inserts,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     client: { from: (t: string) => builder(t) } as any,
   };
@@ -412,6 +474,8 @@ function seedInvoice(
     status?: "unpaid" | "paid";
     createdAt?: string;
     paidAt?: string | null;
+    /** Set only when given, so a row can stand for one written before the column existed. */
+    currency?: string;
   },
 ) {
   db.tables.invoices.push({
@@ -424,6 +488,7 @@ function seedInvoice(
     status: opts.status ?? "unpaid",
     created_at: opts.createdAt ?? "2026-01-31T00:00:00.000Z",
     paid_at: opts.paidAt ?? null,
+    ...(opts.currency ? { currency: opts.currency } : {}),
   });
 }
 
@@ -1182,5 +1247,488 @@ describe("POST /api/v1/coach/invoices idempotency", () => {
     expect(calls).toBe(1);
     expect(db.tables.invoices).toHaveLength(1);
     expect(db.tables.invoice_lines).toHaveLength(1);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Group lessons, lesson prices and billed cancellations (decision #68)       */
+/* -------------------------------------------------------------------------- */
+
+describe("previewInvoice with group lessons (decision #68)", () => {
+  const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-19" };
+
+  it("bills a lesson's own price in place of the athlete's rate, and flags a group lesson", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    db.tables.coach_athlete_rates.push({
+      coach_id: COACH,
+      athlete_id: ATHLETE,
+      rate_kind: "hourly",
+      rate_cents: 7000,
+    });
+    seedWeeklySlot(db, { dayOfWeek: 1 }); // private, Mondays, 60 min
+    seedWeeklySlot(db, { id: "slot-group", dayOfWeek: 3, startMinute: 1020, endMinute: 1080 });
+    Object.assign(db.tables.athlete_lesson_slots[1]!, { group_id: "group-1", price_cents: 3000 });
+    seedGroupPartner(db);
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const priv = result.lines.find((l) => l.occurrenceDate === "2026-01-05");
+    const group = result.lines.find((l) => l.occurrenceDate === "2026-01-07");
+    expect(priv?.amountCents).toBe(7000);
+    expect(priv && "group" in priv).toBe(false);
+    expect(group?.amountCents).toBe(3000);
+    expect(group?.group).toBe(true);
+  });
+
+  it("uses the lesson's price even when the athlete has no rate", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    Object.assign(db.tables.athlete_lesson_slots[0]!, { group_id: "group-1", price_cents: 2500 });
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    expect(result.rate).toBeNull();
+    expect(result.lines.every((l) => l.amountCents === 2500)).toBe(true);
+  });
+
+  it("puts a canceled lesson the coach chose to bill on the draft by default", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    db.tables.lesson_slot_overrides.push(
+      { slot_id: SLOT, occurrence_date: "2026-01-12", status: "canceled", billable: true },
+      { slot_id: SLOT, occurrence_date: "2026-01-19", status: "canceled", billable: false },
+    );
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const billed = result.lines.find((l) => l.occurrenceDate === "2026-01-12");
+    const dropped = result.lines.find((l) => l.occurrenceDate === "2026-01-19");
+    // Still "canceled": a build that predates `billable` decodes the same states.
+    expect(billed?.state).toBe("canceled");
+    expect(billed?.billable).toBe(true);
+    expect(billed?.defaultIncluded).toBe(true);
+    expect(dropped?.state).toBe("canceled");
+    expect(dropped?.defaultIncluded).toBe(false);
+    expect(dropped && "billable" in dropped).toBe(false);
+  });
+
+  it("ignores `billable` on a rescheduled date", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    db.tables.lesson_slot_overrides.push({
+      slot_id: SLOT,
+      occurrence_date: "2026-01-12",
+      status: "rescheduled",
+      start_minute: 700,
+      end_minute: 760,
+      billable: true,
+    });
+
+    const result = await previewInvoice(ctxFor(db), window);
+
+    const line = result.lines.find((l) => l.occurrenceDate === "2026-01-12");
+    expect(line?.state).toBe("scheduled");
+    expect(line && "billable" in line).toBe(false);
+  });
+});
+
+const GROUP_SLOT = "5107aaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const LATE_SLOT = "5107bbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+
+/** Another athlete's slot in "group-1", so the group has two members. */
+function seedGroupPartner(db: ReturnType<typeof makeDb>) {
+  seedWeeklySlot(db, {
+    id: "slot-group-partner",
+    athleteId: "athlete-partner",
+    dayOfWeek: 3,
+    startMinute: 1020,
+    endMinute: 1080,
+  });
+  Object.assign(db.tables.athlete_lesson_slots.at(-1)!, { group_id: "group-1", price_cents: 3000 });
+}
+
+function seedPrivateAndGroup(db: ReturnType<typeof makeDb>) {
+  seedCoach(db);
+  seedRoster(db, ATHLETE);
+  seedWeeklySlot(db, { dayOfWeek: 1 }); // private, Mondays
+  seedWeeklySlot(db, { id: GROUP_SLOT, dayOfWeek: 3, startMinute: 1020, endMinute: 1080 });
+  Object.assign(db.tables.athlete_lesson_slots[1]!, { group_id: "group-1", price_cents: 3000 });
+  seedGroupPartner(db);
+}
+
+describe("createInvoice / getInvoiceDetail with group lessons (decision #68)", () => {
+  it("reads the group flag and the billed cancellation from the schedule, whatever the client sends", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    db.tables.lesson_slot_overrides.push({
+      slot_id: GROUP_SLOT,
+      occurrence_date: "2026-01-14",
+      status: "canceled",
+      start_minute: null,
+      end_minute: null,
+      billable: true,
+    });
+
+    // What a build that predates decision #68 sends: no group flag, and
+    // "completed" for every ticked line.
+    const created = await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        athleteId: ATHLETE,
+        periodStart: "2026-01-01",
+        periodEnd: "2026-01-31",
+        lines: [
+          { slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 },
+          { slotId: GROUP_SLOT, occurrenceDate: "2026-01-07", amountCents: 3000 },
+          { slotId: GROUP_SLOT, occurrenceDate: "2026-01-14", amountCents: 3000 },
+        ],
+      }),
+    );
+    expect(created.totalCents).toBe(13000);
+
+    // Every row names `is_group`: PostgREST writes NULL for a key missing
+    // from some rows of a bulk insert, and the column is NOT NULL.
+    expect(db.tables.invoice_lines.map((l) => l.is_group)).toEqual([false, true, true]);
+
+    const detail = await getInvoiceDetail(ctxFor(db), created.invoiceId);
+    expect(detail.lines).toEqual([
+      { occurrenceDate: "2026-01-05", amountCents: 7000 },
+      { occurrenceDate: "2026-01-07", amountCents: 3000, group: true },
+      { occurrenceDate: "2026-01-14", amountCents: 3000, group: true, canceledBilled: true },
+    ]);
+  });
+
+  it("a lone slot left in a group is billed as a private lesson", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    db.tables.athlete_lesson_slots.pop(); // the partner left
+
+    const preview = await previewInvoice(ctxFor(db), {
+      athleteId: ATHLETE,
+      periodStart: "2026-01-05",
+      periodEnd: "2026-01-11",
+    });
+    expect(preview.lines).toHaveLength(2);
+    expect(preview.lines.some((l) => "group" in l)).toBe(false);
+
+    await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        athleteId: ATHLETE,
+        periodStart: "2026-01-05",
+        periodEnd: "2026-01-11",
+        lines: [{ slotId: GROUP_SLOT, occurrenceDate: "2026-01-07", amountCents: 3000 }],
+      }),
+    );
+    expect(db.tables.invoice_lines.map((l) => l.is_group)).toEqual([false]);
+  });
+
+  it("a slot id that isn't this athlete's lesson can't get a billed date billed again", async () => {
+    const db = makeDb();
+    seedPrivateAndGroup(db);
+    const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-05" };
+    const bill = (slotId: string | null) =>
+      caught(() =>
+        createInvoice(
+          ctxFor(db),
+          createInvoiceInput.parse({
+            ...window,
+            lines: [{ slotId, occurrenceDate: "2026-01-05", amountCents: 7000 }],
+          }),
+        ),
+      );
+
+    expect(await bill(SLOT)).toBeNull();
+    // Another athlete's slot, and a manual line, on the date already billed.
+    expect((await bill("5107cccc-cccc-4ccc-8ccc-cccccccccccc"))?.status).toBe(422);
+    expect((await bill(null))?.status).toBe(422);
+    expect(db.tables.invoice_lines).toHaveLength(1);
+  });
+
+  it("bills two lessons on one date separately", async () => {
+    const db = makeDb();
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+    seedWeeklySlot(db, { id: LATE_SLOT, dayOfWeek: 1, startMinute: 1020, endMinute: 1080 });
+    const window = { athleteId: ATHLETE, periodStart: "2026-01-05", periodEnd: "2026-01-05" };
+
+    await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        ...window,
+        lines: [{ slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 }],
+      }),
+    );
+
+    // The lesson left off the first invoice is still there to bill...
+    const preview = await previewInvoice(ctxFor(db), window);
+    expect(preview.lines.map((l) => l.slotId)).toEqual([LATE_SLOT]);
+
+    // ...and the one already billed is not billed twice.
+    const again = await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({
+        ...window,
+        lines: [
+          { slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 },
+          { slotId: LATE_SLOT, occurrenceDate: "2026-01-05", amountCents: 3000 },
+        ],
+      }),
+    );
+    expect(again).toMatchObject({ totalCents: 3000, lineCount: 1 });
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Invoice currency (decision #69)                                            */
+/* -------------------------------------------------------------------------- */
+
+const INVOICE_HEADER = "id, athlete_id, period_start, period_end, total_cents, status, created_at";
+
+function seedTwoInvoices(db: ReturnType<typeof makeDb>, currencies: [string?, string?] = []) {
+  seedCoach(db);
+  seedRoster(db, ATHLETE, { first: "Alex", last: "One" });
+  seedInvoice(db, {
+    id: "inv-old",
+    createdAt: "2026-01-31T00:00:00.000Z",
+    currency: currencies[0],
+  });
+  seedInvoice(db, {
+    id: "inv-new",
+    createdAt: "2026-02-28T00:00:00.000Z",
+    currency: currencies[1],
+  });
+  seedInvoiceLine(db, { invoiceId: "inv-new", occurrenceDate: "2026-02-02", amountCents: 7000 });
+}
+
+describe("invoice currency on the invoice reads (decision #69)", () => {
+  it("carries each invoice's own currency on the list, the page, an athlete's billing and the detail", async () => {
+    const db = makeDb();
+    seedTwoInvoices(db, ["USD", "GBP"]);
+    const ctx = ctxFor(db);
+
+    const list = await getCoachInvoices(ctx);
+    expect(list.map((i) => [i.id, i.currency])).toEqual([
+      ["inv-new", "GBP"],
+      ["inv-old", "USD"],
+    ]);
+
+    const page = await getCoachInvoicesPage(ctx, { limit: 50 });
+    expect(page.items.map((i) => i.currency)).toEqual(["GBP", "USD"]);
+
+    const billing = await getAthleteBilling(ctx, ATHLETE);
+    expect(billing.invoices.map((i) => i.currency)).toEqual(["GBP", "USD"]);
+
+    const detail = await getInvoiceDetail(ctx, "inv-new");
+    expect(detail.currency).toBe("GBP");
+    expect(detail.lines).toEqual([{ occurrenceDate: "2026-02-02", amountCents: 7000 }]);
+
+    // The value is read from the row: every header select asked for the column.
+    expect(db.selects.filter((s) => s.table === "invoices").map((s) => s.columns)).toEqual([
+      `${INVOICE_HEADER}, currency`,
+      `${INVOICE_HEADER}, currency`,
+      `${INVOICE_HEADER}, currency`,
+      `${INVOICE_HEADER}, currency`,
+    ]);
+  });
+
+  it("the response schemas keep the field (a route parses its output through them)", async () => {
+    const db = makeDb();
+    seedTwoInvoices(db, ["USD", "GBP"]);
+    const ctx = ctxFor(db);
+
+    const page = invoicePageSchema.parse(await getCoachInvoicesPage(ctx, { limit: 50 }));
+    expect(page.items.map((i) => i.currency)).toEqual(["GBP", "USD"]);
+    const billing = athleteBillingSchema.parse(await getAthleteBilling(ctx, ATHLETE));
+    expect(billing.invoices.map((i) => i.currency)).toEqual(["GBP", "USD"]);
+    const detail = invoiceDetailSchema.parse(await getInvoiceDetail(ctx, "inv-new"));
+    expect(detail.currency).toBe("GBP");
+  });
+
+  it("still lists, pages and opens invoices, without the field, while the column is missing", async () => {
+    const db = makeDb();
+    seedTwoInvoices(db);
+    db.missingColumns.invoices = ["currency"];
+    const ctx = ctxFor(db);
+
+    const list = await getCoachInvoices(ctx);
+    expect(list.map((i) => i.id)).toEqual(["inv-new", "inv-old"]);
+    expect(list.some((i) => "currency" in i)).toBe(false);
+
+    const page = await getCoachInvoicesPage(ctx, { limit: 1 });
+    expect(page.items.map((i) => i.id)).toEqual(["inv-new"]);
+    expect(page.nextCursor).toBe(encodeInvoiceCursor("2026-02-28T00:00:00.000Z", "inv-new"));
+    expect("currency" in page.items[0]!).toBe(false);
+    const next = await getCoachInvoicesPage(ctx, { limit: 1, cursor: page.nextCursor! });
+    expect(next.items.map((i) => i.id)).toEqual(["inv-old"]);
+
+    const billing = await getAthleteBilling(ctx, ATHLETE);
+    expect(billing.invoices).toHaveLength(2);
+    expect(billing.invoices.some((i) => "currency" in i)).toBe(false);
+
+    const detail = await getInvoiceDetail(ctx, "inv-new");
+    expect(detail).toMatchObject({ id: "inv-new", lineCount: 1, athleteName: "Alex One" });
+    expect("currency" in detail).toBe(false);
+
+    // Each read asked for the column once, then fell back to the old columns.
+    const headerSelects = db.selects.filter((s) => s.table === "invoices").map((s) => s.columns);
+    expect(headerSelects).toHaveLength(10);
+    expect(headerSelects.filter((c) => c === INVOICE_HEADER)).toHaveLength(5);
+    expect(headerSelects.filter((c) => c === `${INVOICE_HEADER}, currency`)).toHaveLength(5);
+  });
+
+  it("a different database error on an invoice read is not retried or hidden", async () => {
+    const db = makeDb();
+    seedTwoInvoices(db, ["USD", "GBP"]);
+    const realFrom = db.client.from;
+    let invoiceReads = 0;
+    db.client.from = ((t: string) => {
+      if (t !== "invoices") return realFrom(t);
+      const real = realFrom(t);
+      const failing = {
+        select() {
+          invoiceReads += 1;
+          return failing;
+        },
+        eq: () => failing,
+        order: () => failing,
+        limit: () => failing,
+        then(resolve: (v: { data: null; error: { code: string; message: string } }) => void) {
+          resolve({ data: null, error: { code: "57014", message: "statement timeout" } });
+        },
+      };
+      return { ...real, select: failing.select };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as any;
+
+    const realError = console.error;
+    console.error = () => {};
+    try {
+      const err = await getCoachInvoices(ctxFor(db)).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).message).toBe("Something went wrong. Please try again.");
+    } finally {
+      console.error = realError;
+    }
+    expect(invoiceReads).toBe(1);
+  });
+});
+
+describe("createInvoice and the invoice currency (decision #69)", () => {
+  const input = {
+    athleteId: ATHLETE,
+    periodStart: "2026-01-01",
+    periodEnd: "2026-01-31",
+    lines: [{ slotId: SLOT, occurrenceDate: "2026-01-05", amountCents: 7000 }],
+  };
+
+  function seedBillable(db: ReturnType<typeof makeDb>) {
+    seedCoach(db);
+    seedRoster(db, ATHLETE);
+    seedWeeklySlot(db, { dayOfWeek: 1 });
+  }
+
+  it("never names the column on insert, whatever the client sends: the database sets it", async () => {
+    const db = makeDb();
+    seedBillable(db);
+
+    const created = await createInvoice(
+      ctxFor(db),
+      // A client that tries to pick the currency itself.
+      createInvoiceInput.parse({ ...input, currency: "GBP" }),
+    );
+
+    expect(created).toEqual({ invoiceId: created.invoiceId, totalCents: 7000, lineCount: 1 });
+    const header = db.inserts.filter((i) => i.table === "invoices");
+    expect(header).toHaveLength(1);
+    expect(Object.keys(header[0]!.rows[0]!).sort()).toEqual([
+      "athlete_id",
+      "coach_id",
+      "id",
+      "period_end",
+      "period_start",
+      "status",
+      "total_cents",
+    ]);
+  });
+
+  /** The invoices_set_currency trigger for a coach whose invoice currency is `code`. */
+  const stampWith = (code: string) => (row: Record<string, unknown>) => ({
+    ...row,
+    currency: code,
+  });
+
+  it("answers with the currency the database stamped, not one the client sent", async () => {
+    const db = makeDb();
+    seedBillable(db);
+    db.insertTriggers.invoices = stampWith("GBP");
+
+    const created = await createInvoice(
+      ctxFor(db),
+      createInvoiceInput.parse({ ...input, currency: "CAD" }),
+    );
+
+    expect(created).toEqual({
+      invoiceId: created.invoiceId,
+      totalCents: 7000,
+      lineCount: 1,
+      currency: "GBP",
+    });
+    // It travels through the route's output schema to the apps.
+    expect(createInvoiceResultSchema.parse(created).currency).toBe("GBP");
+    // And it is the value the invoice reads carry afterwards.
+    expect((await getInvoiceDetail(ctxFor(db), created.invoiceId)).currency).toBe("GBP");
+    // One header, written once: reading the stamp back is part of the insert.
+    expect(db.inserts.filter((i) => i.table === "invoices")).toHaveLength(1);
+    expect(db.selects.filter((q) => q.table === "invoices" && q.columns === "currency")).toEqual(
+      [],
+    );
+  });
+
+  it("passes through a stamped code this build does not know", async () => {
+    const db = makeDb();
+    seedBillable(db);
+    db.insertTriggers.invoices = stampWith("CHF");
+
+    const created = await createInvoice(ctxFor(db), createInvoiceInput.parse(input));
+
+    expect(createInvoiceResultSchema.parse(created).currency).toBe("CHF");
+  });
+
+  it("leaves the field out when the database stamped nothing", async () => {
+    const db = makeDb();
+    seedBillable(db);
+
+    const created = await createInvoice(ctxFor(db), createInvoiceInput.parse(input));
+
+    expect("currency" in created).toBe(false);
+    expect("currency" in createInvoiceResultSchema.parse(created)).toBe(false);
+  });
+
+  it("creates an invoice before the migration, when the column does not exist", async () => {
+    const db = makeDb();
+    seedBillable(db);
+    db.missingColumns.invoices = ["currency"];
+
+    const created = await createInvoice(ctxFor(db), createInvoiceInput.parse(input));
+
+    expect(created).toMatchObject({ totalCents: 7000, lineCount: 1 });
+    expect("currency" in created).toBe(false);
+    // The refused first attempt wrote nothing: one header and its one line.
+    expect(db.tables.invoices).toHaveLength(1);
+    expect(db.inserts.filter((i) => i.table === "invoices")).toHaveLength(1);
+    expect(db.tables.invoice_lines).toHaveLength(1);
+    const detail = await getInvoiceDetail(ctxFor(db), created.invoiceId);
+    expect(detail.totalCents).toBe(7000);
+    expect("currency" in detail).toBe(false);
   });
 });

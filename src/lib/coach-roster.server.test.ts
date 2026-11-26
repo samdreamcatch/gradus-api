@@ -27,7 +27,7 @@ function fakeClient(
   const inserted: Record<string, unknown[]> = {};
   const chain = (table: string) => {
     const self: Record<string, unknown> = {};
-    for (const m of ["select", "eq", "neq", "in", "lte", "gte", "lt", "order", "limit"]) {
+    for (const m of ["select", "eq", "neq", "in", "lte", "gte", "lt", "order", "limit", "range"]) {
       self[m] = () => self;
     }
     for (const m of ["update", "delete", "insert", "upsert"]) {
@@ -499,7 +499,7 @@ describe("getPendingLessonWrapUps", () => {
           { athlete_id: "a2", end_minute: 930 },
         ],
         lesson_wrap_ups: [{ athlete_id: "a2" }],
-        plans: [{ id: "plan-1", athlete_id: "a1" }],
+        plans: [{ id: "plan-1", athlete_id: "a1", title: "Edges and turns" }],
         athletes: [
           { id: "a1", first_name: "Rory", last_name: "Gilmore" },
           { id: "a2", first_name: "Ava", last_name: "Kowalczyk" },
@@ -514,6 +514,7 @@ describe("getPendingLessonWrapUps", () => {
         lessonDate: "2026-09-08",
         lessonEndMinute: 960,
         activePlanId: "plan-1",
+        activePlans: [{ id: "plan-1", title: "Edges and turns" }],
       },
     ]);
   });

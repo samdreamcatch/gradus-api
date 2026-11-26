@@ -13,6 +13,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError } from "./api/errors";
 import { inBackground } from "./background";
+import { CONTENT_BLOCKED_MESSAGE, decideMessageCheck } from "./message-flags";
+import { isMessagingSuspended, recordMessageFlag } from "./message-flags.server";
+import { checkMessage } from "./message-rules";
+import { isMinorOrUnconfirmed } from "./athlete-age";
 import { dbError } from "./db-error";
 import { coachUserId, notifyUsers, roomMessagePush, withoutBlocked } from "./push-notify.server";
 import {
@@ -222,6 +226,50 @@ export async function submitCompetitionRecap(
   if (comp.error) dbError(comp.error);
   if (!comp.data) throw notFound("Competition not found");
 
+  // The recap is posted into each coach's room with the athlete, so it gets the
+  // message check (PRD #64). This form has no "Send anyway": an adult's flagged
+  // recap is stopped; a child's goes through and is flagged, so a disclosure is
+  // never dead-ended.
+  const match = checkMessage(input.body);
+  if (match) {
+    const athlete = await admin
+      .from("athletes")
+      .select("birthdate")
+      .eq("id", input.athleteId)
+      .maybeSingle();
+    const roomHasMinor = isMinorOrUnconfirmed(
+      (athlete.data as { birthdate: string | null } | null)?.birthdate ?? null,
+    );
+    const senderMinor = viewer.role === "athlete" && roomHasMinor;
+    const decision = decideMessageCheck({
+      match,
+      senderMinor,
+      roomHasMinor,
+      sendAnyway: senderMinor,
+    });
+    const flag = {
+      senderUserId: userId,
+      senderRole: viewer.role,
+      senderMinor,
+      roomId: null,
+      roomKind: "athlete",
+      roomHasMinor,
+      coachId: null,
+      body: input.body,
+      match,
+      outcome: decision.outcome!,
+      messageId: null,
+    };
+    await inBackground("flag:recap", () => recordMessageFlag(admin, flag));
+    if (decision.action === "refuse") {
+      throw new ApiError({
+        code: "content_blocked",
+        status: 422,
+        message: CONTENT_BLOCKED_MESSAGE,
+      });
+    }
+  }
+
   const { error } = await admin.from("competition_recaps").upsert(
     {
       competition_id: input.competitionId,
@@ -240,6 +288,9 @@ export async function submitCompetitionRecap(
     .update({ recap_done_at: new Date().toISOString(), athlete_id: input.athleteId })
     .eq("user_id", userId)
     .eq("competition_id", input.competitionId);
+
+  // Messaging is paused for this user (PRD #64): the recap is saved, but not posted.
+  if (await isMessagingSuspended(admin, userId)) return { ok: true };
 
   await messageCoaches(
     admin,

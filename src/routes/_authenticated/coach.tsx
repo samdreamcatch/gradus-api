@@ -11,7 +11,7 @@ import { ConnectionCelebration } from "@/components/connection-celebration";
 import { createCoachBillingPortalSession } from "@/lib/coach-checkout.functions";
 import { getStripeEnvironment } from "@/lib/stripe-env";
 import { Button } from "@/components/ui/button";
-import { openExternal } from "@/lib/native";
+import { openExternal } from "@/lib/browser-actions";
 
 const ENTITLED = new Set(["paid", "promo_free", "club_covered"]);
 

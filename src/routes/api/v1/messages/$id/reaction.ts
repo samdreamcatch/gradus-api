@@ -17,6 +17,7 @@ const outputSchema = z.discriminatedUnion("ok", [
       "paused",
       "paused_by_parent",
       "text_only",
+      "messaging_suspended",
     ]),
     message: z.string(),
   }),

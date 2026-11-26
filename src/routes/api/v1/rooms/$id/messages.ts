@@ -6,7 +6,12 @@ import { getAiConsent } from "@/lib/ai-consent.server";
 import { sendMessage, sendMessageBody, type sendMessageInputWithRole } from "@/lib/messages.server";
 
 const outputSchema = z.discriminatedUnion("ok", [
-  z.object({ ok: z.literal(true), id: z.string() }),
+  z.object({
+    ok: z.literal(true),
+    id: z.string(),
+    /** Present and true when the sender should be shown the 988 line (PRD #64). */
+    crisisLine: z.literal(true).optional(),
+  }),
   z.object({
     ok: z.literal(false),
     reason: z.enum([
@@ -17,8 +22,14 @@ const outputSchema = z.discriminatedUnion("ok", [
       "paused",
       "paused_by_parent",
       "text_only",
+      "messaging_suspended",
+      "content_blocked",
     ]),
     message: z.string(),
+    /** `content_blocked` only: resending with `sendAnyway: true` will deliver it. */
+    canSendAnyway: z.boolean().optional(),
+    /** `content_blocked` only: the sender is under 18, so link the Safe Sport panel. */
+    showSafeSport: z.boolean().optional(),
   }),
 ]);
 
@@ -29,6 +40,9 @@ const outputSchema = z.discriminatedUnion("ok", [
  * uploaded itself to `voice-notes/<roomId>/<userId>/<uuid>.<ext>`
  * (`audioPath`; the bucket's RLS admits room participants). `ok: false`
  * with a reason is a 200, like the web: the thread stays readable.
+ * `content_blocked` (PRD #64): the message check held the text; keep it in
+ * the composer, show `message`, and offer "Send anyway" only when
+ * `canSendAnyway` is true (resend the same body with `sendAnyway: true`).
  */
 export const Route = createFileRoute("/api/v1/rooms/$id/messages")({
   server: {

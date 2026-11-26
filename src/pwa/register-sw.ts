@@ -3,8 +3,6 @@
 // when the URL has ?sw=off. In any refused context, unregisters any
 // existing /sw.js registration so stale workers do not stick around.
 
-import { isNativeApp } from "@/lib/native";
-
 const SW_URL = "/sw.js";
 
 /** Dispatched on `window` when a newer build has been downloaded and is waiting. */
@@ -62,8 +60,6 @@ function shouldRefuse(): boolean {
   if (typeof window === "undefined") return true;
   if (!("serviceWorker" in navigator)) return true;
   if (!import.meta.env.PROD) return true;
-  // Inside the Capacitor shell the native app owns caching and updates.
-  if (isNativeApp()) return true;
 
   try {
     if (window.top !== window.self) return true;

@@ -22,6 +22,13 @@ const LOCKED = [
   "guardian_claim_token",
   "guardian_claim_code",
   "account_state",
+  // Added by the 2026-11-19 RLS audit: age and guardian contact are server-only.
+  "birthdate",
+  "guardian_email",
+  "guardian_first_name",
+  "guardian_last_name",
+  "guardian_invited_at",
+  "added_by_coach_id",
 ];
 
 const root = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url));

@@ -38,6 +38,8 @@ export type SlotOverride = {
   status: "canceled" | "rescheduled";
   startMinute: number | null;
   endMinute: number | null;
+  /** On a canceled date: the coach chose to bill the lesson anyway (decision #68). Absent when false. */
+  billable?: boolean;
 };
 
 export type RosterSlot = {
@@ -49,7 +51,16 @@ export type RosterSlot = {
   weeksOfMonth: number[];
   startsOn: string | null;
   overrides: SlotOverride[];
+  /** Slots sharing this id are one group lesson (decision #68, PRD §6.16). Absent on a private lesson. */
+  groupId?: string;
+  /** This lesson's own price for this athlete, replacing their rate. Absent when the rate applies. */
+  priceCents?: number;
 };
+
+/** Postgres "undefined column", or PostgREST's schema-cache miss for one. */
+export function isMissingColumn(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
 
 /**
  * Whether the athlete's room can open as far as the claim goes (PRD §6.13
@@ -164,7 +175,7 @@ async function coachIdOrNull(admin: Admin, userId: string): Promise<string | nul
   return coach.data?.id ?? null;
 }
 
-async function requireCoachId(admin: Admin, userId: string): Promise<string> {
+export async function requireCoachId(admin: Admin, userId: string): Promise<string> {
   const id = await coachIdOrNull(admin, userId);
   if (!id) throw unprocessable("Coach profile not found");
   return id;
@@ -201,13 +212,7 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
       .select("athlete_id, sport")
       .eq("coach_id", coachId)
       .in("athlete_id", athleteIds),
-    admin
-      .from("athlete_lesson_slots")
-      .select(
-        "id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on",
-      )
-      .eq("coach_id", coachId)
-      .in("athlete_id", athleteIds),
+    selectRosterSlots(admin, coachId, athleteIds),
     admin
       .from("coach_athletes")
       .select("athlete_id, coach_profiles!inner(last_name)")
@@ -220,61 +225,15 @@ export async function getCoachRoster(ctx: RosterContext): Promise<CoachRoster> {
 
   const slotIds = (slotsRes.data ?? []).map((s) => s.id as string);
   const overridesRes = slotIds.length
-    ? await admin
-        .from("lesson_slot_overrides")
-        .select("slot_id, occurrence_date, status, start_minute, end_minute")
-        .in("slot_id", slotIds)
-    : {
-        data: [] as Array<{
-          slot_id: string;
-          occurrence_date: string;
-          status: string;
-          start_minute: number | null;
-          end_minute: number | null;
-        }>,
-        error: null,
-      };
+    ? await selectRosterOverrides(admin, slotIds)
+    : { data: [] as RosterOverrideRow[], error: null };
   if (overridesRes.error) dbError(overridesRes.error);
 
-  const overridesBySlot = new Map<string, SlotOverride[]>();
-  for (const o of overridesRes.data ?? []) {
-    const arr = overridesBySlot.get(o.slot_id) ?? [];
-    arr.push({
-      date: o.occurrence_date,
-      status: o.status as "canceled" | "rescheduled",
-      startMinute: o.start_minute,
-      endMinute: o.end_minute,
-    });
-    overridesBySlot.set(o.slot_id, arr);
-  }
+  const slotsByAthlete = buildRosterSlots(slotsRes.data ?? [], overridesRes.data ?? []);
 
   const sportByAthlete = new Map<string, string>();
   for (const r of sportsRes.data ?? []) {
     if (!sportByAthlete.has(r.athlete_id)) sportByAthlete.set(r.athlete_id, r.sport);
-  }
-
-  const slotsByAthlete = new Map<string, RosterSlot[]>();
-  for (const s of slotsRes.data ?? []) {
-    const arr = slotsByAthlete.get(s.athlete_id) ?? [];
-    arr.push({
-      id: s.id,
-      dayOfWeek: s.day_of_week,
-      startMinute: s.start_minute,
-      endMinute: s.end_minute,
-      frequency: ((s.frequency as string | null) ?? "weekly") as LessonFrequency,
-      weeksOfMonth: ((s.weeks_of_month as number[] | null) ?? []).map(Number),
-      startsOn: (s.starts_on as string | null) ?? null,
-      overrides: overridesBySlot.get(s.id) ?? [],
-    });
-    slotsByAthlete.set(s.athlete_id, arr);
-  }
-
-  // Sort slots Mon→Sun (treat Sunday=0 as last)
-  const dayOrder = (d: number) => (d === 0 ? 7 : d);
-  for (const arr of slotsByAthlete.values()) {
-    arr.sort(
-      (a, b) => dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || a.startMinute - b.startMinute,
-    );
   }
 
   // Group other-coach links per athlete.
@@ -499,7 +458,9 @@ export async function addAthleteWithGuardian(
   ctx: RosterContext,
   data: z.infer<typeof addAthleteInput>,
   now: Date = new Date(),
+  options: { sendInvite?: boolean } = {},
 ): Promise<AddAthleteResult> {
+  const sendInvite = options.sendInvite ?? true;
   const { admin, userId } = ctx;
   const coachRow = await admin
     .from("coach_profiles")
@@ -569,7 +530,7 @@ export async function addAthleteWithGuardian(
         data.emailRecipient === "guardian" ? data.guardianFirstName || null : null,
       guardian_last_name: data.emailRecipient === "guardian" ? data.guardianLastName || null : null,
       guardian_claim_token: token,
-      guardian_invited_at: guardianEmail ? now.toISOString() : null,
+      guardian_invited_at: guardianEmail && sendInvite ? now.toISOString() : null,
       added_by_coach_id: coachId,
       invite_recipient: data.emailRecipient,
     })
@@ -595,7 +556,7 @@ export async function addAthleteWithGuardian(
     if (sportIns.error) console.error("[roster] sport link failed", sportIns.error);
   }
 
-  if (guardianEmail && token) {
+  if (guardianEmail && token && sendInvite) {
     const coach = await admin
       .from("coach_profiles")
       .select("first_name, last_name")
@@ -667,10 +628,175 @@ export async function removeAthleteFromRoster(
   return { ok: true as const };
 }
 
+// --- Roster slot reads ----------------------------------------------------
+
+export type RosterSlotRow = {
+  id: string;
+  athlete_id: string;
+  day_of_week: number;
+  start_minute: number;
+  end_minute: number;
+  frequency: string | null;
+  weeks_of_month: number[] | null;
+  starts_on: string | null;
+  group_id?: string | null;
+  price_cents?: number | null;
+};
+
+export type RosterOverrideRow = {
+  slot_id: string;
+  occurrence_date: string;
+  status: string;
+  start_minute: number | null;
+  end_minute: number | null;
+  billable?: boolean | null;
+};
+
+type Rows<T> = { data: T[] | null; error: { code?: string; message: string } | null };
+
+const SLOT_COLUMNS =
+  "id, athlete_id, day_of_week, start_minute, end_minute, frequency, weeks_of_month, starts_on";
+const OVERRIDE_COLUMNS = "slot_id, occurrence_date, status, start_minute, end_minute";
+
+/**
+ * The coach's slots for these athletes, with the group link and lesson price
+ * (decision #68). Falls back to the pre-#68 columns while migration
+ * 20261115120000 is not applied, so the roster never fails over it.
+ */
+async function selectRosterSlots(
+  admin: Admin,
+  coachId: string,
+  athleteIds: string[],
+): Promise<Rows<RosterSlotRow>> {
+  const run = (columns: string) =>
+    admin
+      .from("athlete_lesson_slots")
+      .select(columns)
+      .eq("coach_id", coachId)
+      .in("athlete_id", athleteIds) as unknown as Promise<Rows<RosterSlotRow>>;
+  const res = await run(`${SLOT_COLUMNS}, group_id, price_cents`);
+  return isMissingColumn(res.error) ? run(SLOT_COLUMNS) : res;
+}
+
+async function selectRosterOverrides(
+  admin: Admin,
+  slotIds: string[],
+): Promise<Rows<RosterOverrideRow>> {
+  const run = (columns: string) =>
+    admin
+      .from("lesson_slot_overrides")
+      .select(columns)
+      .in("slot_id", slotIds) as unknown as Promise<Rows<RosterOverrideRow>>;
+  const res = await run(`${OVERRIDE_COLUMNS}, billable`);
+  return isMissingColumn(res.error) ? run(OVERRIDE_COLUMNS) : res;
+}
+
+/**
+ * Each athlete's slots, Mon→Sun, with their overrides and the decision #68
+ * fields. `groupId` is sent only for a real group: two or more of these
+ * slots sharing a `group_id`. A lone slot still carrying one (its partners
+ * were removed some other way) reads as a private lesson.
+ */
+export function buildRosterSlots(
+  slots: RosterSlotRow[],
+  overrides: RosterOverrideRow[],
+): Map<string, RosterSlot[]> {
+  const groupSizes = new Map<string, number>();
+  for (const s of slots) {
+    if (s.group_id) groupSizes.set(s.group_id, (groupSizes.get(s.group_id) ?? 0) + 1);
+  }
+
+  const overridesBySlot = new Map<string, SlotOverride[]>();
+  for (const o of overrides) {
+    const arr = overridesBySlot.get(o.slot_id) ?? [];
+    arr.push({
+      date: o.occurrence_date,
+      status: o.status as "canceled" | "rescheduled",
+      startMinute: o.start_minute,
+      endMinute: o.end_minute,
+      ...(o.status === "canceled" && o.billable ? { billable: true } : {}),
+    });
+    overridesBySlot.set(o.slot_id, arr);
+  }
+
+  const slotsByAthlete = new Map<string, RosterSlot[]>();
+  for (const s of slots) {
+    const arr = slotsByAthlete.get(s.athlete_id) ?? [];
+    arr.push({
+      id: s.id,
+      dayOfWeek: s.day_of_week,
+      startMinute: s.start_minute,
+      endMinute: s.end_minute,
+      frequency: (s.frequency ?? "weekly") as LessonFrequency,
+      weeksOfMonth: (s.weeks_of_month ?? []).map(Number),
+      startsOn: s.starts_on ?? null,
+      overrides: overridesBySlot.get(s.id) ?? [],
+      ...(s.group_id && (groupSizes.get(s.group_id) ?? 0) >= 2 ? { groupId: s.group_id } : {}),
+      ...(s.price_cents != null ? { priceCents: s.price_cents } : {}),
+    });
+    slotsByAthlete.set(s.athlete_id, arr);
+  }
+
+  // Sort slots Mon→Sun (treat Sunday=0 as last)
+  const dayOrder = (d: number) => (d === 0 ? 7 : d);
+  for (const arr of slotsByAthlete.values()) {
+    arr.sort(
+      (a, b) => dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || a.startMinute - b.startMinute,
+    );
+  }
+  return slotsByAthlete;
+}
+
+/** The group a slot belongs to, or null (also null before migration 20261115120000). */
+export async function slotGroupId(admin: Admin, slotId: string): Promise<string | null> {
+  const res = (await admin
+    .from("athlete_lesson_slots")
+    .select("group_id")
+    .eq("id", slotId)
+    .maybeSingle()) as unknown as {
+    data: { group_id: string | null } | null;
+    error: { code?: string; message: string } | null;
+  };
+  if (isMissingColumn(res.error)) return null;
+  if (res.error) dbError(res.error);
+  return res.data?.group_id ?? null;
+}
+
+/**
+ * Whether the slot is in a group of two or more. A slot left alone in its
+ * group (its partners went through a roster removal, an account deletion, a
+ * family deleting their lesson) has its link cleared here, so the coach can
+ * edit it as the private lesson it now is.
+ */
+async function inLiveGroup(admin: Admin, slotId: string): Promise<boolean> {
+  const groupId = await slotGroupId(admin, slotId);
+  if (!groupId) return false;
+  await dissolveGroupIfSingle(admin, groupId);
+  return (await slotGroupId(admin, slotId)) != null;
+}
+
+/**
+ * A group left with one member is a private lesson again (PRD §6.16 A): clear
+ * its link. Safe to call after any removal; does nothing for two or more.
+ */
+export async function dissolveGroupIfSingle(admin: Admin, groupId: string): Promise<void> {
+  const members = (await admin
+    .from("athlete_lesson_slots")
+    .select("id")
+    .eq("group_id" as never, groupId)) as unknown as Rows<{ id: string }>;
+  if (members.error) dbError(members.error);
+  if ((members.data ?? []).length !== 1) return;
+  const res = await admin
+    .from("athlete_lesson_slots")
+    .update({ group_id: null } as never)
+    .eq("id", members.data![0]!.id);
+  if (res.error) dbError(res.error);
+}
+
 // --- Lesson slots ---------------------------------------------------------
 
-const dayOfWeekSchema = z.number().int().min(0).max(6);
-const minuteSchema = z.number().int().min(0).max(1440);
+export const dayOfWeekSchema = z.number().int().min(0).max(6);
+export const minuteSchema = z.number().int().min(0).max(1440);
 export const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
 
 /** Start before end, both inside the day (the web's `validateTimeRange`). */
@@ -678,14 +804,14 @@ const timeRange = z
   .object({ startMinute: minuteSchema, endMinute: minuteSchema })
   .refine((v) => v.startMinute < v.endMinute, { message: "Invalid time range" });
 
-const frequencySchema = z
+export const frequencySchema = z
   .enum(["weekly", "biweekly", "twice_monthly", "monthly"])
   .default("weekly");
-const weeksOfMonthSchema = z.array(z.number().int().min(1).max(5)).default([]);
-const startsOnSchema = isoDateSchema.nullable().default(null);
+export const weeksOfMonthSchema = z.array(z.number().int().min(1).max(5)).default([]);
+export const startsOnSchema = isoDateSchema.nullable().default(null);
 
 /** Same cardinality/anchor rules as the web's `schedule-editor.tsx` `validateSlots()`, enforced server-side here for the first time. */
-function refineCadence<
+export function refineCadence<
   T extends { frequency: string; weeksOfMonth: number[]; startsOn: string | null },
 >(v: T, ctx: z.RefinementCtx) {
   if (v.frequency === "twice_monthly" && v.weeksOfMonth.length !== 2) {
@@ -760,7 +886,7 @@ async function assertOwnsSlot(admin: Admin, coachId: string, slotId: string) {
   };
 }
 
-async function assertRosters(admin: Admin, coachId: string, athleteId: string) {
+export async function assertRosters(admin: Admin, coachId: string, athleteId: string) {
   const res = await admin
     .from("coach_athletes")
     .select("id")
@@ -807,6 +933,13 @@ export async function updateLessonSlot(
   const { admin, userId } = ctx;
   const coachId = await requireCoachId(admin, userId);
   await assertOwnsSlot(admin, coachId, slotId);
+  // A group's members share one schedule (PRD §6.16 A): it moves as a group
+  // (`updateLessonGroup`), never one athlete at a time.
+  if (await inLiveGroup(admin, slotId)) {
+    throw unprocessable(
+      "This lesson is part of a group. Change the group's time, or remove the athlete from the group first.",
+    );
+  }
   const res = await admin
     .from("athlete_lesson_slots")
     .update({
@@ -828,33 +961,64 @@ export async function deleteLessonSlot(ctx: RosterContext, slotId: string): Prom
   const { admin, userId } = ctx;
   const coachId = await requireCoachId(admin, userId);
   await assertOwnsSlot(admin, coachId, slotId);
+  const groupId = await slotGroupId(admin, slotId);
   const res = await admin.from("athlete_lesson_slots").delete().eq("id", slotId);
   if (res.error) dbError(res.error);
+  // Deleting one member's lesson takes that athlete out of the group.
+  if (groupId) await dissolveGroupIfSingle(admin, groupId);
   return { ok: true as const };
 }
 
-/** `cancelLessonOccurrence`: skip one date. */
+/** `POST .../cancel` body: optional, so a build that sends none still cancels. */
+export const cancelOccurrenceInput = z
+  .object({ billable: z.boolean().optional() })
+  .optional()
+  .transform((v) => ({ billable: v?.billable === true }));
+
+/**
+ * `cancelLessonOccurrence`: skip one date. `billable` (decision #68) keeps
+ * the canceled lesson on the athlete's next invoice draft; without it the
+ * call writes exactly what it always did.
+ */
 export async function cancelLessonOccurrence(
   ctx: RosterContext,
   slotId: string,
   date: string,
+  opts: { billable?: boolean } = {},
 ): Promise<{ ok: true }> {
   const { admin, userId } = ctx;
   const coachId = await requireCoachId(admin, userId);
   await assertOwnsSlot(admin, coachId, slotId);
-  const res = await admin.from("lesson_slot_overrides").upsert(
-    {
-      slot_id: slotId,
-      occurrence_date: date,
-      status: "canceled",
-      start_minute: null,
-      end_minute: null,
-    },
-    { onConflict: "slot_id,occurrence_date" },
-  );
+  const row = {
+    slot_id: slotId,
+    occurrence_date: date,
+    status: "canceled",
+    start_minute: null,
+    end_minute: null,
+  };
+  const upsert = (payload: Record<string, unknown>) =>
+    admin
+      .from("lesson_slot_overrides")
+      .upsert(payload as never, { onConflict: "slot_id,occurrence_date" });
+  // Always written, so re-canceling without it clears an earlier "still bill".
+  let res = await upsert({ ...row, billable: opts.billable === true });
+  if (isMissingColumn(res.error)) {
+    // Migration 20261115120000 not applied yet: a plain cancel works as it
+    // always did; "still bill" has nowhere to be stored.
+    if (opts.billable) throw groupLessonsNotReady();
+    res = await upsert(row);
+  }
   if (res.error) dbError(res.error);
   return { ok: true as const };
 }
+
+/** The database half of decision #68 (migration 20261115120000) is not applied yet. */
+export const groupLessonsNotReady = () =>
+  new ApiError({
+    code: "unavailable",
+    status: 503,
+    message: "Group lessons aren't switched on yet. Try again shortly.",
+  });
 
 /** `rescheduleLessonOccurrence`: new times for one date. */
 export async function rescheduleLessonOccurrence(
@@ -866,6 +1030,10 @@ export async function rescheduleLessonOccurrence(
   const { admin, userId } = ctx;
   const coachId = await requireCoachId(admin, userId);
   await assertOwnsSlot(admin, coachId, slotId);
+  // One date of a group lesson moves for the whole group (`setGroupOccurrence`).
+  if (await inLiveGroup(admin, slotId)) {
+    throw unprocessable("This lesson is part of a group. Move the date for the whole group.");
+  }
   const res = await admin.from("lesson_slot_overrides").upsert(
     {
       slot_id: slotId,

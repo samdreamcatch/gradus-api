@@ -4,8 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { dbError } from "./db-error";
-import { clubScheduleErrors, type ClubScheduleRow } from "./club-schedule";
-import { buildClubLessons } from "./club-lesson-calendar";
+import {
+  clubScheduleErrors,
+  clubScheduleCommitErrors,
+  type ClubScheduleRow,
+} from "./club-schedule";
+import { buildClubLessons, practiceFor, weekStart, addDays, toIso } from "./club-lesson-calendar";
 
 type ImportRecord = {
   id: string;
@@ -15,6 +19,8 @@ type ImportRecord = {
   created_at: string;
   organization_id: string;
   uploaded_by: string;
+  committed_at: string | null;
+  commit_counts: Json;
 };
 type Table<R> = { Row: R; Insert: never; Update: never; Relationships: [] };
 type ScheduleDatabase = Omit<Database, "public"> & {
@@ -34,6 +40,10 @@ type ScheduleDatabase = Omit<Database, "public"> & {
         Args: { p_org: string; p_user: string; p_file: string; p_rows: Json; p_ready: boolean };
         Returns: string;
       };
+      club_commit_schedule_review: {
+        Args: { p_org: string; p_user: string; p_import: string };
+        Returns: Json;
+      };
     };
   };
 };
@@ -52,6 +62,9 @@ const reviewRow = z.object({
   guardianEmail: z.string().max(254),
   athleteEmail: z.string().max(254),
   sport: z.string().max(100),
+  athleteId: z.string().uuid().nullable().optional(),
+  startsOn: z.string().nullable().optional(),
+  weeksOfMonth: z.array(z.number().int().min(1).max(5)).max(2).optional(),
 });
 
 async function authorized(
@@ -93,7 +106,7 @@ export const getClubScheduleHistory = createServerFn({ method: "POST" })
     const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
     const result = await draft
       .from("org_schedule_imports")
-      .select("id,file_name,status,counts,created_at")
+      .select("id,file_name,status,counts,created_at,committed_at,commit_counts")
       .eq("organization_id", data.organizationId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -147,6 +160,67 @@ export const saveClubScheduleReview = createServerFn({ method: "POST" })
     return { id: result.data, ready };
   });
 
+export const getClubScheduleStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { base, draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const seats = await draft
+      .from("org_seats")
+      .select("coach_id")
+      .eq("organization_id", data.organizationId);
+    if (seats.error) dbError(seats.error);
+    const ids = (seats.data ?? []).flatMap((s) => (s.coach_id ? [s.coach_id] : []));
+    if (!ids.length) return [];
+    const links = await base
+      .from("coach_athletes")
+      .select("coach_id,athlete_id")
+      .in("coach_id", ids);
+    if (links.error) dbError(links.error);
+    const athleteIds = [...new Set((links.data ?? []).map((l) => l.athlete_id))];
+    if (!athleteIds.length) return [];
+    const students = await base
+      .from("athletes")
+      .select("id,first_name,last_name")
+      .in("id", athleteIds)
+      .eq("account_state", "active");
+    if (students.error) dbError(students.error);
+    return (students.data ?? []).map((s) => ({
+      id: s.id,
+      firstName: s.first_name,
+      lastName: s.last_name,
+      coachIds: (links.data ?? []).filter((l) => l.athlete_id === s.id).map((l) => l.coach_id),
+    }));
+  });
+
+export const commitClubScheduleReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => orgInput.extend({ importId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { draft } = await authorized(context.supabase, context.userId, data.organizationId);
+    const stored = await draft
+      .from("org_schedule_import_rows")
+      .select("review_row")
+      .eq("organization_id", data.organizationId)
+      .eq("import_id", data.importId)
+      .order("row_no");
+    if (stored.error) dbError(stored.error);
+    const rows = z
+      .array(reviewRow)
+      .min(1)
+      .max(500)
+      .parse((stored.data ?? []).map((r) => r.review_row));
+    const errors = Object.values(clubScheduleCommitErrors(rows)).flat();
+    if (errors.length) throw new Error(errors[0]);
+    const res = await draft.rpc("club_commit_schedule_review", {
+      p_org: data.organizationId,
+      p_user: context.userId,
+      p_import: data.importId,
+    });
+    if (res.error) dbError(res.error);
+    return z.object({ added: z.number(), skipped: z.number() }).parse(res.data);
+  });
+
 // Operational club schedule only; family contacts must never enter Home/Coaching rollups.
 export const getClubLessonCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -196,7 +270,40 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" })
       ? await base.from("parent_profiles").select("id,first_name,last_name").in("id", parentIds)
       : { data: [], error: null };
     if (parents.error) dbError(parents.error);
-    return buildClubLessons({
+    // Last full week (Mon–Sun, UTC), matching the weekly coach snapshot rule.
+    const lastWeek = addDays(weekStart(toIso(new Date())), -7);
+    const [goals, primaries, levels, targets, plans] = await Promise.all([
+      base.from("athlete_goals").select("id,athlete_id,coach_id,sport,current_level_key,updated_at").in("athlete_id", athleteIds),
+      base.from("athlete_primary_coaches").select("athlete_id,sport,coach_id").in("athlete_id", athleteIds).in("coach_id", ids),
+      base.from("coach_levels").select("coach_id,sport,level_key,practice_hours_per_week").in("coach_id", ids),
+      base.from("coach_athlete_practice_targets").select("coach_id,athlete_id,sport,hours_per_week").in("coach_id", ids).in("athlete_id", athleteIds),
+      base.from("plans").select("id,coach_id,athlete_id").eq("kind", "plan").in("coach_id", ids).in("athlete_id", athleteIds),
+    ]);
+    for (const r of [goals, primaries, levels, targets, plans]) if (r.error) dbError(r.error);
+    const planIds = (plans.data ?? []).map((p) => p.id);
+    const sessions = planIds.length
+      ? await base
+          .from("plan_sessions")
+          .select("plan_id,athlete_id,duration_seconds")
+          .in("plan_id", planIds)
+          .gte("logged_at", `${lastWeek}T00:00:00Z`)
+          .lt("logged_at", `${addDays(lastWeek, 7)}T00:00:00Z`)
+      : { data: [], error: null };
+    if (sessions.error) dbError(sessions.error);
+    const planMap = new Map((plans.data ?? []).map((p) => [p.id, p]));
+    const practiceInput = {
+      goals: (goals.data ?? []) as never,
+      primaries: (primaries.data ?? []) as never,
+      levels: (levels.data ?? []) as never,
+      targets: (targets.data ?? []) as never,
+      sessions: (sessions.data ?? []).flatMap((s) => {
+        const plan = planMap.get(s.plan_id);
+        return plan && plan.coach_id && plan.athlete_id === s.athlete_id
+          ? [{ coach_id: plan.coach_id, athlete_id: s.athlete_id, duration_seconds: s.duration_seconds }]
+          : [];
+      }),
+    };
+    const lessons = buildClubLessons({
       slots: slots.data ?? [],
       students: students.data ?? [],
       coaches: coaches.data ?? [],
@@ -221,6 +328,7 @@ export const getClubLessonCalendar = createServerFn({ method: "POST" })
         }),
       ],
     });
+    return lessons.map((l) => ({ ...l, ...practiceFor(l.coachId, l.athleteId, practiceInput) }));
   });
 /**
  * Sends (or re-sends) the existing family claim invite for club lessons. Only students linked to
@@ -278,7 +386,7 @@ export const sendClubLessonInvites = createServerFn({ method: "POST" })
       await sendGuardianInvite({
         to: email,
         athleteName: [s.first_name, s.last_name].filter(Boolean).join(" "),
-        coachName: coachById.get(coachFor.get(s.id)!) || null,
+        coachName: coachById.get(coachFor.get(s.id) ?? "") || null,
         token,
         recipient: s.invite_recipient === "athlete" ? "athlete" : "guardian",
       });

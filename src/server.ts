@@ -9,12 +9,17 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+// False until this Worker instance has loaded the app (router, every route
+// and the libraries they import). Requests that arrive before then wait for
+// that load: they are the "cold" ones, marked in the API's Server-Timing.
+let serverEntryLoaded = false;
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
-    );
+    serverEntryPromise = import("@tanstack/react-start/server-entry").then((m) => {
+      serverEntryLoaded = true;
+      return (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry);
+    });
   }
   return serverEntryPromise;
 }
@@ -70,11 +75,14 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const cold = !serverEntryLoaded;
       const handler = await getServerEntry();
       // `ctx.waitUntil` is only reachable here; `inBackground` (push sends)
       // reads it from this scope so side effects can outlive the response.
-      const response = await runWithRequestContext(ctx, () =>
-        Promise.resolve(handler.fetch(request, env, ctx)),
+      const response = await runWithRequestContext(
+        ctx,
+        () => Promise.resolve(handler.fetch(request, env, ctx)),
+        { cold },
       );
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
