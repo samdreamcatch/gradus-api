@@ -36,6 +36,7 @@ import { plansTable } from "./plan-schema";
 import { emptySessionsByState, loadSessionsByPlanIds } from "./plan-sessions.server";
 import { skillReasonSchema, type ReasonMove, type SkillReason } from "./skill-events.server";
 import { purgeAtField } from "./plan-deletion";
+import { assertVerifiedToPublish } from "./coach-verification.server";
 import {
   announcePlansActivated,
   cascadeStatusToCopies,
@@ -947,7 +948,11 @@ export async function setPlanStatus(
     // them, decision #66): that is a roster plan, not a listing, so it needs no Coach Pro.
     if (!owned.athlete_id && (owned.kind ?? "plan") === "plan" && owned.status !== "active") {
       const copies = await loadCopyIdsByPlan(supabase, coachId, [id]);
-      if (!copies.has(id)) await assertCoachProForPublish(supabase, coachId);
+      if (!copies.has(id)) {
+        await assertCoachProForPublish(supabase, coachId);
+        // Listings go live only from a verified coach, once MARKETPLACE_REQUIRE_VERIFICATION is on.
+        await assertVerifiedToPublish(supabase, coachId);
+      }
     }
 
     // Athlete-scoped conflict logic only runs when an athlete is assigned.

@@ -103,13 +103,17 @@ const listing = (id: string, updatedAt: string) => ({
 });
 
 describe("isVerifiedCoach", () => {
-  it("is Coach Pro outside a club, whatever their identity checklist says", () => {
-    expect(isVerifiedCoach({ subscription_tier: "coach_pro", organization_id: null })).toBe(true);
-    expect(isVerifiedCoach({ subscription_tier: "coach", organization_id: null })).toBe(false);
-    expect(isVerifiedCoach({ subscription_tier: null, organization_id: null })).toBe(false);
-    expect(isVerifiedCoach({ subscription_tier: "coach_pro", organization_id: "org-1" })).toBe(
+  it("is Coach Pro outside a club who passed identity verification", () => {
+    const pro = { subscription_tier: "coach_pro", organization_id: null };
+    expect(isVerifiedCoach(pro, true)).toBe(true);
+    expect(isVerifiedCoach(pro, false)).toBe(false);
+    expect(isVerifiedCoach({ subscription_tier: "coach", organization_id: null }, true)).toBe(
       false,
     );
+    expect(isVerifiedCoach({ subscription_tier: null, organization_id: null }, true)).toBe(false);
+    expect(
+      isVerifiedCoach({ subscription_tier: "coach_pro", organization_id: "org-1" }, true),
+    ).toBe(false);
   });
 });
 
@@ -146,6 +150,10 @@ describe("getMarketplacePlans", () => {
       ],
       parent_profiles: [{ id: "p-me", user_id: "me" }],
       athlete_guardians: [],
+      // The coach passed identity verification: the Verified badge.
+      coach_verifications: [
+        { coach_id: "c-pro", identity_status: "passed", override_status: null },
+      ],
       plans: [listing("p1", "2026-11-02T10:00:00.000Z")],
       plan_moves: [
         {
@@ -311,6 +319,10 @@ describe("getMarketplaceCoach", () => {
       parent_profiles: [],
       plans: [ownPlan("p1", "4.00", 1), ownPlan("p2", "5.00", 3), ownPlan("p3", null, 0)],
       plan_moves: [],
+      // The coach passed identity verification: the Verified badge.
+      coach_verifications: [
+        { coach_id: "c-pro", identity_status: "passed", override_status: null },
+      ],
     });
 
     const profile = await getMarketplaceCoach({ userId: "me", admin }, "c-pro");

@@ -198,6 +198,8 @@ import "../src/routes/api/v1/marketplace/plans/$id/view";
 import "../src/routes/api/v1/marketplace/plans/$id/report";
 import "../src/routes/api/v1/coach/sales/$id/restrict";
 import "../src/routes/api/v1/marketplace/plans/$id/promo-code";
+import "../src/routes/api/v1/marketplace/seller/verification/index";
+import "../src/routes/api/v1/marketplace/seller/verification/retry";
 import "../src/routes/api/v1/coach/promo-codes/index";
 import "../src/routes/api/v1/coach/promo-codes/$id/index";
 import "../src/routes/api/v1/coach/stripe-connect/index";

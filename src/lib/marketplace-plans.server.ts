@@ -17,7 +17,12 @@ import { ApiError } from "./api/errors";
 import { signedCoachPhotoUrl, signedCoachPhotoUrls } from "./coach-photo.server";
 import { coachRatingSummary } from "./coach-ratings.server";
 import { dbError } from "./db-error";
-import { isDefaultPlanMedia, listingCover, listingCoverUrls } from "./plan-marketplace-fields.server";
+import {
+  isDefaultPlanMedia,
+  listingCover,
+  listingCoverUrls,
+} from "./plan-marketplace-fields.server";
+import { verifiedCoachIds } from "./coach-verification.server";
 import { guardianAthleteAccess } from "./team.server";
 
 type Admin = SupabaseClient<Database>;
@@ -110,7 +115,11 @@ export interface MarketplacePurchaseRef {
  */
 export const marketplacePlansQuery = z.object({
   q: z.string().trim().max(100).optional(),
-  sport: z.string().trim().regex(/^[a-z0-9_]{1,64}$/).optional(),
+  sport: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_]{1,64}$/)
+    .optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -384,10 +393,14 @@ export async function getMarketplacePlans(
   // images and videos are signed in the same call.
   const chosen = page.map((row) => listingCover(row.media, row.media_video));
   const imageUrls = page.map((row, i) =>
-    chosen[i]?.kind === "image" ? chosen[i]!.url : row.media && isDefaultPlanMedia(row.media) ? row.media : null,
+    chosen[i]?.kind === "image"
+      ? chosen[i]!.url
+      : row.media && isDefaultPlanMedia(row.media)
+        ? row.media
+        : null,
   );
   const videoUrls = chosen.map((c) => (c?.kind === "video" ? c.url : null));
-  const [signedCovers, coachPhotos, bought] = await Promise.all([
+  const [signedCovers, coachPhotos, bought, verifiedIds] = await Promise.all([
     listingCoverUrls(admin as unknown as Parameters<typeof listingCoverUrls>[0], [
       ...imageUrls,
       ...videoUrls,
@@ -401,6 +414,11 @@ export async function getMarketplacePlans(
       ctx.userId,
       scope.athleteIds,
       page.map((row) => row.id),
+    ),
+    // The Verified badge: only coaches who passed identity verification.
+    verifiedCoachIds(
+      admin,
+      page.map((row) => row.coach.id),
     ),
   ]);
   const covers = signedCovers.slice(0, page.length);
@@ -436,7 +454,7 @@ export async function getMarketplacePlans(
         id: row.coach.id,
         firstName: row.coach.first_name,
         lastName: row.coach.last_name,
-        verified: isVerifiedCoach(row.coach),
+        verified: isVerifiedCoach(row.coach, verifiedIds.has(row.coach.id)),
         photoUrl: coachPhotos.get(row.coach.id) ?? null,
         canSell:
           !!row.coach.stripe_connect_account_id &&
@@ -458,7 +476,7 @@ export interface MarketplaceCoachDTO {
     id: string;
     firstName: string;
     lastName: string;
-    /** On Coach Pro (`isVerifiedCoach`): the Verified badge. */
+    /** Coach Pro and passed identity verification (`isVerifiedCoach`): the Verified badge. */
     verified: boolean;
     /** A link (an hour) to their profile photo; null when they have none. */
     photoUrl: string | null;
@@ -495,11 +513,14 @@ const coachNotFound = () =>
  * `public.coach_effective_tier()` counts it. Every coach the marketplace lists
  * is, so it shows on all of them.
  */
-export function isVerifiedCoach(coach: {
-  subscription_tier: string | null;
-  organization_id: string | null;
-}): boolean {
-  return coach.subscription_tier === "coach_pro" && coach.organization_id === null;
+export function isVerifiedCoach(
+  coach: { subscription_tier: string | null; organization_id: string | null },
+  /** The coach passed identity verification (coach_verifications; `verifiedCoachIds`). */
+  identityVerified: boolean,
+): boolean {
+  return (
+    coach.subscription_tier === "coach_pro" && coach.organization_id === null && identityVerified
+  );
 }
 
 export async function getMarketplaceCoach(
@@ -584,7 +605,7 @@ export async function getMarketplaceCoach(
       id: coach.id,
       firstName: coach.first_name,
       lastName: coach.last_name,
-      verified: isVerifiedCoach(coach),
+      verified: isVerifiedCoach(coach, (await verifiedCoachIds(admin, [coach.id])).has(coach.id)),
       photoUrl,
       isMe: coach.user_id === ctx.userId,
       onboardedAt: coach.onboarded_at,

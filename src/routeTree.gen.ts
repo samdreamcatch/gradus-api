@@ -43,6 +43,7 @@ import { Route as SignupAthleteRouteImport } from './routes/signup.athlete'
 import { Route as SignupCoachRouteImport } from './routes/signup.coach'
 import { Route as SignupParentRouteImport } from './routes/signup.parent'
 import { Route as TeamTokenRouteImport } from './routes/team.$token'
+import { Route as VerificationCompleteRouteImport } from './routes/verification.complete'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminActiveRouteImport } from './routes/_authenticated/admin.active'
 import { Route as AuthenticatedAdminActivityRouteImport } from './routes/_authenticated/admin.activity'
@@ -160,6 +161,7 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicWebhooksAppStoreRouteImport } from './routes/api/public/webhooks/app-store'
 import { Route as ApiPublicWebhooksKwsRouteImport } from './routes/api/public/webhooks/kws'
 import { Route as ApiPublicWebhooksStripeConnectRouteImport } from './routes/api/public/webhooks/stripe-connect'
+import { Route as ApiPublicWebhooksStripeIdentityRouteImport } from './routes/api/public/webhooks/stripe-identity'
 import { Route as ApiPublicWebhooksStripeMarketplaceRouteImport } from './routes/api/public/webhooks/stripe-marketplace'
 import { Route as ApiV1AdultAthleteGoalsRouteImport } from './routes/api/v1/adult-athlete/goals'
 import { Route as ApiV1AdultAthleteOnboardingRouteImport } from './routes/api/v1/adult-athlete/onboarding'
@@ -382,6 +384,8 @@ import { Route as ApiV1MarketplacePlansIdReportRouteImport } from './routes/api/
 import { Route as ApiV1MarketplacePlansIdViewRouteImport } from './routes/api/v1/marketplace/plans/$id/view'
 import { Route as ApiV1MarketplacePurchasesIdIndexRouteImport } from './routes/api/v1/marketplace/purchases/$id/index'
 import { Route as ApiV1MarketplacePurchasesIdPayRouteImport } from './routes/api/v1/marketplace/purchases/$id/pay'
+import { Route as ApiV1MarketplaceSellerVerificationIndexRouteImport } from './routes/api/v1/marketplace/seller/verification/index'
+import { Route as ApiV1MarketplaceSellerVerificationRetryRouteImport } from './routes/api/v1/marketplace/seller/verification/retry'
 import { Route as ApiV1MeCelebrationsIdAckRouteImport } from './routes/api/v1/me/celebrations/$id/ack'
 import { Route as ApiV1ParentAthletesIdIndexRouteImport } from './routes/api/v1/parent/athletes/$id/index'
 import { Route as ApiV1ParentAthletesIdGoalsRouteImport } from './routes/api/v1/parent/athletes/$id/goals'
@@ -588,6 +592,11 @@ const SignupParentRoute = SignupParentRouteImport.update({
 const TeamTokenRoute = TeamTokenRouteImport.update({
   id: '/team/$token',
   path: '/team/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificationCompleteRoute = VerificationCompleteRouteImport.update({
+  id: '/verification/complete',
+  path: '/verification/complete',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -1267,6 +1276,12 @@ const ApiPublicWebhooksStripeConnectRoute =
   ApiPublicWebhooksStripeConnectRouteImport.update({
     id: '/api/public/webhooks/stripe-connect',
     path: '/api/public/webhooks/stripe-connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksStripeIdentityRoute =
+  ApiPublicWebhooksStripeIdentityRouteImport.update({
+    id: '/api/public/webhooks/stripe-identity',
+    path: '/api/public/webhooks/stripe-identity',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWebhooksStripeMarketplaceRoute =
@@ -2491,6 +2506,18 @@ const ApiV1MarketplacePurchasesIdPayRoute =
     path: '/api/v1/marketplace/purchases/$id/pay',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiV1MarketplaceSellerVerificationIndexRoute =
+  ApiV1MarketplaceSellerVerificationIndexRouteImport.update({
+    id: '/api/v1/marketplace/seller/verification/',
+    path: '/api/v1/marketplace/seller/verification/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiV1MarketplaceSellerVerificationRetryRoute =
+  ApiV1MarketplaceSellerVerificationRetryRouteImport.update({
+    id: '/api/v1/marketplace/seller/verification/retry',
+    path: '/api/v1/marketplace/seller/verification/retry',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1MeCelebrationsIdAckRoute =
   ApiV1MeCelebrationsIdAckRouteImport.update({
     id: '/api/v1/me/celebrations/$id/ack',
@@ -2743,6 +2770,7 @@ export interface FileRoutesByFullPath {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/verification/complete': typeof VerificationCompleteRoute
   '/board/': typeof BoardIndexRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
@@ -2848,6 +2876,7 @@ export interface FileRoutesByFullPath {
   '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/public/webhooks/stripe-connect': typeof ApiPublicWebhooksStripeConnectRoute
+  '/api/public/webhooks/stripe-identity': typeof ApiPublicWebhooksStripeIdentityRoute
   '/api/public/webhooks/stripe-marketplace': typeof ApiPublicWebhooksStripeMarketplaceRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -3070,6 +3099,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
+  '/api/v1/marketplace/seller/verification/retry': typeof ApiV1MarketplaceSellerVerificationRetryRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -3095,6 +3125,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/coach/roster/athletes/': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/marketplace/purchases/$id/': typeof ApiV1MarketplacePurchasesIdIndexRoute
+  '/api/v1/marketplace/seller/verification/': typeof ApiV1MarketplaceSellerVerificationIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/copies/': typeof ApiV1PlansIdCopiesIndexRoute
@@ -3149,6 +3180,7 @@ export interface FileRoutesByTo {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/verification/complete': typeof VerificationCompleteRoute
   '/board': typeof BoardIndexRoute
   '/admin/active': typeof AuthenticatedAdminActiveRoute
   '/admin/activity': typeof AuthenticatedAdminActivityRoute
@@ -3253,6 +3285,7 @@ export interface FileRoutesByTo {
   '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/public/webhooks/stripe-connect': typeof ApiPublicWebhooksStripeConnectRoute
+  '/api/public/webhooks/stripe-identity': typeof ApiPublicWebhooksStripeIdentityRoute
   '/api/public/webhooks/stripe-marketplace': typeof ApiPublicWebhooksStripeMarketplaceRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -3475,6 +3508,7 @@ export interface FileRoutesByTo {
   '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
+  '/api/v1/marketplace/seller/verification/retry': typeof ApiV1MarketplaceSellerVerificationRetryRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -3500,6 +3534,7 @@ export interface FileRoutesByTo {
   '/api/v1/coach/roster/athletes': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/marketplace/purchases/$id': typeof ApiV1MarketplacePurchasesIdIndexRoute
+  '/api/v1/marketplace/seller/verification': typeof ApiV1MarketplaceSellerVerificationIndexRoute
   '/api/v1/parent/athletes/$id': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/copies': typeof ApiV1PlansIdCopiesIndexRoute
@@ -3561,6 +3596,7 @@ export interface FileRoutesById {
   '/signup/coach': typeof SignupCoachRoute
   '/signup/parent': typeof SignupParentRouteWithChildren
   '/team/$token': typeof TeamTokenRoute
+  '/verification/complete': typeof VerificationCompleteRoute
   '/board/': typeof BoardIndexRoute
   '/_authenticated/admin/active': typeof AuthenticatedAdminActiveRoute
   '/_authenticated/admin/activity': typeof AuthenticatedAdminActivityRoute
@@ -3666,6 +3702,7 @@ export interface FileRoutesById {
   '/api/public/webhooks/app-store': typeof ApiPublicWebhooksAppStoreRoute
   '/api/public/webhooks/kws': typeof ApiPublicWebhooksKwsRoute
   '/api/public/webhooks/stripe-connect': typeof ApiPublicWebhooksStripeConnectRoute
+  '/api/public/webhooks/stripe-identity': typeof ApiPublicWebhooksStripeIdentityRoute
   '/api/public/webhooks/stripe-marketplace': typeof ApiPublicWebhooksStripeMarketplaceRoute
   '/api/v1/adult-athlete/goals': typeof ApiV1AdultAthleteGoalsRoute
   '/api/v1/adult-athlete/onboarding': typeof ApiV1AdultAthleteOnboardingRoute
@@ -3888,6 +3925,7 @@ export interface FileRoutesById {
   '/api/v1/marketplace/plans/$id/report': typeof ApiV1MarketplacePlansIdReportRoute
   '/api/v1/marketplace/plans/$id/view': typeof ApiV1MarketplacePlansIdViewRoute
   '/api/v1/marketplace/purchases/$id/pay': typeof ApiV1MarketplacePurchasesIdPayRoute
+  '/api/v1/marketplace/seller/verification/retry': typeof ApiV1MarketplaceSellerVerificationRetryRoute
   '/api/v1/me/celebrations/$id/ack': typeof ApiV1MeCelebrationsIdAckRoute
   '/api/v1/parent/athletes/$id/goals': typeof ApiV1ParentAthletesIdGoalsRoute
   '/api/v1/parent/athletes/$id/primary-coach': typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -3913,6 +3951,7 @@ export interface FileRoutesById {
   '/api/v1/coach/roster/athletes/': typeof ApiV1CoachRosterAthletesIndexRoute
   '/api/v1/coach/visibility/$id/': typeof ApiV1CoachVisibilityIdIndexRoute
   '/api/v1/marketplace/purchases/$id/': typeof ApiV1MarketplacePurchasesIdIndexRoute
+  '/api/v1/marketplace/seller/verification/': typeof ApiV1MarketplaceSellerVerificationIndexRoute
   '/api/v1/parent/athletes/$id/': typeof ApiV1ParentAthletesIdIndexRoute
   '/api/v1/parent/team/guardians/': typeof ApiV1ParentTeamGuardiansIndexRoute
   '/api/v1/plans/$id/copies/': typeof ApiV1PlansIdCopiesIndexRoute
@@ -3974,6 +4013,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/verification/complete'
     | '/board/'
     | '/admin/active'
     | '/admin/activity'
@@ -4079,6 +4119,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/public/webhooks/stripe-connect'
+    | '/api/public/webhooks/stripe-identity'
     | '/api/public/webhooks/stripe-marketplace'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -4301,6 +4342,7 @@ export interface FileRouteTypes {
     | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
+    | '/api/v1/marketplace/seller/verification/retry'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -4326,6 +4368,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes/'
     | '/api/v1/coach/visibility/$id/'
     | '/api/v1/marketplace/purchases/$id/'
+    | '/api/v1/marketplace/seller/verification/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/copies/'
@@ -4380,6 +4423,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/verification/complete'
     | '/board'
     | '/admin/active'
     | '/admin/activity'
@@ -4484,6 +4528,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/public/webhooks/stripe-connect'
+    | '/api/public/webhooks/stripe-identity'
     | '/api/public/webhooks/stripe-marketplace'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -4706,6 +4751,7 @@ export interface FileRouteTypes {
     | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
+    | '/api/v1/marketplace/seller/verification/retry'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -4731,6 +4777,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes'
     | '/api/v1/coach/visibility/$id'
     | '/api/v1/marketplace/purchases/$id'
+    | '/api/v1/marketplace/seller/verification'
     | '/api/v1/parent/athletes/$id'
     | '/api/v1/parent/team/guardians'
     | '/api/v1/plans/$id/copies'
@@ -4791,6 +4838,7 @@ export interface FileRouteTypes {
     | '/signup/coach'
     | '/signup/parent'
     | '/team/$token'
+    | '/verification/complete'
     | '/board/'
     | '/_authenticated/admin/active'
     | '/_authenticated/admin/activity'
@@ -4896,6 +4944,7 @@ export interface FileRouteTypes {
     | '/api/public/webhooks/app-store'
     | '/api/public/webhooks/kws'
     | '/api/public/webhooks/stripe-connect'
+    | '/api/public/webhooks/stripe-identity'
     | '/api/public/webhooks/stripe-marketplace'
     | '/api/v1/adult-athlete/goals'
     | '/api/v1/adult-athlete/onboarding'
@@ -5118,6 +5167,7 @@ export interface FileRouteTypes {
     | '/api/v1/marketplace/plans/$id/report'
     | '/api/v1/marketplace/plans/$id/view'
     | '/api/v1/marketplace/purchases/$id/pay'
+    | '/api/v1/marketplace/seller/verification/retry'
     | '/api/v1/me/celebrations/$id/ack'
     | '/api/v1/parent/athletes/$id/goals'
     | '/api/v1/parent/athletes/$id/primary-coach'
@@ -5143,6 +5193,7 @@ export interface FileRouteTypes {
     | '/api/v1/coach/roster/athletes/'
     | '/api/v1/coach/visibility/$id/'
     | '/api/v1/marketplace/purchases/$id/'
+    | '/api/v1/marketplace/seller/verification/'
     | '/api/v1/parent/athletes/$id/'
     | '/api/v1/parent/team/guardians/'
     | '/api/v1/plans/$id/copies/'
@@ -5199,6 +5250,7 @@ export interface RootRouteChildren {
   SignupCoachRoute: typeof SignupCoachRoute
   SignupParentRoute: typeof SignupParentRouteWithChildren
   TeamTokenRoute: typeof TeamTokenRoute
+  VerificationCompleteRoute: typeof VerificationCompleteRoute
   BoardIndexRoute: typeof BoardIndexRoute
   ApiV1AskRoute: typeof ApiV1AskRoute
   ApiV1ErrorsRoute: typeof ApiV1ErrorsRoute
@@ -5224,6 +5276,7 @@ export interface RootRouteChildren {
   ApiPublicWebhooksAppStoreRoute: typeof ApiPublicWebhooksAppStoreRoute
   ApiPublicWebhooksKwsRoute: typeof ApiPublicWebhooksKwsRoute
   ApiPublicWebhooksStripeConnectRoute: typeof ApiPublicWebhooksStripeConnectRoute
+  ApiPublicWebhooksStripeIdentityRoute: typeof ApiPublicWebhooksStripeIdentityRoute
   ApiPublicWebhooksStripeMarketplaceRoute: typeof ApiPublicWebhooksStripeMarketplaceRoute
   ApiV1AdultAthleteGoalsRoute: typeof ApiV1AdultAthleteGoalsRoute
   ApiV1AdultAthleteOnboardingRoute: typeof ApiV1AdultAthleteOnboardingRoute
@@ -5429,6 +5482,7 @@ export interface RootRouteChildren {
   ApiV1MarketplacePlansIdReportRoute: typeof ApiV1MarketplacePlansIdReportRoute
   ApiV1MarketplacePlansIdViewRoute: typeof ApiV1MarketplacePlansIdViewRoute
   ApiV1MarketplacePurchasesIdPayRoute: typeof ApiV1MarketplacePurchasesIdPayRoute
+  ApiV1MarketplaceSellerVerificationRetryRoute: typeof ApiV1MarketplaceSellerVerificationRetryRoute
   ApiV1MeCelebrationsIdAckRoute: typeof ApiV1MeCelebrationsIdAckRoute
   ApiV1ParentAthletesIdGoalsRoute: typeof ApiV1ParentAthletesIdGoalsRoute
   ApiV1ParentAthletesIdPrimaryCoachRoute: typeof ApiV1ParentAthletesIdPrimaryCoachRoute
@@ -5454,6 +5508,7 @@ export interface RootRouteChildren {
   ApiV1CoachRosterAthletesIndexRoute: typeof ApiV1CoachRosterAthletesIndexRoute
   ApiV1CoachVisibilityIdIndexRoute: typeof ApiV1CoachVisibilityIdIndexRoute
   ApiV1MarketplacePurchasesIdIndexRoute: typeof ApiV1MarketplacePurchasesIdIndexRoute
+  ApiV1MarketplaceSellerVerificationIndexRoute: typeof ApiV1MarketplaceSellerVerificationIndexRoute
   ApiV1ParentAthletesIdIndexRoute: typeof ApiV1ParentAthletesIdIndexRoute
   ApiV1ParentTeamGuardiansIndexRoute: typeof ApiV1ParentTeamGuardiansIndexRoute
   ApiV1PlansIdCopiesIndexRoute: typeof ApiV1PlansIdCopiesIndexRoute
@@ -5719,6 +5774,13 @@ declare module '@tanstack/react-router' {
       path: '/team/$token'
       fullPath: '/team/$token'
       preLoaderRoute: typeof TeamTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verification/complete': {
+      id: '/verification/complete'
+      path: '/verification/complete'
+      fullPath: '/verification/complete'
+      preLoaderRoute: typeof VerificationCompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
@@ -6538,6 +6600,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/stripe-connect'
       fullPath: '/api/public/webhooks/stripe-connect'
       preLoaderRoute: typeof ApiPublicWebhooksStripeConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/stripe-identity': {
+      id: '/api/public/webhooks/stripe-identity'
+      path: '/api/public/webhooks/stripe-identity'
+      fullPath: '/api/public/webhooks/stripe-identity'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeIdentityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/stripe-marketplace': {
@@ -8094,6 +8163,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MarketplacePurchasesIdPayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/marketplace/seller/verification/': {
+      id: '/api/v1/marketplace/seller/verification/'
+      path: '/api/v1/marketplace/seller/verification'
+      fullPath: '/api/v1/marketplace/seller/verification/'
+      preLoaderRoute: typeof ApiV1MarketplaceSellerVerificationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/marketplace/seller/verification/retry': {
+      id: '/api/v1/marketplace/seller/verification/retry'
+      path: '/api/v1/marketplace/seller/verification/retry'
+      fullPath: '/api/v1/marketplace/seller/verification/retry'
+      preLoaderRoute: typeof ApiV1MarketplaceSellerVerificationRetryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/me/celebrations/$id/ack': {
       id: '/api/v1/me/celebrations/$id/ack'
       path: '/api/v1/me/celebrations/$id/ack'
@@ -8713,6 +8796,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupCoachRoute: SignupCoachRoute,
   SignupParentRoute: SignupParentRouteWithChildren,
   TeamTokenRoute: TeamTokenRoute,
+  VerificationCompleteRoute: VerificationCompleteRoute,
   BoardIndexRoute: BoardIndexRoute,
   ApiV1AskRoute: ApiV1AskRoute,
   ApiV1ErrorsRoute: ApiV1ErrorsRoute,
@@ -8738,6 +8822,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebhooksAppStoreRoute: ApiPublicWebhooksAppStoreRoute,
   ApiPublicWebhooksKwsRoute: ApiPublicWebhooksKwsRoute,
   ApiPublicWebhooksStripeConnectRoute: ApiPublicWebhooksStripeConnectRoute,
+  ApiPublicWebhooksStripeIdentityRoute: ApiPublicWebhooksStripeIdentityRoute,
   ApiPublicWebhooksStripeMarketplaceRoute:
     ApiPublicWebhooksStripeMarketplaceRoute,
   ApiV1AdultAthleteGoalsRoute: ApiV1AdultAthleteGoalsRoute,
@@ -8953,6 +9038,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1MarketplacePlansIdReportRoute: ApiV1MarketplacePlansIdReportRoute,
   ApiV1MarketplacePlansIdViewRoute: ApiV1MarketplacePlansIdViewRoute,
   ApiV1MarketplacePurchasesIdPayRoute: ApiV1MarketplacePurchasesIdPayRoute,
+  ApiV1MarketplaceSellerVerificationRetryRoute:
+    ApiV1MarketplaceSellerVerificationRetryRoute,
   ApiV1MeCelebrationsIdAckRoute: ApiV1MeCelebrationsIdAckRoute,
   ApiV1ParentAthletesIdGoalsRoute: ApiV1ParentAthletesIdGoalsRoute,
   ApiV1ParentAthletesIdPrimaryCoachRoute:
@@ -8982,6 +9069,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1CoachRosterAthletesIndexRoute: ApiV1CoachRosterAthletesIndexRoute,
   ApiV1CoachVisibilityIdIndexRoute: ApiV1CoachVisibilityIdIndexRoute,
   ApiV1MarketplacePurchasesIdIndexRoute: ApiV1MarketplacePurchasesIdIndexRoute,
+  ApiV1MarketplaceSellerVerificationIndexRoute:
+    ApiV1MarketplaceSellerVerificationIndexRoute,
   ApiV1ParentAthletesIdIndexRoute: ApiV1ParentAthletesIdIndexRoute,
   ApiV1ParentTeamGuardiansIndexRoute: ApiV1ParentTeamGuardiansIndexRoute,
   ApiV1PlansIdCopiesIndexRoute: ApiV1PlansIdCopiesIndexRoute,

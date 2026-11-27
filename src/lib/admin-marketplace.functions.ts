@@ -106,3 +106,37 @@ export const adminCoachContact = createServerFn({ method: "POST" })
     const { coachContact } = await import("./admin-marketplace.server");
     return coachContact(await adminClient(), data.coachId);
   });
+
+/** A seller's verification: Stripe Identity's result, SafeSport, and any override. */
+export const adminGetCoachVerification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ coachId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as any);
+    const { adminGetVerification } = await import("./coach-verification.server");
+    return adminGetVerification(await adminClient(), data.coachId);
+  });
+
+/** Overrides (or clears) a seller's identity result; the reason is required and recorded. */
+export const adminOverrideCoachVerification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        coachId: z.string().uuid(),
+        status: z.enum(["passed", "failed"]).nullable(),
+        reason: z.string().trim().min(3).max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as any);
+    const { adminOverrideVerification } = await import("./coach-verification.server");
+    const ctx = context as unknown as { userId: string };
+    return adminOverrideVerification(
+      await adminClient(),
+      data.coachId,
+      { status: data.status, reason: data.reason },
+      ctx.userId,
+    );
+  });

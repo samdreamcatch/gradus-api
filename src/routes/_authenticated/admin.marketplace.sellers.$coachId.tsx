@@ -21,6 +21,7 @@ import {
   shortDate,
 } from "@/components/admin/marketplace-ui";
 import { PurchaseList } from "@/components/admin/marketplace-purchases";
+import { SellerVerification } from "@/components/admin/seller-verification";
 
 export const Route = createFileRoute("/_authenticated/admin/marketplace/sellers/$coachId")({
   component: SellerDetail,
@@ -138,6 +139,8 @@ function SellerDetail() {
           search={{ open: true }}
         />
       </div>
+
+      <SellerVerification coachId={s.coachId} />
 
       <Section title={`Listings (${s.listings.length})`}>
         <Panel>
